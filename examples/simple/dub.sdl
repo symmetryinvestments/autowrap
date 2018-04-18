@@ -1,0 +1,15 @@
+name "simple"
+targetType "dynamicLibrary"
+dependency "autowrap" path="../../"
+
+configuration "python36" {
+     subConfiguration "autowrap" "python36"
+}
+
+configuration "python33" {
+     subConfiguration "autowrap" "python33"
+}
+
+configuration "python27" {
+     subConfiguration "autowrap" "python27"
+}
