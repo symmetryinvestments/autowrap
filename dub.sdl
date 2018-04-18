@@ -1,4 +1,7 @@
 name "autowrap"
+description "Wrap existing D code for use in other languages"
+authors "Atila Neves"
+license "BSD"
 targetType "sourceLibrary"
 preBuildCommands "[ -e $PACKAGE_DIR/druntime.o ] || gcc -c -fPIC $PACKAGE_DIR/source/autowrap/python/druntime.c -o $PACKAGE_DIR/druntime.o" platform="linux"
 sourceFiles "$PACKAGE_DIR/druntime.o" platform="linux"
