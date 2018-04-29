@@ -1,4 +1,4 @@
-name "autowrap"
+name "kaleidic-autowrap"
 description "Wrap existing D code for use in other languages"
 authors "Atila Neves"
 license "BSD"
@@ -30,3 +30,8 @@ configuration "python27" {
      subConfiguration ":python" "python27"
      versions "Python2" "PydPythonExtension"
 }
+
+configuration "sil" {
+    versions "Symmetry"
+}
+

@@ -1,8 +1,9 @@
 {
 	"fileVersion": 1,
 	"versions": {
-		"autowrap": {"path":"../../"},
 		"excel-d": "0.3.7",
+		"kaleidic-api": "~master",
+		"kaleidic-autowrap": {"path":"../../"},
 		"nogc": "0.0.1",
 		"pyd": "~master",
 		"unit-threaded": "0.7.46"
