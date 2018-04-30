@@ -5,7 +5,7 @@ license "BSD"
 targetType "sourceLibrary"
 preBuildCommands "[ -e $PACKAGE_DIR/druntime.o ] || gcc -c -fPIC $PACKAGE_DIR/source/autowrap/python/druntime.c -o $PACKAGE_DIR/druntime.o" platform="linux"
 sourceFiles "$PACKAGE_DIR/druntime.o" platform="linux"
-dependency "excel-d" version="~>0.3.5"
+dependency "excel-d" version="~>0.3.6"
 dependency "pyd" version="~master"
 
 configuration "python36" {

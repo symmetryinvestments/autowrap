@@ -3,3 +3,4 @@
 .dub
 .cache
 __pycache__
+autowrap-test-*
