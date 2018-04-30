@@ -5,7 +5,7 @@
    a list of modules, write this in a "main" module and generate mylib.{so,dll}:
 
    ------
-   mixin wrapAll!(LibraryName("mylib"), Modules("module1", "module2", ...));
+   mixin wrapAll(LibraryName("mylib"), Modules("module1", "module2", ...));
    ------
  */
 module autowrap.python.boilerplate;
