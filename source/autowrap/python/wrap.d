@@ -9,6 +9,9 @@ module autowrap.python.wrap;
 import std.meta: allSatisfy;
 import std.traits: isArray;
 
+version(AlwaysExport)
+	pragma(msg,"** exporting all symbols");
+
 version(unittest) {
     void shouldEqual(T, U)(auto ref T t, auto ref U u) {
         assert(t == u);
@@ -44,7 +47,10 @@ void wrapFunctions(alias module_)() if(!is(typeof(module_) == string)) {
 
     foreach(memberName; __traits(allMembers, module_)) {
         alias member = I!(__traits(getMember, module_, memberName));
-        static if(isFunction!member) {
+	enum prot = __traits(getProtection,member);
+	enum isProt = prot=="private" || prot=="protected";
+	alias compiles = I!(__traits(compiles,def!(member,PyName!(toSnakeCase(memberName)))));
+        static if(isFunction!member && !isProt && compiles) {
             def!(member, PyName!(toSnakeCase(memberName)));
         }
     }
@@ -159,7 +165,10 @@ void wrapAllAggregates(ModuleNames...)() if(allSatisfy!(isString, ModuleNames)) 
     alias allAggregates = Unique!(aggregates, functionTypes);
 
     static foreach(aggregate; allAggregates)
-        wrapAggregate!aggregate;
+    {
+        static if(__traits(compiles,wrapAggregate!aggregate))
+		wrapAggregate!aggregate;
+    }
 }
 
 // All return and parameter types of the functions in the given modules
@@ -173,14 +182,16 @@ private template FunctionTypesInModuleName(string moduleName) {
 
     mixin(`import module_  = ` ~ moduleName ~ `;`);
     import std.traits: ReturnType, Parameters;
-    import std.meta: Filter, staticMap, AliasSeq;
+    import std.meta: Filter, staticMap, AliasSeq,NoDuplicates;
+    import std.typecons:Typedef,TypedefType;
 
     alias Member(string memberName) = Symbol!(module_, memberName);
     alias members = staticMap!(Member, __traits(allMembers, module_));
     alias functions = Filter!(isFunction, members);
 
     // all return types of all functions
-    alias returns = Filter!(isUserAggregate, staticMap!(PrimordialType, staticMap!(ReturnType, functions)));
+    alias returns = NoDuplicates!(Filter!(isUserAggregate, staticMap!(PrimordialType, staticMap!(ReturnType, functions))));
+    pragma(msg,"returns:"~functions.stringof);
     // recurse on the types in `returns` to also wrap the aggregate types of the members
     alias recursiveReturns = staticMap!(RecursiveAggregates, returns);
     // all of the parameters types of all of the functions
@@ -195,8 +206,19 @@ private template FunctionTypesInModuleName(string moduleName) {
 private template RecursiveAggregates(T) {
     import std.meta: staticMap, Filter, AliasSeq;
     import std.meta: Unique = NoDuplicates;
+    import std.traits:isInstanceOf;
+    import std.typecons:Typedef,TypedefType;
+    import std.datetime:Date;
 
-    static if(isUserAggregate!T) {
+    static if (isInstanceOf!(Typedef,T))
+    {
+	alias RecursiveAggregates=TypedefType!T;
+    }
+    else static if (is(T==Date))
+    {
+	    alias RecursiveAggregates=Date;
+    }
+    else static if(isUserAggregate!T) {
         alias AggMember(string memberName) = Symbol!(T, memberName);
         alias members = staticMap!(AggMember, __traits(allMembers, T));
         alias types = staticMap!(Type, members);
@@ -205,9 +227,13 @@ private template RecursiveAggregates(T) {
         static if(aggregates.length == 0)
             alias RecursiveAggregates = T;
         else
-            alias RecursiveAggregates = AliasSeq!(aggregates, staticMap!(RecursiveAggregateHelper, aggregates));
+	{
+	    alias RecursiveAggregates = AliasSeq!(aggregates, staticMap!(RecursiveAggregateHelper, aggregates));
+	}
     } else
-        alias RecursiveAggregates = T;
+    {
+	alias RecursiveAggregates = T;
+    }
 
 }
 
@@ -216,8 +242,14 @@ private template RecursiveAggregates(T) {
 private template RecursiveAggregateHelper(T) {
     import std.meta: staticMap, Filter, AliasSeq;
     import std.meta: Unique = NoDuplicates;
+    import std.traits:isInstanceOf;
+    import std.typecons:Typedef,TypedefType;
 
-    static if(isUserAggregate!T) {
+    static if (isInstanceOf!(Typedef,T))
+    {
+	    alias RecursiveAggregates=TypedefType!T;
+    }
+    else static if(isUserAggregate!T) {
         alias AggMember(string memberName) = Symbol!(T, memberName);
         alias members = staticMap!(AggMember, __traits(allMembers, T));
         alias types = staticMap!(Type, members);
@@ -228,7 +260,9 @@ private template RecursiveAggregateHelper(T) {
         else
             alias RecursiveAggregateHelper = AliasSeq!(aggregates, staticMap!(RecursiveAggregates, aggregates));
     } else
-        alias RecursiveAggregatesHelper = T;
+    {
+	alias RecursiveAggregates = T;
+    }
 }
 
 private template AggregatesInModules(ModuleNames...) if(allSatisfy!(isString, ModuleNames)) {
@@ -255,9 +289,26 @@ auto wrapAggregate(T)() if(isUserAggregate!T) {
     import std.meta: staticMap, Filter, AliasSeq;
     import std.traits: Parameters, FieldNameTuple, hasMember;
     import std.typecons: Tuple;
+    import std.algorithm:canFind;
 
-    alias AggMember(string memberName) = Symbol!(T, memberName);
-    alias members = staticMap!(AggMember, __traits(allMembers, T));
+    //alias AggMember(string memberName) = Symbol!(T, memberName);
+    template AggMember(string memberName)
+    {
+	    alias AggMember = Symbol!(T, memberName);
+    }
+
+    template IsPublicCopyableMember(string memberName)
+    {
+	    import std.traits:isCopyable;
+	    alias Member = Symbol!(T,memberName);
+	    enum IsPublicMember = !canFind(["private","protected"],__traits(getProtection,Member)) &&
+		    			isCopyable!(Member);
+    }
+
+    alias allMembers = staticMap!(AggMember, __traits(allMembers, T));
+    alias members = Filter!(IsPublicMember,allMembers);
+    pragma(msg,"T:"~T.stringof);
+    pragma(msg,"members:"~members.stringof);
 
     alias memberFunctions = Filter!(isMemberFunction, members);
 
@@ -280,19 +331,30 @@ auto wrapAggregate(T)() if(isUserAggregate!T) {
     // Apply pyd's Init to the unpacked types of the parameter Tuple.
     alias InitTuple(alias Tuple) = Init!(Tuple.Types);
 
-    wrap_class!(
-        T,
-        staticMap!(Member, FieldNameTuple!T),
-        staticMap!(Def, memberFunctions),
-        staticMap!(InitTuple, constructorParamTuples),
-   );
+    static if(isCopyable!T)
+    {
+	    wrap_class!(
+		T,
+		staticMap!(Member, FieldNameTuple!T),
+		staticMap!(Def, memberFunctions),
+		staticMap!(InitTuple, constructorParamTuples),
+	   );
+    }
+    else
+    {
+	    pragma(msg,"not wrapping: "~T.stringof~" because of @disable this(this)");
+    }
 }
 
 // must be a global template
 private template isMemberFunction(A...) if(A.length == 1) {
     alias T = A[0];
     static if(__traits(compiles, __traits(identifier, T)))
-        enum isMemberFunction = isFunction!T && __traits(identifier, T) != "__ctor";
+    {
+        enum prot = __traits(getProtection,T);
+	enum isPublic = (prot=="public") ||(prot=="export");
+        enum isMemberFunction = isFunction!T && __traits(identifier, T) != "__ctor" && isPublic;
+    }
     else
         enum isMemberFunction = false;
 }
@@ -323,5 +385,22 @@ unittest {
 
 private template isFunction(alias T) {
     import std.traits: isFunction_ = isFunction;
-    enum isFunction = isFunction_!T && __traits(getProtection, T) == "export";
+    static if (isFunction_!T)
+    {
+	    enum isExported =  __traits(getProtection, T) == "export";
+	    version(AlwaysExport)
+	    {
+		    enum linkage = __traits(getLinkage,T);
+		    enum isCorCpp = (linkage=="C" || linkage == "C++");
+		    enum isFunction =  (!isCorCpp) || isExported;
+	    }
+	    else
+	    {
+		    enum isFunction =  isExported;
+	    }
+    }
+    else
+    {
+	    enum isFunction = false;
+    }
 }

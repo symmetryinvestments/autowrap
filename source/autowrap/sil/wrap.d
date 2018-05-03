@@ -42,9 +42,12 @@ void wrapFunctions(alias handlers, string moduleName)() {
 void wrapFunctions(alias handlers,alias module_)() if(!is(typeof(module_) == string)) {
 
     foreach(memberName; __traits(allMembers, module_)) {
-        alias member = I!(__traits(getMember, module_, memberName));
-        static if(isFunction!member) {
-            handlers.registerHandler!(mixin("module_."~memberName));
+        static if (__traits(compiles,I!(__traits(getMember, module_, memberName))))
+        {
+            alias member = I!(__traits(getMember, module_, memberName));
+            static if(isFunction!member) {
+                handlers.registerHandler!(mixin("module_."~memberName));
+            }
         }
     }
 }
