@@ -4,6 +4,6 @@
 		"excel-d": "0.3.6",
 		"nogc": "0.0.1",
 		"pyd": "~master",
-		"unit-threaded": "0.7.42"
+		"unit-threaded": "0.7.45"
 	}
 }
