@@ -23,7 +23,7 @@ struct LibraryName {
 struct Modules {
     string[] value;
     this(string[] modules...) @safe pure nothrow {
-        value = modules;
+        value = modules.dup;
     }
 }
 
