@@ -13,11 +13,11 @@ configuration "python36" {
 }
 
 configuration "python35" {
-     subConfiguration "pyd" "python36"
+     subConfiguration "pyd" "python35"
 }
 
 configuration "python34" {
-     subConfiguration "pyd" "python36"
+     subConfiguration "pyd" "python34"
 }
 
 configuration "python33" {
