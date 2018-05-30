@@ -1,6 +1,6 @@
 name "simple"
 targetType "dynamicLibrary"
-dependency "autowrap" path="../../"
+dependency "kaleidic-autowrap" path="../../"
 
 configuration "python36" {
      subConfiguration "autowrap" "python36"
