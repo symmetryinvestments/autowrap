@@ -2,29 +2,31 @@ name "autowrap"
 description "Wrap existing D code for use in other languages"
 authors "Atila Neves"
 license "BSD"
-targetType "sourceLibrary"
-preBuildCommands "[ -e $PACKAGE_DIR/druntime.o ] || gcc -c -fPIC $PACKAGE_DIR/source/autowrap/python/druntime.c -o $PACKAGE_DIR/druntime.o" platform="linux"
-sourceFiles "$PACKAGE_DIR/druntime.o" platform="linux"
-dependency "excel-d" version="~>0.3.6"
-dependency "pyd" version="~master"
+targetType "none"
+
+dependency ":python" version="*"
+dependency ":excel" version="*"
+
+subPackage "python"
+subPackage "excel"
 
 configuration "python36" {
-     subConfiguration "pyd" "python36"
+     subConfiguration ":python" "python36"
 }
 
 configuration "python35" {
-     subConfiguration "pyd" "python35"
+     subConfiguration ":python" "python35"
 }
 
 configuration "python34" {
-     subConfiguration "pyd" "python34"
+     subConfiguration ":python" "python34"
 }
 
 configuration "python33" {
-     subConfiguration "pyd" "python33"
+     subConfiguration ":python" "python33"
 }
 
 configuration "python27" {
-     subConfiguration "pyd" "python27"
+     subConfiguration ":python" "python27"
      versions "Python2" "PydPythonExtension"
 }

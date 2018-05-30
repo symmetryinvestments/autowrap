@@ -1,0 +1,7 @@
+name "excel"
+description "Wrap existing D code for use in Excel"
+authors "Atila Neves"
+license "BSD"
+targetType "sourceLibrary"
+
+dependency "excel-d" version="~>0.3.6"
