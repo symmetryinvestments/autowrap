@@ -4,3 +4,4 @@
 .cache
 __pycache__
 autowrap-test-*
+.pytest_cache
