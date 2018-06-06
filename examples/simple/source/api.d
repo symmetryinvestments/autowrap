@@ -61,3 +61,8 @@ export auto tupleOfDateTimes(int year, int month, int day) {
 private int shouldNotBeAProblem(int i, int j) {
     return i + j;
 }
+
+
+export auto createOuter2(double x, double y, double value, string string1, string string2) {
+    return createOuter(x, y, value, string1, string2);
+}

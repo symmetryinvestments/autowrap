@@ -175,23 +175,23 @@ private template FunctionTypesInModuleName(string moduleName) {
 
     mixin(`import module_  = ` ~ moduleName ~ `;`);
     import std.traits: ReturnType, Parameters;
-    import std.meta: Filter, staticMap, AliasSeq;
+    import std.meta: Filter, staticMap, AliasSeq, NoDuplicates;
 
     alias Member(string memberName) = Symbol!(module_, memberName);
     alias members = staticMap!(Member, __traits(allMembers, module_));
     alias functions = Filter!(isFunction, members);
 
     // all return types of all functions
-    alias returns = Filter!(isUserAggregate, staticMap!(PrimordialType, staticMap!(ReturnType, functions)));
+    alias returns = NoDuplicates!(Filter!(isUserAggregate, staticMap!(PrimordialType, staticMap!(ReturnType, functions))));
     // recurse on the types in `returns` to also wrap the aggregate types of the members
-    alias recursiveReturns = staticMap!(RecursiveAggregates, returns);
+    alias recursiveReturns = NoDuplicates!(staticMap!(RecursiveAggregates, returns));
     // all of the parameters types of all of the functions
-    alias params = Filter!(isUserAggregate, staticMap!(PrimordialType, staticMap!(Parameters, functions)));
+    alias params = NoDuplicates!(Filter!(isUserAggregate, staticMap!(PrimordialType, staticMap!(Parameters, functions))));
     // recurse on the types in `params` to also wrap the aggregate types of the members
-    alias recursiveParams = staticMap!(RecursiveAggregates, returns);
+    alias recursiveParams = NoDuplicates!(staticMap!(RecursiveAggregates, returns));
     // chain all types
     alias functionTypes = AliasSeq!(returns, recursiveReturns, params, recursiveParams);
-    alias FunctionTypesInModuleName = Filter!(isUserAggregate, functionTypes);
+    alias FunctionTypesInModuleName = NoDuplicates!(Filter!(isUserAggregate, functionTypes));
 }
 
 private template RecursiveAggregates(T) {

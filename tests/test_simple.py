@@ -1,6 +1,6 @@
 from simple import (Prefix, Adder, IntString, create_int_point, create_outer,
-                    create_outers, create_date_time, date_time_array, points,
-                    tuple_of_date_times)
+                    create_outer2, create_outers, create_date_time,
+                    date_time_array, points, tuple_of_date_times)
 import pytest
 
 
@@ -96,3 +96,17 @@ def test_tuple_of_date_times():
     assert d2.year == 2018
     assert d2.month == 5
     assert d2.day == 6
+
+
+def test_create_outer2():
+    o = create_outer2(2.0, 3.0, 33.3, "foo", "bar")
+    [fst_i1, snd_i1] = o.inner1s
+    assert fst_i1.point.x == 2.0
+    assert fst_i1.point.y == 3.0
+    assert fst_i1.value == 33.3
+    assert snd_i1.point.x == 2.0
+    assert snd_i1.point.y == 3.0
+    assert snd_i1.value == 34.3
+    assert o.inner2.evenInner.value == 33.3
+    assert o.string1.value == "foo"
+    assert o.string2.value == "bar"
