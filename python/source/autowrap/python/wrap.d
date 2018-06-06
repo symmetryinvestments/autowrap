@@ -200,9 +200,12 @@ private template RecursiveAggregates(T) {
     import std.meta: staticMap, Filter, AliasSeq, NoDuplicates;
     import std.traits: isInstanceOf;
     import std.typecons: Typedef, TypedefType;
+    import std.datetime: Date;
 
     static if(isInstanceOf!(Typedef, T)) {
         alias RecursiveAggregates = TypedefType!T;
+    } else static if (is(T == Date)) {
+        alias RecursiveAggregates = Date;
     } else static if(isUserAggregate!T) {
         alias AggMember(string memberName) = Symbol!(T, memberName);
         alias members = staticMap!(AggMember, __traits(allMembers, T));
@@ -224,9 +227,12 @@ private template RecursiveAggregateHelper(T) {
     import std.meta: staticMap, Filter, AliasSeq, NoDuplicates;
     import std.traits: isInstanceOf;
     import std.typecons: Typedef, TypedefType;
+    import std.datetime: Date;
 
     static if(isInstanceOf!(Typedef, T)) {
         alias RecursiveAggregates = TypedefType!T;
+    } else static if (is(T == Date)) {
+        alias RecursiveAggregates = Date;
     } else static if(isUserAggregate!T) {
         alias AggMember(string memberName) = Symbol!(T, memberName);
         alias members = staticMap!(AggMember, __traits(allMembers, T));

@@ -76,3 +76,8 @@ export auto createTypedefFoo(int x, int y) {
     import std.typecons: Typedef;
     return Typedef!Foo(Foo(x, y));
 }
+
+export auto createDate(int year, int month, int day) {
+    import std.datetime: Date;
+    return Date(year, month, day);
+}
