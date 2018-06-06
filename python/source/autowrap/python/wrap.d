@@ -343,7 +343,12 @@ unittest {
 
 private template isExportFunction(alias F) {
     import std.traits: isFunction;
-    enum isExportFunction = isFunction!F && __traits(getProtection, F) == "export";
+
+    version(AutowrapAlwaysExport) {
+        enum linkage = __traits(getLinkage, F);
+        enum isExportFunction = isFunction!F && linkage != "C" && linkage != "C++";
+    } else
+        enum isExportFunction = isFunction!F && __traits(getProtection, F) == "export";
 }
 
 private template isPublicFunction(alias F) {
