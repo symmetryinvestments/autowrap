@@ -69,6 +69,18 @@ export auto createOuter2(double x, double y, double value, string string1, strin
 
 struct Foo {
     int x, y;
+
+    this(int x, int y) {
+        this.x = x;
+        this.y = y;
+    }
+
+    string toString() {
+        import std.conv: text;
+        return text("Foo(", x, ", ", y, ")");
+    }
+
+    private void shouldNotBeAProblem() {}
 }
 
 export auto createTypedefFoo(int x, int y) {

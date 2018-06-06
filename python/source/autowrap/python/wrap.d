@@ -44,7 +44,7 @@ void wrapFunctions(alias module_)() if(!is(typeof(module_) == string)) {
 
     foreach(memberName; __traits(allMembers, module_)) {
         alias member = I!(__traits(getMember, module_, memberName));
-        static if(isFunction!member) {
+        static if(isExportFunction!member) {
             def!(member, PyName!(toSnakeCase(memberName)));
         }
     }
@@ -181,7 +181,7 @@ private template FunctionTypesInModuleName(string moduleName) {
 
     alias Member(string memberName) = Symbol!(module_, memberName);
     alias members = staticMap!(Member, __traits(allMembers, module_));
-    alias functions = Filter!(isFunction, members);
+    alias functions = Filter!(isExportFunction, members);
 
     // all return types of all functions
     alias returns = NoDuplicates!(Filter!(isUserAggregate, staticMap!(PrimordialType, staticMap!(ReturnType, functions))));
@@ -311,7 +311,7 @@ auto wrapAggregate(T)() if(isUserAggregate!T) {
 private template isMemberFunction(A...) if(A.length == 1) {
     alias T = A[0];
     static if(__traits(compiles, __traits(identifier, T)))
-        enum isMemberFunction = isFunction!T && __traits(identifier, T) != "__ctor";
+        enum isMemberFunction = isPublicFunction!T && __traits(identifier, T) != "__ctor";
     else
         enum isMemberFunction = false;
 }
@@ -340,7 +340,27 @@ unittest {
     static assert(is(PrimordialType!(string[][]) == dchar));
 }
 
-private template isFunction(alias T) {
-    import std.traits: isFunction_ = isFunction;
-    enum isFunction = isFunction_!T && __traits(getProtection, T) == "export";
+private template isExportFunction(alias F) {
+    import std.traits: isFunction;
+    enum isExportFunction = isFunction!F && __traits(getProtection, F) == "export";
+}
+
+private template isPublicFunction(alias F) {
+    enum prot = __traits(getProtection, F);
+    enum isPublicFunction = isPydCompatibleFunction!F && (prot == "export" || prot == "public");
+}
+
+
+// pyd currently doesn't support @safe, pure or nothrow
+private template isPydCompatibleFunction(alias F) {
+    import std.traits: isFunction, functionAttributes, FA = FunctionAttribute;
+
+    static if(!isFunction!F)
+        enum isPydCompatibleFunction = false;
+    else {
+        enum attrs = functionAttributes!F;
+        enum isPydCompatibleFunction =
+            !(attrs & FA.pure_) && !(attrs & FA.nothrow_) && !(attrs & FA.safe)
+            ;
+    }
 }

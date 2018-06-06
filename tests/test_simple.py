@@ -1,7 +1,7 @@
 from simple import (Prefix, Adder, IntString, create_int_point, create_outer,
                     create_outer2, create_outers, create_date_time,
                     date_time_array, points, tuple_of_date_times,
-                    create_typedef_foo, create_date)
+                    create_typedef_foo, create_date, Foo)
 import pytest
 
 
@@ -114,7 +114,8 @@ def test_create_outer2():
 
 
 def test_typedef():
-    create_typedef_foo(2, 3)
+    t = create_typedef_foo(2, 3)
+    assert t.toString() == "Foo(2, 3)"
 
 
 def test_create_date():
@@ -122,3 +123,8 @@ def test_create_date():
     assert d.year == 2017
     assert d.month == 1
     assert d.day == 2
+
+
+def test_foo():
+    f = Foo(2, 3)
+    assert f.toString() == "Foo(2, 3)"
