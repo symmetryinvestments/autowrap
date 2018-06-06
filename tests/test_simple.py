@@ -128,3 +128,9 @@ def test_create_date():
 def test_foo():
     f = Foo(2, 3)
     assert f.toString() == "Foo(2, 3)"
+
+
+def test_not_copyable():
+    with pytest.raises(ImportError):
+        from simple import NotCopyable
+        NotCopyable(42)

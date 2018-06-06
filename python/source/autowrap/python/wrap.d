@@ -147,7 +147,8 @@ private template Symbol(alias parent, string memberName) {
  */
 void wrapAllAggregates(ModuleNames...)() if(allSatisfy!(isString, ModuleNames)) {
 
-    import std.meta: Unique = NoDuplicates;
+    import std.meta: NoDuplicates, Filter;
+    import std.traits: isCopyable;
 
     // definitions
     alias aggregates = AggregatesInModules!ModuleNames;
@@ -156,7 +157,7 @@ void wrapAllAggregates(ModuleNames...)() if(allSatisfy!(isString, ModuleNames)) 
     alias functionTypes = FunctionTypesInModules!ModuleNames;
 
     // it's an error in pyd to call wrap_class twice
-    alias allAggregates = Unique!(aggregates, functionTypes);
+    alias allAggregates = Filter!(isCopyable, NoDuplicates!(aggregates, functionTypes));
 
     static foreach(aggregate; allAggregates) {
         static if(__traits(compiles, wrapAggregate!aggregate))
