@@ -22,7 +22,7 @@ install:
 script:
   - make
   - cd python
-  - dub test
+  - dub test -c python27
 
 after_success:
  - bash <(curl -s https://codecov.io/bash)

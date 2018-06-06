@@ -114,8 +114,7 @@ def test_create_outer2():
 
 
 def test_typedef():
-    t = create_typedef_foo(2, 3)
-    assert t.toString() == "Foo(2, 3)"
+    create_typedef_foo(2, 3)
 
 
 def test_create_date():
