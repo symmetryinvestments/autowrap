@@ -56,3 +56,8 @@ export auto tupleOfDateTimes(int year, int month, int day) {
     import std.typecons: tuple;
     return tuple([DateTime(year, month, day)], [DateTime(year + 1, month + 1, day + 1)]);
 }
+
+// to make sure there is no attempt to wrap this
+private int shouldNotBeAProblem(int i, int j) {
+    return i + j;
+}
