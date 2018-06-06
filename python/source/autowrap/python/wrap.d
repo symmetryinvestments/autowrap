@@ -158,8 +158,10 @@ void wrapAllAggregates(ModuleNames...)() if(allSatisfy!(isString, ModuleNames)) 
     // it's an error in pyd to call wrap_class twice
     alias allAggregates = Unique!(aggregates, functionTypes);
 
-    static foreach(aggregate; allAggregates)
-        wrapAggregate!aggregate;
+    static foreach(aggregate; allAggregates) {
+        static if(__traits(compiles, wrapAggregate!aggregate))
+            wrapAggregate!aggregate;
+    }
 }
 
 // All return and parameter types of the functions in the given modules
