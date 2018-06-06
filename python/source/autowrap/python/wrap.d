@@ -9,11 +9,6 @@ module autowrap.python.wrap;
 import std.meta: allSatisfy;
 import std.traits: isArray;
 
-version(unittest) {
-    void shouldEqual(T, U)(auto ref T t, auto ref U u) {
-        assert(t == u);
-    }
-}
 
 private alias I(alias T) = T;
 private enum isString(alias T) = is(typeof(T) == string);
@@ -81,27 +76,27 @@ string toSnakeCase(in string str) @safe pure {
 
 @("toSnakeCase empty")
 @safe pure unittest {
-    "".toSnakeCase.shouldEqual("");
+    static assert("".toSnakeCase == "");
 }
 
 @("toSnakeCase no caps")
 @safe pure unittest {
-    "foo".toSnakeCase.shouldEqual("foo");
+    static assert("foo".toSnakeCase == "foo");
 }
 
 @("toSnakeCase camelCase")
 @safe pure unittest {
-    "toSnakeCase".toSnakeCase.shouldEqual("to_snake_case");
+    static assert("toSnakeCase".toSnakeCase == "to_snake_case");
 }
 
 @("toSnakeCase PascalCase")
 @safe pure unittest {
-    "PascalCase".toSnakeCase.shouldEqual("pascal_case");
+    static assert("PascalCase".toSnakeCase == "pascal_case");
 }
 
 @("toSnakeCase ALLCAPS")
 @safe pure unittest {
-    "ALLCAPS".toSnakeCase.shouldEqual("ALLCAPS");
+    static assert("ALLCAPS".toSnakeCase == "ALLCAPS");
 }
 
 // if a type is a struct or a class
