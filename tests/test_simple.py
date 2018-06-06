@@ -1,6 +1,7 @@
 from simple import (Prefix, Adder, IntString, create_int_point, create_outer,
                     create_outer2, create_outers, create_date_time,
-                    date_time_array, points, tuple_of_date_times)
+                    date_time_array, points, tuple_of_date_times,
+                    create_typedef_foo)
 import pytest
 
 
@@ -110,3 +111,7 @@ def test_create_outer2():
     assert o.inner2.evenInner.value == 33.3
     assert o.string1.value == "foo"
     assert o.string2.value == "bar"
+
+
+def test_typedef():
+    create_typedef_foo(2, 3)

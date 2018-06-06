@@ -66,3 +66,13 @@ private int shouldNotBeAProblem(int i, int j) {
 export auto createOuter2(double x, double y, double value, string string1, string string2) {
     return createOuter(x, y, value, string1, string2);
 }
+
+struct Foo {
+    int x, y;
+}
+
+export auto createTypedefFoo(int x, int y) {
+    import templates;
+    import std.typecons: Typedef;
+    return Typedef!Foo(Foo(x, y));
+}

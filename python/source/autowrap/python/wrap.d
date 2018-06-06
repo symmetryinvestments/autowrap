@@ -161,6 +161,8 @@ void wrapAllAggregates(ModuleNames...)() if(allSatisfy!(isString, ModuleNames)) 
     static foreach(aggregate; allAggregates) {
         static if(__traits(compiles, wrapAggregate!aggregate))
             wrapAggregate!aggregate;
+        else
+            pragma(msg, "ERROR! Could not wrap ", aggregate.stringof);
     }
 }
 
@@ -195,14 +197,17 @@ private template FunctionTypesInModuleName(string moduleName) {
 }
 
 private template RecursiveAggregates(T) {
-    import std.meta: staticMap, Filter, AliasSeq;
-    import std.meta: Unique = NoDuplicates;
+    import std.meta: staticMap, Filter, AliasSeq, NoDuplicates;
+    import std.traits: isInstanceOf;
+    import std.typecons: Typedef, TypedefType;
 
-    static if(isUserAggregate!T) {
+    static if(isInstanceOf!(Typedef, T)) {
+        alias RecursiveAggregates = TypedefType!T;
+    } else static if(isUserAggregate!T) {
         alias AggMember(string memberName) = Symbol!(T, memberName);
         alias members = staticMap!(AggMember, __traits(allMembers, T));
         alias types = staticMap!(Type, members);
-        alias aggregates = Unique!(Filter!(isUserAggregate, staticMap!(PrimordialType, types)));
+        alias aggregates = NoDuplicates!(Filter!(isUserAggregate, staticMap!(PrimordialType, types)));
 
         static if(aggregates.length == 0)
             alias RecursiveAggregates = T;
@@ -216,14 +221,17 @@ private template RecursiveAggregates(T) {
 // Only exists because if RecursiveAggregate recurses using itself dmd complains.
 // So instead, we ping-pong between identical templates.
 private template RecursiveAggregateHelper(T) {
-    import std.meta: staticMap, Filter, AliasSeq;
-    import std.meta: Unique = NoDuplicates;
+    import std.meta: staticMap, Filter, AliasSeq, NoDuplicates;
+    import std.traits: isInstanceOf;
+    import std.typecons: Typedef, TypedefType;
 
-    static if(isUserAggregate!T) {
+    static if(isInstanceOf!(Typedef, T)) {
+        alias RecursiveAggregates = TypedefType!T;
+    } else static if(isUserAggregate!T) {
         alias AggMember(string memberName) = Symbol!(T, memberName);
         alias members = staticMap!(AggMember, __traits(allMembers, T));
         alias types = staticMap!(Type, members);
-        alias aggregates = Unique!(Filter!(isUserAggregate, staticMap!(PrimordialType, types)));
+        alias aggregates = NoDuplicates!(Filter!(isUserAggregate, staticMap!(PrimordialType, types)));
 
         static if(aggregates.length == 0)
             alias RecursiveAggregateHelper = T;
@@ -282,9 +290,12 @@ auto wrapAggregate(T)() if(isUserAggregate!T) {
     // Apply pyd's Init to the unpacked types of the parameter Tuple.
     alias InitTuple(alias Tuple) = Init!(Tuple.Types);
 
+    enum isPublic(string fieldName) = __traits(getProtection, __traits(getMember, T, fieldName)) == "public";
+    alias publicFields = Filter!(isPublic, FieldNameTuple!T);
+
     wrap_class!(
         T,
-        staticMap!(Member, FieldNameTuple!T),
+        staticMap!(Member, publicFields),
         staticMap!(Def, memberFunctions),
         staticMap!(InitTuple, constructorParamTuples),
    );
