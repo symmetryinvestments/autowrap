@@ -1,0 +1,5 @@
+name "reflection"
+description "Reflect on modules to access functions and data types"
+authors "Atila Neves"
+license "BSD"
+targetType "sourceLibrary"
