@@ -9,22 +9,32 @@ dependency "autowrap:reflection" path="../reflection"
 dependency "pyd" version="~master"
 
 configuration "python36" {
-     subConfiguration "pyd" "python36"
+    dependency "autowrap:reflection" path="../reflection"
+    subConfiguration "pyd" "python36"
 }
 
 configuration "python35" {
-     subConfiguration "pyd" "python35"
+    dependency "autowrap:reflection" path="../reflection"
+    subConfiguration "pyd" "python35"
 }
 
 configuration "python34" {
-     subConfiguration "pyd" "python34"
+    dependency "autowrap:reflection" path="../reflection"
+    subConfiguration "pyd" "python34"
 }
 
 configuration "python33" {
-     subConfiguration "pyd" "python33"
+    dependency "autowrap:reflection" path="../reflection"
+    subConfiguration "pyd" "python33"
 }
 
 configuration "python27" {
-     subConfiguration "pyd" "python27"
-     versions "Python2" "PydPythonExtension"
+    dependency "autowrap:reflection" path="../reflection"
+    subConfiguration "pyd" "python27"
+    versions "Python2" "PydPythonExtension"
+}
+
+configuration "unittest" {
+    #  I don't know why this needs to be this way for testing
+    dependency "autowrap:reflection" path=".."
 }

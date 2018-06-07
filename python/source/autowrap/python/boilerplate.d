@@ -55,12 +55,16 @@ string wrapAll(in LibraryName libraryName,
 
     string ret =
         pydMainMixin(modules, preModuleInitCode, postModuleInitCode) ~
-        pydInitMixin(libraryName.value) ~
+        pydInitMixin(libraryName.value);
+
+    version(Have_excel_d) {
+        ret ~=
         // this is needed because of the excel-d dependency
         q{
-        import xlld.wrap.worksheet: WorksheetFunction;
-        extern(C) WorksheetFunction[] getWorksheetFunctions() @safe pure nothrow { return []; }
-    };
+            import xlld.wrap.worksheet: WorksheetFunction;
+            extern(C) WorksheetFunction[] getWorksheetFunctions() @safe pure nothrow { return []; }
+        };
+    }
 
     // dllMainMixinStr no longer needed due to excel-d
 

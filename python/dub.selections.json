@@ -1,6 +1,7 @@
 {
 	"fileVersion": 1,
 	"versions": {
+		"autowrap": {"path":".."},
 		"pyd": "~master"
 	}
 }
