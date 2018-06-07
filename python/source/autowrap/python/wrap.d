@@ -22,28 +22,13 @@ private template Type(T...) if(T.length == 1) {
 
 ///  Wrap global functions from multiple modules
 void wrapAllFunctions(ModuleNames...)() if(allSatisfy!(isString, ModuleNames)) {
-    static foreach(moduleName; ModuleNames) {
-        wrapFunctions!moduleName;
-    }
-}
-
-///   Wrap glocal functions in a module, given as a string
-void wrapFunctions(string moduleName)() {
-    mixin(`import module_ = ` ~ moduleName ~ `;`);
-    wrapFunctions!module_;
-}
-
-///   Wrap global functions in a module
-void wrapFunctions(alias module_)() if(!is(typeof(module_) == string)) {
+    import autowrap.reflection: AllFunctions;
     import pyd.pyd: def, PyName;
 
-    foreach(memberName; __traits(allMembers, module_)) {
-        alias member = I!(__traits(getMember, module_, memberName));
-        static if(isExportFunction!member) {
-            def!(member, PyName!(toSnakeCase(memberName)));
-        }
-    }
+    static foreach(symbol; AllFunctions!ModuleNames)
+        def!(symbol, PyName!(toSnakeCase(__traits(identifier, symbol))))();
 }
+
 
 /// Converts an identifier from camelCase or PascalCase to snake_case.
 string toSnakeCase(in string str) @safe pure {
@@ -158,7 +143,7 @@ void wrapAllAggregates(ModuleNames...)() if(allSatisfy!(isString, ModuleNames)) 
         static if(__traits(compiles, wrapAggregate!aggregate))
             wrapAggregate!aggregate;
         else
-            pragma(msg, "ERROR! Could not wrap ", aggregate.stringof);
+            pragma(msg, "ERROR! Autowrap could not wrap aggregate `", aggregate.stringof, "`");
     }
 }
 

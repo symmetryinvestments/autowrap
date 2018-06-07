@@ -12,3 +12,4 @@ reflection-test-*
 *.o
 *.obj
 *.lst
+*.a
