@@ -1,0 +1,15 @@
+.dub
+docs.json
+__dummy.html
+docs/
+reflection.so
+reflection.dylib
+reflection.dll
+reflection.a
+reflection.lib
+reflection-test-*
+*.exe
+*.o
+*.obj
+*.lst
+*.a
