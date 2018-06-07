@@ -1,7 +1,7 @@
 {
 	"fileVersion": 1,
 	"versions": {
-		"excel-d": "0.3.7",
+		"excel-d": "0.3.8",
 		"nogc": "0.0.1",
 		"pyd": "~master",
 		"unit-threaded": "0.7.46"

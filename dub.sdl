@@ -32,3 +32,22 @@ configuration "python27" {
      subConfiguration ":python" "python27"
      versions "Python2" "PydPythonExtension"
 }
+
+configuration "unittest" {
+    targetType "executable"
+    targetName "ut"
+    sourcePaths "python/source"
+    importPaths "python/source"
+    versions "XllDummyGetter"
+    dflags "-main"
+}
+
+configuration "unittest-travis" {
+    targetType "executable"
+    targetName "ut"
+    sourcePaths "python/source"
+    importPaths "python/source"
+    versions "XllDummyGetter"
+    dflags "-main"
+    subConfiguration ":python" "python27"
+}

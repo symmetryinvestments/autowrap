@@ -5,36 +5,26 @@ license "BSD"
 targetType "sourceLibrary"
 preBuildCommands "[ -e $PACKAGE_DIR/druntime.o ] || gcc -c -fPIC $PACKAGE_DIR/source/autowrap/python/druntime.c -o $PACKAGE_DIR/druntime.o" platform="linux"
 sourceFiles "$PACKAGE_DIR/druntime.o" platform="linux"
-dependency "autowrap:reflection" path="../reflection"
 dependency "pyd" version="~master"
+dependency "autowrap:reflection" path="../reflection"
 
 configuration "python36" {
-    dependency "autowrap:reflection" path="../reflection"
     subConfiguration "pyd" "python36"
 }
 
 configuration "python35" {
-    dependency "autowrap:reflection" path="../reflection"
     subConfiguration "pyd" "python35"
 }
 
 configuration "python34" {
-    dependency "autowrap:reflection" path="../reflection"
     subConfiguration "pyd" "python34"
 }
 
 configuration "python33" {
-    dependency "autowrap:reflection" path="../reflection"
     subConfiguration "pyd" "python33"
 }
 
 configuration "python27" {
-    dependency "autowrap:reflection" path="../reflection"
     subConfiguration "pyd" "python27"
     versions "Python2" "PydPythonExtension"
-}
-
-configuration "unittest" {
-    #  I don't know why this needs to be this way for testing
-    dependency "autowrap:reflection" path=".."
 }
