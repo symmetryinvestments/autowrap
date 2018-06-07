@@ -4,9 +4,11 @@ authors "Atila Neves"
 license "BSD"
 targetType "none"
 
+dependency ":reflection" version="*"
 dependency ":python" version="*"
 dependency ":excel" version="*"
 
+subPackage "reflection"
 subPackage "python"
 subPackage "excel"
 
