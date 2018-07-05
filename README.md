@@ -15,7 +15,8 @@ and while the same isn't true of excel-d, the latter wraps everything
 in the modules reflected on. When writing code specifically for Excel,
 that is clearly what the user wants (and if not it can be made `private`).
 When wrapping pre-existing D code, however, it makes sense to opt-in instead
-by requiring functions to be wrapped to be marked `export`.
+by requiring functions to be wrapped to be marked `export`. If one wants to
+wrap all functions regardless of `export`, use `version=AutowrapAlwaysExport`.
 
 There is [ppyd](https://github.com/John-Colvin/ppyd) that makes the effort
 required to use pyd a lot less but that requires using a UDA. Again, when
@@ -86,4 +87,3 @@ as a dub configuration and defaults to 3.6. To use another version, pass
 
 [<img src="https://raw.githubusercontent.com/libmir/mir-algorithm/master/images/symmetry.png" height="80" />](http://symmetryinvestments.com/) 	&nbsp; 	&nbsp;	&nbsp;	&nbsp;
 [<img src="https://raw.githubusercontent.com/libmir/mir-algorithm/master/images/kaleidic.jpeg" height="80" />](https://github.com/kaleidicassociates)
-
