@@ -14,13 +14,12 @@ import std.traits: isArray;
 private alias I(alias T) = T;
 private enum isString(alias T) = is(typeof(T) == string);
 
-
 ///  Wrap global functions from multiple modules
-void wrapAllFunctions(ModuleNames...)() if(allSatisfy!(isString, ModuleNames)) {
+void wrapAllFunctions(Modules...)() {
     import autowrap.reflection: AllFunctions;
     import pyd.pyd: def, PyName;
 
-    static foreach(symbol; AllFunctions!ModuleNames)
+    static foreach(symbol; AllFunctions!Modules)
         def!(symbol, PyName!(toSnakeCase(__traits(identifier, symbol))))();
 }
 
@@ -87,9 +86,17 @@ string toSnakeCase(in string str) @safe pure {
    This function wraps all struct and class definitions, and also all struct and class
    types that are parameters or return types of any functions found.
  */
-void wrapAllAggregates(ModuleNames...)() if(allSatisfy!(isString, ModuleNames)) {
+void wrapAllAggregates(Modules...)() {
 
     import autowrap.reflection: AllAggregates;
+
+    static if(allSatisfy!(isString, Modules))
+        alias ModuleNames = Modules;
+    else {
+        import std.meta: staticMap;
+        enum toString(alias module_) = module_.name;
+        alias ModuleNames = staticMap!(toString, Modules);
+    }
 
     static foreach(aggregate; AllAggregates!ModuleNames) {
         static if(__traits(compiles, wrapAggregate!aggregate))

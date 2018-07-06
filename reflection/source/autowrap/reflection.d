@@ -2,33 +2,54 @@ module autowrap.reflection;
 
 
 import std.meta: allSatisfy;
-import std.traits: isArray;
-
+import std.traits: isArray, Unqual;
+import std.typecons: Flag, No;
 
 private alias I(alias T) = T;
 private enum isString(alias T) = is(typeof(T) == string);
+private enum isModule(alias T) = is(Unqual!T == Module);
+
+/**
+   A module to automatically wrap.
+   Usually not needed since a string will do, but is useful when trying to export
+   all functions from a module by using Module("mymodule", Yes.alwaysExport)
+   instead of "mymodule"
+ */
+struct Module {
+    import std.typecons: Flag, No;
+    string name;
+    Flag!"alwaysExport" alwaysExport = No.alwaysExport;
+
+    string toString() @safe pure const {
+        import std.conv: text;
+        import std.string: capitalize;
+        return text(`Module("`, name, `", `, text(alwaysExport).capitalize, `.alwaysExport)`);
+    }
+}
 
 
-template AllFunctions(ModuleNames...) if(allSatisfy!(isString, ModuleNames)) {
+template AllFunctions(Modules...) {//if(allSatisfy!(isModule, Modules)) {
     import std.meta: staticMap;
-    alias AllFunctions = staticMap!(Functions, ModuleNames);
+    alias AllFunctions = staticMap!(Functions, Modules);
 }
 
 
-template Functions(string moduleName) {
-    mixin(`import module_ = ` ~ moduleName ~ `;`);
-    alias Functions = Functions!module_;
+template Functions(Module module_) {
+    mixin(`import module__ = ` ~ module_.name ~ `;`);
+    alias Functions = Functions!(module__, module_.alwaysExport);
 }
 
 
-template Functions(alias module_) if(!is(typeof(module_) == string)) {
+template Functions(alias module_, Flag!"alwaysExport" alwaysExport = No.alwaysExport)
+    if(!is(typeof(module_) == string))
+{
 
     import std.meta: Filter, staticMap;
 
     template Function(string memberName) {
         static if(__traits(compiles, I!(__traits(getMember, module_, memberName)))) {
             alias member = I!(__traits(getMember, module_, memberName));
-            static if(isExportFunction!member)
+            static if(isExportFunction!(member, alwaysExport))
                 alias Function = member;
             else
                 alias Function = void;
@@ -226,12 +247,13 @@ unittest {
 }
 
 
-package template isExportFunction(alias F) {
+package template isExportFunction(alias F, Flag!"alwaysExport" alwaysExport = No.alwaysExport) {
     import std.traits: isFunction;
 
     version(AutowrapAlwaysExport) {
         enum linkage = __traits(getLinkage, F);
         enum isExportFunction = isFunction!F && linkage != "C" && linkage != "C++";
     } else
-        enum isExportFunction = isFunction!F && __traits(getProtection, F) == "export";
+          enum isExportFunction =
+              isFunction!F && (alwaysExport || __traits(getProtection, F) == "export");
 }
