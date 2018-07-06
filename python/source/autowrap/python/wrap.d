@@ -6,7 +6,7 @@
  */
 module autowrap.python.wrap;
 
-import autowrap.reflection: isUserAggregate;
+import autowrap.reflection: isUserAggregate, isModule;
 import std.meta: allSatisfy;
 import std.traits: isArray;
 
@@ -15,7 +15,7 @@ private alias I(alias T) = T;
 private enum isString(alias T) = is(typeof(T) == string);
 
 ///  Wrap global functions from multiple modules
-void wrapAllFunctions(Modules...)() {
+void wrapAllFunctions(Modules...)() if(allSatisfy!(isModule, Modules)) {
     import autowrap.reflection: AllFunctions;
     import pyd.pyd: def, PyName;
 
@@ -86,17 +86,13 @@ string toSnakeCase(in string str) @safe pure {
    This function wraps all struct and class definitions, and also all struct and class
    types that are parameters or return types of any functions found.
  */
-void wrapAllAggregates(Modules...)() {
+void wrapAllAggregates(Modules...)() if(allSatisfy!(isModule, Modules)) {
 
-    import autowrap.reflection: AllAggregates;
+    import autowrap.reflection: AllAggregates, Module;
+    import std.meta: staticMap;
 
-    static if(allSatisfy!(isString, Modules))
-        alias ModuleNames = Modules;
-    else {
-        import std.meta: staticMap;
-        enum toString(alias module_) = module_.name;
-        alias ModuleNames = staticMap!(toString, Modules);
-    }
+    enum moduleToString(Module module_) = module_.name;
+    alias ModuleNames = staticMap!(moduleToString, Modules);
 
     static foreach(aggregate; AllAggregates!ModuleNames) {
         static if(__traits(compiles, wrapAggregate!aggregate))

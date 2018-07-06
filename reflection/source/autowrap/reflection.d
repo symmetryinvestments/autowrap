@@ -7,7 +7,7 @@ import std.typecons: Flag, No;
 
 private alias I(alias T) = T;
 private enum isString(alias T) = is(typeof(T) == string);
-private enum isModule(alias T) = is(Unqual!T == Module);
+enum isModule(alias T) = is(Unqual!(typeof(T)) == Module);
 
 /**
    A module to automatically wrap.
@@ -28,15 +28,15 @@ struct Module {
 }
 
 
-template AllFunctions(Modules...) {//if(allSatisfy!(isModule, Modules)) {
+template AllFunctions(Modules...) if(allSatisfy!(isModule, Modules)) {
     import std.meta: staticMap;
     alias AllFunctions = staticMap!(Functions, Modules);
 }
 
 
 template Functions(Module module_) {
-    mixin(`import module__ = ` ~ module_.name ~ `;`);
-    alias Functions = Functions!(module__, module_.alwaysExport);
+    mixin(`import dmodule = ` ~ module_.name ~ `;`);
+    alias Functions = Functions!(dmodule, module_.alwaysExport);
 }
 
 

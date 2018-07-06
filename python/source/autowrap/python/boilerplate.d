@@ -17,7 +17,6 @@ struct LibraryName {
     string value;
 }
 
-    private enum isModule(T) = is(Unqual!T == string) || is(Unqual!T == Module);
 
 /**
    The list of modules to automatically wrap for Python consumption
@@ -99,11 +98,9 @@ string pydMainMixin(in Modules modules,
     import std.format: format;
     import std.algorithm: map;
     import std.array: join;
-    import std.conv: text;
 
     if(!__ctfe) return null;
 
-    //auto modulesList = modules.value.map!(a => `"` ~ a.name ~ `"`).join(", ");
     const modulesList = modules.value.map!(a => a.toString).join(", ");
 
     return q{
