@@ -44,6 +44,7 @@ mixin(
 Assuming the dub package name is also "mylibrary", you should get libmylibrary.so/mylibrary.dll.
 If the former, rename it to mylibrary.so and you'll be able to use it from Python:
 
+
 ```Python
 import mylibrary
 
@@ -52,6 +53,14 @@ mylibrary.func1()
 
 The camelCase D functions are wrapped by snake_case Python functions, but struct members
 have the same names.
+
+It is also possible to wrap all functions regardless of their `export` status on a
+module-by-module basis. To do so, instead of using a string to designate the module,
+do this instead:
+
+```d
+Modules("my.module1", Module("my.module2", Yes.alwaysExport))
+```
 
 
 To wrap for Excel:
