@@ -17,15 +17,30 @@ struct LibraryName {
     string value;
 }
 
+
 /**
    The list of modules to automatically wrap for Python consumption
  */
 struct Modules {
-    string[] value;
-    this(string[] modules...) @safe pure nothrow {
-        value = modules.dup;
+    import autowrap.reflection: Module;
+    import std.traits: Unqual;
+    import std.meta: allSatisfy;
+
+    Module[] value;
+
+    this(A...)(auto ref A modules) {
+
+        foreach(module_; modules) {
+            static if(is(Unqual!(typeof(module_)) == Module))
+                value ~= module_;
+            else static if(is(Unqual!(typeof(module_)) == string))
+                value ~= Module(module_);
+            else
+                static assert(false, "Modules must either be `string` or `Module`");
+        }
     }
 }
+
 
 /**
    Code to be inserted before the call to module_init
@@ -86,10 +101,11 @@ string pydMainMixin(in Modules modules,
 
     if(!__ctfe) return null;
 
-    auto modulesList = modules.value.map!(a => `"` ~ a ~ `"`).join(", ");
+    const modulesList = modules.value.map!(a => a.toString).join(", ");
 
     return q{
         extern(C) void PydMain() {
+            import std.typecons: Yes, No;
             import pyd.pyd: module_init;
             import autowrap.python.wrap: wrapAllFunctions, wrapAllAggregates;
 
