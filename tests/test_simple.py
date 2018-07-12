@@ -1,7 +1,7 @@
 from simple import (Prefix, Adder, IntString, create_int_point, create_outer,
                     create_outer2, create_outers, create_date_time,
                     date_time_array, points, tuple_of_date_times,
-                    create_typedef_foo, create_date, Foo, product)
+                    create_typedef_foo, create_date, Foo, product, identity_int)
 import pytest
 
 
@@ -138,3 +138,7 @@ def test_not_copyable():
 def test_product():
     assert product(2, 3) == 6
     assert product(4, 5) == 20
+
+
+def test_identity_int():
+    assert identity_int(4) == 4

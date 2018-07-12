@@ -19,8 +19,8 @@ void wrapAllFunctions(Modules...)() if(allSatisfy!(isModule, Modules)) {
     import autowrap.reflection: AllFunctions;
     import pyd.pyd: def, PyName;
 
-    static foreach(symbol; AllFunctions!Modules)
-        def!(symbol, PyName!(toSnakeCase(__traits(identifier, symbol))))();
+    static foreach(function_; AllFunctions!Modules)
+        def!(function_.symbol, PyName!(toSnakeCase(function_.name)))();
 }
 
 

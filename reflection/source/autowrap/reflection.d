@@ -49,8 +49,9 @@ template Functions(alias module_, Flag!"alwaysExport" alwaysExport = No.alwaysEx
     template Function(string memberName) {
         static if(__traits(compiles, I!(__traits(getMember, module_, memberName)))) {
             alias member = I!(__traits(getMember, module_, memberName));
+
             static if(isExportFunction!(member, alwaysExport))
-                alias Function = member;
+                alias Function = FunctionSymbol!(memberName, member);
             else
                 alias Function = void;
         } else
@@ -65,6 +66,10 @@ template Functions(alias module_, Flag!"alwaysExport" alwaysExport = No.alwaysEx
     alias Functions = Filter!(notVoid, staticMap!(Function, __traits(allMembers, module_)));
 }
 
+template FunctionSymbol(string N, alias S) {
+    alias name = N;
+    alias symbol = S;
+}
 
 template AllAggregates(ModuleNames...) if(allSatisfy!(isString, ModuleNames)) {
 
