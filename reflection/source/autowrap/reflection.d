@@ -28,6 +28,12 @@ struct Module {
 }
 
 
+template AllFunctions(Modules...) if(allSatisfy!(isString, Modules)) {
+    import std.meta: staticMap;
+    enum module_(string name) = Module(name);
+    alias AllFunctions = staticMap!(Functions, staticMap!(module_, Modules));
+}
+
 template AllFunctions(Modules...) if(allSatisfy!(isModule, Modules)) {
     import std.meta: staticMap;
     alias AllFunctions = staticMap!(Functions, Modules);
