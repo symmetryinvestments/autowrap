@@ -142,46 +142,32 @@ private template FunctionTypesInModuleName(string moduleName) {
 }
 
 private template RecursiveAggregates(T) {
-    import std.meta: staticMap, Filter, AliasSeq, NoDuplicates;
-    import std.traits: isInstanceOf, Unqual;
-    import std.typecons: Typedef, TypedefType;
-    import std.datetime: Date;
-
-    static if(isInstanceOf!(Typedef, T)) {
-        alias RecursiveAggregates = TypedefType!T;
-    } else static if (is(T == Date)) {
-        alias RecursiveAggregates = Date;
-    } else static if(isUserAggregate!T) {
-        alias AggMember(string memberName) = Symbol!(T, memberName);
-        alias members = staticMap!(AggMember, __traits(allMembers, T));
-        enum isNotMe(U) = !is(Unqual!T == Unqual!U);
-
-        alias types = staticMap!(Type, members);
-        alias primordials = staticMap!(PrimordialType, types);
-        alias userAggregates = Filter!(isUserAggregate, primordials);
-        alias aggregates = NoDuplicates!(Filter!(isNotMe, userAggregates));
-
-
-        static if(aggregates.length == 0)
-            alias RecursiveAggregates = T;
-        else
-            alias RecursiveAggregates = AliasSeq!(aggregates, staticMap!(RecursiveAggregateHelper, aggregates));
-    } else
-        alias RecursiveAggregates = T;
+    mixin RecursiveAggregateImpl!(T, RecursiveAggregateHelper);
+    alias RecursiveAggregates = RecursiveAggregateImpl;
 }
 
 // Only exists because if RecursiveAggregate recurses using itself dmd complains.
 // So instead, we ping-pong between identical templates.
 private template RecursiveAggregateHelper(T) {
+    mixin RecursiveAggregateImpl!(T, RecursiveAggregates);
+    alias RecursiveAggregateHelper = RecursiveAggregateImpl;
+}
+
+/**
+   Only exists because if RecursiveAggregate recurses using itself dmd complains.
+   Instead there's a canonical implementation and we ping-pong between two
+   templates that mix this in.
+ */
+private mixin template RecursiveAggregateImpl(T, alias Other) {
     import std.meta: staticMap, Filter, AliasSeq, NoDuplicates;
     import std.traits: isInstanceOf, Unqual;
     import std.typecons: Typedef, TypedefType;
     import std.datetime: Date;
 
     static if(isInstanceOf!(Typedef, T)) {
-        alias RecursiveAggregates = TypedefType!T;
+        alias RecursiveAggregateImpl = TypedefType!T;
     } else static if (is(T == Date)) {
-        alias RecursiveAggregates = Date;
+        alias RecursiveAggregateImpl = Date;
     } else static if(isUserAggregate!T) {
         alias AggMember(string memberName) = Symbol!(T, memberName);
         alias members = staticMap!(AggMember, __traits(allMembers, T));
@@ -193,12 +179,13 @@ private template RecursiveAggregateHelper(T) {
         alias aggregates = NoDuplicates!(Filter!(isNotMe, userAggregates));
 
         static if(aggregates.length == 0)
-            alias RecursiveAggregateHelper = T;
+            alias RecursiveAggregateImpl = T;
         else
-            alias RecursiveAggregateHelper = AliasSeq!(aggregates, staticMap!(RecursiveAggregates, aggregates));
+            alias RecursiveAggregateImpl = AliasSeq!(aggregates, staticMap!(Other, aggregates));
     } else
-        alias RecursiveAggregatesHelper = T;
+        alias RecursiveAggregatesImpl = T;
 }
+
 
 private template Type(T...) if(T.length == 1) {
     static if(is(T[0]))
