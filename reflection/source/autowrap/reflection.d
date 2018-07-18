@@ -140,7 +140,7 @@ private template FunctionTypesInModuleName(string moduleName) {
 
 private template RecursiveAggregates(T) {
     import std.meta: staticMap, Filter, AliasSeq, NoDuplicates;
-    import std.traits: isInstanceOf;
+    import std.traits: isInstanceOf, Unqual;
     import std.typecons: Typedef, TypedefType;
     import std.datetime: Date;
 
@@ -151,8 +151,13 @@ private template RecursiveAggregates(T) {
     } else static if(isUserAggregate!T) {
         alias AggMember(string memberName) = Symbol!(T, memberName);
         alias members = staticMap!(AggMember, __traits(allMembers, T));
+        enum isNotMe(U) = !is(Unqual!T == Unqual!U);
+
         alias types = staticMap!(Type, members);
-        alias aggregates = NoDuplicates!(Filter!(isUserAggregate, staticMap!(PrimordialType, types)));
+        alias primordials = staticMap!(PrimordialType, types);
+        alias userAggregates = Filter!(isUserAggregate, primordials);
+        alias aggregates = NoDuplicates!(Filter!(isNotMe, userAggregates));
+
 
         static if(aggregates.length == 0)
             alias RecursiveAggregates = T;
@@ -160,14 +165,13 @@ private template RecursiveAggregates(T) {
             alias RecursiveAggregates = AliasSeq!(aggregates, staticMap!(RecursiveAggregateHelper, aggregates));
     } else
         alias RecursiveAggregates = T;
-
 }
 
 // Only exists because if RecursiveAggregate recurses using itself dmd complains.
 // So instead, we ping-pong between identical templates.
 private template RecursiveAggregateHelper(T) {
     import std.meta: staticMap, Filter, AliasSeq, NoDuplicates;
-    import std.traits: isInstanceOf;
+    import std.traits: isInstanceOf, Unqual;
     import std.typecons: Typedef, TypedefType;
     import std.datetime: Date;
 
@@ -178,8 +182,12 @@ private template RecursiveAggregateHelper(T) {
     } else static if(isUserAggregate!T) {
         alias AggMember(string memberName) = Symbol!(T, memberName);
         alias members = staticMap!(AggMember, __traits(allMembers, T));
+        enum isNotMe(U) = !is(Unqual!T == Unqual!U);
+
         alias types = staticMap!(Type, members);
-        alias aggregates = NoDuplicates!(Filter!(isUserAggregate, staticMap!(PrimordialType, types)));
+        alias primordials = staticMap!(PrimordialType, types);
+        alias userAggregates = Filter!(isUserAggregate, primordials);
+        alias aggregates = NoDuplicates!(Filter!(isNotMe, userAggregates));
 
         static if(aggregates.length == 0)
             alias RecursiveAggregateHelper = T;
@@ -188,7 +196,6 @@ private template RecursiveAggregateHelper(T) {
     } else
         alias RecursiveAggregatesHelper = T;
 }
-
 
 private template Type(T...) if(T.length == 1) {
     static if(is(T[0]))
