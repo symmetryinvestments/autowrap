@@ -99,11 +99,14 @@ private template AggregatesInModules(ModuleNames...) if(allSatisfy!(isString, Mo
 private template AggregatesInModuleName(string moduleName) {
 
     mixin(`import module_  = ` ~ moduleName ~ `;`);
-    import std.meta: Filter, staticMap;
+    import std.meta: Filter, staticMap, NoDuplicates, AliasSeq;
 
     alias Member(string memberName) = Symbol!(module_, memberName);
     alias members = staticMap!(Member, __traits(allMembers, module_));
-    alias AggregatesInModuleName = Filter!(isUserAggregate, members);
+    alias aggregates = Filter!(isUserAggregate, members);
+    alias recursives = staticMap!(RecursiveAggregates, aggregates);
+    alias all = AliasSeq!(aggregates, recursives);
+    alias AggregatesInModuleName = NoDuplicates!all;
 }
 
 

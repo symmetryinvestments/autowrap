@@ -93,3 +93,16 @@ export auto createDate(int year, int month, int day) {
     import std.datetime: Date;
     return Date(year, month, day);
 }
+
+export struct ApiOuter {
+
+    import not_wrapped: NotWrappedInner;
+
+    int value;
+    NotWrappedInner inner;
+
+    export this(int value, NotWrappedInner inner) {
+        this.value = value;
+        this.inner = inner;
+    }
+}
