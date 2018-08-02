@@ -164,22 +164,7 @@ private template isMemberFunction(A...) if(A.length == 1) {
 
 
 private template isPublicFunction(alias F) {
-    enum prot = __traits(getProtection, F);
-    enum isPublicFunction = isPydCompatibleFunction!F && (prot == "export" || prot == "public");
-}
-
-
-// pyd currently doesn't support @safe, pure or nothrow
-private template isPydCompatibleFunction(alias F) {
-    //import std.traits: isFunction, functionAttributes, FA = FunctionAttribute;
-    // static if(!isFunction!F)
-    //     enum isPydCompatibleFunction = false;
-    // else {
-    //     enum attrs = functionAttributes!F;
-    //     enum isPydCompatibleFunction =
-    //         !(attrs & FA.pure_) && !(attrs & FA.nothrow_) && !(attrs & FA.safe)
-    //         ;
-    // }
     import std.traits: isFunction;
-    enum isPydCompatibleFunction = isFunction!F;
+    enum prot = __traits(getProtection, F);
+    enum isPublicFunction = isFunction!F && (prot == "export" || prot == "public");
 }

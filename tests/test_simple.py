@@ -2,7 +2,9 @@ from simple import (Prefix, Adder, IntString, create_int_point, create_outer,
                     create_outer2, create_outers, create_date_time,
                     date_time_array, points, tuple_of_date_times,
                     create_typedef_foo, create_date, Foo, product,
-                    identity_int, ApiOuter, NotWrappedInner, SafePureEtcStruct)
+                    identity_int, ApiOuter, NotWrappedInner, SafePureEtcStruct,
+                    the_year)
+from datetime import date
 import pytest
 
 
@@ -154,3 +156,8 @@ def test_api_outer():
 def test_safe_pure_etc_struct():
     s = SafePureEtcStruct()
     assert s.stuff(3) == 6
+
+
+def test_the_year():
+    assert the_year(date(2017, 1, 1)) == 2017
+    assert the_year(date(2018, 2, 3)) == 2018

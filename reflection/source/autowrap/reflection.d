@@ -80,7 +80,8 @@ template FunctionSymbol(string N, alias S) {
 template AllAggregates(ModuleNames...) if(allSatisfy!(isString, ModuleNames)) {
 
     import std.meta: NoDuplicates, Filter;
-    import std.traits: isCopyable;
+    import std.traits: isCopyable, Unqual;
+    import std.datetime: Date, DateTime;
 
     // definitions
     alias aggregates = AggregatesInModules!ModuleNames;
@@ -88,7 +89,12 @@ template AllAggregates(ModuleNames...) if(allSatisfy!(isString, ModuleNames)) {
     // return and parameter types
     alias functionTypes = FunctionTypesInModules!ModuleNames;
 
-    alias AllAggregates = Filter!(isCopyable, NoDuplicates!(aggregates, functionTypes));
+    alias copyables = Filter!(isCopyable, NoDuplicates!(aggregates, functionTypes));
+    template notAlreadyWrapped(T) {
+        alias Type = Unqual!T;
+        enum notAlreadyWrapped = !is(Type == Date) && !is(Type == DateTime);
+    }
+    alias AllAggregates = Filter!(notAlreadyWrapped, copyables);
 }
 
 private template AggregatesInModules(ModuleNames...) if(allSatisfy!(isString, ModuleNames)) {

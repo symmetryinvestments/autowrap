@@ -1,4 +1,4 @@
-import std.datetime: DateTime;
+import std.datetime: DateTime, Date;
 
 export auto createIntPoint(int x, int y) {
     import templates: Point;
@@ -105,4 +105,9 @@ export struct ApiOuter {
         this.value = value;
         this.inner = inner;
     }
+}
+
+
+export int theYear(Date d) {
+    return d.year;
 }
