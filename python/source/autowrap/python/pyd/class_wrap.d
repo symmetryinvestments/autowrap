@@ -23,12 +23,12 @@ docstring = The function's docstring. Defaults to "".
 struct Def(alias fn, Options...) {
     import pyd.def: Args;
 
-    alias Args!("","", __traits(identifier,fn), "",Options) args;
+    alias args = Args!("", "", __traits(identifier, fn), "", Options);
 
     static if(args.rem.length) {
-        alias args.rem[0] fn_t;
+        alias fn_t = args.rem[0];
     } else {
-        alias typeof(&fn) fn_t;
+        alias fn_t = typeof(&fn);
     }
 
     mixin _Def!(fn, args.pyname, fn_t, args.docstring);
@@ -42,40 +42,42 @@ template _Def(alias _fn, string name, fn_t, string docstring) {
     import util.typeinfo: ApplyConstness, constness;
     import deimos.python.methodobject: PyMethodDef, PyCFunction, METH_VARARGS, METH_KEYWORDS;
 
-    alias def_selector!(_fn,fn_t).FN func;
+    alias func = def_selector!(_fn, fn_t).FN;
     static assert(!__traits(isStaticFunction, func),
                   "Cannot register " ~ name ~ " because static member functions are not yet supported");
     alias /*StripSafeTrusted!*/fn_t func_t;
     enum realname = __traits(identifier,func);
     enum funcname = name;
-    enum min_args = minArgs!(func);
-    enum bool needs_shim = false;
+    enum min_args = minArgs!func;
+    enum bool needs_shim = false; // needed for the compile-time interface
 
-    static void call(string classname, T) () {
-        alias ApplyConstness!(T, constness!(typeof(func))) cT;
+    static void call(string classname, T) () { // needed for the compile-time interface
+        alias cT = ApplyConstness!(T, constness!(typeof(func)));
         static PyMethodDef empty = { null, null, 0, null };
-        alias wrapped_method_list!(T) list;
-        list[$-1].ml_name = (name ~ "\0").ptr;
-        list[$-1].ml_meth = cast(PyCFunction) &method_wrap!(cT, func, classname ~ "." ~ name).func;
-        list[$-1].ml_flags = METH_VARARGS | METH_KEYWORDS;
-        list[$-1].ml_doc = (docstring~"\0").ptr;
+        alias list = wrapped_method_list!(T);
+
+        list[$ - 1].ml_name = (name ~ "\0").ptr;
+        list[$ - 1].ml_meth = cast(PyCFunction) &method_wrap!(cT, func, classname ~ "." ~ name).func;
+        list[$ - 1].ml_flags = METH_VARARGS | METH_KEYWORDS;
+        list[$ - 1].ml_doc = (docstring~"\0").ptr;
         list ~= empty;
         // It's possible that appending the empty item invalidated the
         // pointer in the type struct, so we renew it here.
-        PydTypeObject!(T).tp_methods = list.ptr;
+        PydTypeObject!T.tp_methods = list.ptr;
     }
     template shim(size_t i, T) {
         import util.replace: Replace;
         enum shim = Replace!(q{
-            alias Params[$i] __pyd_p$i;
+            alias __pyd_p$i = Params[$i];
             $override ReturnType!(__pyd_p$i.func_t) $realname(ParameterTypeTuple!(__pyd_p$i.func_t) t) $attrs {
                 return __pyd_get_overload!("$realname", __pyd_p$i.func_t).func!(ParameterTypeTuple!(__pyd_p$i.func_t))("$name", t);
             }
             alias T.$realname $realname;
-        }, "$i",i,"$realname",realname, "$name", name,
-        "$attrs", attrs_to_string(functionAttributes!func_t) ~ " " ~ tattrs_to_string!(func_t)(),
-        "$override",
-        // todo: figure out what's going on here
-        (variadicFunctionStyle!func == Variadic.no ? "override":""));
+        },
+            "$i", i, "$realname", realname, "$name", name,
+            "$attrs", attrs_to_string(functionAttributes!func_t) ~ " " ~ tattrs_to_string!func_t(),
+            "$override",
+            //TODO: figure out what's going on here
+            (variadicFunctionStyle!func == Variadic.no ? "override": ""));
     }
 }
