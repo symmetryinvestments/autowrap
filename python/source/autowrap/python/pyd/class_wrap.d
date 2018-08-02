@@ -20,7 +20,7 @@ pyname = The name of the function as it will appear in Python. Defaults to
 fn's name in D
 docstring = The function's docstring. Defaults to "".
 */
-struct Def(alias fn, Options...) {
+struct MemberFunction(alias fn, Options...) {
     import pyd.def: Args;
 
     alias args = Args!("", "", __traits(identifier, fn), "", Options);
@@ -31,10 +31,10 @@ struct Def(alias fn, Options...) {
         alias fn_t = typeof(&fn);
     }
 
-    mixin _Def!(fn, args.pyname, fn_t, args.docstring);
+    mixin MemberFunctionImpl!(fn, args.pyname, fn_t, args.docstring);
 }
 
-template _Def(alias _fn, string name, fn_t, string docstring) {
+private template MemberFunctionImpl(alias _fn, string name, fn_t, string docstring) {
     import pyd.class_wrap: wrapped_method_list;
     import pyd.references: PydTypeObject;
     import pyd.def: def_selector;

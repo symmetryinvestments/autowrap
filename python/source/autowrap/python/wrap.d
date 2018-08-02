@@ -111,7 +111,7 @@ void wrapAllAggregates(Modules...)() if(allSatisfy!(isModule, Modules)) {
 auto wrapAggregate(T)() if(isUserAggregate!T) {
 
     import autowrap.reflection: Symbol;
-    import autowrap.python.pyd.class_wrap: Def;
+    import autowrap.python.pyd.class_wrap: MemberFunction;
     import pyd.pyd: wrap_class, Member, Init;
     import std.meta: staticMap, Filter, AliasSeq;
     import std.traits: Parameters, FieldNameTuple, hasMember;
@@ -147,7 +147,7 @@ auto wrapAggregate(T)() if(isUserAggregate!T) {
     wrap_class!(
         T,
         staticMap!(Member, publicFields),
-        staticMap!(Def, memberFunctions),
+        staticMap!(MemberFunction, memberFunctions),
         staticMap!(InitTuple, constructorParamTuples),
    );
 }
