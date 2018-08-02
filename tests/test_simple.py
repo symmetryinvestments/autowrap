@@ -2,7 +2,7 @@ from simple import (Prefix, Adder, IntString, create_int_point, create_outer,
                     create_outer2, create_outers, create_date_time,
                     date_time_array, points, tuple_of_date_times,
                     create_typedef_foo, create_date, Foo, product,
-                    identity_int, ApiOuter, NotWrappedInner)
+                    identity_int, ApiOuter, NotWrappedInner, SafePureEtcStruct)
 import pytest
 
 
@@ -149,3 +149,8 @@ def test_api_outer():
     outer = ApiOuter(42, NotWrappedInner("foobar"))
     assert outer.value == 42
     assert outer.inner.value == "foobar"
+
+
+def test_safe_pure_etc_struct():
+    s = SafePureEtcStruct()
+    assert s.stuff(3) == 6

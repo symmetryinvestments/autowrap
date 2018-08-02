@@ -17,3 +17,10 @@ struct IntString {
 struct String {
     string value;
 }
+
+
+struct SafePureEtcStruct {
+    export int stuff(int i) @safe @nogc pure nothrow {
+        return i * 2;
+    }
+}

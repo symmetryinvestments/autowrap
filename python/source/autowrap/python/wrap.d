@@ -90,6 +90,7 @@ void wrapAllAggregates(Modules...)() if(allSatisfy!(isModule, Modules)) {
 
     import autowrap.reflection: AllAggregates, Module;
     import std.meta: staticMap;
+    import std.traits: fullyQualifiedName;
 
     enum moduleToString(Module module_) = module_.name;
     alias ModuleNames = staticMap!(moduleToString, Modules);
@@ -97,8 +98,10 @@ void wrapAllAggregates(Modules...)() if(allSatisfy!(isModule, Modules)) {
     static foreach(aggregate; AllAggregates!ModuleNames) {
         static if(__traits(compiles, wrapAggregate!aggregate))
             wrapAggregate!aggregate;
-        else
-            pragma(msg, "ERROR! Autowrap could not wrap aggregate `", aggregate.stringof, "` for Python");
+        else {
+            pragma(msg, "\nERROR! Autowrap could not wrap aggregate `", fullyQualifiedName!aggregate, "` for Python\n");
+            //wrapAggregate!aggregate; // uncomment to see the error messages from the compiler
+        }
     }
 }
 
@@ -108,7 +111,8 @@ void wrapAllAggregates(Modules...)() if(allSatisfy!(isModule, Modules)) {
 auto wrapAggregate(T)() if(isUserAggregate!T) {
 
     import autowrap.reflection: Symbol;
-    import pyd.pyd: wrap_class, Member, Def, Init;
+    import autowrap.python.pyd.class_wrap: Def;
+    import pyd.pyd: wrap_class, Member, Init;
     import std.meta: staticMap, Filter, AliasSeq;
     import std.traits: Parameters, FieldNameTuple, hasMember;
     import std.typecons: Tuple;
@@ -148,6 +152,7 @@ auto wrapAggregate(T)() if(isUserAggregate!T) {
    );
 }
 
+
 // must be a global template
 private template isMemberFunction(A...) if(A.length == 1) {
     alias T = A[0];
@@ -166,14 +171,15 @@ private template isPublicFunction(alias F) {
 
 // pyd currently doesn't support @safe, pure or nothrow
 private template isPydCompatibleFunction(alias F) {
-    import std.traits: isFunction, functionAttributes, FA = FunctionAttribute;
-
-    static if(!isFunction!F)
-        enum isPydCompatibleFunction = false;
-    else {
-        enum attrs = functionAttributes!F;
-        enum isPydCompatibleFunction =
-            !(attrs & FA.pure_) && !(attrs & FA.nothrow_) && !(attrs & FA.safe)
-            ;
-    }
+    //import std.traits: isFunction, functionAttributes, FA = FunctionAttribute;
+    // static if(!isFunction!F)
+    //     enum isPydCompatibleFunction = false;
+    // else {
+    //     enum attrs = functionAttributes!F;
+    //     enum isPydCompatibleFunction =
+    //         !(attrs & FA.pure_) && !(attrs & FA.nothrow_) && !(attrs & FA.safe)
+    //         ;
+    // }
+    import std.traits: isFunction;
+    enum isPydCompatibleFunction = isFunction!F;
 }
