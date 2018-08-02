@@ -65,6 +65,7 @@ private template MemberFunctionImpl(alias _fn, string name, fn_t, string docstri
         // pointer in the type struct, so we renew it here.
         PydTypeObject!T.tp_methods = list.ptr;
     }
+
     template shim(size_t i, T) {
         import util.replace: Replace;
         enum shim = Replace!(q{
