@@ -3,8 +3,6 @@
  */
 module autowrap.python.pyd.class_wrap;
 
-import deimos.python.Python;
-
 
 /**
 Wraps a member function of the class.
