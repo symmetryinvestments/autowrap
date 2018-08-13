@@ -12,6 +12,11 @@ subPackage "reflection"
 subPackage "python"
 subPackage "excel"
 
+
+configuration "python37" {
+     subConfiguration ":python" "python37"
+}
+
 configuration "python36" {
      subConfiguration ":python" "python36"
 }
