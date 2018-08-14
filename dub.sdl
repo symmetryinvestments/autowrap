@@ -12,27 +12,6 @@ subPackage "reflection"
 subPackage "python"
 subPackage "excel"
 
-configuration "python36" {
-     subConfiguration ":python" "python36"
-}
-
-configuration "python35" {
-     subConfiguration ":python" "python35"
-}
-
-configuration "python34" {
-     subConfiguration ":python" "python34"
-}
-
-configuration "python33" {
-     subConfiguration ":python" "python33"
-}
-
-configuration "python27" {
-     subConfiguration ":python" "python27"
-     versions "Python2" "PydPythonExtension"
-}
-
 configuration "unittest" {
     targetType "executable"
     targetName "ut"
