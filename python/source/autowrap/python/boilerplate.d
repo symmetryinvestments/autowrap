@@ -79,9 +79,9 @@ string wrapAll(in LibraryName libraryName,
             import xlld.wrap.worksheet: WorksheetFunction;
             extern(C) WorksheetFunction[] getWorksheetFunctions() @safe pure nothrow { return []; }
         };
+    } else version(Windows) {
+        ret ~= dllMainMixinStr;
     }
-
-    // dllMainMixinStr no longer needed due to excel-d
 
     return ret;
 }

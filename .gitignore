@@ -6,3 +6,6 @@ __pycache__
 autowrap-test-*
 .pytest_cache
 ut
+*.lib
+*.dll
+*.so
