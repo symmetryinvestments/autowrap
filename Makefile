@@ -1,6 +1,6 @@
 # Makefile to drive the tests
 
-DUB_CONFIGURATION ?= python36
+DUB_CONFIGURATION ?= python37
 
 .PHONY: test_simple examples/simple/libsimple.so
 
