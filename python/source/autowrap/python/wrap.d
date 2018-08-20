@@ -92,10 +92,7 @@ void wrapAllAggregates(Modules...)() if(allSatisfy!(isModule, Modules)) {
     import std.meta: staticMap;
     import std.traits: fullyQualifiedName;
 
-    enum moduleToString(Module module_) = module_.name;
-    alias ModuleNames = staticMap!(moduleToString, Modules);
-
-    static foreach(aggregate; AllAggregates!ModuleNames) {
+    static foreach(aggregate; AllAggregates!Modules) {
         static if(__traits(compiles, wrapAggregate!aggregate))
             wrapAggregate!aggregate;
         else {

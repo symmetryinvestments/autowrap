@@ -17,6 +17,7 @@ enum isModule(alias T) = is(Unqual!(typeof(T)) == Module);
  */
 struct Module {
     import std.typecons: Flag, No;
+
     string name;
     Flag!"alwaysExport" alwaysExport = No.alwaysExport;
 
@@ -78,27 +79,40 @@ template FunctionSymbol(string N, alias S) {
 }
 
 template AllAggregates(ModuleNames...) if(allSatisfy!(isString, ModuleNames)) {
+    import std.meta: staticMap;
+
+    enum module_(string name) = Module(name);
+    enum Modules = staticMap!(module_, ModuleNames);
+
+    alias AllAggregates = AllAggregates!(staticMap!(module_, ModuleNames));
+}
+
+template AllAggregates(Modules...) if(allSatisfy!(isModule, Modules)) {
 
     import std.meta: NoDuplicates, Filter;
     import std.traits: isCopyable, Unqual;
     import std.datetime: Date, DateTime;
 
     // definitions
-    alias aggregates = AggregatesInModules!ModuleNames;
+    alias aggregates = AggregatesInModules!Modules;
 
     // return and parameter types
-    alias functionTypes = FunctionTypesInModules!ModuleNames;
+    alias functionTypes = FunctionTypesInModules!Modules;
 
     alias copyables = Filter!(isCopyable, NoDuplicates!(aggregates, functionTypes));
+
     template notAlreadyWrapped(T) {
         alias Type = Unqual!T;
         enum notAlreadyWrapped = !is(Type == Date) && !is(Type == DateTime);
     }
+
     alias AllAggregates = Filter!(notAlreadyWrapped, copyables);
 }
 
-private template AggregatesInModules(ModuleNames...) if(allSatisfy!(isString, ModuleNames)) {
+private template AggregatesInModules(Modules...) if(allSatisfy!(isModule, Modules)) {
     import std.meta: staticMap;
+    enum name(Module module_) = module_.name;
+    enum ModuleNames = staticMap!(name, Modules);
     alias AggregatesInModules = staticMap!(AggregatesInModuleName, ModuleNames);
 }
 
@@ -117,22 +131,24 @@ private template AggregatesInModuleName(string moduleName) {
 
 
 // All return and parameter types of the functions in the given modules
-private template FunctionTypesInModules(ModuleNames...) if(allSatisfy!(isString, ModuleNames)) {
+private template FunctionTypesInModules(Modules...) if(allSatisfy!(isModule, Modules)) {
     import std.meta: staticMap;
-    alias FunctionTypesInModules = staticMap!(FunctionTypesInModuleName, ModuleNames);
+    alias FunctionTypesInModules = staticMap!(FunctionTypesInModule, Modules);
 }
 
-// All return and parameter types of the functions in the given module
-private template FunctionTypesInModuleName(string moduleName) {
 
-    mixin(`import module_  = ` ~ moduleName ~ `;`);
+// All return and parameter types of the functions in the given module
+private template FunctionTypesInModule(Module module_) {
+
+    mixin(`import dmodule  = ` ~ module_.name ~ `;`);
     import autowrap.reflection: isExportFunction;
     import std.traits: ReturnType, Parameters;
     import std.meta: Filter, staticMap, AliasSeq, NoDuplicates;
 
-    alias Member(string memberName) = Symbol!(module_, memberName);
-    alias members = staticMap!(Member, __traits(allMembers, module_));
-    alias functions = Filter!(isExportFunction, members);
+    alias Member(string memberName) = Symbol!(dmodule, memberName);
+    alias members = staticMap!(Member, __traits(allMembers, dmodule));
+    enum isWantedExportFunction(alias F) = isExportFunction!(F, module_.alwaysExport);
+    alias functions = Filter!(isWantedExportFunction, members);
 
     // all return types of all functions
     alias returns = NoDuplicates!(Filter!(isUserAggregate, staticMap!(PrimordialType, staticMap!(ReturnType, functions))));
@@ -144,8 +160,10 @@ private template FunctionTypesInModuleName(string moduleName) {
     alias recursiveParams = NoDuplicates!(staticMap!(RecursiveAggregates, returns));
     // chain all types
     alias functionTypes = AliasSeq!(returns, recursiveReturns, params, recursiveParams);
-    alias FunctionTypesInModuleName = NoDuplicates!(Filter!(isUserAggregate, functionTypes));
+
+    alias FunctionTypesInModule = NoDuplicates!(Filter!(isUserAggregate, functionTypes));
 }
+
 
 private template RecursiveAggregates(T) {
     mixin RecursiveAggregateImpl!(T, RecursiveAggregateHelper);
