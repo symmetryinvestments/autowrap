@@ -94,7 +94,7 @@ template AllAggregates(Modules...) if(allSatisfy!(isModule, Modules)) {
     import std.datetime: Date, DateTime;
 
     // definitions
-    alias aggregates = AggregatesInModules!Modules;
+    alias aggregates = AggregateDefinitionsInModules!Modules;
 
     // return and parameter types
     alias functionTypes = FunctionTypesInModules!Modules;
@@ -109,14 +109,14 @@ template AllAggregates(Modules...) if(allSatisfy!(isModule, Modules)) {
     alias AllAggregates = Filter!(notAlreadyWrapped, copyables);
 }
 
-private template AggregatesInModules(Modules...) if(allSatisfy!(isModule, Modules)) {
+private template AggregateDefinitionsInModules(Modules...) if(allSatisfy!(isModule, Modules)) {
     import std.meta: staticMap;
     enum name(Module module_) = module_.name;
     enum ModuleNames = staticMap!(name, Modules);
-    alias AggregatesInModules = staticMap!(AggregatesInModuleName, ModuleNames);
+    alias AggregateDefinitionsInModules = staticMap!(AggregateDefinitionsInModuleName, ModuleNames);
 }
 
-private template AggregatesInModuleName(string moduleName) {
+private template AggregateDefinitionsInModuleName(string moduleName) {
 
     mixin(`import module_  = ` ~ moduleName ~ `;`);
     import std.meta: Filter, staticMap, NoDuplicates, AliasSeq;
@@ -126,7 +126,7 @@ private template AggregatesInModuleName(string moduleName) {
     alias aggregates = Filter!(isUserAggregate, members);
     alias recursives = staticMap!(RecursiveAggregates, aggregates);
     alias all = AliasSeq!(aggregates, recursives);
-    alias AggregatesInModuleName = NoDuplicates!all;
+    alias AggregateDefinitionsInModuleName = NoDuplicates!all;
 }
 
 
