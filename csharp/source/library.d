@@ -27,6 +27,7 @@ struct s1 {
 
 struct s2 {
 	public int value;
+	public string str;
 }
 
 class c1 {

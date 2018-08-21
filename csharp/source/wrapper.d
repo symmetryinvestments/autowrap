@@ -12,6 +12,28 @@ import std.utf;
 extern(C):
 export:
 
+string cswrap_dlang_createString(wchar* str) {
+    string temp = toUTF8(value.fromStringz());
+    GC.addRoot(cast(void*)temp.ptr);
+    return temp;
+}
+
+wstring cswrap_dlang_createWString(wchar* str) {
+    wstring temp = to!wstring(value.fromStringz());
+    GC.addRoot(cast(void*)temp.ptr);
+    return temp;
+}
+
+dstring cswrap_dlang_createDString(wchar* str) {
+    dstring temp = toUTF32(value.fromStringz());
+    GC.addRoot(cast(void*)temp.ptr);
+    return temp;
+}
+
+void cswrap_dlang_releaseString(void* ptr) {
+    GC.removeRoot(ptr);
+}
+
 int cswrap_freeFunction (int value) {
     return freeFunction(value);
 }

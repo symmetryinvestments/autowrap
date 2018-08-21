@@ -1,6 +1,47 @@
 namespace csharp {
+    using System;
 
     using System.Runtime.InteropServices;
+
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct dlang_string {
+        private IntPtr length;
+        private IntPtr ptr;
+
+        public override string ToString() {
+            unsafe {
+                return System.Text.Encoding.UTF8.GetString((byte*)ptr.ToPointer(), length.ToInt32());
+            }
+        }
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct dlang_wstring {
+        private IntPtr length;
+        private IntPtr ptr;
+
+        public override string ToString() {
+            unsafe {
+                return System.Text.Encoding.Unicode.GetString((byte*)ptr.ToPointer(), length.ToInt32()*2);
+            }
+        }
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct dlang_dstring {
+        private IntPtr length;
+        private IntPtr ptr;
+
+        public override string ToString() {
+            unsafe {
+                return System.Text.Encoding.UTF32.GetString((byte*)ptr.ToPointer(), length.ToInt32()*4);
+            }
+        }
+    }
+
+    public struct S2 {
+
+    }
 
     public static class library {
         static library() {
