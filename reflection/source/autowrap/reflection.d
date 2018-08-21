@@ -284,6 +284,16 @@ package template isExportFunction(alias F, Flag!"alwaysExport" alwaysExport = No
         enum linkage = __traits(getLinkage, F);
         enum isExportFunction = isFunction!F && linkage != "C" && linkage != "C++";
     } else
-          enum isExportFunction =
-              isFunction!F && (alwaysExport || __traits(getProtection, F) == "export");
+          enum isExportFunction = isFunction!F && isExportSymbol!(F, alwaysExport);
+}
+
+
+private template isExportSymbol(alias S, Flag!"alwaysExport" alwaysExport = No.alwaysExport) {
+    import std.traits: isFunction;
+
+    version(AutowrapAlwaysExport)
+        enum isExportSymbol = true;
+    else
+        enum isExportSymbol = (alwaysExport || __traits(getProtection, S) == "export");
+
 }
