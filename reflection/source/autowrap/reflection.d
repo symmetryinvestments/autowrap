@@ -111,22 +111,20 @@ template AllAggregates(Modules...) if(allSatisfy!(isModule, Modules)) {
 
 private template AggregateDefinitionsInModules(Modules...) if(allSatisfy!(isModule, Modules)) {
     import std.meta: staticMap;
-    enum name(Module module_) = module_.name;
-    enum ModuleNames = staticMap!(name, Modules);
-    alias AggregateDefinitionsInModules = staticMap!(AggregateDefinitionsInModuleName, ModuleNames);
+    alias AggregateDefinitionsInModules = staticMap!(AggregateDefinitionsInModule, Modules);
 }
 
-private template AggregateDefinitionsInModuleName(string moduleName) {
+private template AggregateDefinitionsInModule(Module module_) {
 
-    mixin(`import module_  = ` ~ moduleName ~ `;`);
+    mixin(`import dmodule  = ` ~ module_.name ~ `;`);
     import std.meta: Filter, staticMap, NoDuplicates, AliasSeq;
 
-    alias Member(string memberName) = Symbol!(module_, memberName);
-    alias members = staticMap!(Member, __traits(allMembers, module_));
+    alias Member(string memberName) = Symbol!(dmodule, memberName);
+    alias members = staticMap!(Member, __traits(allMembers, dmodule));
     alias aggregates = Filter!(isUserAggregate, members);
     alias recursives = staticMap!(RecursiveAggregates, aggregates);
     alias all = AliasSeq!(aggregates, recursives);
-    alias AggregateDefinitionsInModuleName = NoDuplicates!all;
+    alias AggregateDefinitionsInModule = NoDuplicates!all;
 }
 
 
