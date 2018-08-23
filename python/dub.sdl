@@ -30,5 +30,8 @@ configuration "python33" {
 
 configuration "python27" {
     subConfiguration "pyd" "python27"
-    versions "Python2" "PydPythonExtension"
+}
+
+configuration "env" {
+    subConfiguration "pyd" "env"
 }
