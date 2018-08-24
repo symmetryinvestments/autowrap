@@ -7,6 +7,7 @@ preBuildCommands "[ -e $PACKAGE_DIR/druntime.o ] || gcc -c -fPIC $PACKAGE_DIR/so
 sourceFiles "$PACKAGE_DIR/druntime.o" platform="linux"
 dependency "pyd" path="../pyd"
 dependency "autowrap:reflection" path="../reflection"
+versions "PydPythonExtension"
 
 configuration "python37" {
     subConfiguration "pyd" "python37"
