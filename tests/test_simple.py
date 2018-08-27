@@ -3,7 +3,7 @@ from simple import (Prefix, Adder, IntString, create_int_point, create_outer,
                     date_time_array, points, tuple_of_date_times,
                     create_typedef_foo, create_date, Foo, product,
                     identity_int, ApiOuter, NotWrappedInner, SafePureEtcStruct,
-                    the_year)
+                    the_year, String, other_string_as_param, OtherString)
 from datetime import date
 import pytest
 
@@ -161,3 +161,11 @@ def test_safe_pure_etc_struct():
 def test_the_year():
     assert the_year(date(2017, 1, 1)) == 2017
     assert the_year(date(2018, 2, 3)) == 2018
+
+
+def test_wrap_all_string():
+    assert String("foobar").s == "foobar"
+
+
+def test_wrap_all_other_string_as_param():
+    assert other_string_as_param(OtherString("hello ")) == "hello quux"
