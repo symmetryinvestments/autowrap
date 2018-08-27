@@ -21,6 +21,10 @@ namespace csharp
                 Console.WriteLine($"Expected: {testString} - Actual: {sret}");
             }
             Console.WriteLine($"StringFunction Result: {sret}");
+
+            string str = library.DLang_String_StringFunction(testString);
+            string wstr = library.DLang_WString_StringFunction(testString);
+            string dstr = library.DLang_DString_StringFunction(testString);
         }
     }
 }

@@ -13,19 +13,19 @@ extern(C):
 export:
 
 string cswrap_dlang_createString(wchar* str) {
-    string temp = toUTF8(value.fromStringz());
+    string temp = toUTF8(str.fromStringz());
     GC.addRoot(cast(void*)temp.ptr);
     return temp;
 }
 
 wstring cswrap_dlang_createWString(wchar* str) {
-    wstring temp = to!wstring(value.fromStringz());
+    wstring temp = to!wstring(str.fromStringz());
     GC.addRoot(cast(void*)temp.ptr);
     return temp;
 }
 
 dstring cswrap_dlang_createDString(wchar* str) {
-    dstring temp = toUTF32(value.fromStringz());
+    dstring temp = toUTF32(str.fromStringz());
     GC.addRoot(cast(void*)temp.ptr);
     return temp;
 }
@@ -41,6 +41,18 @@ int cswrap_freeFunction (int value) {
 const(wchar)* cswrap_stringFunction(wchar* value) {
     string temp = stringFunction(toUTF8(value.fromStringz()));
     return getCSharpString(temp);
+}
+
+string cswrap_dlang_string_stringFunction(string value) {
+    return value.dup;
+}
+
+wstring cswrap_dlang_wstring_stringFunction(wstring value) {
+    return value.dup;
+}
+
+dstring cswrap_dlang_dstring_stringFunction(dstring value) {
+    return value.dup;
 }
 
 float cswrap_s1_getValue(s1* cswrap_s1) {
