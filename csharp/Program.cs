@@ -23,8 +23,11 @@ namespace csharp
             Console.WriteLine($"StringFunction Result: {sret}");
 
             string str = library.DLang_String_StringFunction(testString);
+            Console.WriteLine($"DLang_String_StringFunction Result: {str}");
             string wstr = library.DLang_WString_StringFunction(testString);
+            Console.WriteLine($"DLang_WString_StringFunction Result: {wstr}");
             string dstr = library.DLang_DString_StringFunction(testString);
+            Console.WriteLine($"DLang_DString_StringFunction Result: {dstr}");
         }
     }
 }

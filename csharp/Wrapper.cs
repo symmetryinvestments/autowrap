@@ -13,6 +13,11 @@ namespace csharp {
             }
         }
 
+        public void Dispose()
+        {
+            library.ReleaseMemory(ptr);
+        }
+
         public static implicit operator string(dlang_string str)
         {
             return str.ToString();
@@ -35,6 +40,11 @@ namespace csharp {
             }
         }
 
+        public void Dispose()
+        {
+            library.ReleaseMemory(ptr);
+        }
+
         public static implicit operator string(dlang_wstring str)
         {
             return str.ToString();
@@ -47,7 +57,7 @@ namespace csharp {
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct dlang_dstring {
+    public struct dlang_dstring : IDisposable {
         private IntPtr length;
         private IntPtr ptr;
 
@@ -55,6 +65,11 @@ namespace csharp {
             unsafe {
                 return System.Text.Encoding.UTF32.GetString((byte*)ptr.ToPointer(), length.ToInt32()*4);
             }
+        }
+
+        public void Dispose()
+        {
+            library.ReleaseMemory(ptr);
         }
 
         public static implicit operator string(dlang_dstring str)
@@ -65,6 +80,37 @@ namespace csharp {
         public static implicit operator dlang_dstring(string str)
         {
             return library.CreateDString(str);
+        }
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct dlang_slice<T> : IDisposable
+    {
+        private IntPtr length;
+        private IntPtr ptr;
+
+        public dlang_slice(IntPtr ptr, IntPtr length)
+        {
+            this.ptr = ptr;
+            this.length = length;
+        }
+
+        public void Dispose()
+        {
+            library.ReleaseMemory(ptr);
+        }
+
+        public static implicit operator dlang_slice<T>(Span<T> slice) {
+            unsafe {
+                IntPtr tptr = new IntPtr((void*)slice.GetPinnableReference());
+                return new dlang_slice<T>(tptr, new IntPtr(slice.Length));
+            }
+        }
+
+        public static implicit operator Span<T>(dlang_slice<T> slice) {
+            unsafe {
+                return new Span<T>(slice.ptr.ToPointer(), slice.length.ToInt32());
+            }
         }
     }
 
@@ -94,6 +140,8 @@ namespace csharp {
             DRuntimeInitialize();
         }
 
+/// Support Methods
+
         [DllImport("csharp", EntryPoint = "cswrap_dlang_createString", CallingConvention = CallingConvention.Cdecl)]
         public static extern dlang_string CreateString([MarshalAs(UnmanagedType.LPWStr)]string str);
 
@@ -103,10 +151,15 @@ namespace csharp {
         [DllImport("csharp", EntryPoint = "cswrap_dlang_createDString", CallingConvention = CallingConvention.Cdecl)]
         public static extern dlang_dstring CreateDString([MarshalAs(UnmanagedType.LPWStr)]string str);
 
+        [DllImport("csharp", EntryPoint = "cswrap_dlang_release", CallingConvention = CallingConvention.Cdecl)]
+        public static extern dlang_dstring ReleaseMemory(IntPtr ptr);
+
         [DllImport("csharp", EntryPoint = "rt_init", CallingConvention = CallingConvention.Cdecl)]
         public static extern int DRuntimeInitialize();  
         [DllImport("csharp", EntryPoint = "rt_term", CallingConvention = CallingConvention.Cdecl)]
         public static extern int DRuntimeTerminate();  
+
+/// Library Methods
 
         [DllImport("csharp", EntryPoint = "cswrap_freeFunction", CallingConvention = CallingConvention.Cdecl)]  
         public static extern int FreeFunction(int value);  
