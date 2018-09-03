@@ -102,7 +102,7 @@ namespace csharp {
 
         public static implicit operator dlang_slice<T>(Span<T> slice) {
             unsafe {
-                IntPtr tptr = new IntPtr((void*)slice.GetPinnableReference());
+                IntPtr tptr = new IntPtr((void*)&slice[0]);
                 return new dlang_slice<T>(tptr, new IntPtr(slice.Length));
             }
         }
