@@ -30,7 +30,7 @@ dstring cswrap_dlang_createDString(wchar* str) {
     return temp;
 }
 
-void cswrap_dlang_releaseString(void* ptr) {
+void cswrap_dlang_release(void* ptr) {
     GC.removeRoot(ptr);
 }
 
@@ -67,10 +67,6 @@ void* cswrap_c1__ctor() {
     void* ptr = cast(void*)new c1();
     GC.addRoot(ptr);
     return ptr;
-}
-
-void cswrap_c1__dtor(void* ptr) {
-    GC.removeRoot(ptr);
 }
 
 s2 cswrap_c1_get_getHidden(void* cswrap_c1) {
