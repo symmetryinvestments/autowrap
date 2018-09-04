@@ -43,6 +43,10 @@ const(wchar)* cswrap_stringFunction(wchar* value) {
     return getCSharpString(temp);
 }
 
+s2[] cswrap_arrayFunction(s2[] array) {
+    return arrayFunction(array);
+}
+
 string cswrap_dlang_string_stringFunction(string value) {
     return value.dup;
 }
@@ -67,6 +71,20 @@ void* cswrap_c1__ctor() {
     void* ptr = cast(void*)new c1();
     GC.addRoot(ptr);
     return ptr;
+}
+
+c1[] cswrap_c1_createRange(int capacity) {
+    c1[] t;
+    if (capacity > 0) {
+        t.reserve(capacity);
+    }
+    void* ptr = cast(void*)t.ptr;
+    GC.addRoot(ptr);
+    return t;
+}
+
+void cswrap_c1_rangeAppend(c1[] array, c1 value) {
+    array ~= value;
 }
 
 s2 cswrap_c1_get_getHidden(void* cswrap_c1) {

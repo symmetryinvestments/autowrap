@@ -28,6 +28,14 @@ namespace csharp
             Console.WriteLine($"DLang_WString_StringFunction Result: {wstr}");
             string dstr = library.DLang_DString_StringFunction(testString);
             Console.WriteLine($"DLang_DString_StringFunction Result: {dstr}");
+
+            var arr = new S2[] {new S2(1, "Test1"), new S2(2, "Test2"), new S2(3, "Test3")};
+            Span<S2> retSpan = library.ArrayFunction(arr);
+            var retArr = retSpan.ToArray();
+            Console.WriteLine($"Returned array length: {retArr.Length}");
+            Console.WriteLine(retArr[0].str);
+            Console.WriteLine(retArr[1].str);
+            Console.WriteLine(retArr[2].str);
         }
     }
 }

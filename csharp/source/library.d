@@ -12,6 +12,10 @@ string stringFunction(string value) {
 	return value;
 }
 
+s2[] arrayFunction(s2[] arr) {
+    return arr.dup;
+}
+
 struct s1 {
 	public float value;
 	public s2 nestedStruct;

@@ -10,6 +10,7 @@ csharp.lib
 csharp-test-*
 *.exe
 *.o
+*.so
 *.obj
 *.lst
 

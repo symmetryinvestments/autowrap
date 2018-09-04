@@ -1,5 +1,7 @@
 namespace csharp {
     using System;
+    using System.Collections.Generic;
+    using System.Linq;
     using System.Runtime.InteropServices;
 
     [StructLayout(LayoutKind.Sequential)]
@@ -83,13 +85,11 @@ namespace csharp {
         }
     }
 
-    [StructLayout(LayoutKind.Sequential)]
-    public struct dlang_slice<T> : IDisposable
-    {
-        private IntPtr length;
-        private IntPtr ptr;
+    public struct slice : IDisposable {
+        internal IntPtr length;
+        internal IntPtr ptr;
 
-        public dlang_slice(IntPtr ptr, IntPtr length)
+        public slice(IntPtr ptr, IntPtr length)
         {
             this.ptr = ptr;
             this.length = length;
@@ -99,18 +99,62 @@ namespace csharp {
         {
             library.ReleaseMemory(ptr);
         }
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct dlang_slice<T> : IDisposable
+        where T : unmanaged
+    {
+        private readonly slice ptr;
+
+        public dlang_slice(IntPtr ptr, IntPtr length) {
+            this.ptr = new slice(ptr, length);
+        }
+
+        public dlang_slice(slice ptr) {
+            this.ptr = ptr;
+        }
+
+        public void Dispose() {
+            ptr.Dispose();
+        }
 
         public static implicit operator dlang_slice<T>(Span<T> slice) {
             unsafe {
-                IntPtr tptr = new IntPtr((void*)&slice[0]);
-                return new dlang_slice<T>(tptr, new IntPtr(slice.Length));
+                fixed (T* temp = slice) {
+                    IntPtr tptr = new IntPtr((void*)temp);
+                    return new dlang_slice<T>(tptr, new IntPtr(slice.Length));
+                }
             }
         }
 
         public static implicit operator Span<T>(dlang_slice<T> slice) {
             unsafe {
-                return new Span<T>(slice.ptr.ToPointer(), slice.length.ToInt32());
+                return new Span<T>(slice.ptr.ptr.ToPointer(), slice.ptr.length.ToInt32());
             }
+        }
+
+        internal slice ToSlice() {
+            return ptr;
+        }
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct dlang_refslice<T> : IDisposable
+        where T : DLangBase
+    {
+        private readonly slice ptr;
+
+        public dlang_refslice(IntPtr ptr, IntPtr length) {
+            this.ptr = new slice(ptr, length);
+        }
+
+        public void Dispose() {
+            ptr.Dispose();
+        }
+
+        internal slice ToSlice() {
+            return ptr;
         }
     }
 
@@ -133,6 +177,25 @@ namespace csharp {
     public struct S2 {
         public int value;
         public dlang_string str;
+
+        public S2(int v, string s) {
+            this.value = v;
+            this.str = s;
+        }
+    }
+
+    public abstract class DLangBase : IDisposable {
+        private readonly IntPtr ptr;
+        internal IntPtr Pointer => ptr;
+
+        protected DLangBase(IntPtr ptr) {
+            this.ptr = ptr;
+        }
+
+        public void Dispose()
+        {
+            library.ReleaseMemory(ptr);
+        }
     }
 
     public static class library {
@@ -167,6 +230,15 @@ namespace csharp {
         [DllImport("csharp", EntryPoint = "cswrap_stringFunction", CallingConvention = CallingConvention.Cdecl)]
         [return: MarshalAs(UnmanagedType.LPWStr)]
         public static extern string StringFunction([MarshalAs(UnmanagedType.LPWStr)]string value);  
+
+        [DllImport("csharp", EntryPoint = "cswrap_arrayFunction", CallingConvention = CallingConvention.Cdecl)]
+        private static extern slice ArrayFunction(slice array);
+        public static S2[] ArrayFunction(S2[] array) {
+            dlang_slice<S2> slice = array.AsSpan();
+            var ret = new dlang_slice<S2>(ArrayFunction(slice.ToSlice()));
+            Span<S2> t = ret;
+            return t.ToArray();
+        }
 
         [DllImport("csharp", EntryPoint = "cswrap_s1_getValue", CallingConvention = CallingConvention.Cdecl)]  
         public static extern float S1_GetValue(ref S1 cswrap_s1);
