@@ -67,10 +67,10 @@ void cswrap_s1_setNestedStruct(s1* cswrap_s1, s2 nested) {
     (*cswrap_s1).nestedStruct = nested;
 }
 
-void* cswrap_c1__ctor() {
-    void* ptr = cast(void*)new c1();
-    GC.addRoot(ptr);
-    return ptr;
+c1 cswrap_c1__ctor() {
+    __gshared c1 t = new c1();
+    GC.addRoot(cast(void*)t);
+    return t;
 }
 
 c1[] cswrap_c1_createRange(int capacity) {
@@ -95,14 +95,22 @@ void cswrap_c1_set_setHidden(void* cswrap_c1, s2 value) {
     (cast(c1)cswrap_c1).setHidden(value);
 }
 
-s2 cswrap_c1_get_stringValue(void* cswrap_c1) {
-    return (cast(c1)cswrap_c1).getHidden();
+int cswrap_c1_get_intValue(void* cswrap_c1) {
+    return (cast(c1)cswrap_c1).intValue;
 }
 
-void cswrap_c1_set_stringValue(void* cswrap_c1, wchar[] value) {
-    (cast(c1)cswrap_c1).stringValue = to!string(value);
+void cswrap_c1_set_intValue(void* cswrap_c1, int value) {
+    (cast(c1)cswrap_c1).intValue = value;
 }
 
-wchar[] cswrap_c1_testMemberFunc(void* cswrap_c1, wchar[] test, s1 value) {
-    return to!(wchar[])((cast(c1)cswrap_c1).testMemberFunc(to!string(test), value));
+string cswrap_c1_get_stringValue(void* cswrap_c1) {
+    return (cast(c1)cswrap_c1).stringValue;
+}
+
+void cswrap_c1_set_stringValue(void* cswrap_c1, string value) {
+    (cast(c1)cswrap_c1).stringValue = value;
+}
+
+string cswrap_c1_testMemberFunc(void* cswrap_c1, string test, s1 value) {
+    return (cast(c1)cswrap_c1).testMemberFunc(test, value);
 }

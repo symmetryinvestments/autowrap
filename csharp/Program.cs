@@ -36,6 +36,17 @@ namespace csharp
             Console.WriteLine(retArr[0].str);
             Console.WriteLine(retArr[1].str);
             Console.WriteLine(retArr[2].str);
+
+            var testClass = new C1();
+            Console.WriteLine("Testing Class");
+            testClass.StringValue = "TestStringValue";
+            var tsv = testClass.StringValue;
+            Console.WriteLine($"Class Test String: {tsv}");
+            testClass.IntValue = -1;
+            var isv = testClass.IntValue;
+            Console.WriteLine($"Class Test Int: {isv}");
+            var funcString = testClass.TestMemberFunc("TestMemberFunc", new S1());
+            Console.WriteLine($"Class Func String: {funcString}");
         }
     }
 }

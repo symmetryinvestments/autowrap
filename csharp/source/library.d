@@ -7,8 +7,6 @@ int freeFunction (int value) {
 }
 
 string stringFunction(string value) {
-	import std.stdio;
-	writeln("Printed from D: ", value);
 	return value;
 }
 

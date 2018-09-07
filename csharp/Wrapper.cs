@@ -107,7 +107,7 @@ namespace csharp {
     {
         private readonly slice ptr;
 
-        public dlang_slice(IntPtr ptr, IntPtr length) {
+        private dlang_slice(IntPtr ptr, IntPtr length) {
             this.ptr = new slice(ptr, length);
         }
 
@@ -143,18 +143,34 @@ namespace csharp {
     public struct dlang_refslice<T> : IDisposable
         where T : DLangBase
     {
-        private readonly slice ptr;
+        private readonly dlang_slice<IntPtr> ptr;
 
-        public dlang_refslice(IntPtr ptr, IntPtr length) {
-            this.ptr = new slice(ptr, length);
+        private dlang_refslice(dlang_slice<IntPtr> ptr) {
+            this.ptr = ptr;
         }
 
         public void Dispose() {
             ptr.Dispose();
         }
 
+        public static implicit operator dlang_refslice<T>(T[] slice) {
+            dlang_slice<IntPtr> t = slice.Select(a => a.Pointer).ToArray().AsSpan();
+            return new dlang_refslice<T>(t);
+        }
+
+        public static implicit operator T[](dlang_refslice<T> slice) {
+            Span<IntPtr> t = slice.ptr;
+            Type ti = typeof(T);
+            var ci = ti.GetConstructor(new[] { typeof(IntPtr) });
+            var ol = new List<T>();
+            foreach(var ip in t.ToArray()) {
+                ol.Add((T)ci.Invoke(new object[] {ip}));
+            }
+            return ol.ToArray();
+        }
+
         internal slice ToSlice() {
-            return ptr;
+            return ptr.ToSlice();
         }
     }
 
@@ -185,7 +201,7 @@ namespace csharp {
     }
 
     public abstract class DLangBase : IDisposable {
-        private readonly IntPtr ptr;
+        protected readonly IntPtr ptr;
         internal IntPtr Pointer => ptr;
 
         protected DLangBase(IntPtr ptr) {
@@ -195,6 +211,30 @@ namespace csharp {
         public void Dispose()
         {
             library.ReleaseMemory(ptr);
+        }
+    }
+
+    public class C1 : DLangBase {
+        public C1() : base(library.C1__ctor()) { }
+        private C1(IntPtr ptr) : base(ptr) { }
+
+        public S2 Hidden {
+            get { return library.C1_Get_GetHidden(this.ptr); }
+            set { library.C1_Set_SetHidden(this.ptr, value); }
+        }
+
+        public string StringValue {
+            get { return library.C1_Get_StringValue(this.ptr); }
+            set { library.C1_Set_StringValue(this.ptr, value); }
+        }
+
+        public int IntValue {
+            get { return library.C1_Get_IntValue(this.ptr); }
+            set { library.C1_Set_IntValue(this.ptr, value); }
+        }
+
+        public string TestMemberFunc(string value, S1 test) {
+            return library.C1_TestMemberFunc(this.ptr, value, test);
         }
     }
 
@@ -255,5 +295,28 @@ namespace csharp {
         [DllImport("csharp", EntryPoint = "cswrap_dlang_dstring_stringFunction", CallingConvention = CallingConvention.Cdecl)]  
         public static extern dlang_dstring DLang_DString_StringFunction(dlang_dstring value);
 
+        [DllImport("csharp", EntryPoint = "cswrap_c1__ctor", CallingConvention = CallingConvention.Cdecl)]  
+        public static extern IntPtr C1__ctor();
+
+        [DllImport("csharp", EntryPoint = "cswrap_c1_get_getHidden", CallingConvention = CallingConvention.Cdecl)]  
+        public static extern S2 C1_Get_GetHidden(IntPtr cswrap_c1);
+
+        [DllImport("csharp", EntryPoint = "cswrap_c1_set_setHidden", CallingConvention = CallingConvention.Cdecl)]  
+        public static extern void C1_Set_SetHidden(IntPtr cswrap_c1, S2 value);
+
+        [DllImport("csharp", EntryPoint = "cswrap_c1_get_stringValue", CallingConvention = CallingConvention.Cdecl)]  
+        public static extern dlang_string C1_Get_StringValue(IntPtr cswrap_c1);
+
+        [DllImport("csharp", EntryPoint = "cswrap_c1_set_stringValue", CallingConvention = CallingConvention.Cdecl)]  
+        public static extern void C1_Set_StringValue(IntPtr cswrap_c1, dlang_string value);
+
+        [DllImport("csharp", EntryPoint = "cswrap_c1_get_intValue", CallingConvention = CallingConvention.Cdecl)]  
+        public static extern int C1_Get_IntValue(IntPtr cswrap_c1);
+
+        [DllImport("csharp", EntryPoint = "cswrap_c1_set_intValue", CallingConvention = CallingConvention.Cdecl)]  
+        public static extern void C1_Set_IntValue(IntPtr cswrap_c1, int value);
+
+        [DllImport("csharp", EntryPoint = "cswrap_c1_testMemberFunc", CallingConvention = CallingConvention.Cdecl)]  
+        public static extern dlang_string C1_TestMemberFunc(IntPtr cswrap_c1, dlang_string test, S1 value);
     }
 }
