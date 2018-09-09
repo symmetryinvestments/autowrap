@@ -5,6 +5,13 @@ namespace csharp {
     using System.Reflection;
     using System.Runtime.InteropServices;
 
+    public class DLangException : Exception {
+        public string DLangExceptionText { get; }
+        public DLangException(string dlang) : base() {
+            DLangExceptionText = dlang;
+        }
+    }
+
     [StructLayout(LayoutKind.Sequential)]
     public struct dlang_string {
         private IntPtr length;
@@ -180,6 +187,12 @@ namespace csharp {
     }
 
     [StructLayout(LayoutKind.Sequential)]
+    public struct error_string {
+        public dlang_string str;
+        public ulong errorId;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
     public struct S1 {
         public float value;
         public S2 nestedStruct;
@@ -247,6 +260,8 @@ namespace csharp {
         }
 
 /// Support Methods
+        [DllImport("csharp", EntryPoint = "cswrap_getError", CallingConvention = CallingConvention.Cdecl)]
+        public static extern dlang_wstring GetError(ulong errorId);
 
         [DllImport("csharp", EntryPoint = "cswrap_dlang_createString", CallingConvention = CallingConvention.Cdecl)]
         public static extern dlang_string CreateString([MarshalAs(UnmanagedType.LPWStr)]string str);
@@ -294,6 +309,16 @@ namespace csharp {
             Console.WriteLine($"Array Ref: {slice.ptr.ToInt64()}");
             var ret = new dlang_refslice<C1>(ClassRangeFunction(slice));
             return ret;
+        }
+
+        [DllImport("csharp", EntryPoint = "cswrap_testErrorMessage", CallingConvention = CallingConvention.Cdecl)]
+        private static extern error_string wrap_TestErrorMessage();
+        public static string TestErrorMessage() {
+            var ret = library.wrap_TestErrorMessage();
+            if (ret.errorId != 0) {
+                throw new DLangException(library.GetError(ret.errorId));
+            }
+            return string.Empty;
         }
 
         [DllImport("csharp", EntryPoint = "cswrap_s1_createRange", CallingConvention = CallingConvention.Cdecl)]  

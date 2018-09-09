@@ -3,14 +3,33 @@ module csharp.wrapper;
 import csharp.boilerplate;
 import csharp.library;
 
+import core.atomic;
 import core.memory;
 import std.conv;
 import std.string;
 import std.stdio;
 import std.utf;
 
+shared wstring[ulong] errors;
+shared ulong errorCount = 0;
+
+ulong setError(string error) {
+    ulong t = atomicOp!"+="(errorCount, cast(ulong)1);
+    errors[t] = toUTF16(error);
+    return t;
+}
+
 extern(C):
 export:
+
+struct error_string {
+    string str;
+    ulong errorId;
+}
+
+wstring cswrap_getError(ulong errorId) {
+    return errors[errorId];
+}
 
 string cswrap_dlang_createString(wchar* str) {
     string temp = toUTF8(str.fromStringz());
@@ -55,6 +74,16 @@ c1[] cswrap_classRangeFunction(c1[] array) {
     GC.addRoot(cast(void*)t.ptr);
     writeln("Returning cswrap_classRangeFunction: ", cast(void*)t.ptr);
     return t;
+}
+
+error_string cswrap_testErrorMessage() {
+    error_string ret;
+    try {
+        ret.str = testErrorMessage();
+    } catch (Exception ex) {
+        ret.errorId = setError(ex.toString());
+    }
+    return ret;
 }
 
 string cswrap_dlang_string_stringFunction(string value) {

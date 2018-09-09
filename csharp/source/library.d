@@ -24,6 +24,10 @@ c1[] classRangeFunction(c1[] arr) {
     return arr.dup;
 }
 
+string testErrorMessage() {
+    throw new Exception("Test Error Message");
+}
+
 struct s1 {
 	public float value;
 	public s2 nestedStruct;

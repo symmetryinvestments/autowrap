@@ -53,6 +53,12 @@ namespace csharp
             foreach(var c in retClassArray) {
                 Console.WriteLine($"Class Array Item: {c.StringValue} {c.IntValue}");
             }
+
+            try {
+                var error = library.TestErrorMessage();
+            } catch (DLangException ex) {
+                Console.WriteLine($"Error: {Environment.NewLine}{ex.DLangExceptionText}");
+            }
         }
     }
 }
