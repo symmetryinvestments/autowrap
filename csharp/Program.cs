@@ -47,6 +47,12 @@ namespace csharp
             Console.WriteLine($"Class Test Int: {isv}");
             var funcString = testClass.TestMemberFunc("TestMemberFunc", new S1());
             Console.WriteLine($"Class Func String: {funcString}");
+
+            var classArray = new C1[] { new C1() { StringValue = "Class1", IntValue = 1 }, new C1() { StringValue = "Class2", IntValue = 2 }, new C1() { StringValue = "Class3", IntValue = 3 } };
+            var retClassArray = library.ClassRangeFunction(classArray);
+            foreach(var c in retClassArray) {
+                Console.WriteLine($"Class Array Item: {c.StringValue} {c.IntValue}");
+            }
         }
     }
 }

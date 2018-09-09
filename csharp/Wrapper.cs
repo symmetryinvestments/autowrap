@@ -2,6 +2,7 @@ namespace csharp {
     using System;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Reflection;
     using System.Runtime.InteropServices;
 
     [StructLayout(LayoutKind.Sequential)]
@@ -149,6 +150,10 @@ namespace csharp {
             this.ptr = ptr;
         }
 
+        public dlang_refslice(slice ptr) {
+            this.ptr = new dlang_slice<IntPtr>(ptr);
+        }
+
         public void Dispose() {
             ptr.Dispose();
         }
@@ -161,7 +166,7 @@ namespace csharp {
         public static implicit operator T[](dlang_refslice<T> slice) {
             Span<IntPtr> t = slice.ptr;
             Type ti = typeof(T);
-            var ci = ti.GetConstructor(new[] { typeof(IntPtr) });
+            var ci = ti.GetConstructor(BindingFlags.Instance |BindingFlags.NonPublic, null, new[] { typeof(IntPtr) }, null);
             var ol = new List<T>();
             foreach(var ip in t.ToArray()) {
                 ol.Add((T)ci.Invoke(new object[] {ip}));
@@ -188,7 +193,6 @@ namespace csharp {
         }
     }
 
-
     [StructLayout(LayoutKind.Sequential)]
     public struct S2 {
         public int value;
@@ -208,8 +212,7 @@ namespace csharp {
             this.ptr = ptr;
         }
 
-        public void Dispose()
-        {
+        public void Dispose() {
             library.ReleaseMemory(ptr);
         }
     }
@@ -280,6 +283,22 @@ namespace csharp {
             return t.ToArray();
         }
 
+        [DllImport("csharp", EntryPoint = "cswrap_classRangeFunction", CallingConvention = CallingConvention.Cdecl)]
+        private static extern slice ClassRangeFunction(slice array);
+        public static C1[] ClassRangeFunction(C1[] array) {
+            var slice = library.C1_CreateRange(array.Length);
+            foreach(var t in array) {
+                slice = library.C1_AppendRange(slice, t.Pointer);
+                Console.WriteLine($"Class Ref: {t.Pointer.ToInt64()}");
+            }
+            Console.WriteLine($"Array Ref: {slice.ptr.ToInt64()}");
+            var ret = new dlang_refslice<C1>(ClassRangeFunction(slice));
+            return ret;
+        }
+
+        [DllImport("csharp", EntryPoint = "cswrap_s1_createRange", CallingConvention = CallingConvention.Cdecl)]  
+        public static extern slice S1_CreateRange();
+
         [DllImport("csharp", EntryPoint = "cswrap_s1_getValue", CallingConvention = CallingConvention.Cdecl)]  
         public static extern float S1_GetValue(ref S1 cswrap_s1);
 
@@ -297,6 +316,12 @@ namespace csharp {
 
         [DllImport("csharp", EntryPoint = "cswrap_c1__ctor", CallingConvention = CallingConvention.Cdecl)]  
         public static extern IntPtr C1__ctor();
+
+        [DllImport("csharp", EntryPoint = "cswrap_c1_createRange", CallingConvention = CallingConvention.Cdecl)]  
+        public static extern slice C1_CreateRange(int capacity);
+
+        [DllImport("csharp", EntryPoint = "cswrap_c1_appendRange", CallingConvention = CallingConvention.Cdecl)]  
+        public static extern slice C1_AppendRange(slice ptr, IntPtr appendPtr);
 
         [DllImport("csharp", EntryPoint = "cswrap_c1_get_getHidden", CallingConvention = CallingConvention.Cdecl)]  
         public static extern S2 C1_Get_GetHidden(IntPtr cswrap_c1);

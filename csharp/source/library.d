@@ -14,6 +14,16 @@ s2[] arrayFunction(s2[] arr) {
     return arr.dup;
 }
 
+c1[] classRangeFunction(c1[] arr) {
+    import std.stdio;
+    writeln("Array Length: ", arr.length);
+    foreach (c1 a; arr) {
+        writeln("Class String Value: ", a.stringValue);
+        writeln("Class Int Value: ", a.intValue);
+    }
+    return arr.dup;
+}
+
 struct s1 {
 	public float value;
 	public s2 nestedStruct;

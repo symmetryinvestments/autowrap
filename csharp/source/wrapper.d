@@ -47,6 +47,16 @@ s2[] cswrap_arrayFunction(s2[] array) {
     return arrayFunction(array);
 }
 
+c1[] cswrap_classRangeFunction(c1[] array) {
+    import std.stdio;
+    writeln("Entering cswrap_classRangeFunction: ", cast(void*)array.ptr);
+    writeln("Entering cswrap_classRangeFunction: ", cast(void*)array.length);
+    c1[] t = classRangeFunction(array);
+    GC.addRoot(cast(void*)t.ptr);
+    writeln("Returning cswrap_classRangeFunction: ", cast(void*)t.ptr);
+    return t;
+}
+
 string cswrap_dlang_string_stringFunction(string value) {
     return value.dup;
 }
@@ -59,6 +69,16 @@ dstring cswrap_dlang_dstring_stringFunction(dstring value) {
     return value.dup;
 }
 
+s1[] cswrap_s1_createRange(int capacity) {
+    s1[] t;
+    if (capacity > 0) {
+        t.reserve(capacity);
+    }
+    void* ptr = cast(void*)t.ptr;
+    GC.addRoot(ptr);
+    return t;
+}
+
 float cswrap_s1_getValue(s1* cswrap_s1) {
     return (*cswrap_s1).value;
 }
@@ -68,7 +88,7 @@ void cswrap_s1_setNestedStruct(s1* cswrap_s1, s2 nested) {
 }
 
 c1 cswrap_c1__ctor() {
-    __gshared c1 t = new c1();
+    c1 t = new c1();
     GC.addRoot(cast(void*)t);
     return t;
 }
@@ -83,8 +103,9 @@ c1[] cswrap_c1_createRange(int capacity) {
     return t;
 }
 
-void cswrap_c1_rangeAppend(c1[] array, c1 value) {
-    array ~= value;
+c1[] cswrap_c1_appendRange(c1[] ptr, void* appendPtr) {
+    ptr ~= cast(c1)appendPtr;
+    return ptr;
 }
 
 s2 cswrap_c1_get_getHidden(void* cswrap_c1) {
