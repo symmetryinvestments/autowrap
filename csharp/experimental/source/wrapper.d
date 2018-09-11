@@ -27,11 +27,6 @@ struct errorValue(T) {
     ulong errorId;
 }
 
-struct error_string {
-    string str;
-    ulong errorId;
-}
-
 wstring cswrap_getError(ulong errorId) {
     return errors[errorId];
 }
