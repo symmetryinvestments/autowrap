@@ -19,8 +19,73 @@ ulong setError(string error) {
 extern(C):
 export:
 
+struct error_bool {
+    bool value;
+    ulong errorId;
+}
+
+struct error_byte {
+    byte value;
+    ulong errorId;
+}
+
+struct error_ubyte {
+    ubyte value;
+    ulong errorId;
+}
+
+struct error_short {
+    short value;
+    ulong errorId;
+}
+
+struct error_ushort {
+    ushort value;
+    ulong errorId;
+}
+
+struct error_int {
+    int value;
+    ulong errorId;
+}
+
+struct error_uint {
+    uint value;
+    ulong errorId;
+}
+
+struct error_long {
+    long value;
+    ulong errorId;
+}
+
+struct error_ulong {
+    ulong value;
+    ulong errorId;
+}
+
+struct error_float {
+    float value;
+    ulong errorId;
+}
+
+struct error_double {
+    double value;
+    ulong errorId;
+}
+
 struct error_string {
-    string str;
+    string value;
+    ulong errorId;
+}
+
+struct error_wstring {
+    wstring value;
+    ulong errorId;
+}
+
+struct error_dstring {
+    dstring value;
     ulong errorId;
 }
 
