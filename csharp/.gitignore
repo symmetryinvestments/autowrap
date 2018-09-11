@@ -1,5 +1,6 @@
 .dub
 docs.json
+*selections.json
 __dummy.html
 docs/
 csharp.so
@@ -10,6 +11,7 @@ csharp.lib
 csharp-test-*
 *.exe
 *.o
+*.a
 *.so
 *.obj
 *.lst

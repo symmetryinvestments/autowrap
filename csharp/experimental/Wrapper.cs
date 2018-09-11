@@ -187,8 +187,9 @@ namespace csharp {
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct error_string {
-        public dlang_string str;
+    public struct ErrorString
+    {
+        public dlang_string value;
         public ulong errorId;
     }
 
@@ -273,7 +274,7 @@ namespace csharp {
         public static extern dlang_dstring CreateDString([MarshalAs(UnmanagedType.LPWStr)]string str);
 
         [DllImport("csharp", EntryPoint = "cswrap_dlang_release", CallingConvention = CallingConvention.Cdecl)]
-        public static extern dlang_dstring ReleaseMemory(IntPtr ptr);
+        public static extern void ReleaseMemory(IntPtr ptr);
 
         [DllImport("csharp", EntryPoint = "rt_init", CallingConvention = CallingConvention.Cdecl)]
         public static extern int DRuntimeInitialize();  
@@ -312,7 +313,7 @@ namespace csharp {
         }
 
         [DllImport("csharp", EntryPoint = "cswrap_testErrorMessage", CallingConvention = CallingConvention.Cdecl)]
-        private static extern error_string wrap_TestErrorMessage();
+        private static extern ErrorString wrap_TestErrorMessage();
         public static string TestErrorMessage() {
             var ret = library.wrap_TestErrorMessage();
             if (ret.errorId != 0) {

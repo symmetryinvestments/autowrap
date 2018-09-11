@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <TargetFramework>netcoreapp2.1</TargetFramework>
+    <RootNamespace>Autowrap.CSharp</RootNamespace>
+    <LangVersion>7.3</LangVersion>
+    <RuntimeIdentifiers>linux-x64;linux-x86;windows-x64;windows-x86</RuntimeIdentifiers>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <AssemblyName>Autowrap.CSharp</AssemblyName>
+  </PropertyGroup>
+
+</Project>

@@ -2,6 +2,5 @@ name "csharp"
 description "Wrap existing D code for use in C#."
 authors "Adam Wilson"
 license "BSD"
+copyright "Copyright © 2018, Symmetry Investments LP"
 targetType "dynamicLibrary"
-
-

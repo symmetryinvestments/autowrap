@@ -1,0 +1,6 @@
+name "autowrap-csharp"
+description "Support library for AutoWrap CSharp support."
+authors "Adam Wilson"
+copyright "Copyright © 2018, Symmetry Investments LP"
+license "BSD"
+targetType "library"

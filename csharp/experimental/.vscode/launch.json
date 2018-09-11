@@ -5,18 +5,22 @@
    "version": "0.2.0",
    "configurations": [
         {
+            "env": {
+                "LD_LIBRARY_PATH" : "${workspaceFolder}"
+            },
             "name": ".NET Core Launch (console)",
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build",
             // If you have changed target frameworks, make sure to update the program path.
-            "program": "${workspaceFolder}/experimental/bin/Debug/netcoreapp2.1/csharp.dll",
+            "program": "${workspaceFolder}/bin/Debug/netcoreapp2.1/csharp.dll",
             "args": [],
-            "cwd": "${workspaceFolder}/experimental",
+            "cwd": "${workspaceFolder}",
             // For more information about the 'console' field, see https://github.com/OmniSharp/omnisharp-vscode/blob/master/debugger-launchjson.md#console-terminal-window
             "console": "internalConsole",
             "stopAtEntry": false,
-            "internalConsoleOptions": "openOnSessionStart"
+            "internalConsoleOptions": "openOnSessionStart",
+            "enableStepFiltering": false
         },
         {
             "name": ".NET Core Attach",
