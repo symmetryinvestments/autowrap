@@ -313,13 +313,13 @@ namespace csharp {
         }
 
         [DllImport("csharp", EntryPoint = "cswrap_testErrorMessage", CallingConvention = CallingConvention.Cdecl)]
-        private static extern ErrorString wrap_TestErrorMessage();
-        public static string TestErrorMessage() {
-            var ret = library.wrap_TestErrorMessage();
+        private static extern ErrorString wrap_TestErrorMessage(bool throwError);
+        public static string TestErrorMessage(bool throwError) {
+            var ret = library.wrap_TestErrorMessage(throwError);
             if (ret.errorId != 0) {
                 throw new DLangException(library.GetError(ret.errorId));
             }
-            return string.Empty;
+            return ret.value;
         }
 
         [DllImport("csharp", EntryPoint = "cswrap_s1_createRange", CallingConvention = CallingConvention.Cdecl)]  

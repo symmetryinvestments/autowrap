@@ -66,8 +66,10 @@ namespace csharp
             Console.WriteLine($"Struct Value: {s1value}");
 
             //Test error messages
+            var errorResult = library.TestErrorMessage(false);
+            Console.WriteLine($"No Error Message: {errorResult}");
             try {
-                var error = library.TestErrorMessage();
+                var error = library.TestErrorMessage(true);
             } catch (DLangException ex) {
                 Console.WriteLine($"Error: {Environment.NewLine}{ex.DLangExceptionText}");
             }

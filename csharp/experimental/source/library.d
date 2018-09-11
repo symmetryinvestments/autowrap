@@ -24,8 +24,11 @@ c1[] classRangeFunction(c1[] arr) {
     return arr.dup;
 }
 
-string testErrorMessage() {
-    throw new Exception("Test Error Message");
+string testErrorMessage(bool throwError) {
+    if(throwError) 
+        throw new Exception("Test Error Message");
+    else
+        return "No Error Thrown";
 }
 
 struct s1 {

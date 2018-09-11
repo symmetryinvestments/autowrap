@@ -22,6 +22,11 @@ ulong setError(string error) {
 extern(C):
 export:
 
+struct errorValue(T) {
+    T value;
+    ulong errorId;
+}
+
 struct error_string {
     string str;
     ulong errorId;
@@ -76,10 +81,11 @@ c1[] cswrap_classRangeFunction(c1[] array) {
     return t;
 }
 
-error_string cswrap_testErrorMessage() {
-    error_string ret;
+errorValue!string cswrap_testErrorMessage(bool throwError) {
+    errorValue!string ret;
     try {
-        ret.str = testErrorMessage();
+        ret.value = testErrorMessage(throwError);
+        GC.addRoot(cast(void*)ret.value.ptr);
     } catch (Exception ex) {
         ret.errorId = setError(ex.toString());
     }
