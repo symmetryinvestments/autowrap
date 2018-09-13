@@ -13,6 +13,7 @@ csharp-test-*
 *.o
 *.a
 *.so
+*.dll
 *.obj
 *.lst
 

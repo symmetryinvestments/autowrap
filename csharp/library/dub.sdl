@@ -1,4 +1,4 @@
-name "autowrap-csharp"
+name "autowrap-support"
 description "Support library for AutoWrap CSharp support."
 authors "Adam Wilson"
 copyright "Copyright © 2018, Symmetry Investments LP"

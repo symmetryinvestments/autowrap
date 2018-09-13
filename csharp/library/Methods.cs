@@ -20,10 +20,10 @@ namespace Autowrap.CSharp {
                 stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("Autowrap.CSharp.libautowrap.x86.so");
             }
             if (Environment.Is64BitProcess && RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
-                stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("Autowrap.CSharp.libautowrap.x64.dll");
+                stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("Autowrap.CSharp.autowrap.x64.dll");
             }
             if (!Environment.Is64BitProcess && RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
-                stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("Autowrap.CSharp.libautowrap.x86.dll");
+                stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("Autowrap.CSharp.autowrap.x86.dll");
             }
             if (stream != null) {
                 using(var file = new FileStream(outputName, FileMode.OpenOrCreate, FileAccess.Write)) {
