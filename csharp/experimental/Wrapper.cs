@@ -1,9 +1,11 @@
 namespace csharp {
     using System;
     using System.Collections.Generic;
+    using System.IO;
     using System.Linq;
     using System.Reflection;
     using System.Runtime.InteropServices;
+    using Mono.Unix;
 
     public class DLangException : Exception {
         public string DLangExceptionText { get; }
@@ -257,6 +259,29 @@ namespace csharp {
 
     public static class library {
         static library() {
+            Stream stream = null;
+            var outputName = RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? "libcsharp.dylib" : RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? "libcsharp.so" : "csharp.dll";
+
+            var names = Assembly.GetExecutingAssembly().GetManifestResourceNames();
+            if (Environment.Is64BitProcess && RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
+                stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("csharp.libcsharp.x64.so");
+            }
+            if (!Environment.Is64BitProcess && RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
+                stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("csharp.libcsharp.x86.so");
+            }
+            if (stream != null) {
+                using(var file = new FileStream(outputName, FileMode.OpenOrCreate, FileAccess.Write)) {
+                    stream.CopyTo(file);
+                    if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
+                        var ufi = new Mono.Unix.UnixFileInfo(outputName);
+                        ufi.FileAccessPermissions |= FileAccessPermissions.UserExecute | FileAccessPermissions.GroupExecute | FileAccessPermissions.OtherExecute; 
+                    }
+                }
+            }
+            else {
+                throw new DllNotFoundException($"The required native assembly was not found for the current operating system and process architecture.");
+            }
+
             DRuntimeInitialize();
         }
 
@@ -277,9 +302,9 @@ namespace csharp {
         public static extern void ReleaseMemory(IntPtr ptr);
 
         [DllImport("csharp", EntryPoint = "rt_init", CallingConvention = CallingConvention.Cdecl)]
-        public static extern int DRuntimeInitialize();  
+        public static extern int DRuntimeInitialize();
         [DllImport("csharp", EntryPoint = "rt_term", CallingConvention = CallingConvention.Cdecl)]
-        public static extern int DRuntimeTerminate();  
+        public static extern int DRuntimeTerminate();
 
 /// Library Methods
 
@@ -287,8 +312,7 @@ namespace csharp {
         public static extern int FreeFunction(int value);  
 
         [DllImport("csharp", EntryPoint = "cswrap_stringFunction", CallingConvention = CallingConvention.Cdecl)]
-        [return: MarshalAs(UnmanagedType.LPWStr)]
-        public static extern string StringFunction([MarshalAs(UnmanagedType.LPWStr)]string value);  
+        public static extern dlang_string StringFunction(dlang_string value);  
 
         [DllImport("csharp", EntryPoint = "cswrap_arrayFunction", CallingConvention = CallingConvention.Cdecl)]
         private static extern slice ArrayFunction(slice array);

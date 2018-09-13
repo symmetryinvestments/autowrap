@@ -5,9 +5,13 @@
     <TargetFramework>netcoreapp2.1</TargetFramework>
     <RootNamespace>Autowrap.CSharp</RootNamespace>
     <LangVersion>7.3</LangVersion>
-    <RuntimeIdentifiers>linux-x64;linux-x86;windows-x64;windows-x86</RuntimeIdentifiers>
+    <RuntimeIdentifiers>linux-x64;linux-x86;windows-x64;windows-x86;osx-x64</RuntimeIdentifiers>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <AssemblyName>Autowrap.CSharp</AssemblyName>
   </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Mono.Posix.NETStandard" Version="1.0.0" />
+  </ItemGroup>
 
 </Project>

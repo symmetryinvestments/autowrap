@@ -10,5 +10,8 @@ autowrap-csharp.lib
 autowrap-csharp-test-*
 *.exe
 *.o
+*.so
+*.a
+*.dll
 *.obj
 *.lst

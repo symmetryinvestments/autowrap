@@ -18,7 +18,7 @@ namespace csharp
             Console.WriteLine("Testing Primitive Types (String)");
             string testString = "Hello World!";
             var sret = library.StringFunction(testString);
-            if (sret.Equals(testString, StringComparison.Ordinal)) {
+            if (sret.ToString().Equals(testString, StringComparison.Ordinal)) {
                 Console.WriteLine($"Expected: {testString} - Actual: {sret}");
             }
             Console.WriteLine($"StringFunction Result: {sret}");

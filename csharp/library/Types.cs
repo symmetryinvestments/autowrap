@@ -1,4 +1,5 @@
 namespace Autowrap.CSharp {
+    using System;
     using System.Reflection;
     using System.Runtime.InteropServices;
 
@@ -77,6 +78,20 @@ namespace Autowrap.CSharp {
     public struct ErrorDouble
     {
         public double value;
+        public ulong errorId;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct ErrorIntPtr
+    {
+        public IntPtr value;
+        public ulong errorId;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct ErrorUIntPtr
+    {
+        public UIntPtr value;
         public ulong errorId;
     }
 

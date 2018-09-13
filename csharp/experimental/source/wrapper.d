@@ -57,9 +57,8 @@ int cswrap_freeFunction (int value) {
     return freeFunction(value);
 }
 
-const(wchar)* cswrap_stringFunction(wchar* value) {
-    string temp = stringFunction(toUTF8(value.fromStringz()));
-    return getCSharpString(temp);
+string cswrap_stringFunction(string value) {
+    return stringFunction(value);
 }
 
 s2[] cswrap_arrayFunction(s2[] array) {
@@ -67,12 +66,8 @@ s2[] cswrap_arrayFunction(s2[] array) {
 }
 
 c1[] cswrap_classRangeFunction(c1[] array) {
-    import std.stdio;
-    writeln("Entering cswrap_classRangeFunction: ", cast(void*)array.ptr);
-    writeln("Entering cswrap_classRangeFunction: ", cast(void*)array.length);
     c1[] t = classRangeFunction(array);
     GC.addRoot(cast(void*)t.ptr);
-    writeln("Returning cswrap_classRangeFunction: ", cast(void*)t.ptr);
     return t;
 }
 

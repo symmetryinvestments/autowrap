@@ -1,19 +1,5 @@
 module autowrap.csharp.boilerplate;
 
-public wchar* getCSharpString(string str) @trusted {
-    import std.utf;
-    import core.stdc.stdlib;
-
-    wstring wstr = toUTF16(str);
-    wchar* temp = cast(wchar*) malloc(wstr.length * wchar.sizeof + 1);
-    for(int i = 0; i < wstr.length; i++) {
-        temp[i] = wstr[i];
-    }
-    temp[wstr.length] = 0;
-
-    return temp;
-}
-
 //Shared library boilerplate for windows
 version(Windows) {
 
