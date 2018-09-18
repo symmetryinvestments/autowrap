@@ -29,9 +29,9 @@
   <ItemGroup>
     <EmbeddedResource Include="libautowrap.x64.so" />
     <EmbeddedResource Include="libautowrap.x86.so" />
-    <!--<EmbeddedResource Include="libautowrap.dylib" />
     <EmbeddedResource Include="autowrap.x64.dll" />
-    <EmbeddedResource Include="autowrap.x86.dll" />-->
+    <EmbeddedResource Include="autowrap.x86.dll" />
+    <!--<EmbeddedResource Include="libautowrap.dylib" />-->
   </ItemGroup>
 
 </Project>
