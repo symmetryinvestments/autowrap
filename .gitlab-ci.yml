@@ -1,5 +1,8 @@
 before_script:
   - "cd ./csharp/library/"
+  - "git submodule sync --recursive"
+  - "git clean -fdx"
+  - "git submodule update --init --recursive"
 
 stages:
   - native
@@ -16,8 +19,6 @@ Build Autowrap CSharp Linux x64 Native:
     - csharp
 
   script:
-    - "git submodule sync --recursive"
-    - "git submodule update --init --recursive"
     - "dub build --arch=x86_64 --force"
     - "mv libautowrap-support.so ../../libautowrap.x64.so"
 
@@ -36,8 +37,6 @@ Build Autowrap CSharp Linux x86 Native:
     - csharp
 
   script:
-    - "git submodule sync --recursive"
-    - "git submodule update --init --recursive"
     - "dub build --arch=x86 --force"
     - "mv libautowrap-support.so ../../libautowrap.x86.so"
 
@@ -56,8 +55,6 @@ Build Autowrap CSharp Windows x64 Native:
     - csharp
 
   script:
-    - "git submodule sync --recursive"
-    - "git submodule update --init --recursive"
     - "dub build --arch=x86_64 --force"
     - "move autowrap-support.dll ..\\..\\autowrap.x64.dll"
 
@@ -76,8 +73,6 @@ Build Autowrap CSharp Windows x86 Native:
     - csharp
 
   script:
-    - "git submodule sync --recursive"
-    - "git submodule update --init --recursive"
     - "dub build --arch=x86 --force"
     - "move autowrap-support.dll ..\\..\\autowrap.x86.dll"
 
@@ -95,11 +90,9 @@ Build Autowrap CSharp .NET Library:
     - csharp
 
   script:
-    - "git submodule sync --recursive"
-    - "git submodule update --init --recursive"
-    - "wget https://gitlab.com/$CI_PROJECT_NAMESPACE/$CI_PROJECT_NAME/-/jobs/artifacts/$CI_COMMIT_REF_SLUG/raw/libautowrap.x64.so?job=$CI_JOB_NAME"
-    - "wget https://gitlab.com/$CI_PROJECT_NAMESPACE/$CI_PROJECT_NAME/-/jobs/artifacts/$CI_COMMIT_REF_SLUG/raw/libautowrap.x86.so?job=$CI_JOB_NAME"
-    - "wget https://gitlab.com/$CI_PROJECT_NAMESPACE/$CI_PROJECT_NAME/-/jobs/artifacts/$CI_COMMIT_REF_SLUG/raw/autowrap.x64.dll?job=$CI_JOB_NAME"
-    - "wget https://gitlab.com/$CI_PROJECT_NAMESPACE/$CI_PROJECT_NAME/-/jobs/artifacts/$CI_COMMIT_REF_SLUG/raw/autowrap.x86.dll?job=$CI_JOB_NAME"
+    - "mv ../../libautowrap.x64.so libautowrap.x64.so"
+    - "mv ../../libautowrap.x86.so libautowrap.x86.so"
+    - "mv ../../autowrap.x64.dll autowrap.x64.dll"
+    - "mv ../../autowrap.x86.dll autowrap.x86.dll"
     - "dotnet build"
     - "dotnet pack"
