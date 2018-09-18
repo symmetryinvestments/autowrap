@@ -11,6 +11,7 @@ Build Autowrap CSharp Linux x64 Native:
   tags:
     - linux
     - dmd
+    - dub 
   only:
     - csharp
 
@@ -18,7 +19,7 @@ Build Autowrap CSharp Linux x64 Native:
     - "git submodule sync --recursive"
     - "git submodule update --init --recursive"
     - "dub build --arch=x86_64 --force"
-    - "mv libautowrap-support.so libautowrap.x64.so"
+    - "mv libautowrap-support.so ../../libautowrap.x64.so"
 
   artifacts:
     paths:
@@ -30,6 +31,7 @@ Build Autowrap CSharp Linux x86 Native:
   tags:
     - linux
     - dmd
+    - dub 
   only:
     - csharp
 
@@ -37,7 +39,7 @@ Build Autowrap CSharp Linux x86 Native:
     - "git submodule sync --recursive"
     - "git submodule update --init --recursive"
     - "dub build --arch=x86 --force"
-    - "mv libautowrap-support.so libautowrap.x86.so"
+    - "mv libautowrap-support.so ../../libautowrap.x86.so"
 
   artifacts:
     paths:
@@ -49,6 +51,7 @@ Build Autowrap CSharp Windows x64 Native:
   tags:
     - windows
     - dmd
+    - dub 
   only:
     - csharp
 
@@ -56,7 +59,7 @@ Build Autowrap CSharp Windows x64 Native:
     - "git submodule sync --recursive"
     - "git submodule update --init --recursive"
     - "dub build --arch=x86_64 --force"
-    - "ren autowrap-support.dll autowrap.x64.dll"
+    - "move autowrap-support.dll ..\\..\\autowrap.x64.dll"
 
   artifacts:
     paths:
@@ -68,6 +71,7 @@ Build Autowrap CSharp Windows x86 Native:
   tags:
     - windows
     - dmd
+    - dub 
   only:
     - csharp
 
@@ -75,7 +79,7 @@ Build Autowrap CSharp Windows x86 Native:
     - "git submodule sync --recursive"
     - "git submodule update --init --recursive"
     - "dub build --arch=x86 --force"
-    - "ren autowrap-support.dll autowrap.x86.dll"
+    - "move autowrap-support.dll ..\\..\\autowrap.x86.dll"
 
   artifacts:
     paths:
