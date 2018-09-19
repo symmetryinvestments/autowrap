@@ -1,5 +1,7 @@
 import std.datetime: DateTime, Date;
 
+import not_wrapped: NotWrappedInt;
+
 export auto createIntPoint(int x, int y) {
     import templates: Point;
     return Point!int(x, y);
@@ -113,6 +115,6 @@ export int theYear(Date d) {
 }
 
 
-export int addWithDefault(int i, int j = 42) {
-    return i + j;
+export int addWithDefault(int i, NotWrappedInt j = NotWrappedInt(42)) {
+    return i + j.value;
 }
