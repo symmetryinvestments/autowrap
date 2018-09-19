@@ -111,3 +111,8 @@ export struct ApiOuter {
 export int theYear(Date d) {
     return d.year;
 }
+
+
+export int addWithDefault(int i, int j = 42) {
+    return i + j;
+}

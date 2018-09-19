@@ -3,7 +3,8 @@ from simple import (Prefix, Adder, IntString, create_int_point, create_outer,
                     date_time_array, points, tuple_of_date_times,
                     create_typedef_foo, create_date, Foo, product,
                     identity_int, ApiOuter, NotWrappedInner, SafePureEtcStruct,
-                    the_year, String, other_string_as_param, OtherString)
+                    the_year, String, other_string_as_param, OtherString,
+                    add_with_default)
 from datetime import date
 import pytest
 
@@ -169,3 +170,8 @@ def test_wrap_all_string():
 
 def test_wrap_all_other_string_as_param():
     assert other_string_as_param(OtherString("hello ")) == "hello quux"
+
+
+def test_add_with_default():
+    assert add_with_default(1, 2) == 3
+    assert add_with_default(1) == 43
