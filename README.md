@@ -82,12 +82,12 @@ The camelCase D functions will be PascalCase in Excel.
 ## Python versions
 
 Since autowrap depends on PyD, the version of python to use must be specified.
-The default is `python37`. You can either specify the configuration explicity,
-e.g. `subConfiguration "autowrap:python" "python36"` or you can use the `env`
-configuration e.g. `subConfiguration "autowrap:python" "env"`. In order to use
-the `env` configuration your must first set the relevant environment variables
-using the `pyd_set_env_vars.{sh,bat}` scripts, which you can copy to your
-current working directory by running `dub run pyd:setup`. See
+You can either specify the configuration explicity, e.g.
+`subConfiguration "autowrap:python" "python36"` or you can use the default `env`
+configuration. In order to build using the `env` configuration your must first
+set the relevant environment variables using the `pyd_set_env_vars.{sh,bat}`
+scripts, which you can copy to your current working directory by running
+`dub run pyd:setup`. See
 [the pyd docs](https://pyd.readthedocs.io/en/latest/dub.html) for more
 information.
 

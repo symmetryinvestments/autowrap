@@ -9,6 +9,10 @@ dependency "pyd" path="../pyd"
 dependency "autowrap:reflection" path="../reflection"
 versions "PydPythonExtension"
 
+configuration "env" {
+    subConfiguration "pyd" "env"
+}
+
 configuration "python37" {
     subConfiguration "pyd" "python37"
 }
@@ -31,8 +35,4 @@ configuration "python33" {
 
 configuration "python27" {
     subConfiguration "pyd" "python27"
-}
-
-configuration "env" {
-    subConfiguration "pyd" "env"
 }
