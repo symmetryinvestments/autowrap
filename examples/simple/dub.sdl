@@ -3,17 +3,21 @@ targetType "dynamicLibrary"
 dependency "autowrap:python" path="../../python"
 
 configuration "python37" {
-     subConfiguration "autowrap:python" "python37"
+    subConfiguration "autowrap:python" "python37"
 }
 
 configuration "python36" {
-     subConfiguration "autowrap:python" "python36"
+    subConfiguration "autowrap:python" "python36"
 }
 
 configuration "python33" {
-     subConfiguration "autowrap:python" "python33"
+    subConfiguration "autowrap:python" "python33"
 }
 
 configuration "python27" {
-     subConfiguration "autowrap:python" "python27"
+    subConfiguration "autowrap:python" "python27"
+}
+
+configuration "env" {
+    subConfiguration "autowrap:python" "env"
 }

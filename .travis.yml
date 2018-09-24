@@ -13,16 +13,15 @@ matrix:
   allow_failures:
     - d: dmd-nightly
 
-env:
-  - DUB_CONFIGURATION=python27
-
 install:
   - virtualenv autowrapenv
   - source autowrapenv/bin/activate
   - pip install pytest
 
 script:
-  - make
+  - DUB_CONFIGURATION=python27 make
+  - dub run pyd:setup && source pyd_set_env_vars.sh
+  - DUB_CONFIGURATION=env make
   - dub run -c unittest-travis --build=unittest-cov
 
 after_success:
