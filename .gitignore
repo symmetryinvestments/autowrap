@@ -9,3 +9,5 @@ ut
 *.lib
 *.dll
 *.so
+*.a
+*.lst

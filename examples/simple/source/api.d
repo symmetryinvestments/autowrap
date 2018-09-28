@@ -1,5 +1,7 @@
 import std.datetime: DateTime, Date;
 
+import not_wrapped: NotWrappedInt;
+
 export auto createIntPoint(int x, int y) {
     import templates: Point;
     return Point!int(x, y);
@@ -110,4 +112,9 @@ export struct ApiOuter {
 
 export int theYear(Date d) {
     return d.year;
+}
+
+
+export int addWithDefault(int i, NotWrappedInt j = NotWrappedInt(42)) {
+    return i + j.value;
 }

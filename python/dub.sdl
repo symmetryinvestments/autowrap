@@ -2,11 +2,16 @@ name "python"
 description "Wrap existing D code for use in python"
 authors "Atila Neves"
 license "BSD"
-targetType "sourceLibrary"
+targetType "library"
 preBuildCommands "[ -e $PACKAGE_DIR/druntime.o ] || gcc -c -fPIC $PACKAGE_DIR/source/autowrap/python/druntime.c -o $PACKAGE_DIR/druntime.o" platform="linux"
 sourceFiles "$PACKAGE_DIR/druntime.o" platform="linux"
-dependency "pyd" version="~master"
+dependency "pyd" path="../pyd"
 dependency "autowrap:reflection" path="../reflection"
+versions "PydPythonExtension"
+
+configuration "env" {
+    subConfiguration "pyd" "env"
+}
 
 configuration "python37" {
     subConfiguration "pyd" "python37"
@@ -30,5 +35,4 @@ configuration "python33" {
 
 configuration "python27" {
     subConfiguration "pyd" "python27"
-    versions "Python2" "PydPythonExtension"
 }

@@ -132,21 +132,7 @@ string pydInitMixin(in string libraryName) @safe pure {
 
     if(!__ctfe) return null;
 
-    version(Python2) {
-        return q{
-            import pyd.exception: exception_catcher;
-            import pyd.thread: ensureAttached;
-            import pyd.def: pyd_module_name;
-            extern(C) export void init%s() {
-                exception_catcher(delegate void() {
-                        ensureAttached();
-                        pyd_module_name = "%s";
-                        PydMain();
-                    });
-
-            }
-        }.format(libraryName, libraryName);
-    } else {
+    version(Python_3_0_Or_Later) {
         return q{
             import deimos.python.object: PyObject;
             extern(C) export PyObject* PyInit_%s() {
@@ -160,6 +146,20 @@ string pydInitMixin(in string libraryName) @safe pure {
                         PydMain();
                         return pyd_modules[""];
                     });
+            }
+        }.format(libraryName, libraryName);
+    } else {
+        return q{
+            import pyd.exception: exception_catcher;
+            import pyd.thread: ensureAttached;
+            import pyd.def: pyd_module_name;
+            extern(C) export void init%s() {
+                exception_catcher(delegate void() {
+                        ensureAttached();
+                        pyd_module_name = "%s";
+                        PydMain();
+                    });
+
             }
         }.format(libraryName, libraryName);
     }
