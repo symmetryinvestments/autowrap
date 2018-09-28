@@ -1,6 +1,6 @@
 name "autowrap"
 description "Wrap existing D code for use in other languages"
-authors "Atila Neves"
+authors "Atila Neves" "Adam Wilson"
 license "BSD"
 targetType "none"
 
@@ -11,7 +11,7 @@ dependency ":excel" version="*"
 subPackage "reflection"
 subPackage "python"
 subPackage "excel"
-
+subPackage "csharp"
 
 configuration "unittest" {
     targetType "executable"

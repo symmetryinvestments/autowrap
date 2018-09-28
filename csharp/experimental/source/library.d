@@ -1,8 +1,8 @@
 module csharp.library;
 
-export:
+//export:
 
-int freeFunction (int value) {
+export int freeFunction (int value) {
 	return value;
 }
 

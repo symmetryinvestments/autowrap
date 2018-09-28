@@ -192,7 +192,7 @@ namespace csharp {
     public struct ErrorString
     {
         public dlang_string value;
-        public ulong errorId;
+        public dlang_wstring error;
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -286,8 +286,8 @@ namespace csharp {
         }
 
 /// Support Methods
-        [DllImport("csharp", EntryPoint = "cswrap_getError", CallingConvention = CallingConvention.Cdecl)]
-        public static extern dlang_wstring GetError(ulong errorId);
+        //[DllImport("csharp", EntryPoint = "cswrap_getError", CallingConvention = CallingConvention.Cdecl)]
+        //public static extern dlang_wstring GetError(ulong errorId);
 
         [DllImport("csharp", EntryPoint = "cswrap_dlang_createString", CallingConvention = CallingConvention.Cdecl)]
         public static extern dlang_string CreateString([MarshalAs(UnmanagedType.LPWStr)]string str);
@@ -340,8 +340,8 @@ namespace csharp {
         private static extern ErrorString wrap_TestErrorMessage(bool throwError);
         public static string TestErrorMessage(bool throwError) {
             var ret = library.wrap_TestErrorMessage(throwError);
-            if (ret.errorId != 0) {
-                throw new DLangException(library.GetError(ret.errorId));
+            if (!string.IsNullOrEmpty(ret.error)) {
+                throw new DLangException(ret.error);
             }
             return ret.value;
         }
