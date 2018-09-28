@@ -14,27 +14,41 @@ public string wrapDLangFreeFunctions(Modules...)() if(allSatisfy!(isModule, Modu
 
     foreach(func; AllFunctions!Modules) {
         pragma(msg, typeof(func));
-        alias modName = moduleName!func;
-        alias returnType = ReturnType!func;
-        alias paramTypes = Parameters!func;
-        alias paramNames = ParameterIdentifierTuple!func;
-        enum isNothrow = functionAttributes!func & FunctionAttribute.nothrow_;
-        const string interfaceName = getDlangInterfaceName(modName, null, func.name);
+        alias modName = func.moduleName;
+        pragma(msg, modName);
+        alias funcName = func.name;
+        pragma(msg, funcName);
+
+        alias returnType = ReturnType!(__traits(getMember, func.module_, func.name));
+        pragma(msg, returnType);
+        alias returnTypeStr = fullyQualifiedName!(ReturnType!(__traits(getMember, func.module_, func.name)));
+        pragma(msg, returnTypeStr);
+        alias paramTypes = Parameters!(__traits(getMember, func.module_, func.name));
+        pragma(msg, paramTypes);
+        alias paramNames = ParameterIdentifierTuple!(__traits(getMember, func.module_, func.name));
+        pragma(msg, paramNames);
+        enum isNothrow = functionAttributes!(__traits(getMember, func.module_, func.name)) & FunctionAttribute.nothrow_;
+        pragma(msg, isNothrow);
+        const string interfaceName = getDlangInterfaceName(modName, null, funcName);
+        //pragma(msg, interfaceName);
         string retType = string.init;
         string funcStr = "extern(C) export ";
 
         if (!isNothrow) {
-            retType = retType ~ "exportValue!(" ~ returnType.toString() ~ ")";
+            retType = retType ~ "exportValue!(" ~ returnTypeStr ~ ")";
         } else {
-            retType = returnType.toString();
+            retType = returnTypeStr;
         }
 
         funcStr ~= retType ~ " " ~ interfaceName ~ "(";
+/*        for(int i = 0; i < paramTypes.length; i++) {
+            funcStr ~= fullyQualifiedName!paramTypes[i++] ~ " " ~ pName ~ ", ";
+        }
         int pc = 0;
         foreach(pName; paramNames) {
-            funcStr ~= paramTypes[pc++].name ~ " " ~ pName ~ ", ";
+            funcStr ~= fullyQualifiedName!paramTypes[pc++] ~ " " ~ pName ~ ", ";
         }
-        funcStr = funcStr[0..$-2];
+        funcStr = funcStr[0..$-2];*/
         funcStr ~= ") nothrow {" ~ newline;
         funcStr ~= "import " ~ modName ~ " : " ~ func.name ~ ";" ~ newline;
         if (!isNothrow) {
@@ -64,7 +78,7 @@ public string wrapDLangFreeFunctions(Modules...)() if(allSatisfy!(isModule, Modu
 
         ret ~= funcStr;
     }
-    pragma(msg, ret);
+
     return ret;
 }
 
@@ -80,7 +94,7 @@ private string getInterfaceTypeString(TypeInfo type) {
 
 private string getDlangInterfaceName(string moduleName, string aggName, string funcName) {
     string name = "autowrap_csharp_";
-    name.reserve(128);
+
     foreach(string namePart; moduleName.split(".")) {
         name ~= camelToPascalCase(namePart) ~ "_";
     }

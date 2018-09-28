@@ -48,20 +48,21 @@ string wrapCSharp(in string libraryName, in Modules modules) @safe pure {
     const modulesList = modules.value.map!(a => a.toString).join(", ");
 
     return q{
+        //Insert shared boilerplate code
+        %s
+
         //import std.typecons: Yes, No;
         //import autowrap.csharp.boilerplate : commonBoilerplate, dllMainMixinStr;
         import autowrap.csharp.dlang : wrapDLangFreeFunctions;
 
-        mixin(wrapDLangFreeFunctions!(%s));
-
-        //Insert shared boilerplate code
-        %s
+        const string t = wrapDLangFreeFunctions!(%s);
+        mixin(t);
 
         //Insert DllMain for Windows only.
         version(Windows) {
             %s
         }
-    }.format(modulesList, commonBoilerplate(), dllMainMixinStr());
+    }.format(commonBoilerplate(), modulesList, dllMainMixinStr());
 }
 
 /**

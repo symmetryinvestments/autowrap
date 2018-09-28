@@ -6,7 +6,7 @@ export int freeFunction (int value) {
 	return value;
 }
 
-string stringFunction(string value) {
+export extern(C) string stringFunction(string value) {
 	return value;
 }
 

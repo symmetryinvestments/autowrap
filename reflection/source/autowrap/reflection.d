@@ -2,7 +2,7 @@ module autowrap.reflection;
 
 
 import std.meta: allSatisfy;
-import std.traits: isArray, Unqual;
+import std.traits: isArray, Unqual, moduleName;
 import std.typecons: Flag, No;
 
 private alias I(alias T) = T;
@@ -57,12 +57,14 @@ template Functions(alias module_, Flag!"alwaysExport" alwaysExport = No.alwaysEx
         static if(__traits(compiles, I!(__traits(getMember, module_, memberName)))) {
             alias member = I!(__traits(getMember, module_, memberName));
 
-            static if(isExportFunction!(member, alwaysExport))
-                alias Function = FunctionSymbol!(memberName, member);
-            else
+            static if(isExportFunction!(member, alwaysExport)) {
+                alias Function = FunctionSymbol!(memberName, module_, moduleName!member, member);
+            } else {
                 alias Function = void;
-        } else
+            }
+        } else {
             alias Function = void;
+        }
     }
 
     template notVoid(A...) if(A.length == 1) {
@@ -73,8 +75,10 @@ template Functions(alias module_, Flag!"alwaysExport" alwaysExport = No.alwaysEx
     alias Functions = Filter!(notVoid, staticMap!(Function, __traits(allMembers, module_)));
 }
 
-template FunctionSymbol(string N, alias S) {
+template FunctionSymbol(string N, alias M, string MN, alias S) {
     alias name = N;
+    alias module_ = M;
+    alias moduleName = MN;
     alias symbol = S;
 }
 
@@ -283,8 +287,9 @@ package template isExportFunction(alias F, Flag!"alwaysExport" alwaysExport = No
     version(AutowrapAlwaysExport) {
         enum linkage = __traits(getLinkage, F);
         enum isExportFunction = isFunction!F && linkage != "C" && linkage != "C++";
-    } else
-          enum isExportFunction = isFunction!F && isExportSymbol!(F, alwaysExport);
+    } else {
+        enum isExportFunction = isFunction!F && isExportSymbol!(F, alwaysExport);
+    }
 }
 
 
