@@ -52,11 +52,12 @@ string wrapCSharp(in string libraryName, in Modules modules) @safe pure {
         %s
 
         //import std.typecons: Yes, No;
-        //import autowrap.csharp.boilerplate : commonBoilerplate, dllMainMixinStr;
+        import autowrap.csharp.boilerplate;
         import autowrap.csharp.dlang : wrapDLangFreeFunctions;
 
-        const string t = wrapDLangFreeFunctions!(%s);
+        immutable string t = wrapDLangFreeFunctions!(%s);
         mixin(t);
+        pragma(msg, t);
 
         //Insert DllMain for Windows only.
         version(Windows) {
@@ -80,21 +81,23 @@ string commonBoilerplate() @safe pure {
             T value;
             wstring error;
 
-            this(T value, Exception error = null) nothrow {
+            this(T value) nothrow {
                 this.value = value;
                 static if (isArray!(T) || is(T == class) || is(T == interface)) {
                     if (this.value !is null) {
                         pinPointer(cast(void*)this.error.ptr);
                     }
                 }
-                if (error !is null) {
-                    try {
-                        this.error = to!wstring(error.toString());
-                    } catch(Exception ex) {
-                        this.error = "Unhandled Exception while marshalling exception data. You should never see this error.";
-                    }
-                    pinPointer(cast(void*)this.error.ptr);
+            }
+
+            this(Exception error) nothrow {
+                this.value = T.init;
+                try {
+                    this.error = to!wstring(error.toString());
+                } catch(Exception ex) {
+                    this.error = "Unhandled Exception while marshalling exception data. You should never see this error.";
                 }
+                pinPointer(cast(void*)this.error.ptr);
             }
         }
 

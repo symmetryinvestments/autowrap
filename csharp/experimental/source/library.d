@@ -10,11 +10,11 @@ export extern(C) string stringFunction(string value) {
 	return value;
 }
 
-s2[] arrayFunction(s2[] arr) {
+export s2[] arrayFunction(s2[] arr) {
     return arr.dup;
 }
 
-c1[] classRangeFunction(c1[] arr) {
+export c1[] classRangeFunction(c1[] arr) {
     import std.stdio;
     writeln("Array Length: ", arr.length);
     foreach (c1 a; arr) {

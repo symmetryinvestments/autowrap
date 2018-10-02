@@ -13,42 +13,29 @@ public string wrapDLangFreeFunctions(Modules...)() if(allSatisfy!(isModule, Modu
     string ret = string.init;
 
     foreach(func; AllFunctions!Modules) {
-        pragma(msg, typeof(func));
         alias modName = func.moduleName;
-        pragma(msg, modName);
         alias funcName = func.name;
-        pragma(msg, funcName);
 
         alias returnType = ReturnType!(__traits(getMember, func.module_, func.name));
-        pragma(msg, returnType);
         alias returnTypeStr = fullyQualifiedName!(ReturnType!(__traits(getMember, func.module_, func.name)));
-        pragma(msg, returnTypeStr);
         alias paramTypes = Parameters!(__traits(getMember, func.module_, func.name));
-        pragma(msg, paramTypes);
         alias paramNames = ParameterIdentifierTuple!(__traits(getMember, func.module_, func.name));
-        pragma(msg, paramNames);
         enum isNothrow = functionAttributes!(__traits(getMember, func.module_, func.name)) & FunctionAttribute.nothrow_;
-        pragma(msg, isNothrow);
         const string interfaceName = getDlangInterfaceName(modName, null, funcName);
-        //pragma(msg, interfaceName);
         string retType = string.init;
         string funcStr = "extern(C) export ";
 
         if (!isNothrow) {
-            retType = retType ~ "exportValue!(" ~ returnTypeStr ~ ")";
+            retType = retType ~ "errorValue!(" ~ returnTypeStr ~ ")";
         } else {
             retType = returnTypeStr;
         }
 
         funcStr ~= retType ~ " " ~ interfaceName ~ "(";
-/*        for(int i = 0; i < paramTypes.length; i++) {
-            funcStr ~= fullyQualifiedName!paramTypes[i++] ~ " " ~ pName ~ ", ";
+        static foreach(pc; 0..paramNames.length) {
+            funcStr ~= fullyQualifiedName!(paramTypes[pc]) ~ " " ~ paramNames[pc] ~ ", ";
         }
-        int pc = 0;
-        foreach(pName; paramNames) {
-            funcStr ~= fullyQualifiedName!paramTypes[pc++] ~ " " ~ pName ~ ", ";
-        }
-        funcStr = funcStr[0..$-2];*/
+        funcStr = funcStr[0..$-2];
         funcStr ~= ") nothrow {" ~ newline;
         funcStr ~= "import " ~ modName ~ " : " ~ func.name ~ ";" ~ newline;
         if (!isNothrow) {
@@ -60,7 +47,7 @@ public string wrapDLangFreeFunctions(Modules...)() if(allSatisfy!(isModule, Modu
             funcStr = funcStr[0..$-2];
             funcStr ~= "));" ~ newline;
             funcStr ~= "} catch (Exception ex) {" ~ newline;
-            funcStr ~= "return " ~ retType ~ "(string.init, ex);" ~ newline;
+            funcStr ~= "return " ~ retType ~ "(ex);" ~ newline;
             funcStr ~= "}" ~ newline;
         } else {
             funcStr ~= retType ~ " temp = " ~ func.name ~ "(";
