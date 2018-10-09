@@ -346,7 +346,7 @@ namespace csharp {
             return ret.value;
         }
 
-        [DllImport("csharp", EntryPoint = "cswrap_s1_createRange", CallingConvention = CallingConvention.Cdecl)]  
+        [DllImport("csharp", EntryPoint = "cswrap_s1_createRange", CallingConvention = CallingConvention.Cdecl)]
         public static extern slice S1_CreateRange();
 
         [DllImport("csharp", EntryPoint = "cswrap_s1_getValue", CallingConvention = CallingConvention.Cdecl)]  

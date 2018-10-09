@@ -1,6 +1,7 @@
 module autowrap.csharp.dlang;
 
 import autowrap.csharp.boilerplate;
+import autowrap.csharp.common;
 import autowrap.reflection;
 
 import std.ascii;
@@ -67,33 +68,4 @@ public string wrapDLangFreeFunctions(Modules...)() if(allSatisfy!(isModule, Modu
     }
 
     return ret;
-}
-
-private string getInterfaceTypeString(TypeInfo type) {
-    import std.datetime : DateTime;
-
-    if (typeid(DateTime) == type) {
-        return type.toString();
-    }
-
-    return type.toString();
-}
-
-private string getDlangInterfaceName(string moduleName, string aggName, string funcName) {
-    string name = "autowrap_csharp_";
-
-    foreach(string namePart; moduleName.split(".")) {
-        name ~= camelToPascalCase(namePart) ~ "_";
-    }
-    if (aggName !is null && aggName != string.init) {
-        name ~= camelToPascalCase(aggName) ~ "_";
-    }
-    name ~= camelToPascalCase(funcName);
-    return name;
-}
-
-private string camelToPascalCase(string camel) {
-    import std.uni : toUpper;
-    import std.conv : to;
-    return to!string(camel[0].toUpper) ~ camel[1..$];
 }

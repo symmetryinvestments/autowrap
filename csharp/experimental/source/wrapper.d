@@ -26,3 +26,12 @@ mixin(
         )
     )
 );
+
+version (GenerateCSharp) {
+void main() {
+    import std.stdio;
+    import autowrap.csharp.csharp : writeCSharpFile;
+    string csharpFile = writeCSharpFile!(Modules(Module("csharp.library")));
+    writeln(csharpFile);
+}
+}

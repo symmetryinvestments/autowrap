@@ -6,7 +6,7 @@ export int freeFunction (int value) {
 	return value;
 }
 
-export extern(C) string stringFunction(string value) {
+export extern(C) string stringFunction(string value) nothrow {
 	return value;
 }
 
@@ -24,7 +24,7 @@ export c1[] classRangeFunction(c1[] arr) {
     return arr.dup;
 }
 
-string testErrorMessage(bool throwError) {
+export string testErrorMessage(bool throwError) {
     if(throwError) 
         throw new Exception("Test Error Message");
     else

@@ -6,3 +6,8 @@ copyright "Copyright © 2018, Symmetry Investments LP"
 targetType "dynamicLibrary"
 
 dependency "autowrap:csharp" path="../../"
+
+configuration "generateCSharp" {
+    targetType "executable"
+    versions "GenerateCSharp"
+}

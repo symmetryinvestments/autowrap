@@ -16,8 +16,12 @@ import autowrap.reflection;
 //public:
 
 /**
+struct LibraryName {
+    string value;
+}
+
    The list of modules to automatically wrap for .NET consumption
- */
+
 struct Modules {
     import autowrap.reflection: Module;
     import std.traits: Unqual;
@@ -37,8 +41,8 @@ struct Modules {
         }
     }
 }
-
-string wrapCSharp(in string libraryName, in Modules modules) @safe pure {
+ */
+public string wrapCSharp(in string libraryName, in Modules modules) @safe pure {
     import std.format : format;
     import std.algorithm: map;
     import std.array: join;
@@ -49,19 +53,19 @@ string wrapCSharp(in string libraryName, in Modules modules) @safe pure {
 
     return q{
         //Insert shared boilerplate code
-        %s
+        %1$s
 
-        //import std.typecons: Yes, No;
+        import std.typecons;
         import autowrap.csharp.boilerplate;
         import autowrap.csharp.dlang : wrapDLangFreeFunctions;
 
-        immutable string t = wrapDLangFreeFunctions!(%s);
+        immutable string t = wrapDLangFreeFunctions!(%2$s);
         mixin(t);
         pragma(msg, t);
 
         //Insert DllMain for Windows only.
         version(Windows) {
-            %s
+            %3$s
         }
     }.format(commonBoilerplate(), modulesList, dllMainMixinStr());
 }
@@ -69,7 +73,7 @@ string wrapCSharp(in string libraryName, in Modules modules) @safe pure {
 /**
    Returns a string to be mixed in that defines the boilerplate code needed by all C# interfaces.
  */
-string commonBoilerplate() @safe pure {
+private string commonBoilerplate() @safe pure {
     return q{
         import core.memory;
         import std.conv;
@@ -106,7 +110,7 @@ string commonBoilerplate() @safe pure {
             GC.addRoot(ptr);
         }
 
-        extern(C) export void autowrap_csharp_releasePointer(void* ptr) nothrow {
+        extern(C) export void autowrap_csharp_release(void* ptr) nothrow {
             GC.clrAttr(ptr, GC.BlkAttr.NO_MOVE);
             GC.removeRoot(ptr);
         }
@@ -134,7 +138,7 @@ string commonBoilerplate() @safe pure {
 /**
    Returns a string to be mixed in that defines DllMain, needed on Windows.
  */
-string dllMainMixinStr() @safe pure {
+private string dllMainMixinStr() @safe pure {
     return q{
         import core.sys.windows.windows: HINSTANCE, BOOL, ULONG, LPVOID;
 
@@ -171,3 +175,5 @@ string dllMainMixinStr() @safe pure {
         }
     };
 }
+
+

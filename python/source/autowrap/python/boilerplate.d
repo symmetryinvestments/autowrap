@@ -17,31 +17,6 @@ struct LibraryName {
     string value;
 }
 
-
-/**
-   The list of modules to automatically wrap for Python consumption
- */
-struct Modules {
-    import autowrap.reflection: Module;
-    import std.traits: Unqual;
-    import std.meta: allSatisfy;
-
-    Module[] value;
-
-    this(A...)(auto ref A modules) {
-
-        foreach(module_; modules) {
-            static if(is(Unqual!(typeof(module_)) == Module))
-                value ~= module_;
-            else static if(is(Unqual!(typeof(module_)) == string))
-                value ~= Module(module_);
-            else
-                static assert(false, "Modules must either be `string` or `Module`");
-        }
-    }
-}
-
-
 /**
    Code to be inserted before the call to module_init
  */
