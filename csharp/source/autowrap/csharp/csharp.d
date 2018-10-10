@@ -36,7 +36,7 @@ enum string longTypeString = "long";
 enum string floatTypeString = "float";
 enum string doubleTypeString = "double";
 
-private struct csharpNamespace {
+private class csharpNamespace {
     public string namespace;
     public string functions;
     public csharpAggregate[string] aggregates;
@@ -46,7 +46,7 @@ private struct csharpNamespace {
         functions = string.init;
     }
 
-    public string toString() {
+    public override string toString() {
         char[] ret;
         ret.reserve(1_048_576);
         foreach(csns; namespaces.byValue()) {
@@ -56,8 +56,8 @@ private struct csharpNamespace {
             ret ~= "    using System.Linq;" ~ newline;
             ret ~= "    using System.Reflection;" ~ newline;
             ret ~= "    using System.Runtime.InteropServices;" ~ newline;
-            ret ~= "    using Autowrap;" ~ newline;
-            ret ~= "    public static Functions {";
+            ret ~= "    using Autowrap;" ~ newline ~ newline;
+            ret ~= "    public static Functions {" ~ newline;
             ret ~= csns.functions;
             foreach(agg; aggregates.byValue()) {
                 ret ~= agg.toString();
@@ -69,7 +69,7 @@ private struct csharpNamespace {
     }
 }
 
-private struct csharpAggregate {
+private class csharpAggregate {
     public string name;
     public bool isStruct;
     public string functions;
@@ -83,7 +83,7 @@ private struct csharpAggregate {
         properties = string.init;
     }
 
-    public string toString() {
+    public override string toString() {
         char[] ret;
         ret.reserve(32_768);
         if (isStruct) {
@@ -102,6 +102,15 @@ private struct csharpAggregate {
 public string writeCSharpFile(Modules...)() if(allSatisfy!(isModule, Modules)) {
     import autowrap.reflection: AllFunctions;
     string libraryName ="csharp";
+
+    foreach(agg; AllAggregates!Modules) {
+        alias modName = agg.moduleName;
+        alias aggName = agg.name;
+        csharpNamespace ns = getNamespace(modName);
+
+        string aggStr = "    public ";
+        aggStr ~= aggName;
+    }
 
     foreach(func; AllFunctions!Modules) {
         alias modName = func.moduleName;
@@ -122,7 +131,8 @@ public string writeCSharpFile(Modules...)() if(allSatisfy!(isModule, Modules)) {
         }
         funcStr ~= "        private static extern %s dlang_%s(".format(retType, methodName);
         static foreach(pc; 0..paramNames.length) {
-            funcStr ~= getDLangInterfaceType(fullyQualifiedName!(paramTypes[pc]) ~ " " ~ paramNames[pc] ~ ", ");
+            if (is(paramTypes[pc] == bool)) funcStr ~= "[MarshalAs(UnmanagedType.Bool)]";
+            funcStr ~= getDLangInterfaceType(fullyQualifiedName!(paramTypes[pc])) ~ " " ~ paramNames[pc] ~ ", ";
         }
         if (paramNames.length > 0) {
             funcStr = funcStr[0..$-2];
@@ -130,13 +140,30 @@ public string writeCSharpFile(Modules...)() if(allSatisfy!(isModule, Modules)) {
         funcStr ~= ");" ~ newline;
         funcStr ~= "        public static %s %s(".format(getCSharpInterfaceType(returnTypeStr), methodName);
         static foreach(pc; 0..paramNames.length) {
-            funcStr ~= getCSharpInterfaceType(fullyQualifiedName!(paramTypes[pc]) ~ " " ~ paramNames[pc] ~ ", ");
+            funcStr ~= getCSharpInterfaceType(fullyQualifiedName!(paramTypes[pc])) ~ " " ~ paramNames[pc] ~ ", ";
         }
         if (paramNames.length > 0) {
             funcStr = funcStr[0..$-2];
         }
         funcStr ~= ") {" ~ newline;
-        funcStr ~=
+        funcStr ~= "            var dlang_ret = dlang_%s(".format(methodName);
+        static foreach(pc; 0..paramNames.length) {
+            funcStr ~= paramNames[pc] ~ ", ";
+        }
+        if (paramNames.length > 0) {
+            funcStr = funcStr[0..$-2];
+        }
+        funcStr ~= ");" ~ newline;
+        if (!isNothrow) {
+            funcStr ~= "            if (!string.IsNullOrEmpty(dlang_ret.error)) throw new DLangException(dlang_ret.error);" ~ newline;
+            if (!is(returnType == void)) {
+                funcStr ~= "            return dlang_ret.value;" ~ newline;
+            }
+        } else {
+            if (!is(returnType == void)) {
+                funcStr ~= "            return dlang_ret;" ~ newline;
+            }
+        }
         funcStr ~= "        }" ~ newline;
         ns.functions ~= funcStr;
     }
@@ -146,6 +173,7 @@ public string writeCSharpFile(Modules...)() if(allSatisfy!(isModule, Modules)) {
     foreach(csns; namespaces.byValue()) {
         ret ~= csns.toString();
     }
+    //ret ~= writeCSharpBoilerplate(libraryName, string.init);
     return cast(immutable)ret;
 }
 
@@ -252,12 +280,12 @@ private string getCSharpName(string dlangName) {
 }
 
 private csharpNamespace getNamespace(string name) {
-    return namespaces.require(name, csharpNamespace(name));
+    return namespaces.require(name, new csharpNamespace(name));
 }
 
 private csharpAggregate getAggregate(string namespace, string name, bool isStruct) {
-    csharpNamespace ns = namespaces.require(namespace, csharpNamespace(namespace));
-    return ns.aggregates.require(name, csharpAggregate(name, isStruct));
+    csharpNamespace ns = namespaces.require(namespace, new csharpNamespace(namespace));
+    return ns.aggregates.require(name, new csharpAggregate(name, isStruct));
 }
 
 //This needs to be written last
@@ -275,6 +303,7 @@ private string writeCSharpBoilerplate(string libraryName, string rootNamespace) 
     using System.Reflection;
     using System.Runtime.InteropServices;
     using Mono.Unix;
+
     public class DLangException : Exception {
         public string DLangExceptionText { get; }
         public DLangException(string dlang) : base() {
@@ -283,7 +312,7 @@ private string writeCSharpBoilerplate(string libraryName, string rootNamespace) 
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct dlang_string {
+    internal struct dlang_string {
         private IntPtr length;
         private IntPtr ptr;
 
@@ -310,7 +339,7 @@ private string writeCSharpBoilerplate(string libraryName, string rootNamespace) 
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct dlang_wstring {
+    internal struct dlang_wstring {
         private IntPtr length;
         private IntPtr ptr;
 
@@ -337,7 +366,7 @@ private string writeCSharpBoilerplate(string libraryName, string rootNamespace) 
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct dlang_dstring : IDisposable {
+    internal struct dlang_dstring : IDisposable {
         private IntPtr length;
         private IntPtr ptr;
 
@@ -363,7 +392,7 @@ private string writeCSharpBoilerplate(string libraryName, string rootNamespace) 
         }
     }
 
-    public struct slice : IDisposable {
+    internal struct slice : IDisposable {
         internal IntPtr length;
         internal IntPtr ptr;
 
@@ -380,7 +409,7 @@ private string writeCSharpBoilerplate(string libraryName, string rootNamespace) 
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct dlang_slice<T> : IDisposable
+    internal struct dlang_slice<T> : IDisposable
         where T : unmanaged
     {
         private readonly slice ptr;
@@ -418,7 +447,7 @@ private string writeCSharpBoilerplate(string libraryName, string rootNamespace) 
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct dlang_refslice<T> : IDisposable
+    internal struct dlang_refslice<T> : IDisposable
         where T : DLangBase
     {
         private readonly dlang_slice<IntPtr> ptr;
@@ -470,30 +499,41 @@ private string writeCSharpBoilerplate(string libraryName, string rootNamespace) 
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct return_bool_error {
+    internal struct return_void_error {
+        public dlang_wstring error;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct return_bool_error {
         [MarshalAs(UnmanagedType.Bool)] public bool value;
         public dlang_wstring error;
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct return_string_error {
+    internal struct return_string_error {
         public dlang_string value;
         public dlang_wstring error;
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct return_wstring_error {
+    internal struct return_wstring_error {
         public dlang_wstring value;
         public dlang_wstring error;
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct return_dstring_error {
+    internal struct return_dstring_error {
         public dlang_dstring value;
         public dlang_wstring error;
     }
 
-    public static class Functions {
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct return_slice_error {
+        public slice value;
+        public dlang_wstring error;
+    }
+
+    internal static class Functions {
         static Functions() {
             Stream stream = null;
             var outputName = RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? \"lib%1$s.dylib\" : RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? \"lib%1$s.so\" : \"%1$s.dll\";

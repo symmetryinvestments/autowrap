@@ -15,7 +15,7 @@ namespace csharp {
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct dlang_string {
+    internal struct dlang_string {
         private IntPtr length;
         private IntPtr ptr;
 
@@ -42,7 +42,7 @@ namespace csharp {
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct dlang_wstring {
+    internal struct dlang_wstring {
         private IntPtr length;
         private IntPtr ptr;
 
@@ -69,7 +69,7 @@ namespace csharp {
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct dlang_dstring : IDisposable {
+    internal struct dlang_dstring : IDisposable {
         private IntPtr length;
         private IntPtr ptr;
 
@@ -95,7 +95,7 @@ namespace csharp {
         }
     }
 
-    public struct slice : IDisposable {
+    internal struct slice : IDisposable {
         internal IntPtr length;
         internal IntPtr ptr;
 
@@ -112,7 +112,7 @@ namespace csharp {
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct dlang_slice<T> : IDisposable
+    internal struct dlang_slice<T> : IDisposable
         where T : unmanaged
     {
         private readonly slice ptr;
@@ -150,7 +150,7 @@ namespace csharp {
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct dlang_refslice<T> : IDisposable
+    internal struct dlang_refslice<T> : IDisposable
         where T : DLangBase
     {
         private readonly dlang_slice<IntPtr> ptr;
@@ -189,7 +189,7 @@ namespace csharp {
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct ErrorString
+    internal struct ErrorString
     {
         public dlang_string value;
         public dlang_wstring error;
@@ -205,7 +205,18 @@ namespace csharp {
         }
 
         public void setNestedStruct(S2 nested) {
-            library.S1_SetNestedStruct(ref this, ref nested);
+            library.S1_SetNestedStruct(ref this, nested);
+        }
+
+        internal static S1[] SliceToArray(slice dlang_slice) {
+            Span<S1> span = new dlang_slice<S1>(dlang_slice);
+            return span.ToArray();
+        }
+
+        internal static slice ArrayToSlice(S1[] array) {
+            Span<S1> span = array;
+            dlang_slice<S1> dls = span;
+            return dls.ToSlice();
         }
     }
 
@@ -290,13 +301,13 @@ namespace csharp {
         //public static extern dlang_wstring GetError(ulong errorId);
 
         [DllImport("csharp", EntryPoint = "cswrap_dlang_createString", CallingConvention = CallingConvention.Cdecl)]
-        public static extern dlang_string CreateString([MarshalAs(UnmanagedType.LPWStr)]string str);
+        internal static extern dlang_string CreateString([MarshalAs(UnmanagedType.LPWStr)]string str);
 
         [DllImport("csharp", EntryPoint = "cswrap_dlang_createWString", CallingConvention = CallingConvention.Cdecl)]
-        public static extern dlang_wstring CreateWString([MarshalAs(UnmanagedType.LPWStr)]string str);
+        internal static extern dlang_wstring CreateWString([MarshalAs(UnmanagedType.LPWStr)]string str);
 
         [DllImport("csharp", EntryPoint = "cswrap_dlang_createDString", CallingConvention = CallingConvention.Cdecl)]
-        public static extern dlang_dstring CreateDString([MarshalAs(UnmanagedType.LPWStr)]string str);
+        internal static extern dlang_dstring CreateDString([MarshalAs(UnmanagedType.LPWStr)]string str);
 
         [DllImport("csharp", EntryPoint = "cswrap_dlang_release", CallingConvention = CallingConvention.Cdecl)]
         public static extern void ReleaseMemory(IntPtr ptr);
@@ -329,11 +340,8 @@ namespace csharp {
             var slice = library.C1_CreateRange(array.Length);
             foreach(var t in array) {
                 slice = library.C1_AppendRange(slice, t.Pointer);
-                Console.WriteLine($"Class Ref: {t.Pointer.ToInt64()}");
             }
-            Console.WriteLine($"Array Ref: {slice.ptr.ToInt64()}");
-            var ret = new dlang_refslice<C1>(ClassRangeFunction(slice));
-            return ret;
+            return new dlang_refslice<C1>(ClassRangeFunction(slice));
         }
 
         [DllImport("csharp", EntryPoint = "cswrap_testErrorMessage", CallingConvention = CallingConvention.Cdecl)]
@@ -353,7 +361,7 @@ namespace csharp {
         public static extern float S1_GetValue(ref S1 cswrap_s1);
 
         [DllImport("csharp", EntryPoint = "cswrap_s1_setNestedStruct", CallingConvention = CallingConvention.Cdecl)]  
-        public static extern void S1_SetNestedStruct(ref S1 cswrap_s1, ref S2 nested);
+        public static extern void S1_SetNestedStruct(ref S1 cswrap_s1, S2 nested);
 
         [DllImport("csharp", EntryPoint = "cswrap_dlang_string_stringFunction", CallingConvention = CallingConvention.Cdecl)]  
         public static extern dlang_string DLang_String_StringFunction(dlang_string value);

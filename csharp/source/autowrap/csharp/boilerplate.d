@@ -81,7 +81,7 @@ private string commonBoilerplate() @safe pure {
         import std.traits;
         import std.utf;
 
-        extern(C) export struct errorValue(T) {
+        extern(C) export struct returnValue(T) {
             T value;
             wstring error;
 
@@ -92,10 +92,24 @@ private string commonBoilerplate() @safe pure {
                         pinPointer(cast(void*)this.error.ptr);
                     }
                 }
+                this.error = null;
             }
 
             this(Exception error) nothrow {
                 this.value = T.init;
+                try {
+                    this.error = to!wstring(error.toString());
+                } catch(Exception ex) {
+                    this.error = "Unhandled Exception while marshalling exception data. You should never see this error.";
+                }
+                pinPointer(cast(void*)this.error.ptr);
+            }
+        }
+
+        extern(C) export struct returnVoid {
+            wstring error = null;
+
+            this(Exception error) nothrow {
                 try {
                     this.error = to!wstring(error.toString());
                 } catch(Exception ex) {

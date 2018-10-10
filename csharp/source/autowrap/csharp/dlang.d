@@ -27,7 +27,11 @@ public string wrapDLangFreeFunctions(Modules...)() if(allSatisfy!(isModule, Modu
         string funcStr = "extern(C) export ";
 
         if (!isNothrow) {
-            retType = retType ~ "errorValue!(" ~ returnTypeStr ~ ")";
+            if (!is(returnType == void)) {
+                retType = retType ~ "returnValue!(" ~ returnTypeStr ~ ")";
+            } else {
+                retType = retType ~ "returnVoid";
+            }
         } else {
             retType = returnTypeStr;
         }
@@ -41,12 +45,22 @@ public string wrapDLangFreeFunctions(Modules...)() if(allSatisfy!(isModule, Modu
         funcStr ~= "import " ~ modName ~ " : " ~ func.name ~ ";" ~ newline;
         if (!isNothrow) {
             funcStr ~= "try { " ~ newline;
-            funcStr ~= "return " ~ retType ~ "(" ~ func.name ~ "(";
-            foreach(pName; paramNames) {
-                funcStr ~= pName ~ ", ";
+            if (!is(returnType == void)) {
+                funcStr ~= "return " ~ retType ~ "(" ~ func.name ~ "(";
+                foreach(pName; paramNames) {
+                    funcStr ~= pName ~ ", ";
+                }
+                funcStr = funcStr[0..$-2];
+                funcStr ~= "));" ~ newline;
+            } else {
+                funcStr ~= func.name ~ "(";
+                foreach(pName; paramNames) {
+                    funcStr ~= pName ~ ", ";
+                }
+                funcStr = funcStr[0..$-2];
+                funcStr ~= ");" ~ newline;
+                funcStr ~= "return returnVoid();" ~ newline;
             }
-            funcStr = funcStr[0..$-2];
-            funcStr ~= "));" ~ newline;
             funcStr ~= "} catch (Exception ex) {" ~ newline;
             funcStr ~= "return " ~ retType ~ "(ex);" ~ newline;
             funcStr ~= "}" ~ newline;
