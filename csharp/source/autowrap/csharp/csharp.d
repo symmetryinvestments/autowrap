@@ -160,8 +160,11 @@ public string writeCSharpFile(Modules...)() if(allSatisfy!(isModule, Modules)) {
             ctor ~= "}" ~ newline;
             csagg.constructors ~= ctor;
         }
-/*
+        csagg.constructors ~= "private %s(IntPtr ptr) : base(ptr) { }".format(aggName);
+
         //Generate range creation method
+
+/*
         ret ~= "extern(C) export returnValue!(" ~ fqn ~ "[]) " ~ getDlangInterfaceName(fqn, "CreateSlice") ~ "(ulong capacity) nothrow {" ~ newline;
         ret ~= "    try {" ~ newline;
         ret ~= "        " ~ fqn ~ "[] __temp__ = new " ~ fqn ~ "[capacity];" ~ newline;
