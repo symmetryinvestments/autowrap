@@ -24,6 +24,17 @@ package string getDlangInterfaceName(string moduleName, string aggName, string f
     return name;
 }
 
+package string getDlangInterfaceName(string fqn, string funcName) {
+    import std.string : split;
+    string name = "autowrap_csharp_";
+
+    foreach(string namePart; fqn.split(".")) {
+        name ~= camelToPascalCase(namePart) ~ "_";
+    }
+    name ~= camelToPascalCase(funcName);
+    return name;
+}
+
 package string camelToPascalCase(string camel) {
     import std.uni : toUpper;
     import std.conv : to;

@@ -51,19 +51,24 @@ struct s2 {
 
 class c1 {
 	public int intValue;
-	public string stringValue;
+	protected string stringValue;
+
+    public this(int i, string s) {
+        intValue = i;
+        stringValue = s;
+    }
 
 	//TODO: We will deal with these cases later.
 	//public c1 refMember;
 	//public c1[] refArray;
 	//public s1[] structArray;
 
-	private s2 hidden;
-	public @property s2 getHidden() {
-		return hidden;
+	private s2 _hidden;
+	public @property s2 hidden() {
+		return _hidden;
 	}
-	public @property s2 setHidden(s2 value) {
-		return hidden = value;
+	public @property s2 hidden(s2 value) {
+		return _hidden = value;
 	}
 
 	public string testMemberFunc(string test, s1 value){

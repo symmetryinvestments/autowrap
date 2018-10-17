@@ -72,6 +72,7 @@ private class csharpNamespace {
 private class csharpAggregate {
     public string name;
     public bool isStruct;
+    public string constructors;
     public string functions;
     public string methods;
     public string properties;
@@ -89,8 +90,9 @@ private class csharpAggregate {
         if (isStruct) {
             ret ~= "    public struct " ~ camelToPascalCase(this.name) ~ " {" ~ newline;
         } else {
-            ret ~= "    public class " ~ camelToPascalCase(this.name) ~ " : DLangBase {" ~ newline;
+            ret ~= "    public class " ~ camelToPascalCase(this.name) ~ " {" ~ newline;
         }
+        ret ~= constructors ~ newline;
         ret ~= functions ~ newline;
         ret ~= methods ~ newline;
         ret ~= properties;
@@ -102,16 +104,26 @@ private class csharpAggregate {
 public string writeCSharpFile(Modules...)() if(allSatisfy!(isModule, Modules)) {
     import autowrap.reflection: AllFunctions;
     string libraryName ="csharp";
-
+/*
     foreach(agg; AllAggregates!Modules) {
         alias modName = agg.moduleName;
         alias aggName = agg.name;
-        csharpNamespace ns = getNamespace(modName);
+        static if (is(agg == struct)) {
+            csharpAggregate csAgg = getAggregate(modName, aggName, true);
+        } else {
+            csharpAggregate csAgg = getAggregate(modName, aggName, false);
+        }
 
-        string aggStr = "    public ";
-        aggStr ~= aggName;
+        static if(hasMember!(T, "__ctor")) {
+            alias constructors = AliasSeq!(__traits(getOverloads, agg, "__ctor"));
+        } else {
+            alias constructors = AliasSeq!();
+        }
+        alias ParametersTuple(alias F) = Tuple!(Parameters!F);
+        alias constructorParamTuples = staticMap!(ParametersTuple, constructors);
+        pragma(msg, constructorParamTuples);
     }
-
+*/
     foreach(func; AllFunctions!Modules) {
         alias modName = func.moduleName;
         alias funcName = func.name;
@@ -446,50 +458,11 @@ private string writeCSharpBoilerplate(string libraryName, string rootNamespace) 
         }
     }
 
-    [StructLayout(LayoutKind.Sequential)]
-    internal struct dlang_refslice<T> : IDisposable
-        where T : DLangBase
-    {
-        private readonly dlang_slice<IntPtr> ptr;
-
-        private dlang_refslice(dlang_slice<IntPtr> ptr) {
-            this.ptr = ptr;
-        }
-
-        public dlang_refslice(slice ptr) {
-            this.ptr = new dlang_slice<IntPtr>(ptr);
-        }
-
-        public void Dispose() {
-            ptr.Dispose();
-        }
-
-        public static implicit operator dlang_refslice<T>(T[] slice) {
-            dlang_slice<IntPtr> t = slice.Select(a => a.Pointer).ToArray().AsSpan();
-            return new dlang_refslice<T>(t);
-        }
-
-        public static implicit operator T[](dlang_refslice<T> slice) {
-            Span<IntPtr> t = slice.ptr;
-            Type ti = typeof(T);
-            var ci = ti.GetConstructor(BindingFlags.Instance |BindingFlags.NonPublic, null, new[] { typeof(IntPtr) }, null);
-            var ol = new List<T>();
-            foreach(var ip in t.ToArray()) {
-                ol.Add((T)ci.Invoke(new object[] {ip}));
-            }
-            return ol.ToArray();
-        }
-
-        internal slice ToSlice() {
-            return ptr.ToSlice();
-        }
-    }
-
-    public abstract class DLangBase : IDisposable {
+    public abstract class DLangObject : IDisposable {
         protected readonly IntPtr ptr;
         internal IntPtr Pointer => ptr;
 
-        protected DLangBase(IntPtr ptr) {
+        protected DLangObject(IntPtr ptr) {
             this.ptr = ptr;
         }
 
@@ -570,16 +543,16 @@ private string writeCSharpBoilerplate(string libraryName, string rootNamespace) 
 
         /// Support Functions
         [DllImport(\"%1$s\", EntryPoint = \"autowrap_csharp_createString\", CallingConvention = CallingConvention.Cdecl)]
-        public static extern dlang_string CreateString([MarshalAs(UnmanagedType.LPWStr)]string str);
+        internal static extern dlang_string CreateString([MarshalAs(UnmanagedType.LPWStr)]string str);
 
         [DllImport(\"%1$s\", EntryPoint = \"autowrap_csharp_createWString\", CallingConvention = CallingConvention.Cdecl)]
-        public static extern dlang_wstring CreateWString([MarshalAs(UnmanagedType.LPWStr)]string str);
+        internal static extern dlang_wstring CreateWString([MarshalAs(UnmanagedType.LPWStr)]string str);
 
         [DllImport(\"%1$s\", EntryPoint = \"autowrap_csharp_createDString\", CallingConvention = CallingConvention.Cdecl)]
-        public static extern dlang_dstring CreateDString([MarshalAs(UnmanagedType.LPWStr)]string str);
+        internal static extern dlang_dstring CreateDString([MarshalAs(UnmanagedType.LPWStr)]string str);
 
         [DllImport(\"%1$s\", EntryPoint = \"autowrap_csharp_release\", CallingConvention = CallingConvention.Cdecl)]
-        public static extern void ReleaseMemory(IntPtr ptr);
+        internal static extern void ReleaseMemory(IntPtr ptr);
 
         [DllImport(\"%1$s\", EntryPoint = \"rt_init\", CallingConvention = CallingConvention.Cdecl)]
         public static extern int DRuntimeInitialize();  

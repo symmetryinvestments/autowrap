@@ -57,9 +57,9 @@ public string wrapCSharp(in string libraryName, in Modules modules) @safe pure {
 
         import std.typecons;
         import autowrap.csharp.boilerplate;
-        import autowrap.csharp.dlang : wrapDLangFreeFunctions;
+        import autowrap.csharp.dlang : wrapDLang;
 
-        immutable string t = wrapDLangFreeFunctions!(%2$s);
+        immutable string t = wrapDLang!(%2$s);
         mixin(t);
         pragma(msg, t);
 
