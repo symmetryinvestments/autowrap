@@ -59,10 +59,10 @@ private class csharpNamespace {
             ret ~= "    using Autowrap;" ~ newline ~ newline;
             ret ~= "    public static Functions {" ~ newline;
             ret ~= csns.functions;
+            ret ~= "    }" ~ newline ~ newline;
             foreach(agg; aggregates.byValue()) {
                 ret ~= agg.toString();
             }
-            ret ~= "    }" ~ newline ~ newline;
             ret ~= "}" ~ newline;
         }
         return cast(immutable)ret;
@@ -79,9 +79,11 @@ private class csharpAggregate {
 
     public this (string name, bool isStruct) {
         this.name = name;
-        functions = string.init;
-        methods = string.init;
-        properties = string.init;
+        this.isStruct = isStruct;
+        this.constructors = string.init;
+        this.functions = string.init;
+        this.methods = string.init;
+        this.properties = string.init;
     }
 
     public override string toString() {
@@ -90,10 +92,10 @@ private class csharpAggregate {
         if (isStruct) {
             ret ~= "    public struct " ~ camelToPascalCase(this.name) ~ " {" ~ newline;
         } else {
-            ret ~= "    public class " ~ camelToPascalCase(this.name) ~ " {" ~ newline;
+            ret ~= "    public class " ~ camelToPascalCase(this.name) ~ " : DLangBase {" ~ newline;
         }
-        ret ~= constructors ~ newline;
         ret ~= functions ~ newline;
+        ret ~= constructors ~ newline;
         ret ~= methods ~ newline;
         ret ~= properties;
         ret ~= "    }" ~ newline ~ newline;
@@ -104,30 +106,199 @@ private class csharpAggregate {
 public string writeCSharpFile(Modules...)() if(allSatisfy!(isModule, Modules)) {
     import autowrap.reflection: AllFunctions;
     string libraryName ="csharp";
-/*
-    foreach(agg; AllAggregates!Modules) {
-        alias modName = agg.moduleName;
-        alias aggName = agg.name;
-        static if (is(agg == struct)) {
-            csharpAggregate csAgg = getAggregate(modName, aggName, true);
-        } else {
-            csharpAggregate csAgg = getAggregate(modName, aggName, false);
-        }
 
-        static if(hasMember!(T, "__ctor")) {
+    foreach(agg; AllAggregates!Modules) {
+        alias modName = moduleName!agg;
+        const string aggName = __traits(identifier, agg);
+        alias fqn = fullyQualifiedName!agg;
+        csharpAggregate csagg = getAggregate(getCSharpName(modName), getCSharpName(aggName), !is(agg == class));
+
+        static if(hasMember!(agg, "__ctor")) {
             alias constructors = AliasSeq!(__traits(getOverloads, agg, "__ctor"));
         } else {
             alias constructors = AliasSeq!();
         }
-        alias ParametersTuple(alias F) = Tuple!(Parameters!F);
-        alias constructorParamTuples = staticMap!(ParametersTuple, constructors);
-        pragma(msg, constructorParamTuples);
-    }
-*/
+
+        //Generate constructor methods
+        foreach(c; constructors) {
+            alias paramNames = ParameterIdentifierTuple!c;
+            alias paramTypes = Parameters!c;
+            const string interfaceName = getDlangInterfaceName(fqn, "__ctor");
+            const string methodName = getCSharpMethodName(aggName, "__ctor");
+            string ctor = "        [DllImport(\"%s\", EntryPoint = \"%s\", CallingConvention = CallingConvention.Cdecl))]".format(libraryName, interfaceName) ~ newline;
+            if (is(agg == class)) {
+                ctor ~= "        private static extern IntPtr dlang_%s(".format(methodName);
+            } else if (is(agg == struct)) {
+                ctor ~= "        private static extern %s dlang_%s(".format(methodName);
+            }
+            static foreach(pc; 0..paramNames.length) {
+                if (is(paramTypes[pc] == bool)) ctor ~= "[MarshalAs(UnmanagedType.Bool)]";
+                ctor ~= getDLangInterfaceType(fullyQualifiedName!(paramTypes[pc])) ~ " " ~ paramNames[pc] ~ ", ";
+            }
+            if (paramNames.length > 0) {
+                ctor = ctor[0..$-2];
+            }
+            ctor ~= ");" ~ newline;
+            ctor ~= "        public " ~ aggName ~ "(";
+            static foreach(pc; 0..paramNames.length) {
+                ctor ~= getCSharpInterfaceType(fullyQualifiedName!(paramTypes[pc])) ~ " " ~ paramNames[pc] ~ ", ";
+            }
+            if (paramNames.length > 0) {
+                ctor = ctor[0..$-2];
+            }
+            if (is(agg == class)) {
+                ctor ~= ") : base(dlang_%s(".format(methodName);
+                static foreach(pc; 0..paramNames.length) {
+                    ctor ~= paramNames[pc] ~ ", ";
+                }
+                if (paramNames.length > 0) {
+                    ctor = ctor[0..$-2];
+                }
+                ctor ~= ")) { ";
+            } else if (is(agg == struct)) {
+            }
+            ctor ~= "}" ~ newline;
+            csagg.constructors ~= ctor;
+        }
+/*
+        //Generate range creation method
+        ret ~= "extern(C) export returnValue!(" ~ fqn ~ "[]) " ~ getDlangInterfaceName(fqn, "CreateSlice") ~ "(ulong capacity) nothrow {" ~ newline;
+        ret ~= "    try {" ~ newline;
+        ret ~= "        " ~ fqn ~ "[] __temp__ = new " ~ fqn ~ "[capacity];" ~ newline;
+        ret ~= "        pinPointer(cast(void*)__temp__.ptr);" ~ newline;
+        ret ~= "        return returnValue!(" ~ fqn ~ "[])(__temp__);" ~ newline;
+        ret ~= "    } catch (Exception __ex__) {" ~ newline;
+        ret ~= "        return returnValue!(" ~ fqn ~ "[])(__ex__);" ~ newline;
+        ret ~= "    }" ~ newline;
+        ret ~= "}" ~ newline;
+
+        //Generate range append method
+        if (is(agg == class)) {
+            ret ~= "extern(C) export returnValue!(" ~ fqn ~ "[]) " ~ getDlangInterfaceName(fqn, "AppendSlice") ~ "(" ~ fqn ~ "[] slice, void* append) nothrow {" ~ newline;
+            ret ~= "    try {" ~ newline;
+            ret ~= "        slice ~= cast(" ~ fqn ~ ")append;" ~ newline;
+        } else if (is(agg == struct)) {
+            ret ~= "extern(C) export returnValue!(" ~ fqn ~ "[]) " ~ getDlangInterfaceName(fqn, "AppendSlice") ~ "(" ~ fqn ~ "[] slice, " ~ fqn ~ " append) nothrow {" ~ newline;
+            ret ~= "    try {" ~ newline;
+            ret ~= "        slice ~= append;" ~ newline;
+        }
+        ret ~= "        return returnValue!(" ~ fqn ~ "[])(slice);" ~ newline;
+        ret ~= "    } catch (Exception __ex__) {" ~ newline;
+        ret ~= "        return returnValue!(" ~ fqn ~ "[])(__ex__);" ~ newline ;
+        ret ~= "    }" ~ newline;
+        ret ~= "}" ~ newline;
+
+        foreach(m; __traits(allMembers, agg)) {
+            if (m == "__ctor" || m == "toHash" || m == "opEquals" || m == "opCmp" || m == "factory") {
+                continue;
+            }
+
+            static if (is(typeof(__traits(getMember, agg, m)))) {
+            foreach(mo; __traits(getOverloads, agg, m)) {
+                const bool isMethod = isFunction!mo;
+
+                static if(isMethod) {
+                    string exp = string.init;
+                    const string interfaceName = getDlangInterfaceName(fqn, m);
+
+                    enum isNothrow = functionAttributes!mo & FunctionAttribute.nothrow_;
+                    alias returnType = ReturnType!mo;
+                    alias returnTypeStr = fullyQualifiedName!returnType;
+                    alias paramTypes = Parameters!mo;
+                    alias paramNames = ParameterIdentifierTuple!mo;
+
+                    exp ~= "extern(C) export ";
+                    if (!isNothrow) {
+                        if (!is(returnType == void)) {
+                            exp ~= "returnValue!(" ~ returnTypeStr ~ ")";
+                        } else {
+                            exp ~= "returnVoid";
+                        }
+                    } else {
+                        exp ~= returnTypeStr;
+                    }
+                    exp ~= " " ~ interfaceName ~ "(";
+                    if (is(agg == struct)) {
+                        exp ~= fqn ~ "* __obj__, ";
+                    } else if (is(agg == class) || is(agg == interface)) {
+                        exp ~= "void* __obj__, ";
+                    }
+                    static foreach(pc; 0..paramNames.length) {
+                        exp ~= fullyQualifiedName!(paramTypes[pc]) ~ " " ~ paramNames[pc] ~ ", ";
+                    }
+                    exp = exp[0..$-2];
+                    exp ~= ") nothrow {" ~ newline;
+                    if (!isNothrow) {
+                        exp ~= "    try {" ~ newline;
+                    }
+                    if (is(agg == struct)) {
+                        if (!is(returnType == void)) {
+                            exp ~= "        auto __result__ = ";
+                        } else {
+                            exp ~= "        ";
+                        }
+                        exp ~= "(*__obj__)." ~ m ~ "(";
+                    } else if (is(agg == class) || is(agg == interface)) {
+                        exp ~= "        " ~ fqn ~ " __temp__ = cast(" ~ fqn ~ ")__obj__;" ~ newline;
+                        if (!is(returnType == void)) {
+                            exp ~= "        auto __result__ = ";
+                        } else {
+                            exp ~= "        ";
+                        }
+                        exp ~= "__temp__." ~ m ~ "(";
+                    }
+                    foreach(pName; paramNames) {
+                        exp ~= pName ~ ", ";
+                    }
+                    if (paramNames.length > 0) {
+                        exp = exp[0..$-2];
+                    }
+                    exp ~= ");" ~ newline;
+                    if (!is(returnType == void)) {
+                        exp ~= "        return returnValue!(" ~ returnTypeStr ~ ")(__result__);" ~ newline;
+                    } else {
+                        exp ~= "        return returnVoid();" ~ newline;
+                    }
+                    if (!isNothrow) {
+                        exp ~= "    } catch (Exception __ex__) {" ~ newline;
+                        if (!is(returnType == void)) {
+                            exp ~= "        return returnValue!(" ~ returnTypeStr ~ ")(__ex__);" ~ newline;
+                        } else {
+                            exp ~= "        return returnVoid(__ex__);" ~ newline;
+                        }
+                        exp ~= "    }" ~ newline;
+                    }
+                    exp ~= "}" ~ newline;
+                    ret ~= exp;
+                } else {
+                    
+                }
+            }
+            }
+        }
+
+        if (is(agg == class) || is(agg == interface)) {
+        alias fieldTypes = Fields!agg;
+        alias fieldNames = FieldNameTuple!agg;
+        static foreach(fc; 0..fieldTypes.length) {
+            static if (is(typeof(__traits(getMember, agg, fieldNames[fc])))) {
+            ret ~= "extern(C) export " ~ fullyQualifiedName!(fieldTypes[fc]) ~ " " ~ getDlangInterfaceName(fqn, fieldNames[fc] ~ "_get") ~ "(void* __obj__) nothrow {" ~ newline;
+            ret ~= "    " ~ fqn ~ " __temp__ = cast(" ~ fqn ~ ")__obj__;" ~ newline;
+            ret ~= "    return __temp__." ~ fieldNames[fc] ~ ";" ~ newline;
+            ret ~= "}" ~ newline;
+            ret ~= "extern(C) export void " ~ getDlangInterfaceName(fqn, fieldNames[fc] ~ "_set") ~ "(void* __obj__, " ~ fullyQualifiedName!(fieldTypes[fc]) ~ " value) nothrow {" ~ newline;
+            ret ~= "    " ~ fqn ~ " __temp__ = cast(" ~ fqn ~ ")__obj__;" ~ newline;
+            ret ~= "    __temp__." ~ fieldNames[fc] ~ " = value;" ~ newline;
+            ret ~= "}" ~ newline;
+            }
+        }
+        }
+*/    }
+
     foreach(func; AllFunctions!Modules) {
         alias modName = func.moduleName;
         alias funcName = func.name;
-        csharpNamespace ns = getNamespace(modName);
+        csharpNamespace ns = getNamespace(getCSharpName(modName));
 
         alias returnType = ReturnType!(__traits(getMember, func.module_, func.name));
         alias returnTypeStr = fullyQualifiedName!(ReturnType!(__traits(getMember, func.module_, func.name)));
@@ -185,7 +356,7 @@ public string writeCSharpFile(Modules...)() if(allSatisfy!(isModule, Modules)) {
     foreach(csns; namespaces.byValue()) {
         ret ~= csns.toString();
     }
-    //ret ~= writeCSharpBoilerplate(libraryName, string.init);
+
     return cast(immutable)ret;
 }
 
