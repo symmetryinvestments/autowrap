@@ -194,15 +194,15 @@ namespace csharp {
     }
 
     public abstract class DLangBase : IDisposable {
-        protected readonly IntPtr ptr;
-        internal IntPtr Pointer => ptr;
+        protected readonly IntPtr _ptr;
+        internal IntPtr Pointer => _ptr;
 
         protected DLangBase(IntPtr ptr) {
-            this.ptr = ptr;
+            this._ptr = ptr;
         }
 
         public void Dispose() {
-            library.ReleaseMemory(ptr);
+            library.ReleaseMemory(_ptr);
         }
     }
 
@@ -210,23 +210,20 @@ namespace csharp {
         public C1() : base(library.C1__ctor()) { }
         private C1(IntPtr ptr) : base(ptr) { }
 
-        public S2 Hidden {
-            get { return library.C1_Get_GetHidden(this.ptr); }
-            set { library.C1_Set_SetHidden(this.ptr, value); }
-        }
+        public S2 Hidden { get => library.C1_Get_GetHidden(Pointer); set => library.C1_Set_SetHidden(Pointer, value); }
 
         public string StringValue {
-            get { return library.C1_Get_StringValue(this.ptr); }
-            set { library.C1_Set_StringValue(this.ptr, value); }
+            get { return library.C1_Get_StringValue(Pointer); }
+            set { library.C1_Set_StringValue(Pointer, value); }
         }
 
         public int IntValue {
-            get { return library.C1_Get_IntValue(this.ptr); }
-            set { library.C1_Set_IntValue(this.ptr, value); }
+            get { return library.C1_Get_IntValue(Pointer); }
+            set { library.C1_Set_IntValue(Pointer, value); }
         }
 
         public string TestMemberFunc(string value, S1 test) {
-            return library.C1_TestMemberFunc(this.ptr, value, test);
+            return library.C1_TestMemberFunc(Pointer, value, test);
         }
 
         internal static C1[] SliceToArray(slice dslice) {

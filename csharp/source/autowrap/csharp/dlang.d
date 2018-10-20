@@ -122,104 +122,103 @@ public string wrapDLang(Modules...)() if(allSatisfy!(isModule, Modules)) {
             }
 
             static if (is(typeof(__traits(getMember, agg, m)))) {
-            foreach(mo; __traits(getOverloads, agg, m)) {
-                const bool isMethod = isFunction!mo;
+                foreach(mo; __traits(getOverloads, agg, m)) {
+                    const bool isMethod = isFunction!mo;
 
-                static if(isMethod) {
-                    string exp = string.init;
-                    const string interfaceName = getDlangInterfaceName(fqn, m);
+                    static if(isMethod) {
+                        string exp = string.init;
+                        const string interfaceName = getDlangInterfaceName(fqn, m);
 
-                    enum isNothrow = functionAttributes!mo & FunctionAttribute.nothrow_;
-                    alias returnType = ReturnType!mo;
-                    alias returnTypeStr = fullyQualifiedName!returnType;
-                    alias paramTypes = Parameters!mo;
-                    alias paramNames = ParameterIdentifierTuple!mo;
+                        enum isNothrow = functionAttributes!mo & FunctionAttribute.nothrow_;
+                        alias returnType = ReturnType!mo;
+                        alias returnTypeStr = fullyQualifiedName!returnType;
+                        alias paramTypes = Parameters!mo;
+                        alias paramNames = ParameterIdentifierTuple!mo;
 
-                    exp ~= "extern(C) export ";
-                    if (!isNothrow) {
-                        if (!is(returnType == void)) {
-                            exp ~= "returnValue!(" ~ returnTypeStr ~ ")";
+                        exp ~= "extern(C) export ";
+                        if (!isNothrow) {
+                            if (!is(returnType == void)) {
+                                exp ~= "returnValue!(" ~ returnTypeStr ~ ")";
+                            } else {
+                                exp ~= "returnVoid";
+                            }
                         } else {
-                            exp ~= "returnVoid";
+                            exp ~= returnTypeStr;
                         }
-                    } else {
-                        exp ~= returnTypeStr;
-                    }
-                    exp ~= " " ~ interfaceName ~ "(";
-                    if (is(agg == struct)) {
-                        exp ~= fqn ~ "* __obj__, ";
-                    } else if (is(agg == class) || is(agg == interface)) {
-                        exp ~= "void* __obj__, ";
-                    }
-                    static foreach(pc; 0..paramNames.length) {
-                        exp ~= fullyQualifiedName!(paramTypes[pc]) ~ " " ~ paramNames[pc] ~ ", ";
-                    }
-                    exp = exp[0..$-2];
-                    exp ~= ") nothrow {" ~ newline;
-                    if (!isNothrow) {
-                        exp ~= "    try {" ~ newline;
-                    }
-                    if (is(agg == struct)) {
-                        if (!is(returnType == void)) {
-                            exp ~= "        auto __result__ = ";
-                        } else {
-                            exp ~= "        ";
+                        exp ~= " " ~ interfaceName ~ "(";
+                        if (is(agg == struct)) {
+                            exp ~= fqn ~ "* __obj__, ";
+                        } else if (is(agg == class) || is(agg == interface)) {
+                            exp ~= "void* __obj__, ";
                         }
-                        exp ~= "(*__obj__)." ~ m ~ "(";
-                    } else if (is(agg == class) || is(agg == interface)) {
-                        exp ~= "        " ~ fqn ~ " __temp__ = cast(" ~ fqn ~ ")__obj__;" ~ newline;
-                        if (!is(returnType == void)) {
-                            exp ~= "        auto __result__ = ";
-                        } else {
-                            exp ~= "        ";
+                        static foreach(pc; 0..paramNames.length) {
+                            exp ~= fullyQualifiedName!(paramTypes[pc]) ~ " " ~ paramNames[pc] ~ ", ";
                         }
-                        exp ~= "__temp__." ~ m ~ "(";
-                    }
-                    foreach(pName; paramNames) {
-                        exp ~= pName ~ ", ";
-                    }
-                    if (paramNames.length > 0) {
                         exp = exp[0..$-2];
-                    }
-                    exp ~= ");" ~ newline;
-                    if (!is(returnType == void)) {
-                        exp ~= "        return returnValue!(" ~ returnTypeStr ~ ")(__result__);" ~ newline;
-                    } else {
-                        exp ~= "        return returnVoid();" ~ newline;
-                    }
-                    if (!isNothrow) {
-                        exp ~= "    } catch (Exception __ex__) {" ~ newline;
-                        if (!is(returnType == void)) {
-                            exp ~= "        return returnValue!(" ~ returnTypeStr ~ ")(__ex__);" ~ newline;
-                        } else {
-                            exp ~= "        return returnVoid(__ex__);" ~ newline;
+                        exp ~= ") nothrow {" ~ newline;
+                        if (!isNothrow) {
+                            exp ~= "    try {" ~ newline;
                         }
-                        exp ~= "    }" ~ newline;
+                        if (is(agg == struct)) {
+                            if (!is(returnType == void)) {
+                                exp ~= "        auto __result__ = ";
+                            } else {
+                                exp ~= "        ";
+                            }
+                            exp ~= "(*__obj__)." ~ m ~ "(";
+                        } else if (is(agg == class) || is(agg == interface)) {
+                            exp ~= "        " ~ fqn ~ " __temp__ = cast(" ~ fqn ~ ")__obj__;" ~ newline;
+                            if (!is(returnType == void)) {
+                                exp ~= "        auto __result__ = ";
+                            } else {
+                                exp ~= "        ";
+                            }
+                            exp ~= "__temp__." ~ m ~ "(";
+                        }
+                        foreach(pName; paramNames) {
+                            exp ~= pName ~ ", ";
+                        }
+                        if (paramNames.length > 0) {
+                            exp = exp[0..$-2];
+                        }
+                        exp ~= ");" ~ newline;
+                        if (!is(returnType == void)) {
+                            exp ~= "        return returnValue!(" ~ returnTypeStr ~ ")(__result__);" ~ newline;
+                        } else {
+                            exp ~= "        return returnVoid();" ~ newline;
+                        }
+                        if (!isNothrow) {
+                            exp ~= "    } catch (Exception __ex__) {" ~ newline;
+                            if (!is(returnType == void)) {
+                                exp ~= "        return returnValue!(" ~ returnTypeStr ~ ")(__ex__);" ~ newline;
+                            } else {
+                                exp ~= "        return returnVoid(__ex__);" ~ newline;
+                            }
+                            exp ~= "    }" ~ newline;
+                        }
+                        exp ~= "}" ~ newline;
+                        ret ~= exp;
+                    } else {
                     }
-                    exp ~= "}" ~ newline;
-                    ret ~= exp;
-                } else {
-                    
                 }
-            }
             }
         }
 
         if (is(agg == class) || is(agg == interface)) {
-        alias fieldTypes = Fields!agg;
-        alias fieldNames = FieldNameTuple!agg;
-        static foreach(fc; 0..fieldTypes.length) {
-            static if (is(typeof(__traits(getMember, agg, fieldNames[fc])))) {
-            ret ~= "extern(C) export " ~ fullyQualifiedName!(fieldTypes[fc]) ~ " " ~ getDlangInterfaceName(fqn, fieldNames[fc] ~ "_get") ~ "(void* __obj__) nothrow {" ~ newline;
-            ret ~= "    " ~ fqn ~ " __temp__ = cast(" ~ fqn ~ ")__obj__;" ~ newline;
-            ret ~= "    return __temp__." ~ fieldNames[fc] ~ ";" ~ newline;
-            ret ~= "}" ~ newline;
-            ret ~= "extern(C) export void " ~ getDlangInterfaceName(fqn, fieldNames[fc] ~ "_set") ~ "(void* __obj__, " ~ fullyQualifiedName!(fieldTypes[fc]) ~ " value) nothrow {" ~ newline;
-            ret ~= "    " ~ fqn ~ " __temp__ = cast(" ~ fqn ~ ")__obj__;" ~ newline;
-            ret ~= "    __temp__." ~ fieldNames[fc] ~ " = value;" ~ newline;
-            ret ~= "}" ~ newline;
+            alias fieldTypes = Fields!agg;
+            alias fieldNames = FieldNameTuple!agg;
+            static foreach(fc; 0..fieldTypes.length) {
+                static if (is(typeof(__traits(getMember, agg, fieldNames[fc])))) {
+                    ret ~= "extern(C) export " ~ fullyQualifiedName!(fieldTypes[fc]) ~ " " ~ getDlangInterfaceName(fqn, fieldNames[fc] ~ "_get") ~ "(void* __obj__) nothrow {" ~ newline;
+                    ret ~= "    " ~ fqn ~ " __temp__ = cast(" ~ fqn ~ ")__obj__;" ~ newline;
+                    ret ~= "    return __temp__." ~ fieldNames[fc] ~ ";" ~ newline;
+                    ret ~= "}" ~ newline;
+                    ret ~= "extern(C) export void " ~ getDlangInterfaceName(fqn, fieldNames[fc] ~ "_set") ~ "(void* __obj__, " ~ fullyQualifiedName!(fieldTypes[fc]) ~ " value) nothrow {" ~ newline;
+                    ret ~= "    " ~ fqn ~ " __temp__ = cast(" ~ fqn ~ ")__obj__;" ~ newline;
+                    ret ~= "    __temp__." ~ fieldNames[fc] ~ " = value;" ~ newline;
+                    ret ~= "}" ~ newline;
+                }
             }
-        }
         }
     }
 

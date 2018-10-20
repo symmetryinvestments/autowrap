@@ -15,6 +15,7 @@ import std.stdio;
 private __gshared string[string] returnTypes;
 private __gshared csharpNamespace[string] namespaces;
 
+enum string voidTypeString = "void";
 enum string stringTypeString = "string";
 enum string wstringTypeString = "wstring";
 enum string dstringTypeString = "dstring";
@@ -90,14 +91,15 @@ private class csharpAggregate {
         char[] ret;
         ret.reserve(32_768);
         if (isStruct) {
+            ret ~= "    [StructLayout(LayoutKind.Sequential)]" ~ newline;
             ret ~= "    public struct " ~ camelToPascalCase(this.name) ~ " {" ~ newline;
         } else {
-            ret ~= "    public class " ~ camelToPascalCase(this.name) ~ " : DLangBase {" ~ newline;
+            ret ~= "    public class " ~ camelToPascalCase(this.name) ~ " : DLangObject {" ~ newline;
         }
-        ret ~= functions ~ newline;
-        ret ~= constructors ~ newline;
-        ret ~= methods ~ newline;
-        ret ~= properties;
+        if (functions != string.init) ret ~= functions ~ newline;
+        if (constructors != string.init) ret ~= constructors ~ newline;
+        if (methods != string.init) ret ~= methods ~ newline;
+        if (properties != string.init) ret ~= properties;
         ret ~= "    }" ~ newline ~ newline;
         return cast(immutable)ret;
     }
@@ -160,69 +162,62 @@ public string writeCSharpFile(Modules...)() if(allSatisfy!(isModule, Modules)) {
             ctor ~= "}" ~ newline;
             csagg.constructors ~= ctor;
         }
-        csagg.constructors ~= "private %s(IntPtr ptr) : base(ptr) { }".format(aggName);
+        if (is(agg == class)) {
+            csagg.constructors ~= "        private %s(IntPtr ptr) : base(ptr) { }".format(aggName) ~ newline;
+        }
 
         //Generate range creation method
-
-/*
-        ret ~= "extern(C) export returnValue!(" ~ fqn ~ "[]) " ~ getDlangInterfaceName(fqn, "CreateSlice") ~ "(ulong capacity) nothrow {" ~ newline;
-        ret ~= "    try {" ~ newline;
-        ret ~= "        " ~ fqn ~ "[] __temp__ = new " ~ fqn ~ "[capacity];" ~ newline;
-        ret ~= "        pinPointer(cast(void*)__temp__.ptr);" ~ newline;
-        ret ~= "        return returnValue!(" ~ fqn ~ "[])(__temp__);" ~ newline;
-        ret ~= "    } catch (Exception __ex__) {" ~ newline;
-        ret ~= "        return returnValue!(" ~ fqn ~ "[])(__ex__);" ~ newline;
-        ret ~= "    }" ~ newline;
-        ret ~= "}" ~ newline;
-
-        //Generate range append method
         if (is(agg == class)) {
-            ret ~= "extern(C) export returnValue!(" ~ fqn ~ "[]) " ~ getDlangInterfaceName(fqn, "AppendSlice") ~ "(" ~ fqn ~ "[] slice, void* append) nothrow {" ~ newline;
-            ret ~= "    try {" ~ newline;
-            ret ~= "        slice ~= cast(" ~ fqn ~ ")append;" ~ newline;
+            csagg.functions ~= "        internal static " ~ getCSharpName(aggName) ~ "[] SliceToArray(slice dslice) {" ~ newline;
+            csagg.functions ~= "            Span<IntPtr> span = new dlang_slice<IntPtr>(dslice);" ~ newline;
+            csagg.functions ~= "            return span.ToArray().Select(a => new " ~ getCSharpName(aggName) ~ "(a)).ToArray();" ~ newline;
+            csagg.functions ~= "        }" ~ newline;
+            csagg.functions ~= "        internal static slice ArrayToSlice(" ~ getCSharpName(aggName) ~ "[] array) {" ~ newline;
+            csagg.functions ~= "            dlang_slice<IntPtr> slice = array.Select(a => a.Pointer).ToArray().AsSpan();" ~ newline;
+            csagg.functions ~= "            return slice.ToSlice();" ~ newline;
+            csagg.functions ~= "        }" ~ newline;
         } else if (is(agg == struct)) {
-            ret ~= "extern(C) export returnValue!(" ~ fqn ~ "[]) " ~ getDlangInterfaceName(fqn, "AppendSlice") ~ "(" ~ fqn ~ "[] slice, " ~ fqn ~ " append) nothrow {" ~ newline;
-            ret ~= "    try {" ~ newline;
-            ret ~= "        slice ~= append;" ~ newline;
+            csagg.functions ~= "        internal static " ~ getCSharpName(aggName) ~ "[] SliceToArray(slice dslice) {" ~ newline;
+            csagg.functions ~= "            var ret = dlang_slice<" ~ getCSharpName(aggName) ~ "> slice = array.AsSpan();" ~ newline;
+            csagg.functions ~= "            Span<" ~ getCSharpName(aggName) ~ "> t = ret;" ~ newline;
+            csagg.functions ~= "            return ret.ToArray();" ~ newline;
+            csagg.functions ~= "        }" ~ newline;
+            csagg.functions ~= "        internal static slice ArrayToSlice(" ~ getCSharpName(aggName) ~ "[] array) {" ~ newline;
+            csagg.functions ~= "            var slice = new dlang_slice<" ~ getCSharpName(aggName) ~ ">(array.AsSpan());" ~ newline;
+            csagg.functions ~= "            return slice.ToSlice();" ~ newline;
+            csagg.functions ~= "        }" ~ newline;
         }
-        ret ~= "        return returnValue!(" ~ fqn ~ "[])(slice);" ~ newline;
-        ret ~= "    } catch (Exception __ex__) {" ~ newline;
-        ret ~= "        return returnValue!(" ~ fqn ~ "[])(__ex__);" ~ newline ;
-        ret ~= "    }" ~ newline;
-        ret ~= "}" ~ newline;
 
         foreach(m; __traits(allMembers, agg)) {
             if (m == "__ctor" || m == "toHash" || m == "opEquals" || m == "opCmp" || m == "factory") {
                 continue;
             }
+            const string methodName = camelToPascalCase(cast(string)m);
+            pragma(msg, methodName);
 
             static if (is(typeof(__traits(getMember, agg, m)))) {
             foreach(mo; __traits(getOverloads, agg, m)) {
-                const bool isMethod = isFunction!mo;
-
-                static if(isMethod) {
+                static if(isFunction!mo) {
                     string exp = string.init;
-                    const string interfaceName = getDlangInterfaceName(fqn, m);
-
-                    enum isNothrow = functionAttributes!mo & FunctionAttribute.nothrow_;
+                    enum bool isNothrow = cast(bool)(functionAttributes!mo & FunctionAttribute.nothrow_);
+                    enum bool isProperty = cast(bool)(functionAttributes!mo & FunctionAttribute.property);
                     alias returnType = ReturnType!mo;
                     alias returnTypeStr = fullyQualifiedName!returnType;
                     alias paramTypes = Parameters!mo;
                     alias paramNames = ParameterIdentifierTuple!mo;
 
-                    exp ~= "extern(C) export ";
-                    if (!isNothrow) {
-                        if (!is(returnType == void)) {
-                            exp ~= "returnValue!(" ~ returnTypeStr ~ ")";
-                        } else {
-                            exp ~= "returnVoid";
-                        }
+                    const string interfaceName = getDlangInterfaceName(fqn, m);
+
+                    exp ~= "        [DllImport(\"%s\", EntryPoint = \"%s\", CallingConvention = CallingConvention.Cdecl))]".format(libraryName, interfaceName) ~ newline;
+                    exp ~= "        private static extern ";
+                    if (!is(returnType == void)) {
+                        exp ~= getDLangReturnType(returnTypeStr, isNothrow);
                     } else {
-                        exp ~= returnTypeStr;
+                        exp ~= "return_void_error";
                     }
-                    exp ~= " " ~ interfaceName ~ "(";
+                    exp ~= " dlang_" ~ methodName ~ "(";
                     if (is(agg == struct)) {
-                        exp ~= fqn ~ "* __obj__, ";
+                        exp ~= "ref " ~ fqn ~ " __obj__, ";
                     } else if (is(agg == class) || is(agg == interface)) {
                         exp ~= "void* __obj__, ";
                     }
@@ -230,73 +225,106 @@ public string writeCSharpFile(Modules...)() if(allSatisfy!(isModule, Modules)) {
                         exp ~= fullyQualifiedName!(paramTypes[pc]) ~ " " ~ paramNames[pc] ~ ", ";
                     }
                     exp = exp[0..$-2];
-                    exp ~= ") nothrow {" ~ newline;
-                    if (!isNothrow) {
-                        exp ~= "    try {" ~ newline;
-                    }
-                    if (is(agg == struct)) {
-                        if (!is(returnType == void)) {
-                            exp ~= "        auto __result__ = ";
-                        } else {
-                            exp ~= "        ";
-                        }
-                        exp ~= "(*__obj__)." ~ m ~ "(";
-                    } else if (is(agg == class) || is(agg == interface)) {
-                        exp ~= "        " ~ fqn ~ " __temp__ = cast(" ~ fqn ~ ")__obj__;" ~ newline;
-                        if (!is(returnType == void)) {
-                            exp ~= "        auto __result__ = ";
-                        } else {
-                            exp ~= "        ";
-                        }
-                        exp ~= "__temp__." ~ m ~ "(";
-                    }
-                    foreach(pName; paramNames) {
-                        exp ~= pName ~ ", ";
-                    }
-                    if (paramNames.length > 0) {
-                        exp = exp[0..$-2];
-                    }
                     exp ~= ");" ~ newline;
-                    if (!is(returnType == void)) {
-                        exp ~= "        return returnValue!(" ~ returnTypeStr ~ ")(__result__);" ~ newline;
-                    } else {
-                        exp ~= "        return returnVoid();" ~ newline;
-                    }
-                    if (!isNothrow) {
-                        exp ~= "    } catch (Exception __ex__) {" ~ newline;
-                        if (!is(returnType == void)) {
-                            exp ~= "        return returnValue!(" ~ returnTypeStr ~ ")(__ex__);" ~ newline;
+                    if (!isProperty) {
+                        if (methodName == "ToString") {
+                            exp ~= "        public override %s %s(".format(getCSharpInterfaceType(returnTypeStr), methodName);
                         } else {
-                            exp ~= "        return returnVoid(__ex__);" ~ newline;
+                            exp ~= "        public %s %s(".format(getCSharpInterfaceType(returnTypeStr), methodName);
                         }
-                        exp ~= "    }" ~ newline;
+                        static foreach(pc; 0..paramNames.length) {
+                            exp ~= getCSharpInterfaceType(fullyQualifiedName!(paramTypes[pc])) ~ " " ~ paramNames[pc] ~ ", ";
+                        }
+                        if (paramNames.length > 0) {
+                            exp = exp[0..$-2];
+                        }
+                        exp ~= ") {" ~ newline;
+                        if (is(returnType == void)) {
+                            exp ~= "            dlang_%s(DLangPointer, ".format(methodName);
+                        } else {
+                            exp ~= "            var dlang_ret = dlang_%s(DLangPointer, ".format(methodName);
+                        }
+                        static foreach(pc; 0..paramNames.length) {
+                            exp ~= paramNames[pc] ~ ", ";
+                        }
+                        exp = exp[0..$-2];
+                        exp ~= ");" ~ newline;
+                        if (!isNothrow) {
+                            exp ~= "            if (!string.IsNullOrEmpty(dlang_ret.error)) throw new DLangException(dlang_ret.error);" ~ newline;
+                            if (!is(returnType == void)) {
+                                exp ~= "            return dlang_ret.value;" ~ newline;
+                            }
+                        } else {
+                            if (!is(returnType == void)) {
+                                exp ~= "            return dlang_ret;" ~ newline;
+                            }
+                        }
+                        exp ~= "        }" ~ newline;
                     }
-                    exp ~= "}" ~ newline;
-                    ret ~= exp;
-                } else {
-                    
+                    csagg.methods ~= exp;
                 }
+            }
+
+            bool isProperty = false;
+            bool propertyGet = false;
+            bool propertySet = false;
+            foreach(mo; __traits(getOverloads, agg, m)) {
+            static if (cast(bool)(functionAttributes!mo & FunctionAttribute.property)) {
+                isProperty = true;
+                alias returnType = ReturnType!mo;
+                alias paramTypes = Parameters!mo;
+                if (paramTypes.length == 0) {
+                    propertyGet = true;
+                } else {
+                    propertySet = true;
+                }
+                pragma(msg, returnType);
+                static if(paramTypes.length != 0) {
+                pragma(msg, paramTypes[0]);
+                }
+                pragma(msg, "Found Property");
+            }
+            }
+
+            const olc = __traits(getOverloads, agg, m).length;
+            static if(olc > 0) {
+            if (isProperty) {
+                alias propertyType = ReturnType!(__traits(getOverloads, agg, m)[0]);
+                //pragma(msg, propertyType);
+                string prop = "        public " ~ methodName ~ " { ";
+                if (propertyGet) {
+                    prop ~= "get => dlang_" ~ methodName ~ "(DLangPointer); ";
+                }
+                if (propertySet) {
+                    prop ~= "set => dlang_" ~ methodName ~ "(DLangPointer, value); ";
+                }
+                prop ~= "}" ~ newline;
+                csagg.properties ~= prop;
+            }
             }
             }
         }
 
-        if (is(agg == class) || is(agg == interface)) {
         alias fieldTypes = Fields!agg;
         alias fieldNames = FieldNameTuple!agg;
-        static foreach(fc; 0..fieldTypes.length) {
-            static if (is(typeof(__traits(getMember, agg, fieldNames[fc])))) {
-            ret ~= "extern(C) export " ~ fullyQualifiedName!(fieldTypes[fc]) ~ " " ~ getDlangInterfaceName(fqn, fieldNames[fc] ~ "_get") ~ "(void* __obj__) nothrow {" ~ newline;
-            ret ~= "    " ~ fqn ~ " __temp__ = cast(" ~ fqn ~ ")__obj__;" ~ newline;
-            ret ~= "    return __temp__." ~ fieldNames[fc] ~ ";" ~ newline;
-            ret ~= "}" ~ newline;
-            ret ~= "extern(C) export void " ~ getDlangInterfaceName(fqn, fieldNames[fc] ~ "_set") ~ "(void* __obj__, " ~ fullyQualifiedName!(fieldTypes[fc]) ~ " value) nothrow {" ~ newline;
-            ret ~= "    " ~ fqn ~ " __temp__ = cast(" ~ fqn ~ ")__obj__;" ~ newline;
-            ret ~= "    __temp__." ~ fieldNames[fc] ~ " = value;" ~ newline;
-            ret ~= "}" ~ newline;
+        if (is(agg == class) || is(agg == interface)) {
+            static foreach(fc; 0..fieldTypes.length) {
+                static if (is(typeof(__traits(getMember, agg, fieldNames[fc])))) {
+                    csagg.properties ~= "        [DllImport(\"%s\", EntryPoint = \"%s\", CallingConvention = CallingConvention.Cdecl))]".format(libraryName, getDlangInterfaceName(fqn, fieldNames[fc] ~ "_get")) ~ newline;
+                    csagg.properties ~= "        private static extern %s dlang_%s_get(IntPtr ptr);".format(getCSharpInterfaceType(fullyQualifiedName!(fieldTypes[fc])), fieldNames[fc]) ~ newline;
+                    csagg.properties ~= "        [DllImport(\"%s\", EntryPoint = \"%s\", CallingConvention = CallingConvention.Cdecl))]".format(libraryName, getDlangInterfaceName(fqn, fieldNames[fc] ~ "_set")) ~ newline;
+                    csagg.properties ~= "        private static extern void dlang_%s_set(IntPtr ptr, %s value);".format(fieldNames[fc], getCSharpInterfaceType(fullyQualifiedName!(fieldTypes[fc]))) ~ newline;
+                    csagg.properties ~= "        public %2$s %3$s { get => dlang_%1$s_get(DLangPointer); set => dlang_%1$s_set(DLangPointer, value); }".format(fieldNames[fc], getCSharpInterfaceType(fullyQualifiedName!(fieldTypes[fc])), getCSharpName(fieldNames[fc])) ~ newline;
+                }
+            }
+        } else if(is(agg == struct)) {
+            static foreach(fc; 0..fieldTypes.length) {
+                static if (is(typeof(__traits(getMember, agg, fieldNames[fc])))) {
+                    csagg.properties ~= "        public " ~ getCSharpInterfaceType(fullyQualifiedName!(fieldTypes[fc])) ~ " " ~ getCSharpName(fieldNames[fc]) ~ ";" ~ newline;
+                }
             }
         }
-        }
-*/    }
+    }
 
     foreach(func; AllFunctions!Modules) {
         alias modName = func.moduleName;
@@ -310,7 +338,7 @@ public string writeCSharpFile(Modules...)() if(allSatisfy!(isModule, Modules)) {
         enum bool isNothrow = (functionAttributes!(__traits(getMember, func.module_, func.name)) & FunctionAttribute.nothrow_) == FunctionAttribute.nothrow_;
         const string interfaceName = getDlangInterfaceName(modName, null, funcName);
         const string methodName = getCSharpMethodName(null, funcName);
-        string retType = getReturnType(returnTypeStr, isNothrow);
+        string retType = getDLangReturnType(returnTypeStr, isNothrow);
         string funcStr = "        [DllImport(\"%s\", EntryPoint = \"%s\", CallingConvention = CallingConvention.Cdecl))]".format(libraryName, interfaceName) ~ newline;
         if (returnTypeStr == boolTypeString && isNothrow) {
             funcStr ~= "        [return: MarshalAs(UnmanagedType.Bool)]";
@@ -395,7 +423,8 @@ private string getCSharpInterfaceType(string type) {
     string postfix = string.init;
     if (type[$-2..$] == "[]") postfix = "[]";
     //Types that require special marshalling types
-    if(type == stringTypeString) return "string" ~ postfix;
+    if(type == voidTypeString) return "void";
+    else if(type == stringTypeString) return "string" ~ postfix;
     else if (type == wstringTypeString) return "string" ~ postfix;
     else if (type == dstringTypeString) return "string" ~ postfix;
     else if (type == boolTypeString) return "bool" ~ postfix;
@@ -420,24 +449,25 @@ private string getCSharpInterfaceType(string type) {
     else return getCSharpName(type);
 }
 
-private string getReturnType(string type, bool isNothrow) {
+private string getDLangReturnType(string type, bool isNothrow) {
     if(isNothrow) {
         return getDLangInterfaceType(type);
     } else {
         string rtname = format("return_%s_error", getDLangInterfaceType(type));
         //These types have predefined C# types.
-        if(type == boolTypeString || type == stringTypeString || type == wstringTypeString || type == dstringTypeString) {
+        if(type == voidTypeString || type == boolTypeString || type == stringTypeString || type == wstringTypeString || type == dstringTypeString) {
             return rtname;
         }
+        rtname = rtname.replace("[]", "Array");
 
-        string rt = "    [StructLayout(LayoutKind.Sequential)]
-    public struct %s {
+        const string typeStr = "    [StructLayout(LayoutKind.Sequential)]
+    internal struct %s {
         public %s value;
         public dlang_wstring error;
     }".format(rtname, getDLangInterfaceType(type)) ~ newline;
 
         if ((rtname in returnTypes) is null) {
-            returnTypes[rtname] = rt;
+            returnTypes[rtname] = typeStr;
         }
         return rtname;
     }
@@ -633,15 +663,15 @@ private string writeCSharpBoilerplate(string libraryName, string rootNamespace) 
     }
 
     public abstract class DLangObject : IDisposable {
-        protected readonly IntPtr ptr;
-        internal IntPtr Pointer => ptr;
+        private readonly IntPtr _ptr;
+        internal protected IntPtr DLangPointer => _ptr;
 
         protected DLangObject(IntPtr ptr) {
-            this.ptr = ptr;
+            this._ptr = ptr;
         }
 
         public void Dispose() {
-            Functions.ReleaseMemory(ptr);
+            Functions.ReleaseMemory(_ptr);
         }
     }
 
@@ -657,19 +687,19 @@ private string writeCSharpBoilerplate(string libraryName, string rootNamespace) 
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    internal struct return_string_error {
+    internal struct return_dlang_string_error {
         public dlang_string value;
         public dlang_wstring error;
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    internal struct return_wstring_error {
+    internal struct return_dlang_wstring_error {
         public dlang_wstring value;
         public dlang_wstring error;
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    internal struct return_dstring_error {
+    internal struct return_dlang_dstring_error {
         public dlang_dstring value;
         public dlang_wstring error;
     }
