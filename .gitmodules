@@ -1,4 +1,0 @@
-[submodule "pyd"]
-	path = pyd
-	url = https://github.com/atilaneves/pyd.git
-	branch = autowrap
