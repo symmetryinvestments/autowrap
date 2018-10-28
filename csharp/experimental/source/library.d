@@ -1,7 +1,5 @@
 module csharp.library;
 
-//export:
-
 export int freeFunction (int value) {
 	return value;
 }
@@ -58,17 +56,97 @@ class c1 {
         stringValue = s;
     }
 
-	//TODO: We will deal with these cases later.
-	//public c1 refMember;
-	//public c1[] refArray;
-	//public s1[] structArray;
+    //Member test cases
+    public bool boolMember;
+    public byte byteMember;
+    public ubyte ubyteMember;
+    public short shortMember;
+    public ushort ushortMember;
+    public int intMember;
+    public uint uintMember;
+    public long longMember;
+    public ulong ulongMember;
+    public float floatMember;
+    public double doubleMember;
+    public string stringMember;
+    public wstring wstringMember;
+    public dstring dstringMember;
+    public s1 valueMember;
+	public c1 refMember;
+	public c1[] refArray;
+	public s1[] structArray;
 
-	private s2 _hidden;
-	public @property s2 hidden() {
-		return _hidden;
+    //Property test cases
+	private s2 _structProperty;
+	public @property s2 structProperty() {
+		return _structProperty;
 	}
-	public @property s2 hidden(s2 value) {
-		return _hidden = value;
+	public @property s2 structProperty(s2 value) {
+		return _structProperty = value;
+	}
+	
+    private c1 _refProperty;
+	public @property c1 refProperty() {
+		return _refProperty;
+	}
+	public @property c1 refProperty(c1 value) {
+		return _refProperty = value;
+	}
+	
+    private ulong _valueProperty;
+	public @property ulong valueProperty() {
+		return _valueProperty;
+	}
+	public @property ulong valueProperty(ulong value) {
+		return _valueProperty = value;
+	}
+	
+    private ulong[] _valueSliceProperty;
+	public @property ulong[] valueSliceProperty() {
+		return valueSliceProperty;
+	}
+	public @property ulong[] valueSliceProperty(ulong[] value) {
+		return valueSliceProperty = value;
+	}
+	
+    private string[] _stringSliceProperty;
+	public @property string[] stringSliceProperty() {
+		return _stringSliceProperty;
+	}
+	public @property string[] stringSliceProperty(string[] value) {
+		return _stringSliceProperty = value;
+	}
+	
+    private wstring[] _wstringSliceProperty;
+	public @property wstring[] wstringSliceProperty() {
+		return _wstringSliceProperty;
+	}
+	public @property wstring[] wstringSliceProperty(wstring[] value) {
+		return _wstringSliceProperty = value;
+	}
+	
+    private dstring[] _dstringSliceProperty;
+	public @property dstring[] dstringSliceProperty() {
+		return _dstringSliceProperty;
+	}
+	public @property dstring[] dstringSliceProperty(dstring[] value) {
+		return _dstringSliceProperty = value;
+	}
+	
+    private s1[] _structSliceProperty;
+	public @property s1[] structSliceProperty() {
+		return _structSliceProperty;
+	}
+	public @property s1[] structSliceProperty(s1[] value) {
+		return _structSliceProperty = value;
+	}
+	
+    private c1[] _refSliceProperty;
+	public @property c1[] refSliceProperty() {
+		return _refSliceProperty;
+	}
+	public @property c1[] refSliceProperty(c1[] value) {
+		return _refSliceProperty = value;
 	}
 
 	public string testMemberFunc(string test, s1 value){

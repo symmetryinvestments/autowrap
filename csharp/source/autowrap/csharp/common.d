@@ -10,7 +10,7 @@ package string getInterfaceTypeString(TypeInfo type) {
     return type.toString();
 }
 
-package string getDlangInterfaceName(string moduleName, string aggName, string funcName) {
+package string getDLangInterfaceName(string moduleName, string aggName, string funcName) {
     import std.string : split;
     string name = "autowrap_csharp_";
 
@@ -24,9 +24,20 @@ package string getDlangInterfaceName(string moduleName, string aggName, string f
     return name;
 }
 
-package string getDlangInterfaceName(string fqn, string funcName) {
+package string getDLangInterfaceName(string fqn, string funcName) {
     import std.string : split;
     string name = "autowrap_csharp_";
+
+    foreach(string namePart; fqn.split(".")) {
+        name ~= camelToPascalCase(namePart) ~ "_";
+    }
+    name ~= camelToPascalCase(funcName);
+    return name;
+}
+
+package string getDLangSliceInterfaceName(string fqn, string funcName) {
+    import std.string : split;
+    string name = "autowrap_csharp_slice_";
 
     foreach(string namePart; fqn.split(".")) {
         name ~= camelToPascalCase(namePart) ~ "_";

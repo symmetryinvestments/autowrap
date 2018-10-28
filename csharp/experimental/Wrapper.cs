@@ -1,5 +1,6 @@
 namespace csharp {
     using System;
+    using System.Collections;
     using System.Collections.Generic;
     using System.IO;
     using System.Linq;
@@ -95,7 +96,7 @@ namespace csharp {
         }
     }
 
-    internal struct slice : IDisposable {
+    internal struct slice {
         internal IntPtr length;
         internal IntPtr ptr;
 
@@ -105,9 +106,124 @@ namespace csharp {
             this.length = length;
         }
 
-        public void Dispose()
+        public void Release()
         {
             library.ReleaseMemory(ptr);
+        }
+
+        internal static T[] ToArray<T>(slice dslice)
+            where T : unmanaged {
+            Span<T> span = new dlang_slice<T>(dslice);
+            return span.ToArray();
+        }
+    }
+
+    public class RefSlice<T> : IEnumerable<T>
+        where T : DLangObject {
+        private slice _slice;
+        internal RefSlice(slice dslice) {
+            this._slice = dslice;
+        }
+
+        private static extern IntPtr dlang_slice_C1_Get(slice dslice, IntPtr index);
+        private static extern void dlang_slice_C1_Set(slice dslice, IntPtr index, IntPtr value);
+        private static extern slice dlang_slice_C1_Slice(IntPtr begin, IntPtr end);
+        private static extern slice dlang_slice_C1_Append(slice dslice, IntPtr value);
+
+        public T this[long i] {
+            get {
+                if (typeof(T) == typeof(C1)) return (T)(DLangObject)new C1(dlang_slice_C1_Get(this._slice, new IntPtr(i)));
+                throw new TypeAccessException($"Slice does not support type: {typeof(T).ToString()}");
+            }
+            set {
+                if (typeof(T) == typeof(C1)) dlang_slice_C1_Set(this._slice, new IntPtr(i), value.DLangPointer);
+            }
+        }
+
+        public static RefSlice<T> operator +(RefSlice<T> dslice, T value) {
+            if (typeof(T) == typeof(C1)) return new RefSlice<T>(dlang_slice_C1_Append(dslice._slice, value.DLangPointer));
+            throw new TypeAccessException($"Slice does not support type: {typeof(T).ToString()}");
+        }
+
+        public RefSlice<T> Slice(long begin, long end) {
+            if (end > _slice.length.ToInt64()) {
+                throw new IndexOutOfRangeException("Value for parameter 'end' is greater than that length of the slice.");
+            }
+            throw new TypeAccessException($"Slice does not support type: {typeof(T).ToString()}");
+        }
+
+        public IEnumerator<T> GetEnumerator() {
+            for(long i = 0; i < _slice.length.ToInt64(); i++) {
+                if (typeof(T) == typeof(S1)) yield return (T)(object)new C1(dlang_slice_C1_Get(_slice, new IntPtr(i)));
+            }
+        }
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
+        }
+    }
+
+    public class ValueSlice<T> : IEnumerable<T>
+        where T : unmanaged {
+        private readonly slice _slice;
+        internal ValueSlice(slice dslice) {
+            this._slice = dslice;
+        }
+        public long Length => _slice.length.ToInt64();
+
+        public ValueSlice(long capacity = 0) {
+            if (typeof(T) == typeof(S1)) this._slice = dlang_slice_S1_Create(new IntPtr(capacity));
+            throw new TypeAccessException($"Slice does not support type: {typeof(T).ToString()}");
+        }
+
+        public IEnumerator<T> GetEnumerator() {
+            for(long i = 0; i < _slice.length.ToInt64(); i++) {
+                if (typeof(T) == typeof(S1)) yield return (T)(object)dlang_slice_S1_Get(_slice, new IntPtr(i));
+            }
+        }
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
+        }
+
+        private static extern slice dlang_slice_S1_Create(IntPtr capacity);
+        private static extern S1 dlang_slice_S1_Get(slice dslice, IntPtr index);
+        private static extern void dlang_slice_S1_Set(slice dslice, IntPtr index, S1 value);
+        private static extern slice dlang_slice_S1_Slice(IntPtr begin, IntPtr end);
+        private static extern slice dlang_slice_S1_Append(slice dslice, S1 value);
+        private static extern slice dlang_slice_S1_Append(slice dslice, slice array);
+
+        public T this[long i] {
+            get {
+                if (typeof(T) == typeof(S1)) return (T)(object)dlang_slice_S1_Get(this._slice, new IntPtr(i));
+                throw new TypeAccessException($"Slice does not support type: {typeof(T).ToString()}");
+            }
+            set {
+                if (typeof(T) == typeof(S1)) dlang_slice_S1_Set(this._slice, new IntPtr(i), (S1)(object)value);
+            }
+        }
+
+        public static ValueSlice<T> operator +(ValueSlice<T> dslice, T value) {
+            if (typeof(T) == typeof(S1)) return new ValueSlice<T>(dlang_slice_S1_Append(dslice._slice, (S1)(object)value));
+            throw new TypeAccessException($"Slice does not support type: {typeof(T).ToString()}");
+        }
+
+        public static ValueSlice<T> operator +(ValueSlice<T> dslice, ValueSlice<T> value) {
+            if (typeof(T) == typeof(S1)) return new ValueSlice<T>(dlang_slice_S1_Append(dslice._slice, value._slice));
+            throw new TypeAccessException($"Slice does not support type: {typeof(T).ToString()}");
+        }
+
+        public ValueSlice<T> Slice(long begin) {
+            if (typeof(T) == typeof(S1)) return new ValueSlice<T>(dlang_slice_S1_Slice(new IntPtr(begin), _slice.length));
+            throw new TypeAccessException($"Slice does not support type: {typeof(T).ToString()}");
+        }
+
+        public ValueSlice<T> Slice(long begin, long end) {
+            if (end > _slice.length.ToInt64()) {
+                throw new IndexOutOfRangeException("Value for parameter 'end' is greater than that length of the slice.");
+            }
+            if (typeof(T) == typeof(S1)) return new ValueSlice<T>(dlang_slice_S1_Slice(new IntPtr(begin), new IntPtr(end)));
+            throw new TypeAccessException($"Slice does not support type: {typeof(T).ToString()}");
         }
     }
 
@@ -126,7 +242,7 @@ namespace csharp {
         }
 
         public void Dispose() {
-            ptr.Dispose();
+            ptr.Release();
         }
 
         public static implicit operator dlang_slice<T>(Span<T> slice) {
@@ -193,11 +309,11 @@ namespace csharp {
         }
     }
 
-    public abstract class DLangBase : IDisposable {
+    public abstract class DLangObject : IDisposable {
         protected readonly IntPtr _ptr;
-        internal IntPtr Pointer => _ptr;
+        internal IntPtr DLangPointer => _ptr;
 
-        protected DLangBase(IntPtr ptr) {
+        protected DLangObject(IntPtr ptr) {
             this._ptr = ptr;
         }
 
@@ -206,24 +322,24 @@ namespace csharp {
         }
     }
 
-    public class C1 : DLangBase {
+    public class C1 : DLangObject {
         public C1() : base(library.C1__ctor()) { }
-        private C1(IntPtr ptr) : base(ptr) { }
+        internal C1(IntPtr ptr) : base(ptr) { }
 
-        public S2 Hidden { get => library.C1_Get_GetHidden(Pointer); set => library.C1_Set_SetHidden(Pointer, value); }
+        public S2 Hidden { get => library.C1_Get_GetHidden(DLangPointer); set => library.C1_Set_SetHidden(DLangPointer, value); }
 
         public string StringValue {
-            get { return library.C1_Get_StringValue(Pointer); }
-            set { library.C1_Set_StringValue(Pointer, value); }
+            get { return library.C1_Get_StringValue(DLangPointer); }
+            set { library.C1_Set_StringValue(DLangPointer, value); }
         }
 
         public int IntValue {
-            get { return library.C1_Get_IntValue(Pointer); }
-            set { library.C1_Set_IntValue(Pointer, value); }
+            get { return library.C1_Get_IntValue(DLangPointer); }
+            set { library.C1_Set_IntValue(DLangPointer, value); }
         }
 
         public string TestMemberFunc(string value, S1 test) {
-            return library.C1_TestMemberFunc(Pointer, value, test);
+            return library.C1_TestMemberFunc(DLangPointer, value, test);
         }
 
         internal static C1[] SliceToArray(slice dslice) {
@@ -232,7 +348,7 @@ namespace csharp {
         }
 
         internal static slice ArrayToSlice(C1[] array) {
-            dlang_slice<IntPtr> slice = array.Select(a => a.Pointer).ToArray().AsSpan();
+            dlang_slice<IntPtr> slice = array.Select(a => a.DLangPointer).ToArray().AsSpan();
             return slice.ToSlice();
         }
 
@@ -309,9 +425,10 @@ namespace csharp {
         public static C1[] ClassRangeFunction(C1[] array) {
             var slice = library.C1_CreateRange(array.Length);
             foreach(var t in array) {
-                slice = library.C1_AppendRange(slice, t.Pointer);
+                slice = library.C1_AppendRange(slice, t.DLangPointer);
             }
-            return new dlang_refslice<C1>(ClassRangeFunction(slice));
+            //return new dlang_refslice<C1>(ClassRangeFunction(slice));
+            return null;
         }
 
         [DllImport("csharp", EntryPoint = "cswrap_testErrorMessage", CallingConvention = CallingConvention.Cdecl)]

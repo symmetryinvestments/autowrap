@@ -82,11 +82,25 @@ private string commonBoilerplate() @safe pure {
         import std.utf;
 
         extern(C) export struct returnValue(T) {
-            T value;
+            static if(is(T == string) || is(T == dstring)) {
+                wstring value;
+            } else static if(is(T == string[]) || is(T == dstring[])) {
+                wstring[] value;
+            } else {
+                T value;
+            }
             wstring error;
 
             this(T value) nothrow {
-                this.value = value;
+                static if(is(T == string) || is(T == dstring)) {
+                    this.value = toUTF16(value);
+                } else static if(is(T == string[]) || is(T == dstring[])) {
+                    foreach(t; value) {
+                        this.value ~= toUTF16(t);
+                    }
+                } else {
+                    this.value = value;
+                }
                 static if (isArray!(T) || is(T == class) || is(T == interface)) {
                     if (this.value !is null) {
                         pinPointer(cast(void*)this.error.ptr);
@@ -96,7 +110,13 @@ private string commonBoilerplate() @safe pure {
             }
 
             this(Exception error) nothrow {
-                this.value = T.init;
+                static if(is(T == string) || is(T == dstring)) {
+                    this.value = wstring.init;
+                } else static if(is(T == string[]) || is(T == dstring[])) {
+                    this.value = wstring[].init;
+                } else {
+                    this.value = T.init;
+                }
                 try {
                     this.error = to!wstring(error.toString());
                 } catch(Exception ex) {
@@ -124,25 +144,27 @@ private string commonBoilerplate() @safe pure {
             GC.addRoot(ptr);
         }
 
+        package T fromCSharpStringSlice(T)(wstring[] value)
+            if(is(T == string[]) || is(T == dstring[]))
+        {
+            T temp = T.init;
+            foreach(t; value) {
+                static if (is(T == string[])) {
+                    temp ~= toUTF8(t);
+                } else static if (is(T == dstring[])) {
+                    temp ~= toUTF32(t);
+                }
+            }
+            return temp;
+        }
+
         extern(C) export void autowrap_csharp_release(void* ptr) nothrow {
             GC.clrAttr(ptr, GC.BlkAttr.NO_MOVE);
             GC.removeRoot(ptr);
         }
 
-        extern(C) export string autowrap_csharp_createString(wchar* str) nothrow {
-            string temp = toUTF8(str.fromStringz());
-            pinPointer(cast(void*)temp.ptr);
-            return temp;
-        }
-
-        extern(C) export wstring autowrap_csharp_createWString(wchar* str) nothrow {
+        extern(C) export wstring autowrap_csharp_createString(wchar* str) nothrow {
             wstring temp = to!wstring(str.fromStringz());
-            pinPointer(cast(void*)temp.ptr);
-            return temp;
-        }
-
-        extern(C) export dstring autowrap_csharp_createDString(wchar* str) nothrow {
-            dstring temp = toUTF32(str.fromStringz());
             pinPointer(cast(void*)temp.ptr);
             return temp;
         }
