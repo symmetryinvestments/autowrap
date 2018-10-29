@@ -1,4 +1,4 @@
 [submodule "pyd"]
-	path = pyd
+	path = python/pyd
 	url = https://github.com/atilaneves/pyd.git
 	branch = autowrap
