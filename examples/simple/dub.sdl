@@ -1,6 +1,6 @@
 name "simple"
 targetType "dynamicLibrary"
-dependency "autowrap:python" path="../../python"
+dependency "autowrap:python" path="../../"
 
 configuration "python37" {
     subConfiguration "autowrap:python" "python37"

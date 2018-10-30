@@ -1,8 +1,0 @@
-Python/D bindings:
-Deja Augustine, David Rushby, Kirk McDonald
-
-CeleriD:
-David Rushby, Kirk McDonald
-
-Pyd:
-Kirk McDonald

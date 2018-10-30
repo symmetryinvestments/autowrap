@@ -5,7 +5,7 @@ license "BSD"
 targetType "library"
 preBuildCommands "[ -e $PACKAGE_DIR/druntime.o ] || gcc -c -fPIC $PACKAGE_DIR/source/autowrap/python/druntime.c -o $PACKAGE_DIR/druntime.o" platform="linux"
 sourceFiles "$PACKAGE_DIR/druntime.o" platform="linux"
-dependency "pyd" path="../pyd"
+dependency "pyd" version="~master"
 dependency "autowrap:reflection" path="../reflection"
 versions "PydPythonExtension"
 
