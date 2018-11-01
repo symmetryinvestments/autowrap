@@ -1,5 +1,10 @@
 module autowrap.csharp.common;
 
+package template ArrayElementType(T : T[])
+{
+    alias T ArrayElementType;
+}
+
 package string getInterfaceTypeString(TypeInfo type) {
     import std.datetime : DateTime;
 
@@ -39,8 +44,12 @@ package string getDLangSliceInterfaceName(string fqn, string funcName) {
     import std.string : split;
     string name = "autowrap_csharp_slice_";
 
-    foreach(string namePart; fqn.split(".")) {
-        name ~= camelToPascalCase(namePart) ~ "_";
+    if (fqn == "dstring" || fqn == "wstring" || fqn == "string") {
+        name ~= "Dstring";
+    } else {
+        foreach(string namePart; fqn.split(".")) {
+            name ~= camelToPascalCase(namePart) ~ "_";
+        }
     }
     name ~= camelToPascalCase(funcName);
     return name;

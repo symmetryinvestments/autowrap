@@ -35,5 +35,9 @@ void main() {
     import autowrap.csharp.csharp : writeCSharpFile;
     string csharpFile = writeCSharpFile!(Module("csharp.library"));
     writeln(csharpFile);
+    auto f = File("Wrapper.cs", "w");
+    f.writeln(csharpFile);
+    f.flush();
+    f.close();
 }
 }

@@ -321,8 +321,6 @@ public string wrapDLang(Modules...)() if(allSatisfy!(isModule, Modules)) {
         ret ~= funcStr;
     }
 
-    auto temp = fromCSharpStringSlice!(string[])(wstring[].init);
-
     return ret;
 }
 
@@ -335,23 +333,6 @@ private string getInterfaceType(string type) {
         return type;
     }
 }
-
-
-        package T fromCSharpStringSlice(T)(wstring[] value)
-            if(is(T == string[]) || is(T == dstring[]))
-        {
-            import std.utf;
-            T temp = T.init;
-            foreach(t; value) {
-                static if (is(T == string[])) {
-                    temp ~= toUTF8(t);
-                } else static if (is(T == dstring[])) {
-                    temp ~= toUTF32(t);
-                }
-            }
-            return temp;
-        }
-
 
 private string generateSliceMethods(T)() {
     string ret = string.init;
