@@ -363,7 +363,7 @@ namespace Autowrap {
                     }
                 }
             } else {
-                throw new DllNotFoundException($"The required native assembly was not found for the current operating system and process architecture.");
+                throw new DllNotFoundException($"The required native assembly is unavailable for the current operating system and process architecture.");
             }
 
             DRuntimeInitialize();
@@ -376,8 +376,6 @@ namespace Autowrap {
                     return null;
                 }
                 var length = (int)type;
-                Console.WriteLine(length);
-                Console.WriteLine(str.length.ToInt32());
                 if (type == DStringType._string) {
                     return System.Text.Encoding.UTF8.GetString(bytes, str.length.ToInt32()*length);
                 } else if (type == DStringType._string) {
@@ -651,7 +649,7 @@ namespace Autowrap {
                 return _slice;
             }
         }
-        public long Length => _slice.length.ToInt64();
+        public long Length => _strings?.Count ?? _slice.length.ToInt64();
         internal Range(slice range, DStringType type = DStringType.None) {
             this._slice = range;
             this._type = type;

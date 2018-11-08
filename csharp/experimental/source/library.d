@@ -15,7 +15,13 @@ export extern(C) string stringFunction(string value) nothrow {
 }
 
 export s2[] arrayFunction(s2[] arr) {
+    import std.stdio : writeln;
+    try {
+    writeln(arr.length);
     return arr.dup;
+    } catch (Exception ex) {
+        return null;
+    }
 }
 
 export c1[] classRangeFunction(c1[] arr) {

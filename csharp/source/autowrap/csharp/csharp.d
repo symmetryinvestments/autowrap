@@ -158,7 +158,7 @@ public struct csharpRange {
         ret ~= "                return _slice;" ~ newline;
         ret ~= "            }" ~ newline;
         ret ~= "        }" ~ newline;
-        ret ~= "        public long Length => _slice.length.ToInt64();" ~ newline;
+        ret ~= "        public long Length => _strings?.Count ?? _slice.length.ToInt64();" ~ newline;
 
         ret ~= "        internal Range(slice range, DStringType type = DStringType.None) {" ~ newline;
         ret ~= "            this._slice = range;" ~ newline;
@@ -1002,7 +1002,7 @@ private string writeCSharpBoilerplate(string libraryName, string rootNamespace) 
                     }
                 }
             } else {
-                throw new DllNotFoundException($\"The required native assembly was not found for the current operating system and process architecture.\");
+                throw new DllNotFoundException($\"The required native assembly is unavailable for the current operating system and process architecture.\");
             }
 
             DRuntimeInitialize();
@@ -1015,8 +1015,6 @@ private string writeCSharpBoilerplate(string libraryName, string rootNamespace) 
                     return null;
                 }
                 var length = (int)type;
-                Console.WriteLine(length);
-                Console.WriteLine(str.length.ToInt32());
                 if (type == DStringType._string) {
                     return System.Text.Encoding.UTF8.GetString(bytes, str.length.ToInt32()*length);
                 } else if (type == DStringType._string) {

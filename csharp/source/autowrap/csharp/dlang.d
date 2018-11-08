@@ -292,7 +292,8 @@ private string generateSliceMethods(T)() {
 
     //Generate slice creation method
     ret ~= "extern(C) export " ~ fqn ~ "[] " ~ getDLangSliceInterfaceName(fqn, "Create") ~ "(size_t capacity) nothrow {" ~ newline;
-    ret ~= "    " ~ fqn ~ "[] __temp__ = new " ~ fqn ~ "[capacity];" ~ newline;
+    ret ~= "    " ~ fqn ~ "[] __temp__;" ~ newline;
+    ret ~= "    __temp__.reserve(capacity);" ~ newline;
     ret ~= "    pinPointer(cast(void*)__temp__.ptr);" ~ newline;
     ret ~= "    return (__temp__);" ~ newline;
     ret ~= "}" ~ newline;
