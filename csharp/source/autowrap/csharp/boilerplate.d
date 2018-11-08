@@ -147,15 +147,15 @@ private string commonBoilerplate() @safe pure {
         package T fromCSharpStringSlice(T)(wstring[] value)
             if(is(T == string[]) || is(T == dstring[]))
         {
-            T temp = T.init;
+            T temp_ = T.init;
             foreach(t; value) {
                 static if (is(T == string[])) {
-                    temp ~= toUTF8(t);
+                    temp_ ~= toUTF8(t);
                 } else static if (is(T == dstring[])) {
-                    temp ~= toUTF32(t);
+                    temp_ ~= toUTF32(t);
                 }
             }
-            return temp;
+            return temp_;
         }
 
         extern(C) export void autowrap_csharp_release(void* ptr) nothrow {
@@ -163,8 +163,20 @@ private string commonBoilerplate() @safe pure {
             GC.removeRoot(ptr);
         }
 
-        extern(C) export wstring autowrap_csharp_createString(wchar* str) nothrow {
+        extern(C) export string autowrap_csharp_createString(wchar* str) nothrow {
+            string temp = toUTF8(to!wstring(str.fromStringz()));
+            pinPointer(cast(void*)temp.ptr);
+            return temp;
+        }
+
+        extern(C) export wstring autowrap_csharp_createWString(wchar* str) nothrow {
             wstring temp = to!wstring(str.fromStringz());
+            pinPointer(cast(void*)temp.ptr);
+            return temp;
+        }
+
+        extern(C) export dstring autowrap_csharp_createDString(wchar* str) nothrow {
+            dstring temp = toUTF32(to!wstring(str.fromStringz()));
             pinPointer(cast(void*)temp.ptr);
             return temp;
         }

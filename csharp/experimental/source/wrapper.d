@@ -33,8 +33,8 @@ version (GenerateCSharp) {
 void main() {
     import std.stdio;
     import autowrap.csharp.csharp : writeCSharpFile;
-    string csharpFile = writeCSharpFile!(Module("csharp.library"));
-    writeln(csharpFile);
+    string csharpFile = writeCSharpFile!(Module("csharp.library"))("csharp", "csharp");
+    //writeln(csharpFile);
     auto f = File("Wrapper.cs", "w");
     f.writeln(csharpFile);
     f.flush();

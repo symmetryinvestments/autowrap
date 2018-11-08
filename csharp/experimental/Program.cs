@@ -1,4 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
+using Autowrap;
+using Csharp.Library;
 
 namespace csharp
 {
@@ -6,9 +9,11 @@ namespace csharp
     {
         static void Main(string[] args)
         {
+            Autowrap.SharedFunctions.DRuntimeInitialize();
+
             Console.WriteLine("Testing Primitive Types (Int)");
             int testInt = 1;
-            var iret = library.FreeFunction(testInt);
+            var iret = Csharp.Library.Functions.FreeFunction(testInt);
             if (iret != testInt) {
                 Console.WriteLine($"Expected: {testInt} - Actual: {iret}");
             }
@@ -17,35 +22,27 @@ namespace csharp
             //Test primitive types
             Console.WriteLine("Testing Primitive Types (String)");
             string testString = "Hello World!";
-            var sret = library.StringFunction(testString);
+            var sret = Csharp.Library.Functions.StringFunction(testString);
             if (sret.ToString().Equals(testString, StringComparison.Ordinal)) {
                 Console.WriteLine($"Expected: {testString} - Actual: {sret}");
             }
             Console.WriteLine($"StringFunction Result: {sret}");
 
             //Test string functions
-            string str = library.DLang_String_StringFunction(testString);
+            string str = Csharp.Library.Functions.StringFunction(testString);
             Console.WriteLine($"DLang_String_StringFunction Result: {str}");
-            string wstr = library.DLang_WString_StringFunction(testString);
-            Console.WriteLine($"DLang_WString_StringFunction Result: {wstr}");
-            string dstr = library.DLang_DString_StringFunction(testString);
-            Console.WriteLine($"DLang_DString_StringFunction Result: {dstr}");
 
             //Test struct ranges
-            var arr = new S2[] {new S2(1, "Test1"), new S2(2, "Test2"), new S2(3, "Test3")};
-            Span<S2> retSpan = library.ArrayFunction(arr);
-            var retArr = retSpan.ToArray();
-            Console.WriteLine($"Returned array length: {retArr.Length}");
-            Console.WriteLine(retArr[0].str);
-            Console.WriteLine(retArr[1].str);
-            Console.WriteLine(retArr[2].str);
+            var arr = new S2[] {new S2() { Value = 1, Str = "Test1"}, new S2() { Value = 2, Str = "Test2" }, new S2() { Value = 3, Str = "Test3" }};
+            var retSlice = Csharp.Library.Functions.ArrayFunction(arr);
+            Console.WriteLine($"Returned array length: {retSlice.Length}");
+            Console.WriteLine(retSlice[0].Str);
+            Console.WriteLine(retSlice[1].Str);
+            Console.WriteLine(retSlice[2].Str);
 
             //Test class
-            var testClass = new C1();
+            var testClass = new C1(4, "TestClass4");
             Console.WriteLine("Testing Class");
-            testClass.StringValue = "TestStringValue";
-            var tsv = testClass.StringValue;
-            Console.WriteLine($"Class Test String: {tsv}");
             testClass.IntValue = -1;
             var isv = testClass.IntValue;
             Console.WriteLine($"Class Test Int: {isv}");
@@ -53,23 +50,23 @@ namespace csharp
             Console.WriteLine($"Class Func String: {funcString}");
 
             //Test class ranges
-            var classArray = new C1[] { new C1() { StringValue = "Class1", IntValue = 1 }, new C1() { StringValue = "Class2", IntValue = 2 }, new C1() { StringValue = "Class3", IntValue = 3 } };
-            var retClassArray = library.ClassRangeFunction(classArray);
+            var classArray = new List<C1>() { new C1(0, "Class1") { IntValue = 1 }, new C1(1, "Class2"), new C1(2, "Class3") };
+            List<C1> retClassArray = Csharp.Library.Functions.ClassRangeFunction(classArray);
             foreach(var c in retClassArray) {
-                Console.WriteLine($"Class Array Item: {c.StringValue} {c.IntValue}");
+                Console.WriteLine($"Class Array Item: {c.DstringMember} {c.IntValue}");
             }
 
             //Test struct member functions
             var s1struct = new S1();
-            s1struct.value = 1.1f;
-            var s1value = s1struct.getValue();
+            s1struct.Value = 1.1f;
+            var s1value = s1struct.GetValue();
             Console.WriteLine($"Struct Value: {s1value}");
 
             //Test error messages
-            var errorResult = library.TestErrorMessage(false);
+            var errorResult = Csharp.Library.Functions.TestErrorMessage(false);
             Console.WriteLine($"No Error Message: {errorResult}");
             try {
-                var error = library.TestErrorMessage(true);
+                var error = Csharp.Library.Functions.TestErrorMessage(true);
             } catch (DLangException ex) {
                 Console.WriteLine($"Error: {Environment.NewLine}{ex.DLangExceptionText}");
             }

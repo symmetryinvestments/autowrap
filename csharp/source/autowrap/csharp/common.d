@@ -44,12 +44,8 @@ package string getDLangSliceInterfaceName(string fqn, string funcName) {
     import std.string : split;
     string name = "autowrap_csharp_slice_";
 
-    if (fqn == "dstring" || fqn == "wstring" || fqn == "string") {
-        name ~= "Dstring";
-    } else {
-        foreach(string namePart; fqn.split(".")) {
-            name ~= camelToPascalCase(namePart) ~ "_";
-        }
+    foreach(string namePart; fqn.split(".")) {
+        name ~= camelToPascalCase(namePart) ~ "_";
     }
     name ~= camelToPascalCase(funcName);
     return name;

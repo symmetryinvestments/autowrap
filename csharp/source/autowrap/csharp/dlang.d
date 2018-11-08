@@ -20,8 +20,11 @@ public string wrapDLang(Modules...)() if(allSatisfy!(isModule, Modules)) {
     }
     ret ~= newline;
 
-    ret ~= generateSliceMethods!bool();
+    ret ~= generateSliceMethods!string();
     ret ~= generateSliceMethods!wstring();
+    ret ~= generateSliceMethods!dstring();
+
+    ret ~= generateSliceMethods!bool();
     ret ~= generateSliceMethods!byte();
     ret ~= generateSliceMethods!ubyte();
     ret ~= generateSliceMethods!short();
@@ -73,17 +76,7 @@ public string wrapDLang(Modules...)() if(allSatisfy!(isModule, Modules)) {
             if (is(agg == class)) {
                 exp ~= "        " ~ fqn ~ " __temp__ = new " ~ fqn ~ "(";
                 static foreach(pc; 0..paramNames.length) {
-                    static if (fullyQualifiedName!(paramTypes[pc]) == "string") {
-                        exp ~= "toUTF8(" ~ paramNames[pc] ~ "), ";
-                    } else static if (fullyQualifiedName!(paramTypes[pc]) == "dstring") {
-                        exp ~= "toUTF32(" ~ paramNames[pc] ~ "), ";
-                    } else static if (fullyQualifiedName!(paramTypes[pc]) == "string[]") {
-                        exp ~= "fromCSharpStringSlice!(string[])(" ~ paramNames[pc] ~ "), ";
-                    } else static if (fullyQualifiedName!(paramTypes[pc]) == "dstring[]") {
-                        exp ~= "fromCSharpStringSlice!(dstring[])(" ~ paramNames[pc] ~ "), ";
-                    } else {
-                        exp ~= paramNames[pc] ~ ", ";
-                    }
+                    exp ~= paramNames[pc] ~ ", ";
                 }
                 if (paramTypes.length > 0) {
                     exp = exp[0..$-2];
@@ -150,7 +143,7 @@ public string wrapDLang(Modules...)() if(allSatisfy!(isModule, Modules)) {
                             exp ~= "void* __obj__, ";
                         }
                         static foreach(pc; 0..paramNames.length) {
-                            exp ~= getInterfaceType(fullyQualifiedName!(paramTypes[pc])) ~ " " ~ paramNames[pc] ~ ", ";
+                            exp ~= fullyQualifiedName!(paramTypes[pc]) ~ " " ~ paramNames[pc] ~ ", ";
                         }
                         exp = exp[0..$-2];
                         exp ~= ") nothrow {" ~ newline;
@@ -174,17 +167,7 @@ public string wrapDLang(Modules...)() if(allSatisfy!(isModule, Modules)) {
                             exp ~= "__temp__." ~ m ~ "(";
                         }
                         static foreach(pc; 0..paramNames.length) {
-                            static if (fullyQualifiedName!(paramTypes[pc]) == "string") {
-                                exp ~= "toUTF8(" ~ paramNames[pc] ~ "), ";
-                            } else static if (fullyQualifiedName!(paramTypes[pc]) == "dstring") {
-                                exp ~= "toUTF32(" ~ paramNames[pc] ~ "), ";
-                            } else static if (fullyQualifiedName!(paramTypes[pc]) == "string[]") {
-                                exp ~= "fromCSharpStringSlice!(string[])(" ~ paramNames[pc] ~ "), ";
-                            } else static if (fullyQualifiedName!(paramTypes[pc]) == "dstring[]") {
-                                exp ~= "fromCSharpStringSlice!(dstring[])(" ~ paramNames[pc] ~ "), ";
-                            } else {
-                                exp ~= paramNames[pc] ~ ", ";
-                            }
+                            exp ~= paramNames[pc] ~ ", ";
                         }
                         if (paramNames.length > 0) {
                             exp = exp[0..$-2];
@@ -255,11 +238,10 @@ public string wrapDLang(Modules...)() if(allSatisfy!(isModule, Modules)) {
 
         funcStr ~= retType ~ " " ~ interfaceName ~ "(";
         static foreach(pc; 0..paramNames.length) {
-            funcStr ~= getInterfaceType(fullyQualifiedName!(paramTypes[pc])) ~ " " ~ paramNames[pc] ~ ", ";
+            funcStr ~= fullyQualifiedName!(paramTypes[pc]) ~ " " ~ paramNames[pc] ~ ", ";
         }
         funcStr = funcStr[0..$-2];
         funcStr ~= ") nothrow {" ~ newline;
-        //funcStr ~= "    import " ~ modName ~ " : " ~ func.name ~ ";" ~ newline;
         if (!isNothrow) {
             funcStr ~= "    try {" ~ newline;
             if (!is(returnType == void)) {
@@ -272,17 +254,7 @@ public string wrapDLang(Modules...)() if(allSatisfy!(isModule, Modules)) {
             } else {
                 funcStr ~= func.name ~ "(";
                 static foreach(pc; 0..paramNames.length) {
-                    static if (fullyQualifiedName!(paramTypes[pc]) == "string") {
-                        funcStr ~= "toUTF8(" ~ paramNames[pc] ~ "), ";
-                    } else static if (fullyQualifiedName!(paramTypes[pc]) == "dstring") {
-                        funcStr ~= "toUTF32(" ~ paramNames[pc] ~ "), ";
-                    } else static if (fullyQualifiedName!(paramTypes[pc]) == "string[]") {
-                        funcStr ~= "fromCSharpStringSlice!(string[])(" ~ paramNames[pc] ~ "), ";
-                    } else static if (fullyQualifiedName!(paramTypes[pc]) == "dstring[]") {
-                        funcStr ~= "fromCSharpStringSlice!(dstring[])(" ~ paramNames[pc] ~ "), ";
-                    } else {
-                        funcStr ~= paramNames[pc] ~ ", ";
-                    }
+                    funcStr ~= paramNames[pc] ~ ", ";
                 }
                 funcStr = funcStr[0..$-2];
                 funcStr ~= ");" ~ newline;
@@ -294,17 +266,7 @@ public string wrapDLang(Modules...)() if(allSatisfy!(isModule, Modules)) {
         } else {
             funcStr ~= "    " ~ retType ~ " __temp__ = " ~ func.name ~ "(";
             static foreach(pc; 0..paramNames.length) {
-                static if (fullyQualifiedName!(paramTypes[pc]) == "string") {
-                    funcStr ~= "toUTF8(" ~ paramNames[pc] ~ "), ";
-                } else static if (fullyQualifiedName!(paramTypes[pc]) == "dstring") {
-                    funcStr ~= "toUTF32(" ~ paramNames[pc] ~ "), ";
-                } else static if (fullyQualifiedName!(paramTypes[pc]) == "string[]") {
-                    funcStr ~= "fromCSharpStringSlice!(string[])(" ~ paramNames[pc] ~ "), ";
-                } else static if (fullyQualifiedName!(paramTypes[pc]) == "dstring[]") {
-                    funcStr ~= "fromCSharpStringSlice!(dstring[])(" ~ paramNames[pc] ~ "), ";
-                } else {
-                    funcStr ~= paramNames[pc] ~ ", ";
-                }
+                funcStr ~= paramNames[pc] ~ ", ";
             }
             funcStr = funcStr[0..$-2];
             funcStr ~= ");" ~ newline;
@@ -322,16 +284,6 @@ public string wrapDLang(Modules...)() if(allSatisfy!(isModule, Modules)) {
     }
 
     return ret;
-}
-
-private string getInterfaceType(string type) {
-    if(type == "string" || type == "dstring") {
-        return "wstring";
-    } else if (type == "string[]" || type == "dstring[]") {
-        return "wstring[]";
-    } else {
-        return type;
-    }
 }
 
 private string generateSliceMethods(T)() {
@@ -369,16 +321,16 @@ private string generateSliceMethods(T)() {
 
     //Generate item append method
     if (is(T == class)) {
-        ret ~= "extern(C) export " ~ fqn ~ "[] " ~ getDLangSliceInterfaceName(fqn, "Append") ~ "(" ~ fqn ~ "[] slice, void* append) nothrow {" ~ newline;
+        ret ~= "extern(C) export " ~ fqn ~ "[] " ~ getDLangSliceInterfaceName(fqn, "AppendValue") ~ "(" ~ fqn ~ "[] slice, void* append) nothrow {" ~ newline;
         ret ~= "    return (slice ~= cast(" ~ fqn ~ ")append);" ~ newline;
     } else {
-        ret ~= "extern(C) export " ~ fqn ~ "[] " ~ getDLangSliceInterfaceName(fqn, "Append") ~ "(" ~ fqn ~ "[] slice, " ~ fqn ~ " append) nothrow {" ~ newline;
+        ret ~= "extern(C) export " ~ fqn ~ "[] " ~ getDLangSliceInterfaceName(fqn, "AppendValue") ~ "(" ~ fqn ~ "[] slice, " ~ fqn ~ " append) nothrow {" ~ newline;
         ret ~= "    return (slice ~= append);" ~ newline;
     }
     ret ~= "}" ~ newline;
 
     //Generate slice append method
-    ret ~= "extern(C) export " ~ fqn ~ "[] " ~ getDLangSliceInterfaceName(fqn, "Append") ~ "(" ~ fqn ~ "[] slice, " ~ fqn ~ "[] append) nothrow {" ~ newline;
+    ret ~= "extern(C) export " ~ fqn ~ "[] " ~ getDLangSliceInterfaceName(fqn, "AppendSlice") ~ "(" ~ fqn ~ "[] slice, " ~ fqn ~ "[] append) nothrow {" ~ newline;
     ret ~= "    return (slice ~= append);" ~ newline;
     ret ~= "}" ~ newline;
 
