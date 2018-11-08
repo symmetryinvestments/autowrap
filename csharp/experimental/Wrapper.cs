@@ -375,7 +375,18 @@ namespace Autowrap {
                 if (bytes == null) {
                     return null;
                 }
-                return System.Text.Encoding.Unicode.GetString(bytes, str.length.ToInt32()*(int)type);
+                var length = (int)type;
+                Console.WriteLine(length);
+                Console.WriteLine(str.length.ToInt32());
+                if (type == DStringType._string) {
+                    return System.Text.Encoding.UTF8.GetString(bytes, str.length.ToInt32()*length);
+                } else if (type == DStringType._string) {
+                    return System.Text.Encoding.Unicode.GetString(bytes, str.length.ToInt32()*length);
+                } else if (type == DStringType._string) {
+                    return System.Text.Encoding.UTF32.GetString(bytes, str.length.ToInt32()*length);
+                } else {
+                    throw new UnauthorizedAccessException("Unable to convert D string to C# string: Unrecognized string type.");
+                }
             }
         }
 

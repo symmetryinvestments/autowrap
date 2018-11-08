@@ -5,7 +5,13 @@ export int freeFunction (int value) {
 }
 
 export extern(C) string stringFunction(string value) nothrow {
-	return value;
+    import std.stdio : writeln;
+    try {
+    writeln(value);
+    return value;
+    } catch (Exception ex) {
+        return null;
+    }
 }
 
 export s2[] arrayFunction(s2[] arr) {

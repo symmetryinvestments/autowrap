@@ -28,10 +28,6 @@ namespace csharp
             }
             Console.WriteLine($"StringFunction Result: {sret}");
 
-            //Test string functions
-            string str = Csharp.Library.Functions.StringFunction(testString);
-            Console.WriteLine($"DLang_String_StringFunction Result: {str}");
-
             //Test struct ranges
             var arr = new S2[] {new S2() { Value = 1, Str = "Test1"}, new S2() { Value = 2, Str = "Test2" }, new S2() { Value = 3, Str = "Test3" }};
             var retSlice = Csharp.Library.Functions.ArrayFunction(arr);
