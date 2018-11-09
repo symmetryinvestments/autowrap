@@ -1,27 +1,22 @@
 module csharp.library;
 
 export int freeFunction (int value) {
-	return value;
+    return value;
 }
 
-export extern(C) string stringFunction(string value) nothrow {
+export extern(C) string stringFunction(string value) {
     import std.stdio : writeln;
-    try {
-    writeln(value);
-    return value;
-    } catch (Exception ex) {
-        return null;
+    version(X86) {
+        writeln("Bitness: x86");
     }
+    version(X86_64) {
+        writeln("Bitness: x64");
+    }
+    return value;
 }
 
 export s2[] arrayFunction(s2[] arr) {
-    import std.stdio : writeln;
-    try {
-    writeln(arr.length);
     return arr.dup;
-    } catch (Exception ex) {
-        return null;
-    }
 }
 
 export c1[] classRangeFunction(c1[] arr) {
@@ -42,28 +37,31 @@ export string testErrorMessage(bool throwError) {
 }
 
 struct s1 {
-	public float value;
-	public s2 nestedStruct;
+    public float value;
+    public s2 nestedStruct;
 
-	public float getValue() {
-		return value;
-	}
+    public float getValue() {
+        return value;
+    }
 
-	public void setNestedStruct(s2 nested) {
-		nestedStruct = nested;
-	}
+    public void setNestedStruct(s2 nested) {
+        nestedStruct = nested;
+    }
 }
 
 struct s2 {
-	public int value;
-	public string str;
+    public int value;
+    public string str;
 }
 
 class c1 {
-	public int intValue;
-	protected string stringValue;
+    public int intValue;
+    protected string stringValue;
 
     public this(int i, string s) {
+        import std.stdio : writeln;
+        writeln("Entering c1 constructor.");
+        writeln(s.length);
         intValue = i;
         stringValue = s;
     }
@@ -84,84 +82,84 @@ class c1 {
     public wstring wstringMember;
     public dstring dstringMember;
     public s1 valueMember;
-	public c1 refMember;
-	public c1[] refArray;
-	public s1[] structArray;
+    public c1 refMember;
+    public c1[] refArray;
+    public s1[] structArray;
 
     //Property test cases
-	private s2 _structProperty;
-	public @property s2 structProperty() {
-		return _structProperty;
-	}
-	public @property s2 structProperty(s2 value) {
-		return _structProperty = value;
-	}
-	
+    private s2 _structProperty;
+    public @property s2 structProperty() {
+        return _structProperty;
+    }
+    public @property s2 structProperty(s2 value) {
+        return _structProperty = value;
+    }
+    
     private c1 _refProperty;
-	public @property c1 refProperty() {
-		return _refProperty;
-	}
-	public @property c1 refProperty(c1 value) {
-		return _refProperty = value;
-	}
-	
+    public @property c1 refProperty() {
+        return _refProperty;
+    }
+    public @property c1 refProperty(c1 value) {
+        return _refProperty = value;
+    }
+    
     private ulong _valueProperty;
-	public @property ulong valueProperty() {
-		return _valueProperty;
-	}
-	public @property ulong valueProperty(ulong value) {
-		return _valueProperty = value;
-	}
-	
+    public @property ulong valueProperty() {
+        return _valueProperty;
+    }
+    public @property ulong valueProperty(ulong value) {
+        return _valueProperty = value;
+    }
+    
     private ulong[] _valueSliceProperty;
-	public @property ulong[] valueSliceProperty() {
-		return valueSliceProperty;
-	}
-	public @property ulong[] valueSliceProperty(ulong[] value) {
-		return valueSliceProperty = value;
-	}
-	
+    public @property ulong[] valueSliceProperty() {
+        return valueSliceProperty;
+    }
+    public @property ulong[] valueSliceProperty(ulong[] value) {
+        return valueSliceProperty = value;
+    }
+    
     private string[] _stringSliceProperty;
-	public @property string[] stringSliceProperty() {
-		return _stringSliceProperty;
-	}
-	public @property string[] stringSliceProperty(string[] value) {
-		return _stringSliceProperty = value;
-	}
-	
+    public @property string[] stringSliceProperty() {
+        return _stringSliceProperty;
+    }
+    public @property string[] stringSliceProperty(string[] value) {
+        return _stringSliceProperty = value;
+    }
+    
     private wstring[] _wstringSliceProperty;
-	public @property wstring[] wstringSliceProperty() {
-		return _wstringSliceProperty;
-	}
-	public @property wstring[] wstringSliceProperty(wstring[] value) {
-		return _wstringSliceProperty = value;
-	}
-	
+    public @property wstring[] wstringSliceProperty() {
+        return _wstringSliceProperty;
+    }
+    public @property wstring[] wstringSliceProperty(wstring[] value) {
+        return _wstringSliceProperty = value;
+    }
+    
     private dstring[] _dstringSliceProperty;
-	public @property dstring[] dstringSliceProperty() {
-		return _dstringSliceProperty;
-	}
-	public @property dstring[] dstringSliceProperty(dstring[] value) {
-		return _dstringSliceProperty = value;
-	}
-	
+    public @property dstring[] dstringSliceProperty() {
+        return _dstringSliceProperty;
+    }
+    public @property dstring[] dstringSliceProperty(dstring[] value) {
+        return _dstringSliceProperty = value;
+    }
+    
     private s1[] _structSliceProperty;
-	public @property s1[] structSliceProperty() {
-		return _structSliceProperty;
-	}
-	public @property s1[] structSliceProperty(s1[] value) {
-		return _structSliceProperty = value;
-	}
-	
+    public @property s1[] structSliceProperty() {
+        return _structSliceProperty;
+    }
+    public @property s1[] structSliceProperty(s1[] value) {
+        return _structSliceProperty = value;
+    }
+    
     private c1[] _refSliceProperty;
-	public @property c1[] refSliceProperty() {
-		return _refSliceProperty;
-	}
-	public @property c1[] refSliceProperty(c1[] value) {
-		return _refSliceProperty = value;
-	}
+    public @property c1[] refSliceProperty() {
+        return _refSliceProperty;
+    }
+    public @property c1[] refSliceProperty(c1[] value) {
+        return _refSliceProperty = value;
+    }
 
-	public string testMemberFunc(string test, s1 value){
-		return test;
-	}
+    public string testMemberFunc(string test, s1 value){
+        return test;
+    }
 }

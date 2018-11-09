@@ -11,6 +11,11 @@ namespace csharp
         {
             try {
                 Autowrap.SharedFunctions.DRuntimeInitialize();
+                if (Environment.Is64BitProcess) {
+                    Console.WriteLine("Bitness: x64");
+                } else  {
+                    Console.WriteLine("Bitness: x86");
+                }
 
                 Console.WriteLine("Testing Primitive Types (Int)");
                 int testInt = 1;

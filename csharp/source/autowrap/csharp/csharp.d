@@ -304,7 +304,7 @@ public string writeCSharpFile(Modules...)(string libraryName, string rootNamespa
             csagg.constructors ~= ctor;
         }
         if (is(agg == class)) {
-            csagg.constructors ~= "        private %s(IntPtr ptr) : base(ptr) { }".format(getCSharpName(aggName)) ~ newline;
+            csagg.constructors ~= "        internal %s(IntPtr ptr) : base(ptr) { }".format(getCSharpName(aggName)) ~ newline;
         }
 
         foreach(m; __traits(allMembers, agg)) {
@@ -330,7 +330,11 @@ public string writeCSharpFile(Modules...)(string libraryName, string rootNamespa
                     exp ~= "        [DllImport(\"%s\", EntryPoint = \"%s\", CallingConvention = CallingConvention.Cdecl)]".format(libraryName, interfaceName) ~ newline;
                     exp ~= "        private static extern ";
                     if (!is(returnType == void)) {
-                        exp ~= getDLangReturnType(returnTypeStr, isNothrow);
+                        static if (is(returnType == class)) {
+                            exp ~= getDLangReturnType(returnTypeStr, isNothrow, true);
+                        } else {
+                            exp ~= getDLangReturnType(returnTypeStr, isNothrow, false);
+                        }
                     } else {
                         exp ~= "return_void_error";
                     }
@@ -527,7 +531,11 @@ public string writeCSharpFile(Modules...)(string libraryName, string rootNamespa
         enum bool isNothrow = (functionAttributes!(__traits(getMember, func.module_, func.name)) & FunctionAttribute.nothrow_) == FunctionAttribute.nothrow_;
         const string interfaceName = getDLangInterfaceName(modName, null, funcName);
         const string methodName = getCSharpMethodInterfaceName(null, funcName);
-        string retType = getDLangReturnType(returnTypeStr, isNothrow);
+        static if (is(returnType == class)) {
+            string retType = getDLangReturnType(returnTypeStr, isNothrow, true);
+        } else {
+            string retType = getDLangReturnType(returnTypeStr, isNothrow, false);
+        }
         string funcStr = "        [DllImport(\"%s\", EntryPoint = \"%s\", CallingConvention = CallingConvention.Cdecl)]".format(libraryName, interfaceName) ~ newline;
         if (returnTypeStr == boolTypeString && isNothrow) {
             funcStr ~= "        [return: MarshalAs(UnmanagedType.Bool)]";
@@ -685,7 +693,7 @@ private string getCSharpInterfaceType(string type) {
     else return getCSharpName(type);
 }
 
-private string getDLangReturnType(string type, bool isNothrow) {
+private string getDLangReturnType(string type, bool isNothrow, bool isClass) {
     import std.stdio;
     if(isNothrow) {
         return getDLangInterfaceType(type);
@@ -696,12 +704,17 @@ private string getDLangReturnType(string type, bool isNothrow) {
             return rtname;
         }
 
-        const string typeStr = "    [StructLayout(LayoutKind.Sequential)]
-    internal struct %s {
-        public %s value;
-        private slice _error;
-        public string error => SharedFunctions.SliceToString(_error, DStringType._wstring);
-    }".format(rtname, getDLangInterfaceType(type)) ~ newline;
+        string typeStr = "    [StructLayout(LayoutKind.Sequential)]" ~ newline;
+        typeStr ~= "    internal struct %s {".format(rtname) ~ newline;
+        if (isClass) {
+            typeStr ~= "        private IntPtr _value;" ~ newline;
+            typeStr ~= "        public %1$s value => new %1$s(_value);".format(getCSharpInterfaceType(type)) ~ newline;
+        } else {
+            typeStr ~= "        public %s value;".format(getCSharpInterfaceType(type)) ~ newline;
+        }
+        typeStr ~= "        private slice _error;" ~ newline;
+        typeStr ~= "        public string error => SharedFunctions.SliceToString(_error, DStringType._wstring);" ~ newline;
+        typeStr ~= "    }" ~ newline ~ newline;
 
         if ((rtname in returnTypes) is null) {
             returnTypes[rtname] = typeStr;
@@ -972,8 +985,7 @@ private string writeCSharpBoilerplate(string libraryName, string rootNamespace) 
         public string error => SharedFunctions.SliceToString(_error, DStringType._wstring);
     }
 
-%3$s
-    internal static class SharedFunctions {
+%3$s    internal static class SharedFunctions {
         static SharedFunctions() {
             Stream stream = null;
             var outputName = RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? \"lib%1$s.dylib\" : RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? \"lib%1$s.so\" : \"%1$s.dll\";
@@ -1014,13 +1026,12 @@ private string writeCSharpBoilerplate(string libraryName, string rootNamespace) 
                 if (bytes == null) {
                     return null;
                 }
-                var length = (int)type;
                 if (type == DStringType._string) {
-                    return System.Text.Encoding.UTF8.GetString(bytes, str.length.ToInt32()*length);
-                } else if (type == DStringType._string) {
-                    return System.Text.Encoding.Unicode.GetString(bytes, str.length.ToInt32()*length);
-                } else if (type == DStringType._string) {
-                    return System.Text.Encoding.UTF32.GetString(bytes, str.length.ToInt32()*length);
+                    return System.Text.Encoding.UTF8.GetString(bytes, str.length.ToInt32()*(int)type);
+                } else if (type == DStringType._wstring) {
+                    return System.Text.Encoding.Unicode.GetString(bytes, str.length.ToInt32()*(int)type);
+                } else if (type == DStringType._dstring) {
+                    return System.Text.Encoding.UTF32.GetString(bytes, str.length.ToInt32()*(int)type);
                 } else {
                     throw new UnauthorizedAccessException(\"Unable to convert D string to C# string: Unrecognized string type.\");
                 }

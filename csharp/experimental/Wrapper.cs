@@ -15,10 +15,11 @@ namespace Csharp.Library {
             return dlang_ret.value;
         }
         [DllImport("csharp", EntryPoint = "autowrap_csharp_Csharp_Library_StringFunction", CallingConvention = CallingConvention.Cdecl)]
-        private static extern slice dlang_StringFunction(slice value);
+        private static extern return_slice_error dlang_StringFunction(slice value);
         public static string StringFunction(string value) {
             var dlang_ret = dlang_StringFunction(SharedFunctions.CreateString(value));
-            return SharedFunctions.SliceToString(dlang_ret, DStringType._string);
+            if (!string.IsNullOrEmpty(dlang_ret.error)) throw new DLangException(dlang_ret.error);
+            return SharedFunctions.SliceToString(dlang_ret.value, DStringType._string);
         }
         [DllImport("csharp", EntryPoint = "autowrap_csharp_Csharp_Library_ArrayFunction", CallingConvention = CallingConvention.Cdecl)]
         private static extern return_slice_error dlang_ArrayFunction(slice arr);
@@ -74,7 +75,7 @@ namespace Csharp.Library {
         [DllImport("csharp", EntryPoint = "autowrap_csharp_Csharp_Library_C1___ctor", CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr dlang_C1___ctor(int i, slice s);
         public C1(int i, string s) : base(dlang_C1___ctor(i, SharedFunctions.CreateString(s))) { }
-        private C1(IntPtr ptr) : base(ptr) { }
+        internal C1(IntPtr ptr) : base(ptr) { }
 
         [DllImport("csharp", EntryPoint = "autowrap_csharp_Csharp_Library_C1_StructProperty", CallingConvention = CallingConvention.Cdecl)]
         private static extern return_csharp_library_s2_error dlang_C1_StructProperty(IntPtr __obj__);
@@ -309,27 +310,32 @@ namespace Autowrap {
         private slice _error;
         public string error => SharedFunctions.SliceToString(_error, DStringType._wstring);
     }
+
     [StructLayout(LayoutKind.Sequential)]
     internal struct return_int_error {
         public int value;
         private slice _error;
         public string error => SharedFunctions.SliceToString(_error, DStringType._wstring);
     }
+
     [StructLayout(LayoutKind.Sequential)]
     internal struct return_csharp_library_s2_error {
         public Csharp.Library.S2 value;
         private slice _error;
         public string error => SharedFunctions.SliceToString(_error, DStringType._wstring);
     }
+
     [StructLayout(LayoutKind.Sequential)]
     internal struct return_float_error {
         public float value;
         private slice _error;
         public string error => SharedFunctions.SliceToString(_error, DStringType._wstring);
     }
+
     [StructLayout(LayoutKind.Sequential)]
     internal struct return_csharp_library_c1_error {
-        public Csharp.Library.C1 value;
+        private IntPtr _value;
+        public Csharp.Library.C1 value => new Csharp.Library.C1(_value);
         private slice _error;
         public string error => SharedFunctions.SliceToString(_error, DStringType._wstring);
     }
@@ -375,13 +381,12 @@ namespace Autowrap {
                 if (bytes == null) {
                     return null;
                 }
-                var length = (int)type;
                 if (type == DStringType._string) {
-                    return System.Text.Encoding.UTF8.GetString(bytes, str.length.ToInt32()*length);
-                } else if (type == DStringType._string) {
-                    return System.Text.Encoding.Unicode.GetString(bytes, str.length.ToInt32()*length);
-                } else if (type == DStringType._string) {
-                    return System.Text.Encoding.UTF32.GetString(bytes, str.length.ToInt32()*length);
+                    return System.Text.Encoding.UTF8.GetString(bytes, str.length.ToInt32()*(int)type);
+                } else if (type == DStringType._wstring) {
+                    return System.Text.Encoding.Unicode.GetString(bytes, str.length.ToInt32()*(int)type);
+                } else if (type == DStringType._dstring) {
+                    return System.Text.Encoding.UTF32.GetString(bytes, str.length.ToInt32()*(int)type);
                 } else {
                     throw new UnauthorizedAccessException("Unable to convert D string to C# string: Unrecognized string type.");
                 }
