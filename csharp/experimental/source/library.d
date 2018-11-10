@@ -4,14 +4,7 @@ export int freeFunction (int value) {
     return value;
 }
 
-export extern(C) string stringFunction(string value) {
-    import std.stdio : writeln;
-    version(X86) {
-        writeln("Bitness: x86");
-    }
-    version(X86_64) {
-        writeln("Bitness: x64");
-    }
+export extern(C) string stringFunction(string value) nothrow {
     return value;
 }
 
@@ -58,10 +51,7 @@ class c1 {
     public int intValue;
     protected string stringValue;
 
-    public this(int i, string s) {
-        import std.stdio : writeln;
-        writeln("Entering c1 constructor.");
-        writeln(s.length);
+    public this(string s, int i) {
         intValue = i;
         stringValue = s;
     }

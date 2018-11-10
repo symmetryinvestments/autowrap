@@ -258,17 +258,22 @@ public string writeCSharpFile(Modules...)(string libraryName, string rootNamespa
         foreach(c; constructors) {
             alias paramNames = ParameterIdentifierTuple!c;
             alias paramTypes = Parameters!c;
+            enum isNothrow = functionAttributes!c & FunctionAttribute.nothrow_;
             const string interfaceName = getDLangInterfaceName(fqn, "__ctor");
             const string methodName = getCSharpMethodInterfaceName(aggName, "__ctor");
             string ctor = "        [DllImport(\"%s\", EntryPoint = \"%s\", CallingConvention = CallingConvention.Cdecl)]".format(libraryName, interfaceName) ~ newline;
             if (is(agg == class)) {
-                ctor ~= "        private static extern IntPtr dlang_%s(".format(methodName);
+                ctor ~= "        private static extern %s dlang_%s(".format(getDLangReturnType(aggName, isNothrow, true), methodName);
             } else if (is(agg == struct)) {
                 ctor ~= "        private static extern %s dlang_%s(".format(methodName);
             }
             static foreach(pc; 0..paramNames.length) {
-                if (is(paramTypes[pc] == bool)) ctor ~= "[MarshalAs(UnmanagedType.Bool)]";
-                ctor ~= getDLangInterfaceType(fullyQualifiedName!(paramTypes[pc])) ~ " " ~ paramNames[pc] ~ ", ";
+                if (is(paramTypes[pc] == class)) {
+                    ctor ~= "IntPtr " ~ paramNames[pc] ~ ", ";
+                } else {
+                    if (is(paramTypes[pc] == bool)) ctor ~= "[MarshalAs(UnmanagedType.Bool)]";
+                    ctor ~= getDLangInterfaceType(fullyQualifiedName!(paramTypes[pc])) ~ " " ~ paramNames[pc] ~ ", ";
+                }
             }
             if (paramNames.length > 0) {
                 ctor = ctor[0..$-2];
@@ -345,7 +350,11 @@ public string writeCSharpFile(Modules...)(string libraryName, string rootNamespa
                         exp ~= "IntPtr __obj__, ";
                     }
                     static foreach(pc; 0..paramNames.length) {
-                        exp ~= getDLangInterfaceType(fullyQualifiedName!(paramTypes[pc])) ~ " " ~ paramNames[pc] ~ ", ";
+                        if (is(paramTypes[pc] == class)) {
+                            exp ~= "IntPtr " ~ paramNames[pc] ~ ", ";
+                        } else {
+                            exp ~= getDLangInterfaceType(fullyQualifiedName!(paramTypes[pc])) ~ " " ~ paramNames[pc] ~ ", ";
+                        }
                     }
                     exp = exp[0..$-2];
                     exp ~= ");" ~ newline;
@@ -394,30 +403,15 @@ public string writeCSharpFile(Modules...)(string libraryName, string rootNamespa
                         }
                         exp = exp[0..$-2];
                         exp ~= ");" ~ newline;
-                        if (!isNothrow) {
-                            exp ~= "            if (!string.IsNullOrEmpty(dlang_ret.error)) throw new DLangException(dlang_ret.error);" ~ newline;
-                            if (!is(returnType == void)) {
-                                if (is(returnType == string)) {
-                                    exp ~= "            return SharedFunctions.SliceToString(dlang_ret.value, DStringType._string);" ~ newline;
-                                } else if (is(returnType == wstring)) {
-                                    exp ~= "            return SharedFunctions.SliceToString(dlang_ret.value, DStringType._wstring);" ~ newline;
-                                } else if (is(returnType == dstring)) {
-                                    exp ~= "            return SharedFunctions.SliceToString(dlang_ret.value, DStringType._dstring);" ~ newline;
-                                } else {
-                                    exp ~= "            return dlang_ret.value;" ~ newline;
-                                }
-                            }
-                        } else {
-                            if (!is(returnType == void)) {
-                                if (is(returnType == string)) {
-                                    exp ~= "            return SharedFunctions.SliceToString(dlang_ret, DStringType._string);" ~ newline;
-                                } else if (is(returnType == wstring)) {
-                                    exp ~= "            return SharedFunctions.SliceToString(dlang_ret, DStringType._wstring);" ~ newline;
-                                } else if (is(returnType == dstring)) {
-                                    exp ~= "            return SharedFunctions.SliceToString(dlang_ret, DStringType._dstring);" ~ newline;
-                                } else {
-                                    exp ~= "            return dlang_ret;" ~ newline;
-                                }
+                        if (!is(returnType == void)) {
+                            if (is(returnType == string)) {
+                                exp ~= "            return SharedFunctions.SliceToString(dlang_ret, DStringType._string);" ~ newline;
+                            } else if (is(returnType == wstring)) {
+                                exp ~= "            return SharedFunctions.SliceToString(dlang_ret, DStringType._wstring);" ~ newline;
+                            } else if (is(returnType == dstring)) {
+                                exp ~= "            return SharedFunctions.SliceToString(dlang_ret, DStringType._dstring);" ~ newline;
+                            } else {
+                                exp ~= "            return dlang_ret;" ~ newline;
                             }
                         }
                         exp ~= "        }" ~ newline;
@@ -429,7 +423,6 @@ public string writeCSharpFile(Modules...)(string libraryName, string rootNamespa
             bool isProperty = false;
             bool propertyGet = false;
             bool propertySet = false;
-            bool propertyNoThrow = false;
             foreach(mo; __traits(getOverloads, agg, m)) {
             static if (cast(bool)(functionAttributes!mo & FunctionAttribute.property)) {
                 isProperty = true;
@@ -437,9 +430,6 @@ public string writeCSharpFile(Modules...)(string libraryName, string rootNamespa
                 alias paramTypes = Parameters!mo;
                 if (paramTypes.length == 0) {
                     propertyGet = true;
-                    static if (cast(bool)(functionAttributes!mo & FunctionAttribute.nothrow_)) {
-                        propertyNoThrow = true;
-                    }
                 } else {
                     propertySet = true;
                 }
@@ -458,14 +448,18 @@ public string writeCSharpFile(Modules...)(string libraryName, string rootNamespa
                 }
                 if (propertyGet) {
                     if (isArray!(propertyType)) {
-                        prop ~= "get => new Range<%4$s>(dlang_%1$s(%3$s)%2$s); ".format(methodInterfaceName, !propertyNoThrow ? ".value" : string.init, is(agg == class) ? "DLangPointer" : "ref this", getCSharpInterfaceType(fullyQualifiedName!propertyType));
+                        prop ~= "get => new Range<%3$s>(dlang_%1$s(%2$s)); ".format(methodInterfaceName, is(agg == class) ? "DLangPointer" : "ref this", getCSharpInterfaceType(fullyQualifiedName!propertyType));
+                    } else if (is(propertyType == class)) {
+                        prop ~= "get => new %3$s(dlang_%1$s(%2$s)); ".format(methodInterfaceName, is(agg == class) ? "DLangPointer" : "ref this", getCSharpInterfaceType(fullyQualifiedName!propertyType));
                     } else {
-                        prop ~= "get => dlang_%1$s(%3$s)%2$s; ".format(methodInterfaceName, !propertyNoThrow ? ".value" : string.init, is(agg == class) ? "DLangPointer" : "ref this");
+                        prop ~= "get => dlang_%1$s(%2$s); ".format(methodInterfaceName, is(agg == class) ? "DLangPointer" : "ref this");
                     }
                 }
                 if (propertySet) {
                     if (isArray!(propertyType)) {
                         prop ~= "set => dlang_%1$s(%2$s, value.ToSlice()); ".format(methodInterfaceName, is(agg == class) ? "DLangPointer" : "ref this");
+                    } else if (is(propertyType == class)) {
+                        prop ~= "set => dlang_%1$s(%2$s, value.DLangPointer); ".format(methodInterfaceName, is(agg == class) ? "DLangPointer" : "ref this");
                     } else {
                         prop ~= "set => dlang_%1$s(%2$s, value); ".format(methodInterfaceName, is(agg == class) ? "DLangPointer" : "ref this");
                     }
@@ -591,34 +585,19 @@ public string writeCSharpFile(Modules...)(string libraryName, string rootNamespa
             funcStr = funcStr[0..$-2];
         }
         funcStr ~= ");" ~ newline;
-        if (!isNothrow) {
-            funcStr ~= "            if (!string.IsNullOrEmpty(dlang_ret.error)) throw new DLangException(dlang_ret.error);" ~ newline;
-            if (!is(returnType == void)) {
-                if (is(returnType == string)) {
-                    funcStr ~= "            return SharedFunctions.SliceToString(dlang_ret.value, DStringType._string);" ~ newline;
-                } else if (is(returnType == wstring)) {
-                    funcStr ~= "            return SharedFunctions.SliceToString(dlang_ret.value, DStringType._wstring);" ~ newline;
-                } else if (is(returnType == dstring)) {
-                    funcStr ~= "            return SharedFunctions.SliceToString(dlang_ret.value, DStringType._dstring);" ~ newline;
-                } else if (isArray!(returnType)) {
-                    funcStr ~= "            return new Range<%s>(dlang_ret.value);".format(getCSharpInterfaceType(returnTypeStr)) ~ newline;
-                } else {
-                    funcStr ~= "            return dlang_ret.value;" ~ newline;
-                }
-            }
+        if (is(returnType == void)) {
+            funcStr ~= "            dlang_ret.EnsureValid();" ~ newline;
         } else {
-            if (!is(returnType == void)) {
-                if (is(returnType == string)) {
-                    funcStr ~= "            return SharedFunctions.SliceToString(dlang_ret, DStringType._string);" ~ newline;
-                } else if (is(returnType == wstring)) {
-                    funcStr ~= "            return SharedFunctions.SliceToString(dlang_ret, DStringType._wstring);" ~ newline;
-                } else if (is(returnType == dstring)) {
-                    funcStr ~= "            return SharedFunctions.SliceToString(dlang_ret, DStringType._dstring);" ~ newline;
-                } else if (isArray!(returnType)) {
-                    funcStr ~= "            return new Range<%s>(dlang_ret);".format(getCSharpInterfaceType(returnTypeStr)) ~ newline;
-                } else {
-                    funcStr ~= "            return dlang_ret;" ~ newline;
-                }
+            if (is(returnType == string)) {
+                funcStr ~= "            return SharedFunctions.SliceToString(dlang_ret, DStringType._string);" ~ newline;
+            } else if (is(returnType == wstring)) {
+                funcStr ~= "            return SharedFunctions.SliceToString(dlang_ret, DStringType._wstring);" ~ newline;
+            } else if (is(returnType == dstring)) {
+                funcStr ~= "            return SharedFunctions.SliceToString(dlang_ret, DStringType._dstring);" ~ newline;
+            } else if (isArray!(returnType)) {
+                funcStr ~= "            return new Range<%s>(dlang_ret);".format(getCSharpInterfaceType(returnTypeStr)) ~ newline;
+            } else {
+                funcStr ~= "            return dlang_ret;" ~ newline;
             }
         }
         funcStr ~= "        }" ~ newline;
@@ -706,14 +685,19 @@ private string getDLangReturnType(string type, bool isNothrow, bool isClass) {
 
         string typeStr = "    [StructLayout(LayoutKind.Sequential)]" ~ newline;
         typeStr ~= "    internal struct %s {".format(rtname) ~ newline;
+        typeStr ~= "        private void EnsureValid() {" ~ newline;
+        typeStr ~= "            var errStr = SharedFunctions.SliceToString(_error, DStringType._wstring);" ~ newline;
+        typeStr ~= "            if (!string.IsNullOrEmpty(errStr)) throw new DLangException(errStr);" ~ newline;
+        typeStr ~= "        }" ~ newline;
+
         if (isClass) {
+            typeStr ~= "        public static implicit operator IntPtr(%s ret) { ret.EnsureValid(); return ret._value; }".format(rtname) ~ newline;
             typeStr ~= "        private IntPtr _value;" ~ newline;
-            typeStr ~= "        public %1$s value => new %1$s(_value);".format(getCSharpInterfaceType(type)) ~ newline;
         } else {
-            typeStr ~= "        public %s value;".format(getCSharpInterfaceType(type)) ~ newline;
+            typeStr ~= "        public static implicit operator %s(%s ret) { ret.EnsureValid(); return ret._value; }".format(getCSharpInterfaceType(type), rtname) ~ newline;
+            typeStr ~= "        private %s _value;".format(getCSharpInterfaceType(type)) ~ newline;
         }
         typeStr ~= "        private slice _error;" ~ newline;
-        typeStr ~= "        public string error => SharedFunctions.SliceToString(_error, DStringType._wstring);" ~ newline;
         typeStr ~= "    }" ~ newline ~ newline;
 
         if ((rtname in returnTypes) is null) {
@@ -771,35 +755,39 @@ private void generateRangeDef(T)(string libraryName) {
 
     rangeDef.functions ~= "        [DllImport(\"%1$s\", EntryPoint = \"%2$s\", CallingConvention = CallingConvention.Cdecl)]".format(libraryName, getDLangSliceInterfaceName(fqn, "Create")) ~ newline;
     rangeDef.functions ~= "        internal static extern slice dlang_slice_%1$s(IntPtr capacity);".format(getCSharpMethodInterfaceName(fqn, "Create")) ~ newline;
-    rangeDef.functions ~= "        [DllImport(\"%1$s\", EntryPoint = \"%2$s\", CallingConvention = CallingConvention.Cdecl)]".format(libraryName, getDLangSliceInterfaceName(fqn, "Get")) ~ newline;
-    rangeDef.functions ~= "        internal static extern %2$s dlang_slice_%1$s(slice dslice, IntPtr index);".format(getCSharpMethodInterfaceName(fqn, "Get"), getCSharpInterfaceType(fqn)) ~ newline;
     rangeDef.functions ~= "        [DllImport(\"%1$s\", EntryPoint = \"%2$s\", CallingConvention = CallingConvention.Cdecl)]".format(libraryName, getDLangSliceInterfaceName(fqn, "Slice")) ~ newline;
     rangeDef.functions ~= "        internal static extern slice dlang_slice_%1$s(slice dslice, IntPtr begin, IntPtr end);".format(getCSharpMethodInterfaceName(fqn, "Slice")) ~ newline;
     rangeDef.functions ~= "        [DllImport(\"%1$s\", EntryPoint = \"%2$s\", CallingConvention = CallingConvention.Cdecl)]".format(libraryName, getDLangSliceInterfaceName(fqn, "AppendSlice")) ~ newline;
     rangeDef.functions ~= "        internal static extern slice dlang_slice_%1$s(slice dslice, slice array);".format(getCSharpMethodInterfaceName(fqn, "AppendSlice")) ~ newline;
     if (is(T == class) || is(T == interface)) {
+        rangeDef.functions ~= "        [DllImport(\"%1$s\", EntryPoint = \"%2$s\", CallingConvention = CallingConvention.Cdecl)]".format(libraryName, getDLangSliceInterfaceName(fqn, "Get")) ~ newline;
+        rangeDef.functions ~= "        internal static extern IntPtr dlang_slice_%1$s(slice dslice, IntPtr index);".format(getCSharpMethodInterfaceName(fqn, "Get")) ~ newline;
         rangeDef.functions ~= "        [DllImport(\"%1$s\", EntryPoint = \"%2$s\", CallingConvention = CallingConvention.Cdecl)]".format(libraryName, getDLangSliceInterfaceName(fqn, "Set")) ~ newline;
         rangeDef.functions ~= "        internal static extern void dlang_slice_%1$s(slice dslice, IntPtr index, IntPtr value);".format(getCSharpMethodInterfaceName(fqn, "Set")) ~ newline;
         rangeDef.functions ~= "        [DllImport(\"%1$s\", EntryPoint = \"%2$s\", CallingConvention = CallingConvention.Cdecl)]".format(libraryName, getDLangSliceInterfaceName(fqn, "AppendValue")) ~ newline;
         rangeDef.functions ~= "        internal static extern slice dlang_slice_%1$s(slice dslice, IntPtr value);".format(getCSharpMethodInterfaceName(fqn, "AppendValue")) ~ newline;
     } else {
+        rangeDef.functions ~= "        [DllImport(\"%1$s\", EntryPoint = \"%2$s\", CallingConvention = CallingConvention.Cdecl)]".format(libraryName, getDLangSliceInterfaceName(fqn, "Get")) ~ newline;
+        rangeDef.functions ~= "        internal static extern %2$s dlang_slice_%1$s(slice dslice, IntPtr index);".format(getCSharpMethodInterfaceName(fqn, "Get"), getCSharpInterfaceType(fqn)) ~ newline;
         rangeDef.functions ~= "        [DllImport(\"%1$s\", EntryPoint = \"%2$s\", CallingConvention = CallingConvention.Cdecl)]".format(libraryName, getDLangSliceInterfaceName(fqn, "Set")) ~ newline;
         rangeDef.functions ~= "        internal static extern void dlang_slice_%1$s(slice dslice, IntPtr index, %2$s value);".format(getCSharpMethodInterfaceName(fqn, "Set"), getCSharpInterfaceType(fqn)) ~ newline;
         rangeDef.functions ~= "        [DllImport(\"%1$s\", EntryPoint = \"%2$s\", CallingConvention = CallingConvention.Cdecl)]".format(libraryName, getDLangSliceInterfaceName(fqn, "AppendValue")) ~ newline;
         rangeDef.functions ~= "        internal static extern slice dlang_slice_%1$s(slice dslice, %2$s value);".format(getCSharpMethodInterfaceName(fqn, "AppendValue"), getCSharpInterfaceType(fqn)) ~ newline;
     }
     rangeDef.constructors ~= "            else if (typeof(T) == typeof(%2$s)) this._slice = RangeFunctions.dlang_slice_%1$s(new IntPtr(capacity));".format(getCSharpMethodInterfaceName(fqn, "Create"), getCSharpInterfaceType(fqn)) ~ newline;
-    rangeDef.enumerators ~= "                else if (typeof(T) == typeof(%2$s)) yield return (T)(object)RangeFunctions.dlang_slice_%1$s(_slice, new IntPtr(i));".format(getCSharpMethodInterfaceName(fqn, "Get"), getCSharpInterfaceType(fqn)) ~ newline;
-    rangeDef.getters ~= "                else if (typeof(T) == typeof(%2$s)) return (T)(object)RangeFunctions.dlang_slice_%1$s(_slice, new IntPtr(i));".format(getCSharpMethodInterfaceName(fqn, "Get"), getCSharpInterfaceType(fqn)) ~ newline;
     rangeDef.sliceEnd ~= "            else if (typeof(T) == typeof(%2$s)) return new Range<T>(RangeFunctions.dlang_slice_%1$s(_slice, new IntPtr(begin), _slice.length));".format(getCSharpMethodInterfaceName(fqn, "Slice"), getCSharpInterfaceType(fqn)) ~ newline;
     rangeDef.sliceRange ~= "            else if (typeof(T) == typeof(%2$s)) return new Range<T>(RangeFunctions.dlang_slice_%1$s(_slice, new IntPtr(begin), new IntPtr(end)));".format(getCSharpMethodInterfaceName(fqn, "Slice"), getCSharpInterfaceType(fqn)) ~ newline;
     rangeDef.appendArrays ~= "            else if (typeof(T) == typeof(%2$s)) { range._slice = RangeFunctions.dlang_slice_%1$s(range._slice, source._slice); return range; }".format(getCSharpMethodInterfaceName(fqn, "AppendSlice"), getCSharpInterfaceType(fqn)) ~ newline;
     if (is(T == class) || is(T == interface)) {
+        rangeDef.getters ~= "                else if (typeof(T) == typeof(%2$s)) return (T)(object)new %2$s(RangeFunctions.dlang_slice_%1$s(_slice, new IntPtr(i)));".format(getCSharpMethodInterfaceName(fqn, "Get"), getCSharpInterfaceType(fqn)) ~ newline;
         rangeDef.setters ~= "                else if (typeof(T) == typeof(%2$s)) RangeFunctions.dlang_slice_%1$s(_slice, new IntPtr(i), ((DLangObject)(object)value).DLangPointer);".format(getCSharpMethodInterfaceName(fqn, "Set"), getCSharpInterfaceType(fqn)) ~ newline;
         rangeDef.appendValues ~= "            else if (typeof(T) == typeof(%2$s)) { range._slice = RangeFunctions.dlang_slice_%1$s(range._slice, ((DLangObject)(object)value).DLangPointer); return range; }".format(getCSharpMethodInterfaceName(fqn, "AppendValue"), getCSharpInterfaceType(fqn)) ~ newline;
+        rangeDef.enumerators ~= "                else if (typeof(T) == typeof(%2$s)) yield return (T)(object)new %2$s(RangeFunctions.dlang_slice_%1$s(_slice, new IntPtr(i)));".format(getCSharpMethodInterfaceName(fqn, "Get"), getCSharpInterfaceType(fqn)) ~ newline;
     } else {
+        rangeDef.getters ~= "                else if (typeof(T) == typeof(%2$s)) return (T)(object)RangeFunctions.dlang_slice_%1$s(_slice, new IntPtr(i));".format(getCSharpMethodInterfaceName(fqn, "Get"), getCSharpInterfaceType(fqn)) ~ newline;
         rangeDef.setters ~= "                else if (typeof(T) == typeof(%2$s)) RangeFunctions.dlang_slice_%1$s(_slice, new IntPtr(i), (%2$s)(object)value);".format(getCSharpMethodInterfaceName(fqn, "Set"), getCSharpInterfaceType(fqn)) ~ newline;
         rangeDef.appendValues ~= "            else if (typeof(T) == typeof(%2$s)) { range._slice = RangeFunctions.dlang_slice_%1$s(range._slice, (%2$s)(object)value); return range; }".format(getCSharpMethodInterfaceName(fqn, "AppendValue"), getCSharpInterfaceType(fqn)) ~ newline;
+        rangeDef.enumerators ~= "                else if (typeof(T) == typeof(%2$s)) yield return (T)(object)RangeFunctions.dlang_slice_%1$s(_slice, new IntPtr(i));".format(getCSharpMethodInterfaceName(fqn, "Get"), getCSharpInterfaceType(fqn)) ~ newline;
     }
 }
 
@@ -967,22 +955,33 @@ private string writeCSharpBoilerplate(string libraryName, string rootNamespace) 
 
     [StructLayout(LayoutKind.Sequential)]
     internal struct return_void_error {
+        public void EnsureValid() {
+            var errStr = SharedFunctions.SliceToString(_error, DStringType._wstring);
+            if (!string.IsNullOrEmpty(errStr)) throw new DLangException(errStr);
+        }
         private slice _error;
-        public string error => SharedFunctions.SliceToString(_error, DStringType._wstring);
     }
 
     [StructLayout(LayoutKind.Sequential)]
     internal struct return_bool_error {
-        [MarshalAs(UnmanagedType.Bool)] public bool value;
+        private void EnsureValid() {
+            var errStr = SharedFunctions.SliceToString(_error, DStringType._wstring);
+            if (!string.IsNullOrEmpty(errStr)) throw new DLangException(errStr);
+        }
+        public static implicit operator bool(return_bool_error ret) { ret.EnsureValid(); return ret._value; }
+        [MarshalAs(UnmanagedType.Bool)] public bool _value;
         private slice _error;
-        public string error => SharedFunctions.SliceToString(_error, DStringType._wstring);
     }
 
     [StructLayout(LayoutKind.Sequential)]
     internal struct return_slice_error {
-        public slice value;
+        private void EnsureValid() {
+            var errStr = SharedFunctions.SliceToString(_error, DStringType._wstring);
+            if (!string.IsNullOrEmpty(errStr)) throw new DLangException(errStr);
+        }
+        public static implicit operator slice(return_slice_error ret) { ret.EnsureValid(); return ret._value; }
+        private slice _value;
         private slice _error;
-        public string error => SharedFunctions.SliceToString(_error, DStringType._wstring);
     }
 
 %3$s    internal static class SharedFunctions {

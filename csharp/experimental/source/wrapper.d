@@ -12,15 +12,6 @@ import std.typecons: Yes, No;
 import autowrap.csharp.boilerplate;
 import autowrap.reflection;
 
-
-pragma(msg, wrapCSharp("csharp",
-        Modules(
-            Module("csharp.library")
-        )
-    )
-);
-
-
 mixin(
     wrapCSharp("csharp",
         Modules(
@@ -30,6 +21,14 @@ mixin(
 );
 
 version (GenerateCSharp) {
+
+pragma(msg, wrapCSharp("csharp",
+        Modules(
+            Module("csharp.library")
+        )
+    )
+);
+
 void main() {
     import std.stdio;
     import autowrap.csharp.csharp : writeCSharpFile;

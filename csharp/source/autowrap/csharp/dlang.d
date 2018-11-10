@@ -75,13 +75,6 @@ public string wrapDLang(Modules...)() if(allSatisfy!(isModule, Modules)) {
             }
             if (is(agg == class)) {
                 exp ~= "        import std.stdio : writeln;" ~ newline;
-                static foreach(pc; 0..paramNames.length) {
-                    if (is(paramTypes[pc] == string)) {
-                        exp ~= "        writeln(" ~ paramNames[pc] ~ ".length);" ~ newline;
-                        exp ~= "        writeln(" ~ paramNames[pc] ~ ".ptr);" ~ newline;
-                    }
-                }
-
                 exp ~= "        " ~ fqn ~ " __temp__ = new " ~ fqn ~ "(";
                 static foreach(pc; 0..paramNames.length) {
                     exp ~= paramNames[pc] ~ ", ";

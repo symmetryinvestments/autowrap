@@ -11,11 +11,6 @@ namespace csharp
         {
             try {
                 Autowrap.SharedFunctions.DRuntimeInitialize();
-                if (Environment.Is64BitProcess) {
-                    Console.WriteLine("Bitness: x64");
-                } else  {
-                    Console.WriteLine("Bitness: x86");
-                }
 
                 Console.WriteLine("Testing Primitive Types (Int)");
                 int testInt = 1;
@@ -45,22 +40,6 @@ namespace csharp
                 Console.WriteLine(retSlice[2].Value);
                 Console.WriteLine(retSlice[2].Str);
 
-                //Test class
-                var testClass = new C1(4, "TestClass4");
-                Console.WriteLine("Testing Class");
-                testClass.IntValue = -1;
-                var isv = testClass.IntValue;
-                Console.WriteLine($"Class Test Int: {isv}");
-                var funcString = testClass.TestMemberFunc("TestMemberFunc", new S1());
-                Console.WriteLine($"Class Func String: {funcString}");
-
-                //Test class ranges
-                var classArray = new List<C1>() { new C1(0, "Class1") { IntValue = 1 }, new C1(1, "Class2"), new C1(2, "Class3") };
-                List<C1> retClassArray = Csharp.Library.Functions.ClassRangeFunction(classArray);
-                foreach(var c in retClassArray) {
-                    Console.WriteLine($"Class Array Item: {c.DstringMember} {c.IntValue}");
-                }
-
                 //Test struct member functions
                 var s1struct = new S1();
                 s1struct.Value = 1.1f;
@@ -74,6 +53,22 @@ namespace csharp
                     var error = Csharp.Library.Functions.TestErrorMessage(true);
                 } catch (DLangException ex) {
                     Console.WriteLine($"Error: {Environment.NewLine}{ex.DLangExceptionText}");
+                }
+
+                //Test class
+                var testClass = new C1("TestClass4", 1);
+                Console.WriteLine("Testing Class");
+                testClass.IntValue = -1;
+                var isv = testClass.IntValue;
+                Console.WriteLine($"Class Test Int: {isv}");
+                var funcString = testClass.TestMemberFunc("TestMemberFunc", new S1());
+                Console.WriteLine($"Class Func String: {funcString}");
+
+                //Test class ranges
+                var classArray = new List<C1>() { new C1("Class1", 1) { IntValue = 1 }, new C1("Class2", 2), new C1("Class3", 3) };
+                List<C1> retClassArray = Csharp.Library.Functions.ClassRangeFunction(classArray);
+                foreach(var c in retClassArray) {
+                    Console.WriteLine($"Class Array Item: {c.DstringMember} {c.IntValue}");
                 }
             } catch (Exception ex) {
                 Console.WriteLine(ex.ToString());
