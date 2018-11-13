@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/kaleidicassociates/autowrap.png?branch=master)](https://travis-ci.org/kaleidicassociates/autowrap)
 
-Wrap existing D code for use in other environments such as Python and Excel.
+Wrap existing D code for use in other environments such as Python, Excel, and .NET.
 
 ## About
 
@@ -91,8 +91,96 @@ scripts, which you can copy to your current working directory by running
 [the pyd docs](https://pyd.readthedocs.io/en/latest/dub.html) for more
 information.
 
+# .NET Support
 
-### Our sponsors
+Autowrap can also generate C# bindings to D libraries. Generating bindings for C# is a two-step process. First we must generate a C# compatible C-interface for the D library, then we build and run a version of the library that emits the corresponding C# interface code.
+
+### What Works:
+
+* Primitive Types
+  * string
+  * wstring
+  * dstring
+  * byte
+  * ubyte
+  * short
+  * ushort
+  * int
+  * uint
+  * long
+  * ulong
+  * float
+  * double
+* Structs
+  * Fields
+  * Properties
+  * Methods
+* Classes
+  * Constructors
+  * Fields
+  * Properties
+  * Methods
+
+1-Dimensional Ranges are implemented but only lightly tested and may not work in all cases. Higher dimensional ranges are not supported.
+
+## Generating .NET Interfaces
+
+To generate the C-interface use the following example replacing "csharp" with the dub name of your library (ex: csharp builds to libcsharp&#46;so) and replace "csharp.library" with the name of the module you want to wrap.
+
+```d
+import csharp.library;
+import autowrap.csharp.boilerplate;
+import autowrap.reflection;
+
+mixin(
+    wrapCSharp("csharp",
+        Modules(
+            Module("csharp.library")
+        )
+    )
+);
+```
+
+To generate the C# interface use the writeCSharpFile method as follows to dump the output to a file of your choice.
+
+```d
+string code = writeCSharpFile!(Module("csharp.library"))("csharp", "Autowrap.CSharp");
+```
+
+The template parameter is a list of module to wrap, the first parameter is the dub library name, and the second parameter is the root namespace of the C# project.
+
+## Full Example
+
+```d
+module csharp.wrapper;
+
+import csharp.library;
+
+import autowrap.csharp.boilerplate;
+import autowrap.reflection;
+
+mixin(
+    wrapCSharp("csharp",
+        Modules(
+            Module("csharp.library")
+        )
+    )
+);
+
+version (GenerateCSharp) {
+void main() {
+    import std.stdio;
+    import autowrap.csharp.csharp : writeCSharpFile;
+    string csharpFile = writeCSharpFile!(Module("csharp.library"))("csharp", "Autowrap.Csharp");
+    auto f = File("Wrapper.cs", "w");
+    f.writeln(csharpFile);
+    f.flush();
+    f.close();
+}
+}
+```
+
+# Our sponsors
 
 [<img src="https://raw.githubusercontent.com/libmir/mir-algorithm/master/images/symmetry.png" height="80" />](http://symmetryinvestments.com/) 	&nbsp; 	&nbsp;	&nbsp;	&nbsp;
 [<img src="https://raw.githubusercontent.com/libmir/mir-algorithm/master/images/kaleidic.jpeg" height="80" />](https://github.com/kaleidicassociates)

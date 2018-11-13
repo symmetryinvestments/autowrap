@@ -1,8 +1,8 @@
 before_script:
-  - "cd ./csharp/library/"
   - "git submodule sync --recursive"
   - "git clean -fdx"
   - "git submodule update --init --recursive"
+  - "cd ./examples/csharp/"
 
 stages:
   - native
@@ -20,11 +20,11 @@ Build Autowrap CSharp Linux x64 Native:
 
   script:
     - "dub build --arch=x86_64 --force"
-    - "mv libautowrap-support.so ../../libautowrap.x64.so"
+    - "mv libcsharp.so libcsharp.x64.so"
 
   artifacts:
     paths:
-    - libautowrap.x64.so
+    - libcsharp.x64.so
     expire_in: 1 week
 
 Build Autowrap CSharp Linux x86 Native:
@@ -38,11 +38,11 @@ Build Autowrap CSharp Linux x86 Native:
 
   script:
     - "dub build --arch=x86 --force"
-    - "mv libautowrap-support.so ../../libautowrap.x86.so"
+    - "mv libcsharp.so libcsharp.x86.so"
 
   artifacts:
     paths:
-    - libautowrap.x86.so
+    - libcsharp.x86.so
     expire_in: 1 week
 
 Build Autowrap CSharp Windows x64 Native:
@@ -56,11 +56,11 @@ Build Autowrap CSharp Windows x64 Native:
 
   script:
     - "dub build --arch=x86_64 --force"
-    - "move autowrap-support.dll ..\\..\\autowrap.x64.dll"
+    - "move csharp.dll csharp.x64.dll"
 
   artifacts:
     paths:
-    - autowrap.x64.dll
+    - csharp.x64.dll
     expire_in: 1 week
 
 Build Autowrap CSharp Windows x86 Native:
@@ -74,11 +74,11 @@ Build Autowrap CSharp Windows x86 Native:
 
   script:
     - "dub build --arch=x86 --force"
-    - "move autowrap-support.dll ..\\..\\autowrap.x86.dll"
+    - "move csharp.dll csharp.x86.dll"
 
   artifacts:
     paths:
-    - autowrap.x86.dll
+    - csharp.x86.dll
     expire_in: 1 week
 
 Build Autowrap CSharp .NET Library:
@@ -90,9 +90,6 @@ Build Autowrap CSharp .NET Library:
     - csharp
 
   script:
-    - "mv ../../libautowrap.x64.so libautowrap.x64.so"
-    - "mv ../../libautowrap.x86.so libautowrap.x86.so"
-    - "mv ../../autowrap.x64.dll autowrap.x64.dll"
-    - "mv ../../autowrap.x86.dll autowrap.x86.dll"
+    - "dub run --config=emitCSharp"
     - "dotnet build"
     - "dotnet pack"

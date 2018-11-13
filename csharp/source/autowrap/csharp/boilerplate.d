@@ -5,7 +5,7 @@
    a list of modules, write this in a "main" module and generate mylib.{so,dll}:
 
    ------
-   mixin wrapAll(LibraryName("mylib"), Modules("module1", "module2", ...));
+   mixin wrapCSharp("mylib", Modules("module1", "module2", ...));
    ------
  */
 module autowrap.csharp.boilerplate;
@@ -13,35 +13,6 @@ module autowrap.csharp.boilerplate;
 import autowrap.csharp.dlang;
 import autowrap.reflection;
 
-//public:
-
-/**
-struct LibraryName {
-    string value;
-}
-
-   The list of modules to automatically wrap for .NET consumption
-
-struct Modules {
-    import autowrap.reflection: Module;
-    import std.traits: Unqual;
-    import std.meta: allSatisfy;
-
-    Module[] value;
-
-    this(A...)(auto ref A modules) {
-
-        foreach(module_; modules) {
-            static if(is(Unqual!(typeof(module_)) == Module))
-                value ~= module_;
-            else static if(is(Unqual!(typeof(module_)) == string))
-                value ~= Module(module_);
-            else
-                static assert(false, "Modules must either be `string` or `Module`");
-        }
-    }
-}
- */
 public string wrapCSharp(in string libraryName, in Modules modules) @safe pure {
     import std.format : format;
     import std.algorithm: map;

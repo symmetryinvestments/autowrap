@@ -3,17 +3,15 @@ docs.json
 *selections.json
 __dummy.html
 docs/
-csharp.so
-csharp.dylib
-csharp.dll
-csharp.a
-csharp.lib
+.vscode/
 csharp-test-*
 *.exe
 *.o
 *.a
 *.so
 *.dll
+*.lib
+*.dylib
 *.obj
 *.lst
 

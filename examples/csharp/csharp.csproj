@@ -18,7 +18,7 @@
     <!--<Owners>Symmetry Investments LP</Owners>-->
     <PackageLicenseUrl>https://opensource.org/licenses/BSD-3-Clause</PackageLicenseUrl>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-    <Description>C# support for Autowrap tests.</Description>
+    <Description>C# support for Autowrap example.</Description>
   </PropertyGroup>
 
   <ItemGroup>
