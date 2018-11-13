@@ -1,12 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <OutputType>Library</OutputType>
+    <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp2.1</TargetFramework>
-    <RootNamespace>Autowrap.CSharp</RootNamespace>
+    <RootNamespace>csharp</RootNamespace>
     <LangVersion>7.3</LangVersion>
     <!--<RuntimeIdentifiers>linux-x64;linux-x86;windows-x64;windows-x86;osx-x64</RuntimeIdentifiers>-->
-    <RuntimeIdentifiers>linux-x64;linux-x86;windows-x64;windows-x86</RuntimeIdentifiers>
+    <RuntimeIdentifiers>linux-x64;linux-x86</RuntimeIdentifiers>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <AssemblyName>Autowrap.CSharp</AssemblyName>
 
@@ -18,7 +18,7 @@
     <!--<Owners>Symmetry Investments LP</Owners>-->
     <PackageLicenseUrl>https://opensource.org/licenses/BSD-3-Clause</PackageLicenseUrl>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-    <Description>C# support library for Autowrap.</Description>
+    <Description>C# support for Autowrap tests.</Description>
   </PropertyGroup>
 
   <ItemGroup>
@@ -26,11 +26,14 @@
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="libautowrap.x64.so" />
-    <EmbeddedResource Include="libautowrap.x86.so" />
-    <EmbeddedResource Include="autowrap.x64.dll" />
-    <EmbeddedResource Include="autowrap.x86.dll" />
-    <!--<EmbeddedResource Include="libautowrap.dylib" />-->
+    <EmbeddedResource Include="libcsharp.x64.so" />
+    <EmbeddedResource Include="libcsharp.x86.so" />
+    <!--
+    <EmbeddedResource Include="csharp.x64.dll" />
+    <EmbeddedResource Include="csharp.x86.dll" />
+    <EmbeddedResource Include="libcsharp.dylib" />
+    -->
   </ItemGroup>
+
 
 </Project>
