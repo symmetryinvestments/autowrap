@@ -4,7 +4,7 @@ export int freeFunction (int value) {
     return value;
 }
 
-export extern(C) string stringFunction(string value) nothrow {
+export string stringFunction(string value) nothrow {
     return value;
 }
 

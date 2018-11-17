@@ -4,7 +4,7 @@
 
 Wrap existing D code for use in other environments such as Python, Excel, and .NET.
 
-## About
+# About
 
 There are projects already to make it possible to use D code
 [from Python](https://github.com/ariovistus/pyd) and
@@ -97,6 +97,7 @@ Autowrap can also generate C# bindings to D libraries. Generating bindings for C
 
 ### What Works:
 
+* Module Functions
 * Primitive Types
   * string
   * wstring

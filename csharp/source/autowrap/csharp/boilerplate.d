@@ -133,24 +133,34 @@ private string dllMainMixinStr() @safe pure {
 
             import core.sys.windows.windows;
             import core.sys.windows.dll;
+            import core.thread;
+            import rt.minfo;
 
             switch (ulReason)  {
 
                 case DLL_PROCESS_ATTACH:
                     g_hInst = hInstance;
                     dll_process_attach(hInstance, true);
-                break;
+                    thread_attachThis();
+                    rt_moduleTlsCtor();
+                    break;
 
                 case DLL_PROCESS_DETACH:
                     dll_process_detach(hInstance, true);
+                    thread_detachThis();
+                    rt_moduleTlsDtor();
                     break;
 
                 case DLL_THREAD_ATTACH:
                     dll_thread_attach(true, true);
+                    thread_attachThis();
+                    rt_moduleTlsCtor();
                     break;
 
                 case DLL_THREAD_DETACH:
                     dll_thread_detach(true, true);
+                    thread_detachThis();
+                    rt_moduleTlsDtor();
                     break;
 
                 default:
