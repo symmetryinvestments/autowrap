@@ -837,65 +837,6 @@ private void generateSliceBoilerplate(string libraryName) {
     rangeDef.appendArrays ~= "            else if (typeof(T) == typeof(string) && range._strings != null && range._type == DStringType.None) { foreach(T s in source) range._strings.Add((string)(object)s); return range; }" ~ newline;
     rangeDef.appendValues ~= "            else if (typeof(T) == typeof(string) && range._strings != null && range._type == DStringType.None) { range._strings.Add((string)(object)value); return range; }" ~ newline;
 
-/*
-    rangeDef.enumerators ~= "                else if (typeof(T) == typeof(string) && _strings == null && _type == DStringType._wstring) yield return (T)(object)SharedFunctions.SliceToString(RangeFunctions.Wstring_Get(_slice, new IntPtr(i)), DStringType._string);" ~ newline;
-    rangeDef.enumerators ~= "                else if (typeof(T) == typeof(string) && _strings == null && _type == DStringType._dstring) yield return (T)(object)SharedFunctions.SliceToString(RangeFunctions.Dstring_Get(_slice, new IntPtr(i)), DStringType._string);" ~ newline;
-    rangeDef.getters ~= "                else if (typeof(T) == typeof(string) && _strings == null && _type == DStringType._wstring) return (T)(object)SharedFunctions.SliceToString(RangeFunctions.Wstring_Get(_slice, new IntPtr(i)), DStringType._string);" ~ newline;
-    rangeDef.getters ~= "                else if (typeof(T) == typeof(string) && _strings == null && _type == DStringType._dstring) return (T)(object)SharedFunctions.SliceToString(RangeFunctions.Dstring_Get(_slice, new IntPtr(i)), DStringType._string);" ~ newline;
-    rangeDef.setters ~= "                else if (typeof(T) == typeof(string) && _strings == null && _type == DStringType._wstring) RangeFunctions.Wstring_Set(_slice, new IntPtr(i), SharedFunctions.CreateWString((string)(object)value));" ~ newline;
-    rangeDef.setters ~= "                else if (typeof(T) == typeof(string) && _strings == null && _type == DStringType._dstring) RangeFunctions.Dstring_Set(_slice, new IntPtr(i), SharedFunctions.CreateDString((string)(object)value));" ~ newline;
-    rangeDef.sliceEnd ~= "            else if (typeof(T) == typeof(string) && _strings == null && _type == DStringType._wstring) return new Range<T>(RangeFunctions.Wstring_Slice(_slice, new IntPtr(begin), _slice.length), _type);" ~ newline;
-    rangeDef.sliceEnd ~= "            else if (typeof(T) == typeof(string) && _strings == null && _type == DStringType._dstring) return new Range<T>(RangeFunctions.Dstring_Slice(_slice, new IntPtr(begin), _slice.length), _type);" ~ newline;
-    rangeDef.sliceRange ~= "            else if (typeof(T) == typeof(string) && _strings == null && _type == DStringType._wstring) return new Range<T>(RangeFunctions.Wstring_Slice(_slice, new IntPtr(begin), new IntPtr(end)), _type);" ~ newline;
-    rangeDef.sliceRange ~= "            else if (typeof(T) == typeof(string) && _strings == null && _type == DStringType._dstring) return new Range<T>(RangeFunctions.Dstring_Slice(_slice, new IntPtr(begin), new IntPtr(end)), _type);" ~ newline;
-    rangeDef.appendValues ~= "            else if (typeof(T) == typeof(string) && range._strings == null && range._type == DStringType._wstring) { range._slice = RangeFunctions.Wstring_AppendValue(range._slice, SharedFunctions.CreateWString((string)(object)value)); return range; }" ~ newline;
-    rangeDef.appendValues ~= "            else if (typeof(T) == typeof(string) && range._strings == null && range._type == DStringType._dstring) { range._slice = RangeFunctions.Dstring_AppendValue(range._slice, SharedFunctions.CreateDString((string)(object)value)); return range; }" ~ newline;
-    rangeDef.appendArrays ~= "            else if (typeof(T) == typeof(string) && range._strings == null && range._type == DStringType._wstring) { range._slice = RangeFunctions.Wstring_AppendSlice(range._slice, source._slice); return range; }" ~ newline;
-    rangeDef.appendArrays ~= "            else if (typeof(T) == typeof(string) && range._strings == null && range._type == DStringType._dstring) { range._slice = RangeFunctions.Dstring_AppendSlice(range._slice, source._slice); return range; }" ~ newline;
-
-    //string
-    rangeDef.functions ~= dllImportString.format(libraryName, "autowrap_csharp_String_Create");
-    rangeDef.functions ~= externFuncString.format("slice", "String_Create", "IntPtr capacity");
-    rangeDef.functions ~= dllImportString.format(libraryName, "autowrap_csharp_String_Get");
-    rangeDef.functions ~= externFuncString.format("slice", "String_Get", "slice dslice, IntPtr index");
-    rangeDef.functions ~= dllImportString.format(libraryName, "autowrap_csharp_String_Set");
-    rangeDef.functions ~= externFuncString.format("void", "String_Set", "slice dslice, IntPtr index, slice value");
-    rangeDef.functions ~= dllImportString.format(libraryName, "autowrap_csharp_String_Slice");
-    rangeDef.functions ~= externFuncString.format("slice", "String_Slice", "slice dslice, IntPtr begin, IntPtr end");
-    rangeDef.functions ~= dllImportString.format(libraryName, "autowrap_csharp_String_AppendValue");
-    rangeDef.functions ~= externFuncString.format("slice", "String_AppendValue", "slice dslice, slice value");
-    rangeDef.functions ~= dllImportString.format(libraryName, "autowrap_csharp_String_AppendSlice");
-    rangeDef.functions ~= externFuncString.format("slice", "String_AppendSlice", "slice dslice, slice array");
-
-    //wstring
-    rangeDef.functions ~= dllImportString.format(libraryName, "autowrap_csharp_Wstring_Create");
-    rangeDef.functions ~= externFuncString.format("slice", "Wstring_Create", "IntPtr capacity");
-    rangeDef.functions ~= dllImportString.format(libraryName, "autowrap_csharp_Wstring_Get");
-    rangeDef.functions ~= externFuncString.format("slice", "Wstring_Get", "slice dslice, IntPtr index");
-    rangeDef.functions ~= dllImportString.format(libraryName, "autowrap_csharp_Wstring_Set");
-    rangeDef.functions ~= externFuncString.format("void", "Wstring_Set", "slice dslice, IntPtr index, slice value");
-    rangeDef.functions ~= dllImportString.format(libraryName, "autowrap_csharp_Wstring_Slice");
-    rangeDef.functions ~= externFuncString.format("slice", "Wstring_Slice", "slice dslice, IntPtr begin, IntPtr end");
-    rangeDef.functions ~= dllImportString.format(libraryName, "autowrap_csharp_Wstring_AppendValue");
-    rangeDef.functions ~= externFuncString.format("slice", "Wstring_AppendValue", "slice dslice, slice value");
-    rangeDef.functions ~= dllImportString.format(libraryName, "autowrap_csharp_Wstring_AppendSlice");
-    rangeDef.functions ~= externFuncString.format("slice", "Wstring_AppendSlice", "slice dslice, slice array");
-
-    //dstring
-    rangeDef.functions ~= dllImportString.format(libraryName, "autowrap_csharp_Dstring_Create");
-    rangeDef.functions ~= externFuncString.format("slice", "Dstring_Create", "IntPtr capacity");
-    rangeDef.functions ~= dllImportString.format(libraryName, "autowrap_csharp_Dstring_Get");
-    rangeDef.functions ~= externFuncString.format("slice", "Dstring_Get", "slice dslice, IntPtr index");
-    rangeDef.functions ~= dllImportString.format(libraryName, "autowrap_csharp_Dstring_Set");
-    rangeDef.functions ~= externFuncString.format("void", "Dstring_Set", "slice dslice, IntPtr index, slice value");
-    rangeDef.functions ~= dllImportString.format(libraryName, "autowrap_csharp_Dstring_Slice");
-    rangeDef.functions ~= externFuncString.format("slice", "Dstring_Slice", "slice dslice, IntPtr begin, IntPtr end");
-    rangeDef.functions ~= dllImportString.format(libraryName, "autowrap_csharp_Dstring_AppendValue");
-    rangeDef.functions ~= externFuncString.format("slice", "Dstring_AppendValue", "slice dslice, slice value");
-    rangeDef.functions ~= dllImportString.format(libraryName, "autowrap_csharp_Dstring_AppendSlice");
-    rangeDef.functions ~= externFuncString.format("slice", "Dstring_AppendSlice", "slice dslice, slice array");
-*/
-
     generateStringBoilerplate("string", "String");
     generateStringBoilerplate("wstring", "Wstring");
     generateStringBoilerplate("dstring", "Dstring");
