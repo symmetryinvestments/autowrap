@@ -1,10 +1,5 @@
 module autowrap.csharp.common;
 
-package template ArrayElementType(T : T[])
-{
-    alias T ArrayElementType;
-}
-
 package string getInterfaceTypeString(TypeInfo type) {
     import std.datetime : DateTime;
 
@@ -51,7 +46,7 @@ package string getDLangSliceInterfaceName(string fqn, string funcName) {
     return name;
 }
 
-package string camelToPascalCase(string camel) {
+public string camelToPascalCase(string camel) {
     import std.uni : toUpper;
     import std.conv : to;
     return to!string(camel[0].toUpper) ~ camel[1..$];

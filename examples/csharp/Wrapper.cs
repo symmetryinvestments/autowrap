@@ -1,5 +1,6 @@
 namespace Csharp.Library {
     using System;
+    using System.CodeDom.Compiler;
     using System.Collections.Generic;
     using System.Linq;
     using System.Reflection;
@@ -37,8 +38,10 @@ namespace Csharp.Library {
             var dlang_ret = dlang_TestErrorMessage(throwError);
             return SharedFunctions.SliceToString(dlang_ret, DStringType._string);
         }
+
     }
 
+    [GeneratedCodeAttribute("Autowrap", "1.0.0.0")]
     [StructLayout(LayoutKind.Sequential)]
     public struct S2 {
         public int Value;
@@ -46,6 +49,7 @@ namespace Csharp.Library {
         public string Str { get => SharedFunctions.SliceToString(_Str, DStringType._string); set => _Str = SharedFunctions.CreateString(value); }
     }
 
+    [GeneratedCodeAttribute("Autowrap", "1.0.0.0")]
     [StructLayout(LayoutKind.Sequential)]
     public struct S1 {
         [DllImport("csharp", EntryPoint = "autowrap_csharp_Csharp_Library_S1_GetValue", CallingConvention = CallingConvention.Cdecl)]
@@ -64,20 +68,21 @@ namespace Csharp.Library {
         public Csharp.Library.S2 NestedStruct;
     }
 
+    [GeneratedCodeAttribute("Autowrap", "1.0.0.0")]
     public class C1 : DLangObject {
         [DllImport("csharp", EntryPoint = "autowrap_csharp_Csharp_Library_C1___ctor", CallingConvention = CallingConvention.Cdecl)]
-        private static extern return_c1_error dlang_C1___ctor(slice s, int i);
+        private static extern return_C1_error dlang_C1___ctor(slice s, int i);
         public C1(string s, int i) : base(dlang_C1___ctor(SharedFunctions.CreateString(s), i)) { }
         internal C1(IntPtr ptr) : base(ptr) { }
 
         [DllImport("csharp", EntryPoint = "autowrap_csharp_Csharp_Library_C1_StructProperty", CallingConvention = CallingConvention.Cdecl)]
-        private static extern return_csharp_library_s2_error dlang_C1_StructProperty(IntPtr __obj__);
+        private static extern return_Csharp_Library_S2_error dlang_C1_StructProperty(IntPtr __obj__);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_Csharp_Library_C1_StructProperty", CallingConvention = CallingConvention.Cdecl)]
-        private static extern return_csharp_library_s2_error dlang_C1_StructProperty(IntPtr __obj__, Csharp.Library.S2 value);
+        private static extern return_Csharp_Library_S2_error dlang_C1_StructProperty(IntPtr __obj__, Csharp.Library.S2 value);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_Csharp_Library_C1_RefProperty", CallingConvention = CallingConvention.Cdecl)]
-        private static extern return_csharp_library_c1_error dlang_C1_RefProperty(IntPtr __obj__);
+        private static extern return_Csharp_Library_C1_error dlang_C1_RefProperty(IntPtr __obj__);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_Csharp_Library_C1_RefProperty", CallingConvention = CallingConvention.Cdecl)]
-        private static extern return_csharp_library_c1_error dlang_C1_RefProperty(IntPtr __obj__, IntPtr value);
+        private static extern return_Csharp_Library_C1_error dlang_C1_RefProperty(IntPtr __obj__, IntPtr value);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_Csharp_Library_C1_ValueProperty", CallingConvention = CallingConvention.Cdecl)]
         private static extern return_ulong_error dlang_C1_ValueProperty(IntPtr __obj__);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_Csharp_Library_C1_ValueProperty", CallingConvention = CallingConvention.Cdecl)]
@@ -229,6 +234,7 @@ namespace Csharp.Library {
 
 namespace Autowrap {
     using System;
+    using System.CodeDom.Compiler;
     using System.Collections.Generic;
     using System.IO;
     using System.Linq;
@@ -236,6 +242,7 @@ namespace Autowrap {
     using System.Runtime.InteropServices;
     using Mono.Unix;
 
+    [GeneratedCodeAttribute("Autowrap", "1.0.0.0")]
     public class DLangException : Exception {
         public string DLangExceptionText { get; }
         public DLangException(string dlang) : base() {
@@ -243,6 +250,7 @@ namespace Autowrap {
         }
     }
 
+    [GeneratedCodeAttribute("Autowrap", "1.0.0.0")]
     [StructLayout(LayoutKind.Sequential)]
     internal struct slice {
         internal IntPtr length;
@@ -255,6 +263,7 @@ namespace Autowrap {
         }
     }
 
+    [GeneratedCodeAttribute("Autowrap", "1.0.0.0")]
     internal enum DStringType : int {
         None = 0,
         _string = 1,
@@ -262,6 +271,7 @@ namespace Autowrap {
         _dstring = 4,
     }
 
+    [GeneratedCodeAttribute("Autowrap", "1.0.0.0")]
     public abstract class DLangObject {
         private readonly IntPtr _ptr;
         internal protected IntPtr DLangPointer => _ptr;
@@ -275,6 +285,7 @@ namespace Autowrap {
         }
     }
 
+    [GeneratedCodeAttribute("Autowrap", "1.0.0.0")]
     [StructLayout(LayoutKind.Sequential)]
     internal struct return_void_error {
         public void EnsureValid() {
@@ -284,6 +295,7 @@ namespace Autowrap {
         private slice _error;
     }
 
+    [GeneratedCodeAttribute("Autowrap", "1.0.0.0")]
     [StructLayout(LayoutKind.Sequential)]
     internal struct return_bool_error {
         private void EnsureValid() {
@@ -295,6 +307,7 @@ namespace Autowrap {
         private slice _error;
     }
 
+    [GeneratedCodeAttribute("Autowrap", "1.0.0.0")]
     [StructLayout(LayoutKind.Sequential)]
     internal struct return_slice_error {
         private void EnsureValid() {
@@ -306,17 +319,31 @@ namespace Autowrap {
         private slice _error;
     }
 
+    [GeneratedCodeAttribute("Autowrap", "1.0.0.0")]
     [StructLayout(LayoutKind.Sequential)]
-    internal struct return_c1_error {
+    internal struct return_Csharp_Library_C1_error {
         private void EnsureValid() {
             var errStr = SharedFunctions.SliceToString(_error, DStringType._wstring);
             if (!string.IsNullOrEmpty(errStr)) throw new DLangException(errStr);
         }
-        public static implicit operator IntPtr(return_c1_error ret) { ret.EnsureValid(); return ret._value; }
+        public static implicit operator IntPtr(return_Csharp_Library_C1_error ret) { ret.EnsureValid(); return ret._value; }
         private IntPtr _value;
         private slice _error;
     }
 
+    [GeneratedCodeAttribute("Autowrap", "1.0.0.0")]
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct return_Csharp_Library_S2_error {
+        private void EnsureValid() {
+            var errStr = SharedFunctions.SliceToString(_error, DStringType._wstring);
+            if (!string.IsNullOrEmpty(errStr)) throw new DLangException(errStr);
+        }
+        public static implicit operator Csharp.Library.S2(return_Csharp_Library_S2_error ret) { ret.EnsureValid(); return ret._value; }
+        private Csharp.Library.S2 _value;
+        private slice _error;
+    }
+
+    [GeneratedCodeAttribute("Autowrap", "1.0.0.0")]
     [StructLayout(LayoutKind.Sequential)]
     internal struct return_ulong_error {
         private void EnsureValid() {
@@ -328,6 +355,7 @@ namespace Autowrap {
         private slice _error;
     }
 
+    [GeneratedCodeAttribute("Autowrap", "1.0.0.0")]
     [StructLayout(LayoutKind.Sequential)]
     internal struct return_int_error {
         private void EnsureValid() {
@@ -339,17 +367,7 @@ namespace Autowrap {
         private slice _error;
     }
 
-    [StructLayout(LayoutKind.Sequential)]
-    internal struct return_csharp_library_s2_error {
-        private void EnsureValid() {
-            var errStr = SharedFunctions.SliceToString(_error, DStringType._wstring);
-            if (!string.IsNullOrEmpty(errStr)) throw new DLangException(errStr);
-        }
-        public static implicit operator Csharp.Library.S2(return_csharp_library_s2_error ret) { ret.EnsureValid(); return ret._value; }
-        private Csharp.Library.S2 _value;
-        private slice _error;
-    }
-
+    [GeneratedCodeAttribute("Autowrap", "1.0.0.0")]
     [StructLayout(LayoutKind.Sequential)]
     internal struct return_float_error {
         private void EnsureValid() {
@@ -361,17 +379,19 @@ namespace Autowrap {
         private slice _error;
     }
 
+    [GeneratedCodeAttribute("Autowrap", "1.0.0.0")]
     [StructLayout(LayoutKind.Sequential)]
-    internal struct return_csharp_library_c1_error {
+    internal struct return_C1_error {
         private void EnsureValid() {
             var errStr = SharedFunctions.SliceToString(_error, DStringType._wstring);
             if (!string.IsNullOrEmpty(errStr)) throw new DLangException(errStr);
         }
-        public static implicit operator IntPtr(return_csharp_library_c1_error ret) { ret.EnsureValid(); return ret._value; }
+        public static implicit operator IntPtr(return_C1_error ret) { ret.EnsureValid(); return ret._value; }
         private IntPtr _value;
         private slice _error;
     }
 
+    [GeneratedCodeAttribute("Autowrap", "1.0.0.0")]
     internal static class SharedFunctions {
         static SharedFunctions() {
             Stream stream = null;
@@ -445,6 +465,7 @@ namespace Autowrap {
         public static extern int DRuntimeTerminate();
     }
 
+    [GeneratedCodeAttribute("Autowrap", "1.0.0.0")]
     internal class RangeFunctions {
         [DllImport("csharp", EntryPoint = "autowrap_csharp_Bool_Create", CallingConvention = CallingConvention.Cdecl)]
         internal static extern slice Bool_Create(IntPtr capacity);
@@ -653,6 +674,8 @@ namespace Autowrap {
         internal static extern slice Csharp_library_c1_AppendValue(slice dslice, IntPtr value);
 
     }
+
+    [GeneratedCodeAttribute("Autowrap", "1.0.0.0")]
     public class Range<T> : IEnumerable<T> {
         private slice _slice;
         private DStringType _type;

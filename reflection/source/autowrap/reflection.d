@@ -1,6 +1,5 @@
 module autowrap.reflection;
 
-
 import std.meta: allSatisfy;
 import std.traits: isArray, Unqual, moduleName;
 import std.typecons: Flag, No;

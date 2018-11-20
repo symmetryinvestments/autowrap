@@ -142,10 +142,10 @@ mixin(
 );
 ```
 
-To generate the C# interface use the writeCSharpFile method as follows to dump the output to a file of your choice.
+To generate the C# interface use the generateCSharp method as follows to dump the output to a file of your choice.
 
 ```d
-string code = writeCSharpFile!(Module("csharp.library"))("csharp", "Autowrap.CSharp");
+string code = generateCSharp!(Module("csharp.library"))("csharp", "Autowrap.CSharp");
 ```
 
 The template parameter is a list of module to wrap, the first parameter is the dub library name, and the second parameter is the root namespace of the C# project.
@@ -171,8 +171,8 @@ mixin(
 version (GenerateCSharp) {
 void main() {
     import std.stdio;
-    import autowrap.csharp.csharp : writeCSharpFile;
-    string csharpFile = writeCSharpFile!(Module("csharp.library"))("csharp", "Autowrap.Csharp");
+    import autowrap.csharp.csharp : generateCSharp;
+    string csharpFile = generateCSharp!(Module("csharp.library"))("csharp", "Autowrap.Csharp");
     auto f = File("Wrapper.cs", "w");
     f.writeln(csharpFile);
     f.flush();

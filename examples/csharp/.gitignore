@@ -4,7 +4,6 @@ docs.json
 __dummy.html
 docs/
 .vscode/
-csharp
 csharp-test-*
 *.exe
 *.o

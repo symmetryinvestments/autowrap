@@ -10,10 +10,11 @@
  */
 module autowrap.csharp.boilerplate;
 
-import autowrap.csharp.dlang;
+import autowrap.common;
 import autowrap.reflection;
+import autowrap.csharp.dlang;
 
-public string wrapCSharp(in string libraryName, in Modules modules) @safe pure {
+public string wrapCSharp(in Modules modules) @safe pure {
     import std.format : format;
     import std.algorithm: map;
     import std.array: join;
@@ -119,56 +120,3 @@ private string commonBoilerplate() @safe pure {
         }
     };
 }
-
-/**
-   Returns a string to be mixed in that defines DllMain, needed on Windows.
- */
-private string dllMainMixinStr() @safe pure {
-    return q{
-        import core.sys.windows.windows: HINSTANCE, BOOL, ULONG, LPVOID;
-
-        __gshared HINSTANCE g_hInst;
-
-        extern (Windows) BOOL DllMain(HINSTANCE hInstance, ULONG ulReason, LPVOID pvReserved) {
-
-            import core.sys.windows.windows;
-            import core.sys.windows.dll;
-            import core.thread;
-            import rt.minfo;
-
-            switch (ulReason)  {
-
-                case DLL_PROCESS_ATTACH:
-                    g_hInst = hInstance;
-                    dll_process_attach(hInstance, true);
-                    thread_attachThis();
-                    rt_moduleTlsCtor();
-                    break;
-
-                case DLL_PROCESS_DETACH:
-                    dll_process_detach(hInstance, true);
-                    thread_detachThis();
-                    rt_moduleTlsDtor();
-                    break;
-
-                case DLL_THREAD_ATTACH:
-                    dll_thread_attach(true, true);
-                    thread_attachThis();
-                    rt_moduleTlsCtor();
-                    break;
-
-                case DLL_THREAD_DETACH:
-                    dll_thread_detach(true, true);
-                    thread_detachThis();
-                    rt_moduleTlsDtor();
-                    break;
-
-                default:
-            }
-
-            return true;
-        }
-    };
-}
-
-

@@ -53,19 +53,20 @@ private class csharpNamespace {
     }
 
     public override string toString() {
-        char[] ret;
-        ret.reserve(1_048_576);
+        string ret;
         foreach(csns; namespaces.byValue()) {
-            ret ~= "namespace " ~ csns.namespace ~ " {" ~newline;
-            ret ~= "    using System;" ~ newline;
-            ret ~= "    using System.Collections.Generic;" ~ newline;
-            ret ~= "    using System.Linq;" ~ newline;
-            ret ~= "    using System.Reflection;" ~ newline;
-            ret ~= "    using System.Runtime.InteropServices;" ~ newline;
-            ret ~= "    using Autowrap;" ~ newline ~ newline;
-            ret ~= "    public static class Functions {" ~ newline;
-            ret ~= csns.functions;
-            ret ~= "    }" ~ newline ~ newline;
+            ret ~= "namespace " ~ csns.namespace ~ " {
+    using System;
+    using System.CodeDom.Compiler;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Reflection;
+    using System.Runtime.InteropServices;
+    using Autowrap;
+
+    public static class Functions {
+" ~ csns.functions ~ "
+    }" ~ newline ~ newline;
             foreach(agg; aggregates.byValue()) {
                 ret ~= agg.toString();
             }
@@ -95,6 +96,7 @@ private class csharpAggregate {
     public override string toString() {
         char[] ret;
         ret.reserve(32_768);
+        ret ~= "    [GeneratedCodeAttribute(\"Autowrap\", \"1.0.0.0\")]" ~ newline;
         if (isStruct) {
             ret ~= "    [StructLayout(LayoutKind.Sequential)]" ~ newline;
             ret ~= "    public struct " ~ camelToPascalCase(this.name) ~ " {" ~ newline;
@@ -122,9 +124,12 @@ public struct csharpRange {
     public string sliceRange = string.init;
 
     public string toString() {
-        return "    internal class RangeFunctions {
+        return "    [GeneratedCodeAttribute(\"Autowrap\", \"1.0.0.0\")]
+    internal class RangeFunctions {
 " ~ functions ~ "
     }
+
+    [GeneratedCodeAttribute(\"Autowrap\", \"1.0.0.0\")]
     public class Range<T> : IEnumerable<T> {
         private slice _slice;
         private DStringType _type;
@@ -235,7 +240,7 @@ public struct csharpRange {
     }
 }
 
-public string writeCSharpFile(Modules...)(string libraryName, string rootNamespace) if(allSatisfy!(isModule, Modules)) {
+public string generateCSharp(Modules...)(string libraryName, string rootNamespace) if(allSatisfy!(isModule, Modules)) {
     import autowrap.reflection: AllFunctions;
     generateSliceBoilerplate(libraryName);
 
@@ -261,7 +266,7 @@ public string writeCSharpFile(Modules...)(string libraryName, string rootNamespa
             enum isNothrow = functionAttributes!c & FunctionAttribute.nothrow_;
             const string interfaceName = getDLangInterfaceName(fqn, "__ctor");
             const string methodName = getCSharpMethodInterfaceName(aggName, "__ctor");
-            string ctor = "        [DllImport(\"%s\", EntryPoint = \"%s\", CallingConvention = CallingConvention.Cdecl)]".format(libraryName, interfaceName) ~ newline;
+            string ctor = dllImportString.format(libraryName, interfaceName);
             if (is(agg == class)) {
                 ctor ~= "        private static extern %s dlang_%s(".format(getDLangReturnType(aggName, isNothrow, true), methodName);
             } else if (is(agg == struct)) {
@@ -332,7 +337,7 @@ public string writeCSharpFile(Modules...)(string libraryName, string rootNamespa
 
                     const string interfaceName = getDLangInterfaceName(fqn, m);
 
-                    exp ~= "        [DllImport(\"%s\", EntryPoint = \"%s\", CallingConvention = CallingConvention.Cdecl)]".format(libraryName, interfaceName) ~ newline;
+                    exp ~= dllImportString.format(libraryName, interfaceName);
                     exp ~= "        private static extern ";
                     if (!is(returnType == void)) {
                         static if (is(returnType == class)) {
@@ -476,9 +481,9 @@ public string writeCSharpFile(Modules...)(string libraryName, string rootNamespa
         if (is(agg == class) || is(agg == interface)) {
             static foreach(fc; 0..fieldTypes.length) {
                 static if (is(typeof(__traits(getMember, agg, fieldNames[fc])))) {
-                    csagg.properties ~= "        [DllImport(\"%s\", EntryPoint = \"%s\", CallingConvention = CallingConvention.Cdecl)]".format(libraryName, getDLangInterfaceName(fqn, fieldNames[fc] ~ "_get")) ~ newline;
+                    csagg.properties ~= dllImportString.format(libraryName, getDLangInterfaceName(fqn, fieldNames[fc] ~ "_get"));
                     csagg.properties ~= "        private static extern %s dlang_%s_get(IntPtr ptr);".format(getDLangInterfaceType(fullyQualifiedName!(fieldTypes[fc])), fieldNames[fc]) ~ newline;
-                    csagg.properties ~= "        [DllImport(\"%s\", EntryPoint = \"%s\", CallingConvention = CallingConvention.Cdecl)]".format(libraryName, getDLangInterfaceName(fqn, fieldNames[fc] ~ "_set")) ~ newline;
+                    csagg.properties ~= dllImportString.format(libraryName, getDLangInterfaceName(fqn, fieldNames[fc] ~ "_set"));
                     csagg.properties ~= "        private static extern void dlang_%s_set(IntPtr ptr, %s value);".format(fieldNames[fc], getDLangInterfaceType(fullyQualifiedName!(fieldTypes[fc]))) ~ newline;
                     if (is(fieldTypes[fc] == string)) {
                         csagg.properties ~= "        public %2$s %3$s { get => SharedFunctions.SliceToString(dlang_%1$s_get(DLangPointer), DStringType._string); set => dlang_%1$s_set(DLangPointer, SharedFunctions.CreateString(value)); }".format(fieldNames[fc], getCSharpInterfaceType(fullyQualifiedName!(fieldTypes[fc])), getCSharpName(fieldNames[fc])) ~ newline;
@@ -616,54 +621,61 @@ public string writeCSharpFile(Modules...)(string libraryName, string rootNamespa
 }
 
 private string getDLangInterfaceType(string type) {
-    //Types that require special marshalling types
     if (type[$-2..$] == "[]") return "slice";
-    else if (type == stringTypeString) return "slice";
-    else if (type == wstringTypeString) return "slice";
-    else if (type == dstringTypeString) return "slice";
-    else if (type == boolTypeString) return "bool";
 
-    //Types that can be marshalled by default
-    else if (type == charTypeString) return "byte";
-    else if (type == wcharTypeString) return "char";
-    else if (type == dcharTypeString) return "uint";
-    else if (type == ubyteTypeString) return "byte";
-    else if (type == byteTypeString) return "sbyte";
-    else if (type == ushortTypeString) return "ushort";
-    else if (type == shortTypeString) return "short";
-    else if (type == uintTypeString) return "uint";
-    else if (type == intTypeString) return "int";
-    else if (type == ulongTypeString) return "ulong";
-    else if (type == longTypeString) return "long";
-    else if (type == floatTypeString) return "float";
-    else if (type == doubleTypeString) return "double";
-    else return getCSharpName(type);
+    switch(type) {
+        //Types that require special marshalling types
+        case voidTypeString: return "void";
+        case stringTypeString: return "slice";
+        case wstringTypeString: return "slice";
+        case dstringTypeString: return "slice";
+        case boolTypeString: return "bool";
+
+        //Types that can be marshalled by default
+        case charTypeString: return "byte";
+        case wcharTypeString: return "char";
+        case dcharTypeString: return "uint";
+        case ubyteTypeString: return "byte";
+        case byteTypeString: return "sbyte";
+        case ushortTypeString: return "ushort";
+        case shortTypeString: return "short";
+        case uintTypeString: return "uint";
+        case intTypeString: return "int";
+        case ulongTypeString: return "ulong";
+        case longTypeString: return "long";
+        case floatTypeString: return "float";
+        case doubleTypeString: return "double";
+        default: return getCSharpName(type);
+    }
 }
 
 private string getCSharpInterfaceType(string type) {
-    //Types that require special marshalling types
     if (type[$-2..$] == "[]") type = type[0..$-2];
-    if(type == voidTypeString) return "void";
-    else if(type == stringTypeString) return "string";
-    else if (type == wstringTypeString) return "string";
-    else if (type == dstringTypeString) return "string";
-    else if (type == boolTypeString) return "bool";
 
-    //Types that can be marshalled by default
-    else if (type == charTypeString) return "byte";
-    else if (type == wcharTypeString) return "char";
-    else if (type == dcharTypeString) return "uint";
-    else if (type == ubyteTypeString) return "byte";
-    else if (type == byteTypeString) return "sbyte";
-    else if (type == ushortTypeString) return "ushort";
-    else if (type == shortTypeString) return "short";
-    else if (type == uintTypeString) return "uint";
-    else if (type == intTypeString) return "int";
-    else if (type == ulongTypeString) return "ulong";
-    else if (type == longTypeString) return "long";
-    else if (type == floatTypeString) return "float";
-    else if (type == doubleTypeString) return "double";
-    else return getCSharpName(type);
+    switch (type) {
+        //Types that require special marshalling types
+        case voidTypeString: return "void";
+        case stringTypeString: return "string";
+        case wstringTypeString: return "string";
+        case dstringTypeString: return "string";
+        case boolTypeString: return "bool";
+
+        //Types that can be marshalled by default
+        case charTypeString: return "byte";
+        case wcharTypeString: return "char";
+        case dcharTypeString: return "uint";
+        case ubyteTypeString: return "byte";
+        case byteTypeString: return "sbyte";
+        case ushortTypeString: return "ushort";
+        case shortTypeString: return "short";
+        case uintTypeString: return "uint";
+        case intTypeString: return "int";
+        case ulongTypeString: return "ulong";
+        case longTypeString: return "long";
+        case floatTypeString: return "float";
+        case doubleTypeString: return "double";
+        default: return getCSharpName(type);
+    }
 }
 
 private string getDLangReturnType(string type, bool isNothrow, bool isClass) {
@@ -677,12 +689,14 @@ private string getDLangReturnType(string type, bool isNothrow, bool isClass) {
             return rtname;
         }
 
-        string typeStr = "    [StructLayout(LayoutKind.Sequential)]" ~ newline;
-        typeStr ~= "    internal struct %s {".format(rtname) ~ newline;
-        typeStr ~= "        private void EnsureValid() {" ~ newline;
-        typeStr ~= "            var errStr = SharedFunctions.SliceToString(_error, DStringType._wstring);" ~ newline;
-        typeStr ~= "            if (!string.IsNullOrEmpty(errStr)) throw new DLangException(errStr);" ~ newline;
-        typeStr ~= "        }" ~ newline;
+        string typeStr = "    [GeneratedCodeAttribute(\"Autowrap\", \"1.0.0.0\")]
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct " ~ rtname ~ " {
+        private void EnsureValid() {
+            var errStr = SharedFunctions.SliceToString(_error, DStringType._wstring);
+            if (!string.IsNullOrEmpty(errStr)) throw new DLangException(errStr);
+        }
+";
 
         if (isClass) {
             typeStr ~= "        public static implicit operator IntPtr(%s ret) { ret.EnsureValid(); return ret._value; }".format(rtname) ~ newline;
@@ -714,24 +728,15 @@ private string getCSharpMethodInterfaceName(string aggName, string funcName) {
 
 private string getReturnErrorTypeName(string aggName) {
     import std.string : split;
-    string name = "return_";
-
-    string[] parts = aggName.toLower().split(".");
-    foreach(string p; parts) {
-        name ~= p ~ "_";
-    }
-    return name ~ "error";
+    import std.array : join;
+    return "return_" ~ aggName.split(".").join("_") ~ "_error";
 }
 
 private string getCSharpName(string dlangName) {
+    import std.algorithm : map;
     import std.string : split;
-    string[] parts = dlangName.split(".");
-    string ns = string.init;
-    foreach(string p; parts) {
-        ns ~= camelToPascalCase(p) ~ ".";
-    }
-    ns = ns[0..$-1];
-    return ns;
+    import std.array : join;
+    return dlangName.split(".").map!camelToPascalCase.join(".");
 }
 
 private csharpNamespace getNamespace(string name) {
@@ -853,7 +858,6 @@ private void generateSliceBoilerplate(string libraryName) {
     generateRangeDef!double(libraryName);
 }
 
-//This needs to be written last
 private string writeCSharpBoilerplate(string libraryName, string rootNamespace) {
     string returnTypesStr = string.init;
     foreach(string rt; returnTypes.byValue) {
@@ -862,6 +866,7 @@ private string writeCSharpBoilerplate(string libraryName, string rootNamespace) 
 
     return "namespace Autowrap {
     using System;
+    using System.CodeDom.Compiler;
     using System.Collections.Generic;
     using System.IO;
     using System.Linq;
@@ -869,6 +874,7 @@ private string writeCSharpBoilerplate(string libraryName, string rootNamespace) 
     using System.Runtime.InteropServices;
     using Mono.Unix;
 
+    [GeneratedCodeAttribute(\"Autowrap\", \"1.0.0.0\")]
     public class DLangException : Exception {
         public string DLangExceptionText { get; }
         public DLangException(string dlang) : base() {
@@ -876,6 +882,7 @@ private string writeCSharpBoilerplate(string libraryName, string rootNamespace) 
         }
     }
 
+    [GeneratedCodeAttribute(\"Autowrap\", \"1.0.0.0\")]
     [StructLayout(LayoutKind.Sequential)]
     internal struct slice {
         internal IntPtr length;
@@ -888,6 +895,7 @@ private string writeCSharpBoilerplate(string libraryName, string rootNamespace) 
         }
     }
 
+    [GeneratedCodeAttribute(\"Autowrap\", \"1.0.0.0\")]
     internal enum DStringType : int {
         None = 0,
         _string = 1,
@@ -895,6 +903,7 @@ private string writeCSharpBoilerplate(string libraryName, string rootNamespace) 
         _dstring = 4,
     }
 
+    [GeneratedCodeAttribute(\"Autowrap\", \"1.0.0.0\")]
     public abstract class DLangObject {
         private readonly IntPtr _ptr;
         internal protected IntPtr DLangPointer => _ptr;
@@ -908,6 +917,7 @@ private string writeCSharpBoilerplate(string libraryName, string rootNamespace) 
         }
     }
 
+    [GeneratedCodeAttribute(\"Autowrap\", \"1.0.0.0\")]
     [StructLayout(LayoutKind.Sequential)]
     internal struct return_void_error {
         public void EnsureValid() {
@@ -917,6 +927,7 @@ private string writeCSharpBoilerplate(string libraryName, string rootNamespace) 
         private slice _error;
     }
 
+    [GeneratedCodeAttribute(\"Autowrap\", \"1.0.0.0\")]
     [StructLayout(LayoutKind.Sequential)]
     internal struct return_bool_error {
         private void EnsureValid() {
@@ -928,6 +939,7 @@ private string writeCSharpBoilerplate(string libraryName, string rootNamespace) 
         private slice _error;
     }
 
+    [GeneratedCodeAttribute(\"Autowrap\", \"1.0.0.0\")]
     [StructLayout(LayoutKind.Sequential)]
     internal struct return_slice_error {
         private void EnsureValid() {
@@ -939,7 +951,8 @@ private string writeCSharpBoilerplate(string libraryName, string rootNamespace) 
         private slice _error;
     }
 
-%3$s    internal static class SharedFunctions {
+%3$s    [GeneratedCodeAttribute(\"Autowrap\", \"1.0.0.0\")]
+    internal static class SharedFunctions {
         static SharedFunctions() {
             Stream stream = null;
             var outputName = RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? \"lib%1$s.dylib\" : RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? \"lib%1$s.so\" : \"%1$s.dll\";
