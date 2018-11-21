@@ -1,5 +1,10 @@
+/**
+   Make D symbiks out of  Python macros and helper functions
+ */
 #include "Python.h"
 
+
+// Turn macros into D symbols
 
 enum MethodArgs {
     Var = METH_VARARGS,
@@ -26,6 +31,7 @@ auto pyModuleDef(A...)(auto ref A args) {
 }
 
 
+// PyModule_Create is a macro so wrap it with a D funtion
 auto createModule(PyModuleDef* module_) {
     return PyModule_Create(module_);
 }

@@ -19,7 +19,7 @@ private PyObject* silly_strlen(PyObject* self, PyObject *args) {
 
 private auto methods = [
     PyMethodDef("strlen".ptr, &silly_strlen, MethodArgs.Var),
-    PyMethodDef(),
+    PyMethodDef(), // sentinel
 ];
 
 
