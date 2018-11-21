@@ -1,33 +1,37 @@
 #include "Python.h"
 
+extern(C):
 
-static extern(C) PyObject* silly_strlen(PyObject* self, PyObject *args) {
-    import core.stdc.string: strlen;
+private PyObject* silly_strlen(PyObject* self, PyObject *args) {
+    import core.stdc.string: cstrlen = strlen;
+
     const char* arg;
+
     if(!PyArg_ParseTuple(args, "s", &arg))
         return null;
-    const auto len = strlen(arg);
+
+    const auto len = cstrlen(arg);
     return PyLong_FromLong(len);
 }
 
 
-static auto SillyMethods = [
+private auto methods = [
     PyMethodDef("strlen".ptr, &silly_strlen, METH_VARARGS),
     PyMethodDef(),
 ];
 
 
-extern(C) PyMODINIT_FUNC PyInit_silly() {
+PyMODINIT_FUNC PyInit_silly() {
     static PyModuleDef sillymodule;
-    //static auto sillymodule = PyModuleDef(
+
     sillymodule = PyModuleDef(
         //PyModuleDef_HEAD_INIT,  // this won't work due to C syntax
         PyModuleDef_Base(PyObject(1 /*ref count*/, null /*type*/), null /*m_init*/, 0/*m_index*/, null/*m_copy*/),
-        "silly".ptr, // name
+        &"silly"[0], // name
         null, // documentation
         -1, // size of per-interpreter module state or -1 if the module keeps state in globals
-        SillyMethods.ptr,
-        );
+        &methods[0],
+    );
 
     return PyModule_Create(&sillymodule);
 }
