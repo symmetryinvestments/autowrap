@@ -4,7 +4,7 @@ import python;
 extern(C):
 
 
-private PyObject* silly_strlen(PyObject* self, PyObject *args) {
+private PyObject* silly_strlen(PyObject* self, PyObject *args) nothrow @nogc {
     import core.stdc.string: cstrlen = strlen;
 
     const char* arg;
@@ -18,8 +18,8 @@ private PyObject* silly_strlen(PyObject* self, PyObject *args) {
 
 
 private auto methods = [
-    PyMethodDef("strlen".ptr, &silly_strlen, MethodArgs.Var),
-    PyMethodDef(), // sentinel
+    pyMethodDef!"strlen"(&silly_strlen),
+    pyMethodSentinel,
 ];
 
 

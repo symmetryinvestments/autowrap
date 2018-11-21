@@ -30,6 +30,16 @@ auto pyModuleDef(A...)(auto ref A args) {
     );
 }
 
+/**
+   Helper function to create PyMethodDef structs
+ */
+auto pyMethodDef(string name, int flags = MethodArgs.Var, string doc = "")(PyCFunction cfunction) pure {
+    return PyMethodDef(name.ptr, cfunction, flags, doc.ptr);
+}
+
+auto pyMethodSentinel() {
+    return PyMethodDef();
+}
 
 // PyModule_Create is a macro so wrap it with a D funtion
 auto createModule(PyModuleDef* module_) {
