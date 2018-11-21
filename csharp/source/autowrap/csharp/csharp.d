@@ -42,6 +42,9 @@ enum string sliceTypeString = "slice";
 enum string dllImportString = "        [DllImport(\"%1$s\", EntryPoint = \"%2$s\", CallingConvention = CallingConvention.Cdecl)]" ~ newline;
 enum string externFuncString = "        internal static extern %1$s %2$s(%3$s);" ~ newline;
 
+enum int fileReservationSize = 33_554_432;
+enum int aggregateReservationSize = 32_768;
+
 private class csharpNamespace {
     public string namespace;
     public string functions;
@@ -95,7 +98,7 @@ private class csharpAggregate {
 
     public override string toString() {
         char[] ret;
-        ret.reserve(32_768);
+        ret.reserve(aggregateReservationSize);
         ret ~= "    [GeneratedCodeAttribute(\"Autowrap\", \"1.0.0.0\")]" ~ newline;
         if (isStruct) {
             ret ~= "    [StructLayout(LayoutKind.Sequential)]" ~ newline;
@@ -248,7 +251,6 @@ public string generateCSharp(Modules...)(string libraryName, string rootNamespac
         const string aggName = __traits(identifier, agg);
         csharpAggregate csagg = getAggregate(getCSharpName(modName), getCSharpName(aggName), !is(agg == class));
 
-        //Generate range definition methods
         generateRangeDef!agg(libraryName);
 
         generateConstructors!agg(libraryName, csagg);
@@ -263,7 +265,7 @@ public string generateCSharp(Modules...)(string libraryName, string rootNamespac
     generateFunctions!Modules(libraryName);
 
     char[] ret;
-    ret.reserve(33_554_432);
+    ret.reserve(fileReservationSize);
     foreach(csns; namespaces.byValue()) {
         ret ~= csns.toString();
     }
