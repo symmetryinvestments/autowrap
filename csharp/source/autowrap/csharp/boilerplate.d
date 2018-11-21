@@ -33,7 +33,7 @@ public string wrapCSharp(in Modules modules) @safe pure {
 
         immutable string t = wrapDLang!(%2$s);
         mixin(t);
-        pragma(msg, t);
+        debug: pragma(msg, t);
 
         //Insert DllMain for Windows only.
         version(Windows) {
