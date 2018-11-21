@@ -1,18 +1,14 @@
 module autowrap.csharp.dlang;
 
-import autowrap.csharp.boilerplate;
-import autowrap.csharp.common;
-import autowrap.reflection;
+import autowrap.csharp.common : camelToPascalCase, getDLangSliceInterfaceName, getDLangInterfaceName;
+import autowrap.reflection : AllFunctions, AllAggregates, isModule;
 
-import std.ascii;
-import std.conv;
-import std.traits;
-import std.typecons;
-import std.string;
+import std.ascii : newline;
+import std.traits : isArray, fullyQualifiedName, moduleName, isFunction, Fields, FieldNameTuple, hasMember, functionAttributes, FunctionAttribute, ReturnType, Parameters, ParameterIdentifierTuple;
+import std.meta: allSatisfy, AliasSeq;
 
-///  Wrap global functions from multiple modules
+// Wrap global functions from multiple modules
 public string wrapDLang(Modules...)() if(allSatisfy!(isModule, Modules)) {
-    import autowrap.reflection: AllFunctions;
     string ret = string.init;
 
     foreach(mod; Modules) {

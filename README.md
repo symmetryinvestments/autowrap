@@ -130,8 +130,7 @@ To generate the C-interface use the following example replacing "csharp" with th
 
 ```d
 import csharp.library;
-import autowrap.csharp.boilerplate;
-import autowrap.reflection;
+import autowrap.csharp;
 
 mixin(
     wrapCSharp("csharp",
@@ -156,9 +155,7 @@ The template parameter is a list of module to wrap, the first parameter is the d
 module csharp.wrapper;
 
 import csharp.library;
-
-import autowrap.csharp.boilerplate;
-import autowrap.reflection;
+import autowrap.csharp;
 
 mixin(
     wrapCSharp("csharp",
@@ -169,15 +166,12 @@ mixin(
 );
 
 version (GenerateCSharp) {
-void main() {
-    import std.stdio;
-    import autowrap.csharp.csharp : generateCSharp;
-    string csharpFile = generateCSharp!(Module("csharp.library"))("csharp", "Autowrap.Csharp");
-    auto f = File("Wrapper.cs", "w");
-    f.writeln(csharpFile);
-    f.flush();
-    f.close();
-}
+    void main() {
+        import std.stdio;
+        string csharpFile = generateCSharp!(Module("csharp.library"))("csharp", "Autowrap.Csharp");
+        auto f = File("Wrapper.cs", "w");
+        f.writeln(csharpFile);
+    }
 }
 ```
 

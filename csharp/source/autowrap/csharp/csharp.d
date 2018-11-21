@@ -1,19 +1,15 @@
 module autowrap.csharp.csharp;
 
-import autowrap.csharp.boilerplate;
-import autowrap.csharp.common;
-import autowrap.reflection;
+import autowrap.csharp.common : camelToPascalCase, getDLangSliceInterfaceName, getDLangInterfaceName;
+import autowrap.reflection : AllFunctions, AllAggregates, isModule;
 
-import std.ascii;
-import std.datetime;
-import std.traits;
-import std.string;
-import std.uuid;
-
-import std.stdio;
+import std.ascii : newline;
+import std.meta: allSatisfy, AliasSeq;
+import std.traits : isArray, fullyQualifiedName, moduleName, isFunction, Fields, FieldNameTuple, hasMember, functionAttributes, FunctionAttribute, ReturnType, Parameters, ParameterIdentifierTuple;
+import std.string : format, replace;
 
 private string[string] returnTypes;
-private csharpNamespace[string] namespaces;
+private CSharpNamespace[string] namespaces;
 private csharpRange rangeDef;
 
 enum string voidTypeString = "void";
@@ -45,10 +41,10 @@ enum string externFuncString = "        internal static extern %1$s %2$s(%3$s);"
 enum int fileReservationSize = 33_554_432;
 enum int aggregateReservationSize = 32_768;
 
-private class csharpNamespace {
+private class CSharpNamespace {
     public string namespace;
     public string functions;
-    public csharpAggregate[string] aggregates;
+    public CSharpAggregate[string] aggregates;
 
     public this(string ns) {
         namespace = ns;
@@ -79,7 +75,7 @@ private class csharpNamespace {
     }
 }
 
-private class csharpAggregate {
+private class CSharpAggregate {
     public string name;
     public bool isStruct;
     public string constructors;
@@ -249,7 +245,7 @@ public string generateCSharp(Modules...)(string libraryName, string rootNamespac
     foreach(agg; AllAggregates!Modules) {
         alias modName = moduleName!agg;
         const string aggName = __traits(identifier, agg);
-        csharpAggregate csagg = getAggregate(getCSharpName(modName), getCSharpName(aggName), !is(agg == class));
+        CSharpAggregate csagg = getAggregate(getCSharpName(modName), getCSharpName(aggName), !is(agg == class));
 
         generateRangeDef!agg(libraryName);
 
@@ -275,7 +271,7 @@ public string generateCSharp(Modules...)(string libraryName, string rootNamespac
     return cast(immutable)ret;
 }
 
-private void generateConstructors(T)(string libraryName, csharpAggregate csagg) if (is(T == class) || is(T == struct)) {
+private void generateConstructors(T)(string libraryName, CSharpAggregate csagg) if (is(T == class) || is(T == struct)) {
     const string aggName = __traits(identifier, T);
     alias fqn = fullyQualifiedName!T;
 
@@ -344,7 +340,7 @@ private void generateConstructors(T)(string libraryName, csharpAggregate csagg) 
     }
 }
 
-private void generateMethods(T)(string libraryName, csharpAggregate csagg) if (is(T == class) || is(T == interface) || is(T == struct)) {
+private void generateMethods(T)(string libraryName, CSharpAggregate csagg) if (is(T == class) || is(T == interface) || is(T == struct)) {
     const string aggName = __traits(identifier, T);
     alias fqn = fullyQualifiedName!T;
 
@@ -459,7 +455,7 @@ private void generateMethods(T)(string libraryName, csharpAggregate csagg) if (i
     }
 }
 
-private void generateProperties(T)(string libraryName, csharpAggregate csagg) if (is(T == class) || is(T == interface) || is(T == struct)) {
+private void generateProperties(T)(string libraryName, CSharpAggregate csagg) if (is(T == class) || is(T == interface) || is(T == struct)) {
     const string aggName = __traits(identifier, T);
     alias fqn = fullyQualifiedName!T;
 
@@ -523,7 +519,7 @@ private void generateProperties(T)(string libraryName, csharpAggregate csagg) if
     }
 }
 
-private void generateFields(T)(string libraryName, csharpAggregate csagg) if (is(T == class) || is(T == interface) || is(T == struct)) {
+private void generateFields(T)(string libraryName, CSharpAggregate csagg) if (is(T == class) || is(T == interface) || is(T == struct)) {
     const string aggName = __traits(identifier, T);
     alias fqn = fullyQualifiedName!T;
     alias fieldTypes = Fields!T;
@@ -574,7 +570,7 @@ private void generateFunctions(Modules...)(string libraryName) if(allSatisfy!(is
     foreach(func; AllFunctions!Modules) {
         alias modName = func.moduleName;
         alias funcName = func.name;
-        csharpNamespace ns = getNamespace(getCSharpName(modName));
+        CSharpNamespace ns = getNamespace(getCSharpName(modName));
 
         alias returnType = ReturnType!(__traits(getMember, func.module_, func.name));
         alias returnTypeStr = fullyQualifiedName!(ReturnType!(__traits(getMember, func.module_, func.name)));
@@ -782,13 +778,13 @@ private string getCSharpName(string dlangName) {
     return dlangName.split(".").map!camelToPascalCase.join(".");
 }
 
-private csharpNamespace getNamespace(string name) {
-    return namespaces.require(name, new csharpNamespace(name));
+private CSharpNamespace getNamespace(string name) {
+    return namespaces.require(name, new CSharpNamespace(name));
 }
 
-private csharpAggregate getAggregate(string namespace, string name, bool isStruct) {
-    csharpNamespace ns = namespaces.require(namespace, new csharpNamespace(namespace));
-    return ns.aggregates.require(name, new csharpAggregate(name, isStruct));
+private CSharpAggregate getAggregate(string namespace, string name, bool isStruct) {
+    CSharpNamespace ns = namespaces.require(namespace, new CSharpNamespace(namespace));
+    return ns.aggregates.require(name, new CSharpAggregate(name, isStruct));
 }
 
 private void generateRangeDef(T)(string libraryName) {
