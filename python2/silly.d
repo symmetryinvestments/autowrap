@@ -24,14 +24,5 @@ private auto methods = [
 
 
 ModuleInitRet PyInit_silly() {
-    static PyModuleDef sillymodule;
-
-    sillymodule = pyModuleDef(
-        &"silly"[0], // name
-        null, // documentation
-        -1, // size of per-interpreter module state or -1 if the module keeps state in globals
-        &methods[0],
-    );
-
-    return createModule(&sillymodule);
+    return createModule!"silly"(methods);
 }

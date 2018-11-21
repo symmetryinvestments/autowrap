@@ -4,8 +4,8 @@
 #include "Python.h"
 
 
-// Turn macros into D symbols
 
+// All of the cases are macros instead of values in an enum
 enum MethodArgs {
     Var = METH_VARARGS,
     Keywords = METH_KEYWORDS,
@@ -13,14 +13,28 @@ enum MethodArgs {
     O = METH_O,
 }
 
+// Demacroify
 alias ModuleInitRet = PyMODINIT_FUNC;
 
 
 /**
-   Helper function to get around the C syntax problem with
-   PyModuleDef_HEAD_INIT
+   Create a Python module.
+   The strings are compile-time parameters to avoid passing GC-allocated memory
+   to Python (by calling std.string.toStringz or manually appending the null
+   terminator).
  */
-auto pyModuleDef(A...)(auto ref A args) {
+auto createModule(string name, string doc = "", long size = -1)(PyMethodDef[] methods) {
+    assert(methods[$-1] == PyMethodDef.init, "Methods array must end with a sentinel");
+    static PyModuleDef moduleDef;
+    moduleDef = pyModuleDef(name.ptr, doc.ptr, size, &methods[0]);
+    return PyModule_Create(&moduleDef);
+}
+
+/**
+   Helper function to get around the C syntax problem with
+   PyModuleDef_HEAD_INIT - it doesn't compile in D.
+ */
+private auto pyModuleDef(A...)(auto ref A args) {
     import std.functional: forward;
 
     return PyModuleDef(
@@ -31,17 +45,16 @@ auto pyModuleDef(A...)(auto ref A args) {
 }
 
 /**
-   Helper function to create PyMethodDef structs
+   Helper function to create PyMethodDef structs.
+   The strings are compile-time parameters to avoid passing GC-allocated memory
+   to Python (by calling std.string.toStringz or manually appending the null
+   terminator).
  */
 auto pyMethodDef(string name, int flags = MethodArgs.Var, string doc = "")(PyCFunction cfunction) pure {
     return PyMethodDef(name.ptr, cfunction, flags, doc.ptr);
 }
 
+
 auto pyMethodSentinel() {
     return PyMethodDef();
-}
-
-// PyModule_Create is a macro so wrap it with a D funtion
-auto createModule(PyModuleDef* module_) {
-    return PyModule_Create(module_);
 }
