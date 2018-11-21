@@ -5,7 +5,12 @@ extern(C):
 
 
 ModuleInitRet PyInit_silly() {
-    return createModule!("silly", strlen_);
+    return createModule!(
+        Module("silly"),
+        CFunctions!(
+            strlen_,
+        ),
+    );
 }
 
 

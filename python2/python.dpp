@@ -17,23 +17,33 @@ enum MethodArgs {
 alias ModuleInitRet = PyMODINIT_FUNC;
 
 
+/// For a nicer API
+struct Module {
+    string name;
+}
+
+/// For a nicer API
+struct CFunctions(functions...) {
+    alias symbols = functions;
+    enum length = functions.length;
+}
+
 /**
    Creates a Python module from the given C functions.
    Each function has the same name in Python.
  */
-auto createModule(string moduleName, cfunctions...)() {
-
-    pragma(msg, "cfunctions length", cfunctions.length);
-
+auto createModule(Module module_, alias cfunctions)()
+    if(is(cfunctions == CFunctions!(A), A...))
+{
     // +1 due to the sentinel
     static PyMethodDef[cfunctions.length + 1] methods;
 
-    static foreach(i, cfunction; cfunctions) {
+    static foreach(i, cfunction; cfunctions.symbols) {
         methods[i] = pyMethodDef!(__traits(identifier, cfunction))(&cfunction);
     }
 
     static PyModuleDef moduleDef;
-    moduleDef = pyModuleDef(moduleName.ptr, null /*doc*/, -1 /*size*/, &methods[0]);
+    moduleDef = pyModuleDef(module_.name.ptr, null /*doc*/, -1 /*size*/, &methods[0]);
 
     return PyModule_Create(&moduleDef);
 }
