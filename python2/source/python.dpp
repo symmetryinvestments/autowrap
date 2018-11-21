@@ -1,0 +1,31 @@
+#include "Python.h"
+
+
+enum MethodArgs {
+    Var = METH_VARARGS,
+    Keywords = METH_KEYWORDS,
+    None = METH_NOARGS,
+    O = METH_O,
+}
+
+alias ModuleInitRet = PyMODINIT_FUNC;
+
+
+/**
+   Helper function to get around the C syntax problem with
+   PyModuleDef_HEAD_INIT
+ */
+auto pyModuleDef(A...)(auto ref A args) {
+    import std.functional: forward;
+
+    return PyModuleDef(
+        // the line below is a manual PyModuleDef_HEAD_INIT
+        PyModuleDef_Base(PyObject(1 /*ref count*/, null /*type*/), null /*m_init*/, 0/*m_index*/, null/*m_copy*/),
+        forward!args
+    );
+}
+
+
+auto createModule(PyModuleDef* module_) {
+    return PyModule_Create(module_);
+}
