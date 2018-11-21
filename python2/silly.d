@@ -4,7 +4,12 @@ import python;
 extern(C):
 
 
-private PyObject* silly_strlen(PyObject* self, PyObject *args) nothrow @nogc {
+ModuleInitRet PyInit_silly() {
+    return createModule!("silly", strlen_);
+}
+
+
+private PyObject* strlen_(PyObject* self, PyObject *args) nothrow @nogc {
     import core.stdc.string: cstrlen = strlen;
 
     const char* arg;
@@ -14,15 +19,4 @@ private PyObject* silly_strlen(PyObject* self, PyObject *args) nothrow @nogc {
 
     const auto len = cstrlen(arg);
     return PyLong_FromLong(len);
-}
-
-
-private auto methods = [
-    pyMethodDef!"strlen"(&silly_strlen),
-    pyMethodSentinel,
-];
-
-
-ModuleInitRet PyInit_silly() {
-    return createModule!"silly"(methods);
 }

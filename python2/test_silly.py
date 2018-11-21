@@ -1,4 +1,4 @@
 import silly
 
-assert silly.strlen("foobar") == 6
-assert silly.strlen("quux") == 4
+assert silly.strlen_("foobar") == 6
+assert silly.strlen_("quux") == 4

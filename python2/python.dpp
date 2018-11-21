@@ -18,6 +18,27 @@ alias ModuleInitRet = PyMODINIT_FUNC;
 
 
 /**
+   Creates a Python module from the given C functions.
+   Each function has the same name in Python.
+ */
+auto createModule(string moduleName, cfunctions...)() {
+
+    pragma(msg, "cfunctions length", cfunctions.length);
+
+    // +1 due to the sentinel
+    static PyMethodDef[cfunctions.length + 1] methods;
+
+    static foreach(i, cfunction; cfunctions) {
+        methods[i] = pyMethodDef!(__traits(identifier, cfunction))(&cfunction);
+    }
+
+    static PyModuleDef moduleDef;
+    moduleDef = pyModuleDef(moduleName.ptr, null /*doc*/, -1 /*size*/, &methods[0]);
+
+    return PyModule_Create(&moduleDef);
+}
+
+/**
    Create a Python module.
    The strings are compile-time parameters to avoid passing GC-allocated memory
    to Python (by calling std.string.toStringz or manually appending the null
@@ -52,9 +73,4 @@ private auto pyModuleDef(A...)(auto ref A args) {
  */
 auto pyMethodDef(string name, int flags = MethodArgs.Var, string doc = "")(PyCFunction cfunction) pure {
     return PyMethodDef(name.ptr, cfunction, flags, doc.ptr);
-}
-
-
-auto pyMethodSentinel() {
-    return PyMethodDef();
 }
