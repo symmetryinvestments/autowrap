@@ -158,7 +158,7 @@ import csharp.library;
 import autowrap.csharp;
 
 mixin(
-    wrapCSharp("csharp",
+    wrapCSharp(
         Modules(
             Module("csharp.library")
         )
@@ -168,7 +168,7 @@ mixin(
 version (GenerateCSharp) {
     void main() {
         import std.stdio;
-        string csharpFile = generateCSharp!(Module("csharp.library"))("csharp", "Autowrap.Csharp");
+        string csharpFile = generateCSharp!(Module("csharp.library"))(LibraryName("csharp"), RootNamespace("csharp"));
         auto f = File("Wrapper.cs", "w");
         f.writeln(csharpFile);
     }

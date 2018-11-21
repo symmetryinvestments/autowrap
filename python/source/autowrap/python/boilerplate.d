@@ -10,6 +10,8 @@
  */
 module autowrap.python.boilerplate;
 
+import autowrap.reflection : Modules;
+
 /**
    The name of the dynamic library, i.e. the file name with the .so/.dll extension
  */

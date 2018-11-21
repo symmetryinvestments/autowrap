@@ -11,11 +11,13 @@ mixin(
     )
 );
 
-version (GenerateCSharp) {
-    void main() {
-        import std.stdio;
-        string csharpFile = generateCSharp!(Module("csharp.library"))("csharp", "csharp");
-        auto f = File("Wrapper.cs", "w");
-        f.writeln(csharpFile);
-    }
-}
+mixin(
+    emitCSharp(
+        Modules(
+            Module("csharp.library")
+        ),
+        OutputFileName("Wrapper.cs"), 
+        LibraryName("csharp"),
+        RootNamespace("csharp")
+    )
+);

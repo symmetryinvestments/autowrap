@@ -1,5 +1,13 @@
 module autowrap.csharp.common;
 
+public struct LibraryName {
+    string value;
+}
+
+public struct RootNamespace {
+    string value;
+}
+
 package string getInterfaceTypeString(TypeInfo type) {
     import std.datetime : DateTime;
 

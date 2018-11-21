@@ -12,5 +12,5 @@ configuration "buildSharedLib" {
 
 configuration "emitCSharp" {
     targetType "executable"
-    versions "GenerateCSharp"
+    versions "EmitCSharp"
 }

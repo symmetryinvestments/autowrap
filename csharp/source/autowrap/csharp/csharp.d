@@ -1,6 +1,6 @@
 module autowrap.csharp.csharp;
 
-import autowrap.csharp.common : camelToPascalCase, getDLangSliceInterfaceName, getDLangInterfaceName;
+import autowrap.csharp.common : LibraryName, RootNamespace, camelToPascalCase, getDLangSliceInterfaceName, getDLangInterfaceName;
 import autowrap.reflection : AllFunctions, AllAggregates, isModule;
 
 import std.ascii : newline;
@@ -239,26 +239,26 @@ public struct csharpRange {
     }
 }
 
-public string generateCSharp(Modules...)(string libraryName, string rootNamespace) if(allSatisfy!(isModule, Modules)) {
-    generateSliceBoilerplate(libraryName);
+public string generateCSharp(Modules...)(LibraryName libraryName, RootNamespace rootNamespace) if(allSatisfy!(isModule, Modules)) {
+    generateSliceBoilerplate(libraryName.value);
 
     foreach(agg; AllAggregates!Modules) {
         alias modName = moduleName!agg;
         const string aggName = __traits(identifier, agg);
         CSharpAggregate csagg = getAggregate(getCSharpName(modName), getCSharpName(aggName), !is(agg == class));
 
-        generateRangeDef!agg(libraryName);
+        generateRangeDef!agg(libraryName.value);
 
-        generateConstructors!agg(libraryName, csagg);
+        generateConstructors!agg(libraryName.value, csagg);
 
-        generateMethods!agg(libraryName, csagg);
+        generateMethods!agg(libraryName.value, csagg);
 
-        generateProperties!agg(libraryName, csagg);
+        generateProperties!agg(libraryName.value, csagg);
 
-        generateFields!agg(libraryName, csagg);
+        generateFields!agg(libraryName.value, csagg);
     }
 
-    generateFunctions!Modules(libraryName);
+    generateFunctions!Modules(libraryName.value);
 
     char[] ret;
     ret.reserve(fileReservationSize);
@@ -266,7 +266,7 @@ public string generateCSharp(Modules...)(string libraryName, string rootNamespac
         ret ~= csns.toString();
     }
 
-    ret ~= newline ~ writeCSharpBoilerplate(libraryName, rootNamespace);
+    ret ~= newline ~ writeCSharpBoilerplate(libraryName.value, rootNamespace.value);
 
     return cast(immutable)ret;
 }

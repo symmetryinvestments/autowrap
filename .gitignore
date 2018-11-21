@@ -12,3 +12,4 @@ ut
 *.a
 *.lst
 *.exe
+.vscode/
