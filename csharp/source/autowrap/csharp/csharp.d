@@ -106,7 +106,7 @@ private class csharpAggregate {
         } else {
             ret ~= "    public class " ~ camelToPascalCase(this.name) ~ " : DLangObject {" ~ newline;
         }
-        if (functions != string.init) ret.join(functions).join(newline);
+        if (functions != string.init) ret ~= functions ~ newline;
         if (constructors != string.init) ret ~= constructors ~ newline;
         if (methods != string.init) ret ~= methods ~ newline;
         if (properties != string.init) ret ~= properties;

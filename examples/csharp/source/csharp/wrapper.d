@@ -1,9 +1,7 @@
 module csharp.wrapper;
 
 import csharp.library;
-
-import autowrap.csharp.boilerplate;
-import autowrap.reflection;
+import autowrap.csharp;
 
 mixin(
     wrapCSharp(
@@ -14,11 +12,10 @@ mixin(
 );
 
 version (GenerateCSharp) {
-void main() {
-    import std.stdio;
-    import autowrap.csharp.csharp : generateCSharp;
-    string csharpFile = generateCSharp!(Module("csharp.library"))("csharp", "csharp");
-    auto f = File("Wrapper.cs", "w");
-    f.writeln(csharpFile);
-}
+    void main() {
+        import std.stdio;
+        string csharpFile = generateCSharp!(Module("csharp.library"))("csharp", "csharp");
+        auto f = File("Wrapper.cs", "w");
+        f.writeln(csharpFile);
+    }
 }
