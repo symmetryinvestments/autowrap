@@ -28,6 +28,37 @@ struct CFunctions(functions...) {
     enum length = functions.length;
 }
 
+
+/**
+   A string mixin to reduce boilerplate
+ */
+string createModuleMixin(Module module_, alias cfunctions)() {
+    import std.format: format;
+
+    return q{
+        import python: ModuleInitRet;
+        extern(C) ModuleInitRet PyInit_%s() {
+            return createModule!(
+                Module("%s"),
+                CFunctions!(
+                    %s
+                ),
+            );
+        }
+    }.format(module_.name, module_.name, symbols!cfunctions);
+}
+
+private string symbols(alias cfunctions)() {
+    import std.array: join;
+
+    string[] ret;
+
+    static foreach(cfunction; cfunctions.symbols)
+        ret ~= __traits(identifier, cfunction);
+
+    return ret.join(", ");
+}
+
 /**
    Creates a Python module from the given C functions.
    Each function has the same name in Python.
@@ -47,6 +78,7 @@ auto createModule(Module module_, alias cfunctions)()
 
     return PyModule_Create(&moduleDef);
 }
+
 
 /**
    Create a Python module.

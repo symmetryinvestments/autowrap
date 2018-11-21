@@ -4,14 +4,15 @@ import python;
 extern(C):
 
 
-ModuleInitRet PyInit_silly() {
-    return createModule!(
+mixin(
+    createModuleMixin!(
         Module("silly"),
         CFunctions!(
             strlen_,
-        ),
-    );
-}
+        )
+    )
+);
+
 
 
 private PyObject* strlen_(PyObject* self, PyObject *args) nothrow @nogc {
