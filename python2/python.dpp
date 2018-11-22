@@ -1,11 +1,16 @@
 /**
-   Make D symbiks out of  Python macros and helper functions
+   Make D symbols out of Python macros and helper functions
  */
+module python;
+
+
 #include "Python.h"
 
 
-
-// All of the cases are macros instead of values in an enum
+/**
+    All of the enum cases are macros instead of values in an enum
+    so we make them available to D code with MethodArgs instead.
+*/
 enum MethodArgs {
     Var = METH_VARARGS,
     Keywords = METH_KEYWORDS,
@@ -22,6 +27,7 @@ struct Module {
     string name;
 }
 
+
 /// For a nicer API
 struct CFunctions(functions...) {
     alias symbols = functions;
@@ -30,7 +36,9 @@ struct CFunctions(functions...) {
 
 
 /**
-   A string mixin to reduce boilerplate
+   A string mixin to reduce boilerplate when creating a Python module.
+   Takes a module name and a variadic list of C functions to make
+   available.
  */
 string createModuleMixin(Module module_, alias cfunctions)() {
     import std.format: format;
@@ -59,6 +67,7 @@ private string symbols(alias cfunctions)() {
     return ret.join(", ");
 }
 
+
 /**
    Creates a Python module from the given C functions.
    Each function has the same name in Python.
@@ -66,10 +75,12 @@ private string symbols(alias cfunctions)() {
 auto createModule(Module module_, alias cfunctions)()
     if(is(cfunctions == CFunctions!(A), A...))
 {
-    // +1 due to the sentinel
+    // +1 due to the sentinel that Python uses to know when to
+    // stop incrementing through the pointer.
     static PyMethodDef[cfunctions.length + 1] methods;
 
     static foreach(i, cfunction; cfunctions.symbols) {
+        // TODO: make it possible to use a different name with a UDA
         methods[i] = pyMethodDef!(__traits(identifier, cfunction))(&cfunction);
     }
 
