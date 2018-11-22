@@ -141,13 +141,20 @@ mixin(
 );
 ```
 
-To generate the C# interface use the generateCSharp method as follows to dump the output to a file of your choice.
+To generate the C# interface use the emitCSharp mixin as follows to dump the output to a location of your choice. This mixin creates a void main() function that will need to be executed by running the code. (This is due to the inability of CTFE to write files to the disk.)
 
 ```d
-string code = generateCSharp!(Module("csharp.library"))("csharp", "Autowrap.CSharp");
+mixin(
+    emitCSharp(
+        Modules(
+            Module("csharp.library")
+        ),
+        OutputFileName("Wrapper.cs"),
+        LibraryName("csharp"),
+        RootNamespace("csharp")
+    )
+);
 ```
-
-The template parameter is a list of module to wrap, the first parameter is the dub library name, and the second parameter is the root namespace of the C# project.
 
 ## Full Example
 
@@ -165,14 +172,16 @@ mixin(
     )
 );
 
-version (GenerateCSharp) {
-    void main() {
-        import std.stdio;
-        string csharpFile = generateCSharp!(Module("csharp.library"))(LibraryName("csharp"), RootNamespace("csharp"));
-        auto f = File("Wrapper.cs", "w");
-        f.writeln(csharpFile);
-    }
-}
+mixin(
+    emitCSharp(
+        Modules(
+            Module("csharp.library")
+        ),
+        OutputFileName("Wrapper.cs"),
+        LibraryName("csharp"),
+        RootNamespace("csharp")
+    )
+);
 ```
 
 # Our sponsors

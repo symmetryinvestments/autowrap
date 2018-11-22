@@ -28,13 +28,11 @@ public string emitCSharp(in Modules modules, OutputFileName outputFile, LibraryN
     const modulesList = modules.value.map!(a => a.toString).join(", ");
 
     return q{
-        version(EmitCSharp) {
-            void main() {
-                import std.stdio;
-                string generated = generateCSharp!(%1$s)(LibraryName("%2$s"), RootNamespace("%3$s"));
-                auto f = File("%4$s", "w");
-                f.writeln(generated);
-            }
+        void main() {
+            import std.stdio;
+            string generated = generateCSharp!(%1$s)(LibraryName("%2$s"), RootNamespace("%3$s"));
+            auto f = File("%4$s", "w");
+            f.writeln(generated);
         }
     }.format(modulesList, libraryName.value, rootNamespace.value, outputFile.value);
 }

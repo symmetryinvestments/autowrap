@@ -16,7 +16,7 @@ mixin(
         Modules(
             Module("csharp.library")
         ),
-        OutputFileName("Wrapper.cs"), 
+        OutputFileName("Wrapper.cs"),
         LibraryName("csharp"),
         RootNamespace("csharp")
     )
