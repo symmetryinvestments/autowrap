@@ -7,10 +7,15 @@ import std.ascii : newline;
 import std.traits : isArray, fullyQualifiedName, moduleName, isFunction, Fields, FieldNameTuple, hasMember, functionAttributes, FunctionAttribute, ReturnType, Parameters, ParameterIdentifierTuple;
 import std.meta : allSatisfy, AliasSeq;
 
+enum string methodSetup = "        thread_attachThis();" ~ newline ~ "        rt_moduleTlsCtor();" ~ newline ~ "        scope(exit) rt_moduleTlsDtor();" ~ newline ~ "        scope(exit) thread_detachThis();" ~ newline;
+
 // Wrap global functions from multiple modules
 public string wrapDLang(Modules...)() if(allSatisfy!(isModule, Modules)) {
     string ret = string.init;
 
+    ret ~= "import core.thread : thread_attachThis, thread_detachThis;" ~ newline;
+    ret ~= "extern(C) void rt_moduleTlsCtor();" ~ newline;
+    ret ~= "extern(C) void rt_moduleTlsDtor();" ~ newline;
     foreach(mod; Modules) {
         ret ~= "import " ~ mod.name ~ ";" ~ newline;
     }
@@ -64,14 +69,9 @@ private string generateConstructors(T)() {
         alias paramNames = ParameterIdentifierTuple!c;
         alias paramTypes = Parameters!c;
         string exp = "extern(C) export ";
-        enum isNothrow = functionAttributes!c & FunctionAttribute.nothrow_;
         const string interfaceName = getDLangInterfaceName(fqn, "__ctor");
 
-        if (!isNothrow) {
-            exp ~= "returnValue!(" ~ fqn ~ ")";
-        } else {
-            exp ~= fqn;
-        }
+        exp ~= "returnValue!(" ~ fqn ~ ")";
         exp ~= " " ~ interfaceName ~ "(";
 
         static foreach(pc; 0..paramNames.length) {
@@ -81,9 +81,8 @@ private string generateConstructors(T)() {
             exp = exp[0..$-2];
         }
         exp ~= ") nothrow {" ~ newline;
-        if (!isNothrow) {
-            exp ~= "    try {" ~ newline;
-        }
+        exp ~= "    try {" ~ newline;
+        exp ~= methodSetup;
         if (is(T == class)) {
             exp ~= "        import std.stdio : writeln;" ~ newline;
             exp ~= "        " ~ fqn ~ " __temp__ = new " ~ fqn ~ "(";
@@ -95,11 +94,7 @@ private string generateConstructors(T)() {
             }
             exp ~= ");" ~ newline;
             exp ~= "        pinPointer(cast(void*)__temp__);" ~ newline;
-            if (!isNothrow) {
-                exp ~= "        return returnValue!(" ~ fqn ~ ")(__temp__);" ~ newline;
-            } else {
-                exp ~= "        return __temp__;" ~ newline;
-            }
+            exp ~= "        return returnValue!(" ~ fqn ~ ")(__temp__);" ~ newline;
         } else if (is(T == struct)) {
             exp ~= "        return " ~ fqn ~ "(";
             foreach(pn; paramNames) {
@@ -110,11 +105,9 @@ private string generateConstructors(T)() {
             }
             exp ~= ");" ~ newline;
         }
-        if (!isNothrow) {
-            exp ~= "    } catch (Exception __ex__) {" ~ newline;
-            exp ~= "        return returnValue!(" ~ fqn ~ ")(__ex__);" ~ newline;
-            exp ~= "    }" ~ newline;
-        }
+        exp ~= "    } catch (Exception __ex__) {" ~ newline;
+        exp ~= "        return returnValue!(" ~ fqn ~ ")(__ex__);" ~ newline;
+        exp ~= "    }" ~ newline;
         exp ~= "}" ~ newline;
         ret ~= exp;
     }
@@ -138,52 +131,36 @@ private string generateMethods(T)() {
                     string exp = string.init;
                     const string interfaceName = getDLangInterfaceName(fqn, m);
 
-                    enum isNothrow = functionAttributes!mo & FunctionAttribute.nothrow_;
                     alias returnType = ReturnType!mo;
                     alias returnTypeStr = fullyQualifiedName!returnType;
                     alias paramTypes = Parameters!mo;
                     alias paramNames = ParameterIdentifierTuple!mo;
 
                     exp ~= "extern(C) export ";
-                    if (!isNothrow) {
-                        if (!is(returnType == void)) {
-                            exp ~= "returnValue!(" ~ returnTypeStr ~ ")";
-                        } else {
-                            exp ~= "returnVoid";
-                        }
+                    if (!is(returnType == void)) {
+                        exp ~= "returnValue!(" ~ returnTypeStr ~ ")";
                     } else {
-                        exp ~= returnTypeStr;
+                        exp ~= "returnVoid";
                     }
                     exp ~= " " ~ interfaceName ~ "(";
                     if (is(T == struct)) {
-                        exp ~= fqn ~ "* __obj__, ";
-                    } else if (is(T == class) || is(T == interface)) {
-                        exp ~= "void* __obj__, ";
+                        exp ~= "ref " ~ fqn ~ " __obj__, ";
+                    } else {
+                        exp ~= fqn ~ " __obj__, ";
                     }
                     static foreach(pc; 0..paramNames.length) {
                         exp ~= fullyQualifiedName!(paramTypes[pc]) ~ " " ~ paramNames[pc] ~ ", ";
                     }
                     exp = exp[0..$-2];
                     exp ~= ") nothrow {" ~ newline;
-                    if (!isNothrow) {
-                        exp ~= "    try {" ~ newline;
+                    exp ~= "    try {" ~ newline;
+                    exp ~= methodSetup;
+                    if (!is(returnType == void)) {
+                        exp ~= "        auto __result__ = ";
+                    } else {
+                        exp ~= "        ";
                     }
-                    if (is(T == struct)) {
-                        if (!is(returnType == void)) {
-                            exp ~= "        auto __result__ = ";
-                        } else {
-                            exp ~= "        ";
-                        }
-                        exp ~= "(*__obj__)." ~ m ~ "(";
-                    } else if (is(T == class) || is(T == interface)) {
-                        exp ~= "        " ~ fqn ~ " __temp__ = cast(" ~ fqn ~ ")__obj__;" ~ newline;
-                        if (!is(returnType == void)) {
-                            exp ~= "        auto __result__ = ";
-                        } else {
-                            exp ~= "        ";
-                        }
-                        exp ~= "__temp__." ~ m ~ "(";
-                    }
+                    exp ~= "__obj__." ~ m ~ "(";
                     static foreach(pc; 0..paramNames.length) {
                         exp ~= paramNames[pc] ~ ", ";
                     }
@@ -196,18 +173,15 @@ private string generateMethods(T)() {
                     } else {
                         exp ~= "        return returnVoid();" ~ newline;
                     }
-                    if (!isNothrow) {
-                        exp ~= "    } catch (Exception __ex__) {" ~ newline;
-                        if (!is(returnType == void)) {
-                            exp ~= "        return returnValue!(" ~ returnTypeStr ~ ")(__ex__);" ~ newline;
-                        } else {
-                            exp ~= "        return returnVoid(__ex__);" ~ newline;
-                        }
-                        exp ~= "    }" ~ newline;
+                    exp ~= "    } catch (Exception __ex__) {" ~ newline;
+                    if (!is(returnType == void)) {
+                        exp ~= "        return returnValue!(" ~ returnTypeStr ~ ")(__ex__);" ~ newline;
+                    } else {
+                        exp ~= "        return returnVoid(__ex__);" ~ newline;
                     }
+                    exp ~= "    }" ~ newline;
                     exp ~= "}" ~ newline;
                     ret ~= exp;
-                } else {
                 }
             }
         }
@@ -224,13 +198,11 @@ private string generateFields(T)() {
         alias fieldNames = FieldNameTuple!T;
         static foreach(fc; 0..fieldTypes.length) {
             static if (is(typeof(__traits(getMember, T, fieldNames[fc])))) {
-                ret ~= "extern(C) export " ~ fullyQualifiedName!(fieldTypes[fc]) ~ " " ~ getDLangInterfaceName(fqn, fieldNames[fc] ~ "_get") ~ "(void* __obj__) nothrow {" ~ newline;
-                ret ~= "    " ~ fqn ~ " __temp__ = cast(" ~ fqn ~ ")__obj__;" ~ newline;
-                ret ~= "    return __temp__." ~ fieldNames[fc] ~ ";" ~ newline;
+                ret ~= "extern(C) export returnValue!(" ~ fullyQualifiedName!(fieldTypes[fc]) ~ ") " ~ getDLangInterfaceName(fqn, fieldNames[fc] ~ "_get") ~ "(" ~ fqn ~ " __obj__) nothrow {" ~ newline;
+                ret ~= generateMethodErrorHandling("        return returnValue!(" ~ fullyQualifiedName!(fieldTypes[fc]) ~ ")(__obj__." ~ fieldNames[fc] ~ ");", "returnValue!(" ~ fullyQualifiedName!(fieldTypes[fc]) ~ ")");
                 ret ~= "}" ~ newline;
-                ret ~= "extern(C) export void " ~ getDLangInterfaceName(fqn, fieldNames[fc] ~ "_set") ~ "(void* __obj__, " ~ fullyQualifiedName!(fieldTypes[fc]) ~ " value) nothrow {" ~ newline;
-                ret ~= "    " ~ fqn ~ " __temp__ = cast(" ~ fqn ~ ")__obj__;" ~ newline;
-                ret ~= "    __temp__." ~ fieldNames[fc] ~ " = value;" ~ newline;
+                ret ~= "extern(C) export returnVoid " ~ getDLangInterfaceName(fqn, fieldNames[fc] ~ "_set") ~ "(" ~ fqn ~ " __obj__, " ~ fullyQualifiedName!(fieldTypes[fc]) ~ " value) nothrow {" ~ newline;
+                ret ~= generateMethodErrorHandling("        __obj__." ~ fieldNames[fc] ~ " = value;" ~ newline ~ "        return returnVoid();", "returnVoid");
                 ret ~= "}" ~ newline;
             }
         }
@@ -248,19 +220,14 @@ private string generateFunctions(Modules...)() if(allSatisfy!(isModule, Modules)
         alias returnTypeStr = fullyQualifiedName!(ReturnType!(__traits(getMember, func.module_, func.name)));
         alias paramTypes = Parameters!(__traits(getMember, func.module_, func.name));
         alias paramNames = ParameterIdentifierTuple!(__traits(getMember, func.module_, func.name));
-        enum isNothrow = functionAttributes!(__traits(getMember, func.module_, func.name)) & FunctionAttribute.nothrow_;
         const string interfaceName = getDLangInterfaceName(modName, null, funcName);
         string retType = string.init;
         string funcStr = "extern(C) export ";
 
-        if (!isNothrow) {
-            if (!is(returnType == void)) {
-                retType = retType ~ "returnValue!(" ~ returnTypeStr ~ ")";
-            } else {
-                retType = retType ~ "returnVoid";
-            }
+        if (!is(returnType == void)) {
+            retType = retType ~ "returnValue!(" ~ returnTypeStr ~ ")";
         } else {
-            retType = returnTypeStr;
+            retType = retType ~ "returnVoid";
         }
 
         funcStr ~= retType ~ " " ~ interfaceName ~ "(";
@@ -269,42 +236,27 @@ private string generateFunctions(Modules...)() if(allSatisfy!(isModule, Modules)
         }
         funcStr = funcStr[0..$-2];
         funcStr ~= ") nothrow {" ~ newline;
-        if (!isNothrow) {
-            funcStr ~= "    try {" ~ newline;
-            if (!is(returnType == void)) {
-                funcStr ~= "        return " ~ retType ~ "(" ~ func.name ~ "(";
-                foreach(pName; paramNames) {
-                    funcStr ~= pName ~ ", ";
-                }
-                funcStr = funcStr[0..$-2];
-                funcStr ~= "));" ~ newline;
-            } else {
-                funcStr ~= func.name ~ "(";
-                static foreach(pc; 0..paramNames.length) {
-                    funcStr ~= paramNames[pc] ~ ", ";
-                }
-                funcStr = funcStr[0..$-2];
-                funcStr ~= ");" ~ newline;
-                funcStr ~= "        return returnVoid();" ~ newline;
+        funcStr ~= "    try {" ~ newline;
+        funcStr ~= methodSetup;
+        if (!is(returnType == void)) {
+            funcStr ~= "        return " ~ retType ~ "(" ~ func.name ~ "(";
+            foreach(pName; paramNames) {
+                funcStr ~= pName ~ ", ";
             }
-            funcStr ~= "    } catch (Exception __ex__) {" ~ newline;
-            funcStr ~= "        return " ~ retType ~ "(__ex__);" ~ newline;
-            funcStr ~= "    }" ~ newline;
+            funcStr = funcStr[0..$-2];
+            funcStr ~= "));" ~ newline;
         } else {
-            funcStr ~= "    " ~ retType ~ " __temp__ = " ~ func.name ~ "(";
+            funcStr ~= func.name ~ "(";
             static foreach(pc; 0..paramNames.length) {
                 funcStr ~= paramNames[pc] ~ ", ";
             }
             funcStr = funcStr[0..$-2];
             funcStr ~= ");" ~ newline;
-            if (isArray!(returnType)) {
-                funcStr ~= "    pinPointer(cast(void*)__temp__.ptr);" ~ newline;
-            }
-            else if (is(returnType == class) || is(returnType == interface)) {
-                funcStr ~= "    pinPointer(cast(void*)__temp__);" ~ newline;
-            }
-            funcStr ~= "    return __temp__;" ~ newline;
+            funcStr ~= "        return returnVoid();" ~ newline;
         }
+        funcStr ~= "    } catch (Exception __ex__) {" ~ newline;
+        funcStr ~= "        return " ~ retType ~ "(__ex__);" ~ newline;
+        funcStr ~= "    }" ~ newline;
         funcStr ~= "}" ~ newline;
 
         ret ~= funcStr;
@@ -318,49 +270,54 @@ private string generateSliceMethods(T)() {
     alias fqn = fullyQualifiedName!T;
 
     //Generate slice creation method
-    ret ~= "extern(C) export " ~ fqn ~ "[] " ~ getDLangSliceInterfaceName(fqn, "Create") ~ "(size_t capacity) nothrow {" ~ newline;
-    ret ~= "    " ~ fqn ~ "[] __temp__;" ~ newline;
-    ret ~= "    __temp__.reserve(capacity);" ~ newline;
-    ret ~= "    pinPointer(cast(void*)__temp__.ptr);" ~ newline;
-    ret ~= "    return (__temp__);" ~ newline;
+    ret ~= "extern(C) export returnValue!(" ~ fqn ~ "[]) " ~ getDLangSliceInterfaceName(fqn, "Create") ~ "(size_t capacity) nothrow {" ~ newline;
+    ret ~= generateMethodErrorHandling("        " ~ fqn ~ "[] __temp__;
+        __temp__.reserve(capacity);
+        pinPointer(cast(void*)__temp__.ptr);
+        return returnValue!(" ~ fqn ~ "[])(__temp__);", "returnValue!(" ~ fqn ~ "[])");
     ret ~= "}" ~ newline;
 
     //Generate slice method
-    ret ~= "extern(C) export " ~ fqn ~ "[] " ~ getDLangSliceInterfaceName(fqn, "Slice") ~ "(" ~ fqn ~ "[] slice, size_t begin, size_t end) nothrow {" ~ newline;
-    ret ~= "    " ~ fqn ~ "[] __temp__ = slice[begin..end];" ~ newline;
-    ret ~= "    pinPointer(cast(void*)__temp__.ptr);" ~ newline;
-    ret ~= "    return __temp__;" ~ newline;
+    ret ~= "extern(C) export returnValue!(" ~ fqn ~ "[]) " ~ getDLangSliceInterfaceName(fqn, "Slice") ~ "(" ~ fqn ~ "[] slice, size_t begin, size_t end) nothrow {" ~ newline;
+    ret ~= generateMethodErrorHandling("        " ~ fqn ~ "[] __temp__ = slice[begin..end];
+        pinPointer(cast(void*)__temp__.ptr);
+        return returnValue!(" ~ fqn ~ "[])(__temp__);", "returnValue!(" ~ fqn ~ "[])");
     ret ~= "}" ~ newline;
 
     //Generate get method
-    ret ~= "extern(C) export " ~ fqn ~ " " ~ getDLangSliceInterfaceName(fqn, "Get") ~ "(" ~ fqn ~ "[] slice, size_t index) nothrow {" ~ newline;
-    ret ~= "    return slice[index];" ~ newline;
+    ret ~= "extern(C) export returnValue!(" ~ fqn ~ ") " ~ getDLangSliceInterfaceName(fqn, "Get") ~ "(" ~ fqn ~ "[] slice, size_t index) nothrow {" ~ newline;
+    ret ~= generateMethodErrorHandling("        return returnValue!(" ~ fqn ~ ")(slice[index]);", "returnValue!(" ~ fqn ~ ")");
     ret ~= "}" ~ newline;
 
     //Generate set method
-    if (is(T == class)) {
-        ret ~= "extern(C) export void " ~ getDLangSliceInterfaceName(fqn, "Set") ~ "(" ~ fqn ~ "[] slice, size_t index, void* set) nothrow {" ~ newline;
-        ret ~= "    slice[index] = cast(" ~ fqn ~ ")set;" ~ newline;
-    } else {
-        ret ~= "extern(C) export void " ~ getDLangSliceInterfaceName(fqn, "Set") ~ "(" ~ fqn ~ "[] slice, size_t index, " ~ fqn ~ " set) nothrow {" ~ newline;
-        ret ~= "    slice[index] = set;" ~ newline;
-    }
+    ret ~= "extern(C) export returnVoid " ~ getDLangSliceInterfaceName(fqn, "Set") ~ "(" ~ fqn ~ "[] slice, size_t index, " ~ fqn ~ " set) nothrow {" ~ newline;
+    ret ~= generateMethodErrorHandling("        slice[index] = set;" ~ newline ~ "        return returnVoid();", "returnVoid");
     ret ~= "}" ~ newline;
 
     //Generate item append method
-    if (is(T == class)) {
-        ret ~= "extern(C) export " ~ fqn ~ "[] " ~ getDLangSliceInterfaceName(fqn, "AppendValue") ~ "(" ~ fqn ~ "[] slice, void* append) nothrow {" ~ newline;
-        ret ~= "    return (slice ~= cast(" ~ fqn ~ ")append);" ~ newline;
-    } else {
-        ret ~= "extern(C) export " ~ fqn ~ "[] " ~ getDLangSliceInterfaceName(fqn, "AppendValue") ~ "(" ~ fqn ~ "[] slice, " ~ fqn ~ " append) nothrow {" ~ newline;
-        ret ~= "    return (slice ~= append);" ~ newline;
-    }
+    ret ~= "extern(C) export returnValue!(" ~ fqn ~ "[]) " ~ getDLangSliceInterfaceName(fqn, "AppendValue") ~ "(" ~ fqn ~ "[] slice, " ~ fqn ~ " append) nothrow {" ~ newline;
+    ret ~= generateMethodErrorHandling("        return returnValue!(" ~ fqn ~ "[])(slice ~= append);", "returnValue!(" ~ fqn ~ "[])");
     ret ~= "}" ~ newline;
 
     //Generate slice append method
-    ret ~= "extern(C) export " ~ fqn ~ "[] " ~ getDLangSliceInterfaceName(fqn, "AppendSlice") ~ "(" ~ fqn ~ "[] slice, " ~ fqn ~ "[] append) nothrow {" ~ newline;
-    ret ~= "    return (slice ~= append);" ~ newline;
+    ret ~= "extern(C) export returnValue!(" ~ fqn ~ "[]) " ~ getDLangSliceInterfaceName(fqn, "AppendSlice") ~ "(" ~ fqn ~ "[] slice, " ~ fqn ~ "[] append) nothrow {" ~ newline;
+    ret ~= generateMethodErrorHandling("        return returnValue!(" ~ fqn ~ "[])(slice ~= append);", "returnValue!(" ~ fqn ~ "[])");
     ret ~= "}" ~ newline;
 
     return ret;
+}
+
+private string generateMethodErrorHandling(string insideCode, string returnType) {
+    string ret = string.init;
+    ret ~= "    try {" ~ newline;
+    ret ~= methodSetup;
+    ret ~= insideCode ~ newline;
+    ret ~= "    } catch (Exception __ex__) {" ~ newline;
+    ret ~= "        return " ~ returnType ~ "(__ex__);" ~ newline;
+    ret ~= "    }" ~ newline;
+    return ret;
+}
+
+private string getReturnType(T)() {
+    return "returnValue!(" ~ fullyQualifiedName!T ~ ")";
 }

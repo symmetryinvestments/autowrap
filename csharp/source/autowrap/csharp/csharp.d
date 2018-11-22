@@ -41,7 +41,8 @@ enum string externFuncString = "        internal static extern %1$s %2$s(%3$s);"
 enum int fileReservationSize = 33_554_432;
 enum int aggregateReservationSize = 32_768;
 
-private class CSharpNamespace {
+//Class used for language built-in reference semantics.
+private final class CSharpNamespace {
     public string namespace;
     public string functions;
     public CSharpAggregate[string] aggregates;
@@ -75,7 +76,8 @@ private class CSharpNamespace {
     }
 }
 
-private class CSharpAggregate {
+//Class used for language built-in reference semantics.
+private final class CSharpAggregate {
     public string name;
     public bool isStruct;
     public string constructors;

@@ -114,7 +114,7 @@ private string commonBoilerplate() @safe pure {
             }
         }
 
-        package void pinPointer(void* ptr) nothrow {
+        public void pinPointer(void* ptr) nothrow {
             GC.setAttr(ptr, GC.BlkAttr.NO_MOVE);
             GC.addRoot(ptr);
         }
