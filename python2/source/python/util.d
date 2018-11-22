@@ -1,25 +1,9 @@
 /**
-   Make D symbols out of Python macros and helper functions
+   Helper functions to interact with the Python C API
  */
-module python;
+module python.util;
 
-
-#include "Python.h"
-
-
-/**
-    All of the enum cases are macros instead of values in an enum
-    so we make them available to D code with MethodArgs instead.
-*/
-enum MethodArgs {
-    Var = METH_VARARGS,
-    Keywords = METH_KEYWORDS,
-    None = METH_NOARGS,
-    O = METH_O,
-}
-
-// Demacroify
-alias ModuleInitRet = PyMODINIT_FUNC;
+import python.bindings;
 
 
 /// For a nicer API
@@ -87,7 +71,7 @@ auto createModule(Module module_, alias cfunctions)()
     static PyModuleDef moduleDef;
     moduleDef = pyModuleDef(module_.name.ptr, null /*doc*/, -1 /*size*/, &methods[0]);
 
-    return PyModule_Create(&moduleDef);
+    return pyModuleCreate(&moduleDef);
 }
 
 
@@ -101,7 +85,7 @@ auto createModule(string name, string doc = "", long size = -1)(PyMethodDef[] me
     assert(methods[$-1] == PyMethodDef.init, "Methods array must end with a sentinel");
     static PyModuleDef moduleDef;
     moduleDef = pyModuleDef(name.ptr, doc.ptr, size, &methods[0]);
-    return PyModule_Create(&moduleDef);
+    return pyModuleCreate(&moduleDef);
 }
 
 /**
@@ -112,7 +96,7 @@ private auto pyModuleDef(A...)(auto ref A args) {
     import std.functional: forward;
 
     return PyModuleDef(
-        // the line below is a manual PyModuleDef_HEAD_INIT
+        // the line below is a manual D version expansion of PyModuleDef_HEAD_INIT
         PyModuleDef_Base(PyObject(1 /*ref count*/, null /*type*/), null /*m_init*/, 0/*m_index*/, null/*m_copy*/),
         forward!args
     );
