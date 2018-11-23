@@ -9,30 +9,35 @@ namespace Csharp.Library {
 
     public static class Functions {
         [DllImport("csharp", EntryPoint = "autowrap_csharp_Csharp_Library_FreeFunction", CallingConvention = CallingConvention.Cdecl)]
+
         private static extern return_int_error dlang_FreeFunction(int value);
         public static int FreeFunction(int value) {
             var dlang_ret = dlang_FreeFunction(value);
             return dlang_ret;
         }
         [DllImport("csharp", EntryPoint = "autowrap_csharp_Csharp_Library_StringFunction", CallingConvention = CallingConvention.Cdecl)]
-        private static extern slice dlang_StringFunction(slice value);
+
+        private static extern return_slice_error dlang_StringFunction(slice value);
         public static string StringFunction(string value) {
             var dlang_ret = dlang_StringFunction(SharedFunctions.CreateString(value));
             return SharedFunctions.SliceToString(dlang_ret, DStringType._string);
         }
         [DllImport("csharp", EntryPoint = "autowrap_csharp_Csharp_Library_ArrayFunction", CallingConvention = CallingConvention.Cdecl)]
+
         private static extern return_slice_error dlang_ArrayFunction(slice arr);
         public static Range<Csharp.Library.S2> ArrayFunction(Range<Csharp.Library.S2> arr) {
             var dlang_ret = dlang_ArrayFunction(arr.ToSlice());
             return new Range<Csharp.Library.S2>(dlang_ret);
         }
         [DllImport("csharp", EntryPoint = "autowrap_csharp_Csharp_Library_ClassRangeFunction", CallingConvention = CallingConvention.Cdecl)]
+
         private static extern return_slice_error dlang_ClassRangeFunction(slice arr);
         public static Range<Csharp.Library.C1> ClassRangeFunction(Range<Csharp.Library.C1> arr) {
             var dlang_ret = dlang_ClassRangeFunction(arr.ToSlice());
             return new Range<Csharp.Library.C1>(dlang_ret);
         }
         [DllImport("csharp", EntryPoint = "autowrap_csharp_Csharp_Library_TestErrorMessage", CallingConvention = CallingConvention.Cdecl)]
+
         private static extern return_slice_error dlang_TestErrorMessage([MarshalAs(UnmanagedType.Bool)]bool throwError);
         public static string TestErrorMessage(bool throwError) {
             var dlang_ret = dlang_TestErrorMessage(throwError);
@@ -321,37 +326,49 @@ namespace Autowrap {
 
     [GeneratedCodeAttribute("Autowrap", "1.0.0.0")]
     [StructLayout(LayoutKind.Sequential)]
-    internal struct return_Csharp_Library_C1_error {
+    internal struct return_byte_error {
         private void EnsureValid() {
             var errStr = SharedFunctions.SliceToString(_error, DStringType._wstring);
             if (!string.IsNullOrEmpty(errStr)) throw new DLangException(errStr);
         }
-        public static implicit operator IntPtr(return_Csharp_Library_C1_error ret) { ret.EnsureValid(); return ret._value; }
-        private IntPtr _value;
+        public static implicit operator byte(return_byte_error ret) { ret.EnsureValid(); return ret._value; }
+        private byte _value;
         private slice _error;
     }
 
     [GeneratedCodeAttribute("Autowrap", "1.0.0.0")]
     [StructLayout(LayoutKind.Sequential)]
-    internal struct return_Csharp_Library_S2_error {
+    internal struct return_ushort_error {
         private void EnsureValid() {
             var errStr = SharedFunctions.SliceToString(_error, DStringType._wstring);
             if (!string.IsNullOrEmpty(errStr)) throw new DLangException(errStr);
         }
-        public static implicit operator Csharp.Library.S2(return_Csharp_Library_S2_error ret) { ret.EnsureValid(); return ret._value; }
-        private Csharp.Library.S2 _value;
+        public static implicit operator ushort(return_ushort_error ret) { ret.EnsureValid(); return ret._value; }
+        private ushort _value;
         private slice _error;
     }
 
     [GeneratedCodeAttribute("Autowrap", "1.0.0.0")]
     [StructLayout(LayoutKind.Sequential)]
-    internal struct return_ulong_error {
+    internal struct return_long_error {
         private void EnsureValid() {
             var errStr = SharedFunctions.SliceToString(_error, DStringType._wstring);
             if (!string.IsNullOrEmpty(errStr)) throw new DLangException(errStr);
         }
-        public static implicit operator ulong(return_ulong_error ret) { ret.EnsureValid(); return ret._value; }
-        private ulong _value;
+        public static implicit operator long(return_long_error ret) { ret.EnsureValid(); return ret._value; }
+        private long _value;
+        private slice _error;
+    }
+
+    [GeneratedCodeAttribute("Autowrap", "1.0.0.0")]
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct return_short_error {
+        private void EnsureValid() {
+            var errStr = SharedFunctions.SliceToString(_error, DStringType._wstring);
+            if (!string.IsNullOrEmpty(errStr)) throw new DLangException(errStr);
+        }
+        public static implicit operator short(return_short_error ret) { ret.EnsureValid(); return ret._value; }
+        private short _value;
         private slice _error;
     }
 
@@ -369,13 +386,37 @@ namespace Autowrap {
 
     [GeneratedCodeAttribute("Autowrap", "1.0.0.0")]
     [StructLayout(LayoutKind.Sequential)]
-    internal struct return_float_error {
+    internal struct return_uint_error {
         private void EnsureValid() {
             var errStr = SharedFunctions.SliceToString(_error, DStringType._wstring);
             if (!string.IsNullOrEmpty(errStr)) throw new DLangException(errStr);
         }
-        public static implicit operator float(return_float_error ret) { ret.EnsureValid(); return ret._value; }
-        private float _value;
+        public static implicit operator uint(return_uint_error ret) { ret.EnsureValid(); return ret._value; }
+        private uint _value;
+        private slice _error;
+    }
+
+    [GeneratedCodeAttribute("Autowrap", "1.0.0.0")]
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct return_Csharp_Library_S1_error {
+        private void EnsureValid() {
+            var errStr = SharedFunctions.SliceToString(_error, DStringType._wstring);
+            if (!string.IsNullOrEmpty(errStr)) throw new DLangException(errStr);
+        }
+        public static implicit operator Csharp.Library.S1(return_Csharp_Library_S1_error ret) { ret.EnsureValid(); return ret._value; }
+        private Csharp.Library.S1 _value;
+        private slice _error;
+    }
+
+    [GeneratedCodeAttribute("Autowrap", "1.0.0.0")]
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct return_double_error {
+        private void EnsureValid() {
+            var errStr = SharedFunctions.SliceToString(_error, DStringType._wstring);
+            if (!string.IsNullOrEmpty(errStr)) throw new DLangException(errStr);
+        }
+        public static implicit operator double(return_double_error ret) { ret.EnsureValid(); return ret._value; }
+        private double _value;
         private slice _error;
     }
 
@@ -388,6 +429,66 @@ namespace Autowrap {
         }
         public static implicit operator IntPtr(return_C1_error ret) { ret.EnsureValid(); return ret._value; }
         private IntPtr _value;
+        private slice _error;
+    }
+
+    [GeneratedCodeAttribute("Autowrap", "1.0.0.0")]
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct return_Csharp_Library_C1_error {
+        private void EnsureValid() {
+            var errStr = SharedFunctions.SliceToString(_error, DStringType._wstring);
+            if (!string.IsNullOrEmpty(errStr)) throw new DLangException(errStr);
+        }
+        public static implicit operator IntPtr(return_Csharp_Library_C1_error ret) { ret.EnsureValid(); return ret._value; }
+        private IntPtr _value;
+        private slice _error;
+    }
+
+    [GeneratedCodeAttribute("Autowrap", "1.0.0.0")]
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct return_ulong_error {
+        private void EnsureValid() {
+            var errStr = SharedFunctions.SliceToString(_error, DStringType._wstring);
+            if (!string.IsNullOrEmpty(errStr)) throw new DLangException(errStr);
+        }
+        public static implicit operator ulong(return_ulong_error ret) { ret.EnsureValid(); return ret._value; }
+        private ulong _value;
+        private slice _error;
+    }
+
+    [GeneratedCodeAttribute("Autowrap", "1.0.0.0")]
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct return_sbyte_error {
+        private void EnsureValid() {
+            var errStr = SharedFunctions.SliceToString(_error, DStringType._wstring);
+            if (!string.IsNullOrEmpty(errStr)) throw new DLangException(errStr);
+        }
+        public static implicit operator sbyte(return_sbyte_error ret) { ret.EnsureValid(); return ret._value; }
+        private sbyte _value;
+        private slice _error;
+    }
+
+    [GeneratedCodeAttribute("Autowrap", "1.0.0.0")]
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct return_Csharp_Library_S2_error {
+        private void EnsureValid() {
+            var errStr = SharedFunctions.SliceToString(_error, DStringType._wstring);
+            if (!string.IsNullOrEmpty(errStr)) throw new DLangException(errStr);
+        }
+        public static implicit operator Csharp.Library.S2(return_Csharp_Library_S2_error ret) { ret.EnsureValid(); return ret._value; }
+        private Csharp.Library.S2 _value;
+        private slice _error;
+    }
+
+    [GeneratedCodeAttribute("Autowrap", "1.0.0.0")]
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct return_float_error {
+        private void EnsureValid() {
+            var errStr = SharedFunctions.SliceToString(_error, DStringType._wstring);
+            if (!string.IsNullOrEmpty(errStr)) throw new DLangException(errStr);
+        }
+        public static implicit operator float(return_float_error ret) { ret.EnsureValid(); return ret._value; }
+        private float _value;
         private slice _error;
     }
 
@@ -468,210 +569,210 @@ namespace Autowrap {
     [GeneratedCodeAttribute("Autowrap", "1.0.0.0")]
     internal class RangeFunctions {
         [DllImport("csharp", EntryPoint = "autowrap_csharp_Bool_Create", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern slice Bool_Create(IntPtr capacity);
+        internal static extern return_slice_error Bool_Create(IntPtr capacity);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_Bool_Get", CallingConvention = CallingConvention.Cdecl)]
         [return: MarshalAs(UnmanagedType.Bool)]
-        internal static extern bool Bool_Get(slice dslice, IntPtr index);
+        internal static extern return_bool_error Bool_Get(slice dslice, IntPtr index);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_Bool_Set", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern void Bool_Set(slice dslice, IntPtr index, [MarshalAs(UnmanagedType.Bool)] bool value);
+        internal static extern return_void_error Bool_Set(slice dslice, IntPtr index, [MarshalAs(UnmanagedType.Bool)] bool value);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_Bool_Slice", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern slice Bool_Slice(slice dslice, IntPtr begin, IntPtr end);
+        internal static extern return_slice_error Bool_Slice(slice dslice, IntPtr begin, IntPtr end);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_Bool_AppendValue", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern slice Bool_AppendValue(slice dslice, [MarshalAs(UnmanagedType.Bool)] bool value);
+        internal static extern return_slice_error Bool_AppendValue(slice dslice, [MarshalAs(UnmanagedType.Bool)] bool value);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_Bool_AppendSlice", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern slice Bool_AppendSlice(slice dslice, slice array);
+        internal static extern return_slice_error Bool_AppendSlice(slice dslice, slice array);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_String_Create", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern slice String_Create(IntPtr capacity);
+        internal static extern return_slice_error String_Create(IntPtr capacity);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_String_Get", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern slice String_Get(slice dslice, IntPtr index);
+        internal static extern return_slice_error String_Get(slice dslice, IntPtr index);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_String_Set", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern void String_Set(slice dslice, IntPtr index, slice value);
+        internal static extern return_void_error String_Set(slice dslice, IntPtr index, slice value);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_String_Slice", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern slice String_Slice(slice dslice, IntPtr begin, IntPtr end);
+        internal static extern return_slice_error String_Slice(slice dslice, IntPtr begin, IntPtr end);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_String_AppendValue", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern slice String_AppendValue(slice dslice, slice value);
+        internal static extern return_slice_error String_AppendValue(slice dslice, slice value);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_String_AppendSlice", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern slice String_AppendSlice(slice dslice, slice array);
+        internal static extern return_slice_error String_AppendSlice(slice dslice, slice array);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_Wstring_Create", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern slice Wstring_Create(IntPtr capacity);
+        internal static extern return_slice_error Wstring_Create(IntPtr capacity);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_Wstring_Get", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern slice Wstring_Get(slice dslice, IntPtr index);
+        internal static extern return_slice_error Wstring_Get(slice dslice, IntPtr index);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_Wstring_Set", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern void Wstring_Set(slice dslice, IntPtr index, slice value);
+        internal static extern return_void_error Wstring_Set(slice dslice, IntPtr index, slice value);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_Wstring_Slice", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern slice Wstring_Slice(slice dslice, IntPtr begin, IntPtr end);
+        internal static extern return_slice_error Wstring_Slice(slice dslice, IntPtr begin, IntPtr end);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_Wstring_AppendValue", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern slice Wstring_AppendValue(slice dslice, slice value);
+        internal static extern return_slice_error Wstring_AppendValue(slice dslice, slice value);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_Wstring_AppendSlice", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern slice Wstring_AppendSlice(slice dslice, slice array);
+        internal static extern return_slice_error Wstring_AppendSlice(slice dslice, slice array);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_Dstring_Create", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern slice Dstring_Create(IntPtr capacity);
+        internal static extern return_slice_error Dstring_Create(IntPtr capacity);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_Dstring_Get", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern slice Dstring_Get(slice dslice, IntPtr index);
+        internal static extern return_slice_error Dstring_Get(slice dslice, IntPtr index);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_Dstring_Set", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern void Dstring_Set(slice dslice, IntPtr index, slice value);
+        internal static extern return_void_error Dstring_Set(slice dslice, IntPtr index, slice value);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_Dstring_Slice", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern slice Dstring_Slice(slice dslice, IntPtr begin, IntPtr end);
+        internal static extern return_slice_error Dstring_Slice(slice dslice, IntPtr begin, IntPtr end);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_Dstring_AppendValue", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern slice Dstring_AppendValue(slice dslice, slice value);
+        internal static extern return_slice_error Dstring_AppendValue(slice dslice, slice value);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_Dstring_AppendSlice", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern slice Dstring_AppendSlice(slice dslice, slice array);
+        internal static extern return_slice_error Dstring_AppendSlice(slice dslice, slice array);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_slice_Byte_Create", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern slice Byte_Create(IntPtr capacity);
+        internal static extern return_slice_error Byte_Create(IntPtr capacity);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_slice_Byte_Slice", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern slice Byte_Slice(slice dslice, IntPtr begin, IntPtr end);
+        internal static extern return_slice_error Byte_Slice(slice dslice, IntPtr begin, IntPtr end);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_slice_Byte_AppendSlice", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern slice Byte_AppendSlice(slice dslice, slice array);
+        internal static extern return_slice_error Byte_AppendSlice(slice dslice, slice array);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_slice_Byte_Get", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern sbyte Byte_Get(slice dslice, IntPtr index);
+        internal static extern return_sbyte_error Byte_Get(slice dslice, IntPtr index);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_slice_Byte_Set", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern void Byte_Set(slice dslice, IntPtr index, sbyte value);
+        internal static extern return_void_error Byte_Set(slice dslice, IntPtr index, sbyte value);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_slice_Byte_AppendValue", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern slice Byte_AppendValue(slice dslice, sbyte value);
+        internal static extern return_slice_error Byte_AppendValue(slice dslice, sbyte value);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_slice_Ubyte_Create", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern slice Ubyte_Create(IntPtr capacity);
+        internal static extern return_slice_error Ubyte_Create(IntPtr capacity);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_slice_Ubyte_Slice", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern slice Ubyte_Slice(slice dslice, IntPtr begin, IntPtr end);
+        internal static extern return_slice_error Ubyte_Slice(slice dslice, IntPtr begin, IntPtr end);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_slice_Ubyte_AppendSlice", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern slice Ubyte_AppendSlice(slice dslice, slice array);
+        internal static extern return_slice_error Ubyte_AppendSlice(slice dslice, slice array);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_slice_Ubyte_Get", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern byte Ubyte_Get(slice dslice, IntPtr index);
+        internal static extern return_byte_error Ubyte_Get(slice dslice, IntPtr index);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_slice_Ubyte_Set", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern void Ubyte_Set(slice dslice, IntPtr index, byte value);
+        internal static extern return_void_error Ubyte_Set(slice dslice, IntPtr index, byte value);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_slice_Ubyte_AppendValue", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern slice Ubyte_AppendValue(slice dslice, byte value);
+        internal static extern return_slice_error Ubyte_AppendValue(slice dslice, byte value);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_slice_Short_Create", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern slice Short_Create(IntPtr capacity);
+        internal static extern return_slice_error Short_Create(IntPtr capacity);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_slice_Short_Slice", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern slice Short_Slice(slice dslice, IntPtr begin, IntPtr end);
+        internal static extern return_slice_error Short_Slice(slice dslice, IntPtr begin, IntPtr end);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_slice_Short_AppendSlice", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern slice Short_AppendSlice(slice dslice, slice array);
+        internal static extern return_slice_error Short_AppendSlice(slice dslice, slice array);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_slice_Short_Get", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern short Short_Get(slice dslice, IntPtr index);
+        internal static extern return_short_error Short_Get(slice dslice, IntPtr index);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_slice_Short_Set", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern void Short_Set(slice dslice, IntPtr index, short value);
+        internal static extern return_void_error Short_Set(slice dslice, IntPtr index, short value);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_slice_Short_AppendValue", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern slice Short_AppendValue(slice dslice, short value);
+        internal static extern return_slice_error Short_AppendValue(slice dslice, short value);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_slice_Ushort_Create", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern slice Ushort_Create(IntPtr capacity);
+        internal static extern return_slice_error Ushort_Create(IntPtr capacity);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_slice_Ushort_Slice", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern slice Ushort_Slice(slice dslice, IntPtr begin, IntPtr end);
+        internal static extern return_slice_error Ushort_Slice(slice dslice, IntPtr begin, IntPtr end);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_slice_Ushort_AppendSlice", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern slice Ushort_AppendSlice(slice dslice, slice array);
+        internal static extern return_slice_error Ushort_AppendSlice(slice dslice, slice array);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_slice_Ushort_Get", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern ushort Ushort_Get(slice dslice, IntPtr index);
+        internal static extern return_ushort_error Ushort_Get(slice dslice, IntPtr index);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_slice_Ushort_Set", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern void Ushort_Set(slice dslice, IntPtr index, ushort value);
+        internal static extern return_void_error Ushort_Set(slice dslice, IntPtr index, ushort value);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_slice_Ushort_AppendValue", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern slice Ushort_AppendValue(slice dslice, ushort value);
+        internal static extern return_slice_error Ushort_AppendValue(slice dslice, ushort value);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_slice_Int_Create", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern slice Int_Create(IntPtr capacity);
+        internal static extern return_slice_error Int_Create(IntPtr capacity);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_slice_Int_Slice", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern slice Int_Slice(slice dslice, IntPtr begin, IntPtr end);
+        internal static extern return_slice_error Int_Slice(slice dslice, IntPtr begin, IntPtr end);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_slice_Int_AppendSlice", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern slice Int_AppendSlice(slice dslice, slice array);
+        internal static extern return_slice_error Int_AppendSlice(slice dslice, slice array);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_slice_Int_Get", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern int Int_Get(slice dslice, IntPtr index);
+        internal static extern return_int_error Int_Get(slice dslice, IntPtr index);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_slice_Int_Set", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern void Int_Set(slice dslice, IntPtr index, int value);
+        internal static extern return_void_error Int_Set(slice dslice, IntPtr index, int value);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_slice_Int_AppendValue", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern slice Int_AppendValue(slice dslice, int value);
+        internal static extern return_slice_error Int_AppendValue(slice dslice, int value);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_slice_Uint_Create", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern slice Uint_Create(IntPtr capacity);
+        internal static extern return_slice_error Uint_Create(IntPtr capacity);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_slice_Uint_Slice", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern slice Uint_Slice(slice dslice, IntPtr begin, IntPtr end);
+        internal static extern return_slice_error Uint_Slice(slice dslice, IntPtr begin, IntPtr end);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_slice_Uint_AppendSlice", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern slice Uint_AppendSlice(slice dslice, slice array);
+        internal static extern return_slice_error Uint_AppendSlice(slice dslice, slice array);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_slice_Uint_Get", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern uint Uint_Get(slice dslice, IntPtr index);
+        internal static extern return_uint_error Uint_Get(slice dslice, IntPtr index);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_slice_Uint_Set", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern void Uint_Set(slice dslice, IntPtr index, uint value);
+        internal static extern return_void_error Uint_Set(slice dslice, IntPtr index, uint value);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_slice_Uint_AppendValue", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern slice Uint_AppendValue(slice dslice, uint value);
+        internal static extern return_slice_error Uint_AppendValue(slice dslice, uint value);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_slice_Long_Create", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern slice Long_Create(IntPtr capacity);
+        internal static extern return_slice_error Long_Create(IntPtr capacity);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_slice_Long_Slice", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern slice Long_Slice(slice dslice, IntPtr begin, IntPtr end);
+        internal static extern return_slice_error Long_Slice(slice dslice, IntPtr begin, IntPtr end);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_slice_Long_AppendSlice", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern slice Long_AppendSlice(slice dslice, slice array);
+        internal static extern return_slice_error Long_AppendSlice(slice dslice, slice array);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_slice_Long_Get", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern long Long_Get(slice dslice, IntPtr index);
+        internal static extern return_long_error Long_Get(slice dslice, IntPtr index);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_slice_Long_Set", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern void Long_Set(slice dslice, IntPtr index, long value);
+        internal static extern return_void_error Long_Set(slice dslice, IntPtr index, long value);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_slice_Long_AppendValue", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern slice Long_AppendValue(slice dslice, long value);
+        internal static extern return_slice_error Long_AppendValue(slice dslice, long value);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_slice_Ulong_Create", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern slice Ulong_Create(IntPtr capacity);
+        internal static extern return_slice_error Ulong_Create(IntPtr capacity);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_slice_Ulong_Slice", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern slice Ulong_Slice(slice dslice, IntPtr begin, IntPtr end);
+        internal static extern return_slice_error Ulong_Slice(slice dslice, IntPtr begin, IntPtr end);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_slice_Ulong_AppendSlice", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern slice Ulong_AppendSlice(slice dslice, slice array);
+        internal static extern return_slice_error Ulong_AppendSlice(slice dslice, slice array);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_slice_Ulong_Get", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern ulong Ulong_Get(slice dslice, IntPtr index);
+        internal static extern return_ulong_error Ulong_Get(slice dslice, IntPtr index);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_slice_Ulong_Set", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern void Ulong_Set(slice dslice, IntPtr index, ulong value);
+        internal static extern return_void_error Ulong_Set(slice dslice, IntPtr index, ulong value);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_slice_Ulong_AppendValue", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern slice Ulong_AppendValue(slice dslice, ulong value);
+        internal static extern return_slice_error Ulong_AppendValue(slice dslice, ulong value);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_slice_Float_Create", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern slice Float_Create(IntPtr capacity);
+        internal static extern return_slice_error Float_Create(IntPtr capacity);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_slice_Float_Slice", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern slice Float_Slice(slice dslice, IntPtr begin, IntPtr end);
+        internal static extern return_slice_error Float_Slice(slice dslice, IntPtr begin, IntPtr end);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_slice_Float_AppendSlice", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern slice Float_AppendSlice(slice dslice, slice array);
+        internal static extern return_slice_error Float_AppendSlice(slice dslice, slice array);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_slice_Float_Get", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern float Float_Get(slice dslice, IntPtr index);
+        internal static extern return_float_error Float_Get(slice dslice, IntPtr index);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_slice_Float_Set", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern void Float_Set(slice dslice, IntPtr index, float value);
+        internal static extern return_void_error Float_Set(slice dslice, IntPtr index, float value);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_slice_Float_AppendValue", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern slice Float_AppendValue(slice dslice, float value);
+        internal static extern return_slice_error Float_AppendValue(slice dslice, float value);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_slice_Double_Create", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern slice Double_Create(IntPtr capacity);
+        internal static extern return_slice_error Double_Create(IntPtr capacity);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_slice_Double_Slice", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern slice Double_Slice(slice dslice, IntPtr begin, IntPtr end);
+        internal static extern return_slice_error Double_Slice(slice dslice, IntPtr begin, IntPtr end);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_slice_Double_AppendSlice", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern slice Double_AppendSlice(slice dslice, slice array);
+        internal static extern return_slice_error Double_AppendSlice(slice dslice, slice array);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_slice_Double_Get", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern double Double_Get(slice dslice, IntPtr index);
+        internal static extern return_double_error Double_Get(slice dslice, IntPtr index);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_slice_Double_Set", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern void Double_Set(slice dslice, IntPtr index, double value);
+        internal static extern return_void_error Double_Set(slice dslice, IntPtr index, double value);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_slice_Double_AppendValue", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern slice Double_AppendValue(slice dslice, double value);
+        internal static extern return_slice_error Double_AppendValue(slice dslice, double value);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_slice_Csharp_Library_S1_Create", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern slice Csharp_library_s1_Create(IntPtr capacity);
+        internal static extern return_slice_error Csharp_library_s1_Create(IntPtr capacity);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_slice_Csharp_Library_S1_Slice", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern slice Csharp_library_s1_Slice(slice dslice, IntPtr begin, IntPtr end);
+        internal static extern return_slice_error Csharp_library_s1_Slice(slice dslice, IntPtr begin, IntPtr end);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_slice_Csharp_Library_S1_AppendSlice", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern slice Csharp_library_s1_AppendSlice(slice dslice, slice array);
+        internal static extern return_slice_error Csharp_library_s1_AppendSlice(slice dslice, slice array);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_slice_Csharp_Library_S1_Get", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern Csharp.Library.S1 Csharp_library_s1_Get(slice dslice, IntPtr index);
+        internal static extern return_Csharp_Library_S1_error Csharp_library_s1_Get(slice dslice, IntPtr index);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_slice_Csharp_Library_S1_Set", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern void Csharp_library_s1_Set(slice dslice, IntPtr index, Csharp.Library.S1 value);
+        internal static extern return_void_error Csharp_library_s1_Set(slice dslice, IntPtr index, Csharp.Library.S1 value);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_slice_Csharp_Library_S1_AppendValue", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern slice Csharp_library_s1_AppendValue(slice dslice, Csharp.Library.S1 value);
+        internal static extern return_slice_error Csharp_library_s1_AppendValue(slice dslice, Csharp.Library.S1 value);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_slice_Csharp_Library_S2_Create", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern slice Csharp_library_s2_Create(IntPtr capacity);
+        internal static extern return_slice_error Csharp_library_s2_Create(IntPtr capacity);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_slice_Csharp_Library_S2_Slice", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern slice Csharp_library_s2_Slice(slice dslice, IntPtr begin, IntPtr end);
+        internal static extern return_slice_error Csharp_library_s2_Slice(slice dslice, IntPtr begin, IntPtr end);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_slice_Csharp_Library_S2_AppendSlice", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern slice Csharp_library_s2_AppendSlice(slice dslice, slice array);
+        internal static extern return_slice_error Csharp_library_s2_AppendSlice(slice dslice, slice array);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_slice_Csharp_Library_S2_Get", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern Csharp.Library.S2 Csharp_library_s2_Get(slice dslice, IntPtr index);
+        internal static extern return_Csharp_Library_S2_error Csharp_library_s2_Get(slice dslice, IntPtr index);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_slice_Csharp_Library_S2_Set", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern void Csharp_library_s2_Set(slice dslice, IntPtr index, Csharp.Library.S2 value);
+        internal static extern return_void_error Csharp_library_s2_Set(slice dslice, IntPtr index, Csharp.Library.S2 value);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_slice_Csharp_Library_S2_AppendValue", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern slice Csharp_library_s2_AppendValue(slice dslice, Csharp.Library.S2 value);
+        internal static extern return_slice_error Csharp_library_s2_AppendValue(slice dslice, Csharp.Library.S2 value);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_slice_Csharp_Library_C1_Create", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern slice Csharp_library_c1_Create(IntPtr capacity);
+        internal static extern return_slice_error Csharp_library_c1_Create(IntPtr capacity);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_slice_Csharp_Library_C1_Slice", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern slice Csharp_library_c1_Slice(slice dslice, IntPtr begin, IntPtr end);
+        internal static extern return_slice_error Csharp_library_c1_Slice(slice dslice, IntPtr begin, IntPtr end);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_slice_Csharp_Library_C1_AppendSlice", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern slice Csharp_library_c1_AppendSlice(slice dslice, slice array);
+        internal static extern return_slice_error Csharp_library_c1_AppendSlice(slice dslice, slice array);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_slice_Csharp_Library_C1_Get", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern IntPtr Csharp_library_c1_Get(slice dslice, IntPtr index);
+        internal static extern return_Csharp_Library_C1_error Csharp_library_c1_Get(slice dslice, IntPtr index);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_slice_Csharp_Library_C1_Set", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern void Csharp_library_c1_Set(slice dslice, IntPtr index, IntPtr value);
+        internal static extern return_void_error Csharp_library_c1_Set(slice dslice, IntPtr index, IntPtr value);
         [DllImport("csharp", EntryPoint = "autowrap_csharp_slice_Csharp_Library_C1_AppendValue", CallingConvention = CallingConvention.Cdecl)]
-        internal static extern slice Csharp_library_c1_AppendValue(slice dslice, IntPtr value);
+        internal static extern return_slice_error Csharp_library_c1_AppendValue(slice dslice, IntPtr value);
 
     }
 
@@ -749,18 +850,18 @@ namespace Autowrap {
                 else if (typeof(T) == typeof(string) && _strings == null && _type == DStringType._string) return (T)(object)SharedFunctions.SliceToString(RangeFunctions.String_Get(_slice, new IntPtr(i)), DStringType._string);
                 else if (typeof(T) == typeof(string) && _strings == null && _type == DStringType._wstring) return (T)(object)SharedFunctions.SliceToString(RangeFunctions.Wstring_Get(_slice, new IntPtr(i)), DStringType._wstring);
                 else if (typeof(T) == typeof(string) && _strings == null && _type == DStringType._dstring) return (T)(object)SharedFunctions.SliceToString(RangeFunctions.Dstring_Get(_slice, new IntPtr(i)), DStringType._dstring);
-                else if (typeof(T) == typeof(sbyte)) return (T)(object)RangeFunctions.Byte_Get(_slice, new IntPtr(i));
-                else if (typeof(T) == typeof(byte)) return (T)(object)RangeFunctions.Ubyte_Get(_slice, new IntPtr(i));
-                else if (typeof(T) == typeof(short)) return (T)(object)RangeFunctions.Short_Get(_slice, new IntPtr(i));
-                else if (typeof(T) == typeof(ushort)) return (T)(object)RangeFunctions.Ushort_Get(_slice, new IntPtr(i));
-                else if (typeof(T) == typeof(int)) return (T)(object)RangeFunctions.Int_Get(_slice, new IntPtr(i));
-                else if (typeof(T) == typeof(uint)) return (T)(object)RangeFunctions.Uint_Get(_slice, new IntPtr(i));
-                else if (typeof(T) == typeof(long)) return (T)(object)RangeFunctions.Long_Get(_slice, new IntPtr(i));
-                else if (typeof(T) == typeof(ulong)) return (T)(object)RangeFunctions.Ulong_Get(_slice, new IntPtr(i));
-                else if (typeof(T) == typeof(float)) return (T)(object)RangeFunctions.Float_Get(_slice, new IntPtr(i));
-                else if (typeof(T) == typeof(double)) return (T)(object)RangeFunctions.Double_Get(_slice, new IntPtr(i));
-                else if (typeof(T) == typeof(Csharp.Library.S1)) return (T)(object)RangeFunctions.Csharp_library_s1_Get(_slice, new IntPtr(i));
-                else if (typeof(T) == typeof(Csharp.Library.S2)) return (T)(object)RangeFunctions.Csharp_library_s2_Get(_slice, new IntPtr(i));
+                else if (typeof(T) == typeof(sbyte)) return (T)(object)(sbyte)RangeFunctions.Byte_Get(_slice, new IntPtr(i));
+                else if (typeof(T) == typeof(byte)) return (T)(object)(byte)RangeFunctions.Ubyte_Get(_slice, new IntPtr(i));
+                else if (typeof(T) == typeof(short)) return (T)(object)(short)RangeFunctions.Short_Get(_slice, new IntPtr(i));
+                else if (typeof(T) == typeof(ushort)) return (T)(object)(ushort)RangeFunctions.Ushort_Get(_slice, new IntPtr(i));
+                else if (typeof(T) == typeof(int)) return (T)(object)(int)RangeFunctions.Int_Get(_slice, new IntPtr(i));
+                else if (typeof(T) == typeof(uint)) return (T)(object)(uint)RangeFunctions.Uint_Get(_slice, new IntPtr(i));
+                else if (typeof(T) == typeof(long)) return (T)(object)(long)RangeFunctions.Long_Get(_slice, new IntPtr(i));
+                else if (typeof(T) == typeof(ulong)) return (T)(object)(ulong)RangeFunctions.Ulong_Get(_slice, new IntPtr(i));
+                else if (typeof(T) == typeof(float)) return (T)(object)(float)RangeFunctions.Float_Get(_slice, new IntPtr(i));
+                else if (typeof(T) == typeof(double)) return (T)(object)(double)RangeFunctions.Double_Get(_slice, new IntPtr(i));
+                else if (typeof(T) == typeof(Csharp.Library.S1)) return (T)(object)(Csharp.Library.S1)RangeFunctions.Csharp_library_s1_Get(_slice, new IntPtr(i));
+                else if (typeof(T) == typeof(Csharp.Library.S2)) return (T)(object)(Csharp.Library.S2)RangeFunctions.Csharp_library_s2_Get(_slice, new IntPtr(i));
                 else if (typeof(T) == typeof(Csharp.Library.C1)) return (T)(object)new Csharp.Library.C1(RangeFunctions.Csharp_library_c1_Get(_slice, new IntPtr(i)));
 
                 else throw new TypeAccessException($"Range does not support type: {typeof(T).ToString()}");
@@ -885,18 +986,18 @@ namespace Autowrap {
                 else if (typeof(T) == typeof(string) && _strings == null && _type == DStringType._string) yield return (T)(object)SharedFunctions.SliceToString(RangeFunctions.String_Get(_slice, new IntPtr(i)), DStringType._string);
                 else if (typeof(T) == typeof(string) && _strings == null && _type == DStringType._wstring) yield return (T)(object)SharedFunctions.SliceToString(RangeFunctions.Wstring_Get(_slice, new IntPtr(i)), DStringType._wstring);
                 else if (typeof(T) == typeof(string) && _strings == null && _type == DStringType._dstring) yield return (T)(object)SharedFunctions.SliceToString(RangeFunctions.Dstring_Get(_slice, new IntPtr(i)), DStringType._dstring);
-                else if (typeof(T) == typeof(sbyte)) yield return (T)(object)RangeFunctions.Byte_Get(_slice, new IntPtr(i));
-                else if (typeof(T) == typeof(byte)) yield return (T)(object)RangeFunctions.Ubyte_Get(_slice, new IntPtr(i));
-                else if (typeof(T) == typeof(short)) yield return (T)(object)RangeFunctions.Short_Get(_slice, new IntPtr(i));
-                else if (typeof(T) == typeof(ushort)) yield return (T)(object)RangeFunctions.Ushort_Get(_slice, new IntPtr(i));
-                else if (typeof(T) == typeof(int)) yield return (T)(object)RangeFunctions.Int_Get(_slice, new IntPtr(i));
-                else if (typeof(T) == typeof(uint)) yield return (T)(object)RangeFunctions.Uint_Get(_slice, new IntPtr(i));
-                else if (typeof(T) == typeof(long)) yield return (T)(object)RangeFunctions.Long_Get(_slice, new IntPtr(i));
-                else if (typeof(T) == typeof(ulong)) yield return (T)(object)RangeFunctions.Ulong_Get(_slice, new IntPtr(i));
-                else if (typeof(T) == typeof(float)) yield return (T)(object)RangeFunctions.Float_Get(_slice, new IntPtr(i));
-                else if (typeof(T) == typeof(double)) yield return (T)(object)RangeFunctions.Double_Get(_slice, new IntPtr(i));
-                else if (typeof(T) == typeof(Csharp.Library.S1)) yield return (T)(object)RangeFunctions.Csharp_library_s1_Get(_slice, new IntPtr(i));
-                else if (typeof(T) == typeof(Csharp.Library.S2)) yield return (T)(object)RangeFunctions.Csharp_library_s2_Get(_slice, new IntPtr(i));
+                else if (typeof(T) == typeof(sbyte)) yield return (T)(object)(sbyte)RangeFunctions.Byte_Get(_slice, new IntPtr(i));
+                else if (typeof(T) == typeof(byte)) yield return (T)(object)(byte)RangeFunctions.Ubyte_Get(_slice, new IntPtr(i));
+                else if (typeof(T) == typeof(short)) yield return (T)(object)(short)RangeFunctions.Short_Get(_slice, new IntPtr(i));
+                else if (typeof(T) == typeof(ushort)) yield return (T)(object)(ushort)RangeFunctions.Ushort_Get(_slice, new IntPtr(i));
+                else if (typeof(T) == typeof(int)) yield return (T)(object)(int)RangeFunctions.Int_Get(_slice, new IntPtr(i));
+                else if (typeof(T) == typeof(uint)) yield return (T)(object)(uint)RangeFunctions.Uint_Get(_slice, new IntPtr(i));
+                else if (typeof(T) == typeof(long)) yield return (T)(object)(long)RangeFunctions.Long_Get(_slice, new IntPtr(i));
+                else if (typeof(T) == typeof(ulong)) yield return (T)(object)(ulong)RangeFunctions.Ulong_Get(_slice, new IntPtr(i));
+                else if (typeof(T) == typeof(float)) yield return (T)(object)(float)RangeFunctions.Float_Get(_slice, new IntPtr(i));
+                else if (typeof(T) == typeof(double)) yield return (T)(object)(double)RangeFunctions.Double_Get(_slice, new IntPtr(i));
+                else if (typeof(T) == typeof(Csharp.Library.S1)) yield return (T)(object)(Csharp.Library.S1)RangeFunctions.Csharp_library_s1_Get(_slice, new IntPtr(i));
+                else if (typeof(T) == typeof(Csharp.Library.S2)) yield return (T)(object)(Csharp.Library.S2)RangeFunctions.Csharp_library_s2_Get(_slice, new IntPtr(i));
                 else if (typeof(T) == typeof(Csharp.Library.C1)) yield return (T)(object)new Csharp.Library.C1(RangeFunctions.Csharp_library_c1_Get(_slice, new IntPtr(i)));
 
             }

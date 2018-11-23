@@ -317,7 +317,3 @@ private string generateMethodErrorHandling(string insideCode, string returnType)
     ret ~= "    }" ~ newline;
     return ret;
 }
-
-private string getReturnType(T)() {
-    return "returnValue!(" ~ fullyQualifiedName!T ~ ")";
-}

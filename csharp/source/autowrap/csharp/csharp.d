@@ -287,12 +287,11 @@ private void generateConstructors(T)(string libraryName, CSharpAggregate csagg) 
     foreach(c; constructors) {
         alias paramNames = ParameterIdentifierTuple!c;
         alias paramTypes = Parameters!c;
-        enum isNothrow = functionAttributes!c & FunctionAttribute.nothrow_;
         const string interfaceName = getDLangInterfaceName(fqn, "__ctor");
         const string methodName = getCSharpMethodInterfaceName(aggName, "__ctor");
         string ctor = dllImportString.format(libraryName, interfaceName);
         if (is(T == class)) {
-            ctor ~= "        private static extern %s dlang_%s(".format(getDLangReturnType(aggName, isNothrow, true), methodName);
+            ctor ~= "        private static extern %s dlang_%s(".format(getDLangReturnType(aggName, true), methodName);
         } else if (is(T == struct)) {
             ctor ~= "        private static extern %s dlang_%s(".format(methodName);
         }
@@ -357,22 +356,20 @@ private void generateMethods(T)(string libraryName, CSharpAggregate csagg) if (i
             foreach(mo; __traits(getOverloads, T, m)) {
                 static if(isFunction!mo) {
                     string exp = string.init;
-                    enum bool isNothrow = cast(bool)(functionAttributes!mo & FunctionAttribute.nothrow_);
                     enum bool isProperty = cast(bool)(functionAttributes!mo & FunctionAttribute.property);
                     alias returnType = ReturnType!mo;
                     alias returnTypeStr = fullyQualifiedName!returnType;
                     alias paramTypes = Parameters!mo;
                     alias paramNames = ParameterIdentifierTuple!mo;
-
                     const string interfaceName = getDLangInterfaceName(fqn, m);
 
                     exp ~= dllImportString.format(libraryName, interfaceName);
                     exp ~= "        private static extern ";
                     if (!is(returnType == void)) {
                         static if (is(returnType == class)) {
-                            exp ~= getDLangReturnType(returnTypeStr, isNothrow, true);
+                            exp ~= getDLangReturnType(returnTypeStr, true);
                         } else {
-                            exp ~= getDLangReturnType(returnTypeStr, isNothrow, false);
+                            exp ~= getDLangReturnType(returnTypeStr, false);
                         }
                     } else {
                         exp ~= "return_void_error";
@@ -412,17 +409,9 @@ private void generateMethods(T)(string libraryName, CSharpAggregate csagg) if (i
                         }
                         exp ~= ") {" ~ newline;
                         if (is(T == class)) {
-                            if (isNothrow && is(returnType == void)) {
-                                exp ~= "            dlang_%s(DLangPointer, ".format(methodInterfaceName);
-                            } else {
-                                exp ~= "            var dlang_ret = dlang_%s(DLangPointer, ".format(methodInterfaceName);
-                            }
+                            exp ~= "            var dlang_ret = dlang_%s(DLangPointer, ".format(methodInterfaceName);
                         } else {
-                            if (isNothrow && is(returnType == void)) {
-                                exp ~= "            dlang_%s(ref this, ".format(methodInterfaceName);
-                            } else {
-                                exp ~= "            var dlang_ret = dlang_%s(ref this, ".format(methodInterfaceName);
-                            }
+                            exp ~= "            var dlang_ret = dlang_%s(ref this, ".format(methodInterfaceName);
                         }
                         static foreach(pc; 0..paramNames.length) {
                             static if (is(paramTypes[pc] == string)) {
@@ -578,18 +567,14 @@ private void generateFunctions(Modules...)(string libraryName) if(allSatisfy!(is
         alias returnTypeStr = fullyQualifiedName!(ReturnType!(__traits(getMember, func.module_, func.name)));
         alias paramTypes = Parameters!(__traits(getMember, func.module_, func.name));
         alias paramNames = ParameterIdentifierTuple!(__traits(getMember, func.module_, func.name));
-        enum bool isNothrow = (functionAttributes!(__traits(getMember, func.module_, func.name)) & FunctionAttribute.nothrow_) == FunctionAttribute.nothrow_;
         const string interfaceName = getDLangInterfaceName(modName, null, funcName);
         const string methodName = getCSharpMethodInterfaceName(null, funcName);
         static if (is(returnType == class)) {
-            string retType = getDLangReturnType(returnTypeStr, isNothrow, true);
+            string retType = getDLangReturnType(returnTypeStr, true);
         } else {
-            string retType = getDLangReturnType(returnTypeStr, isNothrow, false);
+            string retType = getDLangReturnType(returnTypeStr, false);
         }
-        string funcStr = "        [DllImport(\"%s\", EntryPoint = \"%s\", CallingConvention = CallingConvention.Cdecl)]".format(libraryName, interfaceName) ~ newline;
-        if (returnTypeStr == boolTypeString && isNothrow) {
-            funcStr ~= "        [return: MarshalAs(UnmanagedType.Bool)]";
-        }
+        string funcStr = dllImportString.format(libraryName, interfaceName) ~ newline;
         funcStr ~= "        private static extern %s dlang_%s(".format(retType, methodName);
         static foreach(pc; 0..paramNames.length) {
             if (is(paramTypes[pc] == bool)) funcStr ~= "[MarshalAs(UnmanagedType.Bool)]";
@@ -619,11 +604,7 @@ private void generateFunctions(Modules...)(string libraryName) if(allSatisfy!(is
             funcStr = funcStr[0..$-2];
         }
         funcStr ~= ") {" ~ newline;
-        if (isNothrow && is(returnType == void)) {
-            funcStr ~= "            dlang_%s(".format(methodName);
-        } else { 
-            funcStr ~= "            var dlang_ret = dlang_%s(".format(methodName);
-        }
+        funcStr ~= "            var dlang_ret = dlang_%s(".format(methodName);
         static foreach(pc; 0..paramNames.length) {
             if (is(paramTypes[pc] == string)) {
                 funcStr ~= "SharedFunctions.CreateString(" ~ paramNames[pc] ~ "), ";
@@ -719,18 +700,15 @@ private string getCSharpInterfaceType(string type) {
     }
 }
 
-private string getDLangReturnType(string type, bool isNothrow, bool isClass) {
+private string getDLangReturnType(string type, bool isClass) {
     import std.stdio;
-    if(isNothrow) {
-        return getDLangInterfaceType(type);
-    } else {
-        string rtname = getReturnErrorTypeName(getDLangInterfaceType(type));
-        //These types have predefined C# types.
-        if(type == voidTypeString || type == boolTypeString || type == stringTypeString || type == wstringTypeString || type == dstringTypeString || rtname == "return_slice_error") {
-            return rtname;
-        }
+    string rtname = getReturnErrorTypeName(getDLangInterfaceType(type));
+    //These types have predefined C# types.
+    if(type == voidTypeString || type == boolTypeString || type == stringTypeString || type == wstringTypeString || type == dstringTypeString || rtname == "return_slice_error") {
+        return rtname;
+    }
 
-        string typeStr = "    [GeneratedCodeAttribute(\"Autowrap\", \"1.0.0.0\")]
+    string typeStr = "    [GeneratedCodeAttribute(\"Autowrap\", \"1.0.0.0\")]
     [StructLayout(LayoutKind.Sequential)]
     internal struct " ~ rtname ~ " {
         private void EnsureValid() {
@@ -739,21 +717,20 @@ private string getDLangReturnType(string type, bool isNothrow, bool isClass) {
         }
 ";
 
-        if (isClass) {
-            typeStr ~= "        public static implicit operator IntPtr(%s ret) { ret.EnsureValid(); return ret._value; }".format(rtname) ~ newline;
-            typeStr ~= "        private IntPtr _value;" ~ newline;
-        } else {
-            typeStr ~= "        public static implicit operator %s(%s ret) { ret.EnsureValid(); return ret._value; }".format(getCSharpInterfaceType(type), rtname) ~ newline;
-            typeStr ~= "        private %s _value;".format(getCSharpInterfaceType(type)) ~ newline;
-        }
-        typeStr ~= "        private slice _error;" ~ newline;
-        typeStr ~= "    }" ~ newline ~ newline;
-
-        if ((rtname in returnTypes) is null) {
-            returnTypes[rtname] = typeStr;
-        }
-        return rtname;
+    if (isClass) {
+        typeStr ~= "        public static implicit operator IntPtr(%s ret) { ret.EnsureValid(); return ret._value; }".format(rtname) ~ newline;
+        typeStr ~= "        private IntPtr _value;" ~ newline;
+    } else {
+        typeStr ~= "        public static implicit operator %s(%s ret) { ret.EnsureValid(); return ret._value; }".format(getCSharpInterfaceType(type), rtname) ~ newline;
+        typeStr ~= "        private %s _value;".format(getCSharpInterfaceType(type)) ~ newline;
     }
+    typeStr ~= "        private slice _error;" ~ newline;
+    typeStr ~= "    }" ~ newline ~ newline;
+
+    if ((rtname in returnTypes) is null) {
+        returnTypes[rtname] = typeStr;
+    }
+    return rtname;
 }
 
 private string getCSharpMethodInterfaceName(string aggName, string funcName) {
@@ -794,37 +771,37 @@ private void generateRangeDef(T)(string libraryName) {
     const string csn = getCSharpName(fqn);
 
     rangeDef.functions ~= dllImportString.format(libraryName, getDLangSliceInterfaceName(fqn, "Create"));
-    rangeDef.functions ~= externFuncString.format("slice", getCSharpMethodInterfaceName(fqn, "Create"), "IntPtr capacity");
+    rangeDef.functions ~= externFuncString.format("return_slice_error", getCSharpMethodInterfaceName(fqn, "Create"), "IntPtr capacity");
     rangeDef.functions ~= dllImportString.format(libraryName, getDLangSliceInterfaceName(fqn, "Slice"));
-    rangeDef.functions ~= externFuncString.format("slice", getCSharpMethodInterfaceName(fqn, "Slice"), "slice dslice, IntPtr begin, IntPtr end");
+    rangeDef.functions ~= externFuncString.format("return_slice_error", getCSharpMethodInterfaceName(fqn, "Slice"), "slice dslice, IntPtr begin, IntPtr end");
     rangeDef.functions ~= dllImportString.format(libraryName, getDLangSliceInterfaceName(fqn, "AppendSlice"));
-    rangeDef.functions ~= externFuncString.format("slice", getCSharpMethodInterfaceName(fqn, "AppendSlice"), "slice dslice, slice array");
+    rangeDef.functions ~= externFuncString.format("return_slice_error", getCSharpMethodInterfaceName(fqn, "AppendSlice"), "slice dslice, slice array");
     rangeDef.constructors ~= "            else if (typeof(T) == typeof(%2$s)) this._slice = RangeFunctions.%1$s(new IntPtr(capacity));".format(getCSharpMethodInterfaceName(fqn, "Create"), getCSharpInterfaceType(fqn)) ~ newline;
     rangeDef.sliceEnd ~= "            else if (typeof(T) == typeof(%2$s)) return new Range<T>(RangeFunctions.%1$s(_slice, new IntPtr(begin), _slice.length));".format(getCSharpMethodInterfaceName(fqn, "Slice"), getCSharpInterfaceType(fqn)) ~ newline;
     rangeDef.sliceRange ~= "            else if (typeof(T) == typeof(%2$s)) return new Range<T>(RangeFunctions.%1$s(_slice, new IntPtr(begin), new IntPtr(end)));".format(getCSharpMethodInterfaceName(fqn, "Slice"), getCSharpInterfaceType(fqn)) ~ newline;
     rangeDef.appendArrays ~= "            else if (typeof(T) == typeof(%2$s)) { range._slice = RangeFunctions.%1$s(range._slice, source._slice); return range; }".format(getCSharpMethodInterfaceName(fqn, "AppendSlice"), getCSharpInterfaceType(fqn)) ~ newline;
     if (is(T == class) || is(T == interface)) {
         rangeDef.functions ~= dllImportString.format(libraryName, getDLangSliceInterfaceName(fqn, "Get"));
-        rangeDef.functions ~= externFuncString.format("IntPtr", getCSharpMethodInterfaceName(fqn, "Get"), "slice dslice, IntPtr index");
+        rangeDef.functions ~= externFuncString.format(getDLangReturnType(fqn, true), getCSharpMethodInterfaceName(fqn, "Get"), "slice dslice, IntPtr index");
         rangeDef.functions ~= dllImportString.format(libraryName, getDLangSliceInterfaceName(fqn, "Set"));
-        rangeDef.functions ~= externFuncString.format("void", getCSharpMethodInterfaceName(fqn, "Set"), "slice dslice, IntPtr index, IntPtr value");
+        rangeDef.functions ~= externFuncString.format("return_void_error", getCSharpMethodInterfaceName(fqn, "Set"), "slice dslice, IntPtr index, IntPtr value");
         rangeDef.functions ~= dllImportString.format(libraryName, getDLangSliceInterfaceName(fqn, "AppendValue"));
-        rangeDef.functions ~= externFuncString.format("slice", getCSharpMethodInterfaceName(fqn, "AppendValue"), "slice dslice, IntPtr value");
+        rangeDef.functions ~= externFuncString.format("return_slice_error", getCSharpMethodInterfaceName(fqn, "AppendValue"), "slice dslice, IntPtr value");
         rangeDef.getters ~= "                else if (typeof(T) == typeof(%2$s)) return (T)(object)new %2$s(RangeFunctions.%1$s(_slice, new IntPtr(i)));".format(getCSharpMethodInterfaceName(fqn, "Get"), getCSharpInterfaceType(fqn)) ~ newline;
         rangeDef.setters ~= "                else if (typeof(T) == typeof(%2$s)) RangeFunctions.%1$s(_slice, new IntPtr(i), ((DLangObject)(object)value).DLangPointer);".format(getCSharpMethodInterfaceName(fqn, "Set"), getCSharpInterfaceType(fqn)) ~ newline;
         rangeDef.appendValues ~= "            else if (typeof(T) == typeof(%2$s)) { range._slice = RangeFunctions.%1$s(range._slice, ((DLangObject)(object)value).DLangPointer); return range; }".format(getCSharpMethodInterfaceName(fqn, "AppendValue"), getCSharpInterfaceType(fqn)) ~ newline;
         rangeDef.enumerators ~= "                else if (typeof(T) == typeof(%2$s)) yield return (T)(object)new %2$s(RangeFunctions.%1$s(_slice, new IntPtr(i)));".format(getCSharpMethodInterfaceName(fqn, "Get"), getCSharpInterfaceType(fqn)) ~ newline;
     } else {
         rangeDef.functions ~= dllImportString.format(libraryName, getDLangSliceInterfaceName(fqn, "Get"));
-        rangeDef.functions ~= externFuncString.format(getCSharpInterfaceType(fqn), getCSharpMethodInterfaceName(fqn, "Get"), "slice dslice, IntPtr index");
+        rangeDef.functions ~= externFuncString.format(getDLangReturnType(fqn, false), getCSharpMethodInterfaceName(fqn, "Get"), "slice dslice, IntPtr index");
         rangeDef.functions ~= dllImportString.format(libraryName, getDLangSliceInterfaceName(fqn, "Set"));
-        rangeDef.functions ~= externFuncString.format("void", getCSharpMethodInterfaceName(fqn, "Set"), "slice dslice, IntPtr index, %1$s value".format(getCSharpInterfaceType(fqn)));
+        rangeDef.functions ~= externFuncString.format("return_void_error", getCSharpMethodInterfaceName(fqn, "Set"), "slice dslice, IntPtr index, %1$s value".format(getCSharpInterfaceType(fqn)));
         rangeDef.functions ~= dllImportString.format(libraryName, getDLangSliceInterfaceName(fqn, "AppendValue"));
-        rangeDef.functions ~= externFuncString.format("slice", getCSharpMethodInterfaceName(fqn, "AppendValue"), "slice dslice, %1$s value".format(getCSharpInterfaceType(fqn)));
-        rangeDef.getters ~= "                else if (typeof(T) == typeof(%2$s)) return (T)(object)RangeFunctions.%1$s(_slice, new IntPtr(i));".format(getCSharpMethodInterfaceName(fqn, "Get"), getCSharpInterfaceType(fqn)) ~ newline;
+        rangeDef.functions ~= externFuncString.format("return_slice_error", getCSharpMethodInterfaceName(fqn, "AppendValue"), "slice dslice, %1$s value".format(getCSharpInterfaceType(fqn)));
+        rangeDef.getters ~= "                else if (typeof(T) == typeof(%2$s)) return (T)(object)(%2$s)RangeFunctions.%1$s(_slice, new IntPtr(i));".format(getCSharpMethodInterfaceName(fqn, "Get"), getCSharpInterfaceType(fqn)) ~ newline;
         rangeDef.setters ~= "                else if (typeof(T) == typeof(%2$s)) RangeFunctions.%1$s(_slice, new IntPtr(i), (%2$s)(object)value);".format(getCSharpMethodInterfaceName(fqn, "Set"), getCSharpInterfaceType(fqn)) ~ newline;
         rangeDef.appendValues ~= "            else if (typeof(T) == typeof(%2$s)) { range._slice = RangeFunctions.%1$s(range._slice, (%2$s)(object)value); return range; }".format(getCSharpMethodInterfaceName(fqn, "AppendValue"), getCSharpInterfaceType(fqn)) ~ newline;
-        rangeDef.enumerators ~= "                else if (typeof(T) == typeof(%2$s)) yield return (T)(object)RangeFunctions.%1$s(_slice, new IntPtr(i));".format(getCSharpMethodInterfaceName(fqn, "Get"), getCSharpInterfaceType(fqn)) ~ newline;
+        rangeDef.enumerators ~= "                else if (typeof(T) == typeof(%2$s)) yield return (T)(object)(%2$s)RangeFunctions.%1$s(_slice, new IntPtr(i));".format(getCSharpMethodInterfaceName(fqn, "Get"), getCSharpInterfaceType(fqn)) ~ newline;
     }
 }
 
@@ -839,33 +816,33 @@ private void generateSliceBoilerplate(string libraryName) {
         rangeDef.appendArrays ~= "            else if (typeof(T) == typeof(string) && range._strings == null && range._type == DStringType._" ~ dlangType ~ ") { range._slice = RangeFunctions." ~ csharpType ~ "_AppendSlice(range._slice, source._slice); return range; }" ~ newline;
 
         rangeDef.functions ~= dllImportString.format(libraryName, "autowrap_csharp_" ~ csharpType ~ "_Create");
-        rangeDef.functions ~= externFuncString.format("slice", "" ~ csharpType ~ "_Create", "IntPtr capacity");
+        rangeDef.functions ~= externFuncString.format("return_slice_error", "" ~ csharpType ~ "_Create", "IntPtr capacity");
         rangeDef.functions ~= dllImportString.format(libraryName, "autowrap_csharp_" ~ csharpType ~ "_Get");
-        rangeDef.functions ~= externFuncString.format("slice", "" ~ csharpType ~ "_Get", "slice dslice, IntPtr index");
+        rangeDef.functions ~= externFuncString.format("return_slice_error", "" ~ csharpType ~ "_Get", "slice dslice, IntPtr index");
         rangeDef.functions ~= dllImportString.format(libraryName, "autowrap_csharp_" ~ csharpType ~ "_Set");
-        rangeDef.functions ~= externFuncString.format("void", "" ~ csharpType ~ "_Set", "slice dslice, IntPtr index, slice value");
+        rangeDef.functions ~= externFuncString.format("return_void_error", "" ~ csharpType ~ "_Set", "slice dslice, IntPtr index, slice value");
         rangeDef.functions ~= dllImportString.format(libraryName, "autowrap_csharp_" ~ csharpType ~ "_Slice");
-        rangeDef.functions ~= externFuncString.format("slice", "" ~ csharpType ~ "_Slice", "slice dslice, IntPtr begin, IntPtr end");
+        rangeDef.functions ~= externFuncString.format("return_slice_error", "" ~ csharpType ~ "_Slice", "slice dslice, IntPtr begin, IntPtr end");
         rangeDef.functions ~= dllImportString.format(libraryName, "autowrap_csharp_" ~ csharpType ~ "_AppendValue");
-        rangeDef.functions ~= externFuncString.format("slice", "" ~ csharpType ~ "_AppendValue", "slice dslice, slice value");
+        rangeDef.functions ~= externFuncString.format("return_slice_error", "" ~ csharpType ~ "_AppendValue", "slice dslice, slice value");
         rangeDef.functions ~= dllImportString.format(libraryName, "autowrap_csharp_" ~ csharpType ~ "_AppendSlice");
-        rangeDef.functions ~= externFuncString.format("slice", "" ~ csharpType ~ "_AppendSlice", "slice dslice, slice array");
+        rangeDef.functions ~= externFuncString.format("return_slice_error", "" ~ csharpType ~ "_AppendSlice", "slice dslice, slice array");
     }
 
     //bool
     rangeDef.functions ~= dllImportString.format(libraryName, "autowrap_csharp_Bool_Create");
-    rangeDef.functions ~= externFuncString.format("slice", "Bool_Create", "IntPtr capacity");
+    rangeDef.functions ~= externFuncString.format("return_slice_error", "Bool_Create", "IntPtr capacity");
     rangeDef.functions ~= dllImportString.format(libraryName, "autowrap_csharp_Bool_Get");
     rangeDef.functions ~= "        [return: MarshalAs(UnmanagedType.Bool)]" ~ newline;
-    rangeDef.functions ~= externFuncString.format("bool", "Bool_Get", "slice dslice, IntPtr index");
+    rangeDef.functions ~= externFuncString.format("return_bool_error", "Bool_Get", "slice dslice, IntPtr index");
     rangeDef.functions ~= dllImportString.format(libraryName, "autowrap_csharp_Bool_Set");
-    rangeDef.functions ~= externFuncString.format("void", "Bool_Set", "slice dslice, IntPtr index, [MarshalAs(UnmanagedType.Bool)] bool value");
+    rangeDef.functions ~= externFuncString.format("return_void_error", "Bool_Set", "slice dslice, IntPtr index, [MarshalAs(UnmanagedType.Bool)] bool value");
     rangeDef.functions ~= dllImportString.format(libraryName, "autowrap_csharp_Bool_Slice");
-    rangeDef.functions ~= externFuncString.format("slice", "Bool_Slice", "slice dslice, IntPtr begin, IntPtr end");
+    rangeDef.functions ~= externFuncString.format("return_slice_error", "Bool_Slice", "slice dslice, IntPtr begin, IntPtr end");
     rangeDef.functions ~= dllImportString.format(libraryName, "autowrap_csharp_Bool_AppendValue");
-    rangeDef.functions ~= externFuncString.format("slice", "Bool_AppendValue", "slice dslice, [MarshalAs(UnmanagedType.Bool)] bool value");
+    rangeDef.functions ~= externFuncString.format("return_slice_error", "Bool_AppendValue", "slice dslice, [MarshalAs(UnmanagedType.Bool)] bool value");
     rangeDef.functions ~= dllImportString.format(libraryName, "autowrap_csharp_Bool_AppendSlice");
-    rangeDef.functions ~= externFuncString.format("slice", "Bool_AppendSlice", "slice dslice, slice array");
+    rangeDef.functions ~= externFuncString.format("return_slice_error", "Bool_AppendSlice", "slice dslice, slice array");
     rangeDef.constructors ~= "            if (typeof(T) == typeof(bool)) this._slice = RangeFunctions.Bool_Create(new IntPtr(capacity));" ~ newline;
     rangeDef.enumerators ~= "                if (typeof(T) == typeof(bool)) yield return (T)(object)RangeFunctions.Bool_Get(_slice, new IntPtr(i));" ~ newline;
     rangeDef.getters ~= "                if (typeof(T) == typeof(bool)) return (T)(object)RangeFunctions.Bool_Get(_slice, new IntPtr(i));" ~ newline;
