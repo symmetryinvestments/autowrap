@@ -519,9 +519,9 @@ private void generateFields(T)(string libraryName, CSharpAggregate csagg) if (is
         static foreach(fc; 0..fieldTypes.length) {
             static if (is(typeof(__traits(getMember, T, fieldNames[fc])))) {
                 csagg.properties ~= dllImportString.format(libraryName, getDLangInterfaceName(fqn, fieldNames[fc] ~ "_get"));
-                csagg.properties ~= "        private static extern %s dlang_%s_get(IntPtr ptr);".format(getDLangInterfaceType(fullyQualifiedName!(fieldTypes[fc])), fieldNames[fc]) ~ newline;
+                csagg.properties ~= "        private static extern %1$s dlang_%2$s_get(IntPtr ptr);".format(getDLangReturnType(fullyQualifiedName!(fieldTypes[fc]), true), fieldNames[fc]) ~ newline;
                 csagg.properties ~= dllImportString.format(libraryName, getDLangInterfaceName(fqn, fieldNames[fc] ~ "_set"));
-                csagg.properties ~= "        private static extern void dlang_%s_set(IntPtr ptr, %s value);".format(fieldNames[fc], getDLangInterfaceType(fullyQualifiedName!(fieldTypes[fc]))) ~ newline;
+                csagg.properties ~= "        private static extern void dlang_%1$s_set(IntPtr ptr, %2$s value);".format(fieldNames[fc], getDLangInterfaceType(fullyQualifiedName!(fieldTypes[fc]))) ~ newline;
                 if (is(fieldTypes[fc] == string)) {
                     csagg.properties ~= "        public %2$s %3$s { get => SharedFunctions.SliceToString(dlang_%1$s_get(DLangPointer), DStringType._string); set => dlang_%1$s_set(DLangPointer, SharedFunctions.CreateString(value)); }".format(fieldNames[fc], getCSharpInterfaceType(fullyQualifiedName!(fieldTypes[fc])), getCSharpName(fieldNames[fc])) ~ newline;
                 } else if (is(fieldTypes[fc] == wstring)) {
@@ -530,6 +530,8 @@ private void generateFields(T)(string libraryName, CSharpAggregate csagg) if (is
                     csagg.properties ~= "        public %2$s %3$s { get => SharedFunctions.SliceToString(dlang_%1$s_get(DLangPointer), DStringType._dstring); set => dlang_%1$s_set(DLangPointer, SharedFunctions.CreateDstring(value)); }".format(fieldNames[fc], getCSharpInterfaceType(fullyQualifiedName!(fieldTypes[fc])), getCSharpName(fieldNames[fc])) ~ newline;
                 } else if (isArray!(fieldTypes[fc])) {
                     csagg.properties ~= "        public Range<%2$s> %3$s { get => new Range<%2$s>(dlang_%1$s_get(DLangPointer)); set => dlang_%1$s_set(DLangPointer, value.ToSlice()); }".format(fieldNames[fc], getCSharpInterfaceType(fullyQualifiedName!(fieldTypes[fc])), getCSharpName(fieldNames[fc])) ~ newline;
+                } else if (is(fieldTypes[fc] == class)) {
+                    csagg.properties ~= "        public %2$s %3$s { get => new %2$s(dlang_%1$s_get(DLangPointer)); set => dlang_%1$s_set(DLangPointer, value); }".format(fieldNames[fc], getCSharpInterfaceType(fullyQualifiedName!(fieldTypes[fc])), getCSharpName(fieldNames[fc])) ~ newline;
                 } else {
                     csagg.properties ~= "        public %2$s %3$s { get => dlang_%1$s_get(DLangPointer); set => dlang_%1$s_set(DLangPointer, value); }".format(fieldNames[fc], getCSharpInterfaceType(fullyQualifiedName!(fieldTypes[fc])), getCSharpName(fieldNames[fc])) ~ newline;
                 }
@@ -970,7 +972,7 @@ private string writeCSharpBoilerplate(string libraryName, string rootNamespace) 
     }
 
 %3$s    [GeneratedCodeAttribute(\"Autowrap\", \"1.0.0.0\")]
-    internal static class SharedFunctions {
+    public static class SharedFunctions {
         static SharedFunctions() {
             Stream stream = null;
             var outputName = RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? \"lib%1$s.dylib\" : RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? \"lib%1$s.so\" : \"%1$s.dll\";
