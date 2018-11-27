@@ -1,0 +1,29 @@
+/**
+   Python.d + D symbols instead of C macros
+ */
+module python.bindings;
+
+
+#include "Python.h"
+
+
+/**
+    All of the enum cases are macros instead of values in an enum
+    so we make them available to D code with MethodArgs instead.
+*/
+enum MethodArgs {
+    Var = METH_VARARGS,
+    Keywords = METH_KEYWORDS,
+    None = METH_NOARGS,
+    O = METH_O,
+}
+
+
+// Demacroify
+alias ModuleInitRet = PyMODINIT_FUNC;
+
+
+// Demacroify
+auto pyModuleCreate(PyModuleDef* moduleDef) {
+    return PyModule_Create(moduleDef);
+}
