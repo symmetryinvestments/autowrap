@@ -3,7 +3,6 @@ import python;
 
 extern(C):
 
-
 mixin(
     createModuleMixin!(
         Module("silly"),

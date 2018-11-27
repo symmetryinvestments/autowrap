@@ -5,7 +5,6 @@ module python.util;
 
 import python.bindings;
 
-
 /// For a nicer API
 struct Module {
     string name;
@@ -24,12 +23,19 @@ struct CFunctions(functions...) {
    Takes a module name and a variadic list of C functions to make
    available.
  */
-string createModuleMixin(Module module_, alias cfunctions)() {
+string createModuleMixin(Module module_, alias cfunctions)() if(isPython3) {
     import std.format: format;
 
-    return q{
+    enum ret = q{
+        // This is declared as an extern C variable in python.bindings.
+        // We declare it here to avoid linker errors.
+        __gshared PyDateTime_CAPI* PyDateTimeAPI;
+
         import python: ModuleInitRet;
-        extern(C) ModuleInitRet PyInit_%s() {
+
+        extern(C) export ModuleInitRet PyInit_%s() {
+            import python: pyDateTimeImport;
+            pyDateTimeImport;
             return createModule!(
                 Module("%s"),
                 CFunctions!(
@@ -38,6 +44,31 @@ string createModuleMixin(Module module_, alias cfunctions)() {
             );
         }
     }.format(module_.name, module_.name, symbols!cfunctions);
+
+    return ret;
+}
+
+string createModuleMixin(Module module_, alias cfunctions)() if(isPython2) {
+    import std.format: format;
+
+    enum ret = q{
+        // This is declared as an extern C variable in python.bindings.
+        // We declare it here to avoid linker errors.
+        __gshared PyDateTime_CAPI* PyDateTimeAPI;
+
+        extern(C) export void init%s() {
+            import python: pyDateTimeImport, initModule;
+            pyDateTimeImport;
+            initModule!(
+                Module("%s"),
+                CFunctions!(
+                    %s
+                ),
+            );
+        }
+    }.format(module_.name, module_.name, symbols!cfunctions);
+
+    return ret;
 }
 
 private string symbols(alias cfunctions)() {
@@ -57,7 +88,7 @@ private string symbols(alias cfunctions)() {
    Each function has the same name in Python.
  */
 auto createModule(Module module_, alias cfunctions)()
-    if(is(cfunctions == CFunctions!(A), A...))
+    if(isPython3 && is(cfunctions == CFunctions!(A), A...))
 {
     // +1 due to the sentinel that Python uses to know when to
     // stop incrementing through the pointer.
@@ -65,13 +96,40 @@ auto createModule(Module module_, alias cfunctions)()
 
     static foreach(i, cfunction; cfunctions.symbols) {
         // TODO: make it possible to use a different name with a UDA
-        methods[i] = pyMethodDef!(__traits(identifier, cfunction))(&cfunction);
+        static assert(is(typeof(&cfunction): PyCFunction) ||
+                      is(typeof(&cfunction): PyCFunctionWithKeywords));
+        methods[i] = pyMethodDef!(__traits(identifier, cfunction))(cast(PyCFunction) &cfunction);
     }
 
     static PyModuleDef moduleDef;
     moduleDef = pyModuleDef(module_.name.ptr, null /*doc*/, -1 /*size*/, &methods[0]);
 
     return pyModuleCreate(&moduleDef);
+}
+
+
+void initModule(Module module_, alias cfunctions)()
+    if(isPython2 && is(cfunctions == CFunctions!(A), A...))
+{
+    pyInitModule(&module_.name[0], cFunctionsToPyMethodDefs!(cfunctions));
+}
+
+///  Returns a PyMethodDef for each cfunction.
+private PyMethodDef* cFunctionsToPyMethodDefs(alias cfunctions)()
+        if(is(cfunctions == CFunctions!(A), A...))
+{
+    // +1 due to the sentinel that Python uses to know when to
+    // stop incrementing through the pointer.
+    static PyMethodDef[cfunctions.length + 1] methods;
+
+    static foreach(i, cfunction; cfunctions.symbols) {
+        // TODO: make it possible to use a different name with a UDA
+        static assert(is(typeof(&cfunction): PyCFunction) ||
+                      is(typeof(&cfunction): PyCFunctionWithKeywords));
+        methods[i] = pyMethodDef!(__traits(identifier, cfunction))(cast(PyCFunction) &cfunction);
+    }
+
+    return &methods[0];
 }
 
 
@@ -91,8 +149,8 @@ auto createModule(string name, string doc = "", long size = -1)(PyMethodDef[] me
 /**
    Helper function to get around the C syntax problem with
    PyModuleDef_HEAD_INIT - it doesn't compile in D.
- */
-private auto pyModuleDef(A...)(auto ref A args) {
+*/
+private auto pyModuleDef(A...)(auto ref A args) if(isPython3) {
     import std.functional: forward;
 
     return PyModuleDef(
@@ -108,6 +166,8 @@ private auto pyModuleDef(A...)(auto ref A args) {
    to Python (by calling std.string.toStringz or manually appending the null
    terminator).
  */
-auto pyMethodDef(string name, int flags = MethodArgs.Var, string doc = "")(PyCFunction cfunction) pure {
+auto pyMethodDef(string name, int flags = MethodArgs.Var | MethodArgs.Keywords, string doc = "")
+                (PyCFunction cfunction) pure
+{
     return PyMethodDef(name.ptr, cfunction, flags, doc.ptr);
 }

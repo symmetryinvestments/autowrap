@@ -1,28 +1,36 @@
 language: d
 sudo: false
+dist: xenial
 
 matrix:
   include:
     - d: dmd-nightly
-    - d: dmd-2.082.1
-    - d: dmd-2.081.2
-    - d: dmd-2.080.1
-    - d: ldc-1.12.0
-    - d: ldc-1.11.0
-    - d: ldc-1.10.0
+    - d: dmd-2.083.0
   allow_failures:
     - d: dmd-nightly
+
+addons:
+  apt:
+    sources:
+      - ubuntu-toolchain-r-test
+    packages:
+      - libclang-3.9-dev
+      - libpython-dev
 
 install:
   - virtualenv autowrapenv
   - source autowrapenv/bin/activate
   - pip install pytest
 
+env:
+  - PYTHON_INCLUDE_DIR=/usr/include/python2.7
+
 script:
   - DUB_CONFIGURATION=python27 make
   - dub run pyd:setup && source pyd_set_env_vars.sh
   - DUB_CONFIGURATION=env make
   - dub run -c unittest-travis --build=unittest-cov
+  - python2/ci.sh
 
 after_success:
  - bash <(curl -s https://codecov.io/bash)
