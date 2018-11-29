@@ -1,5 +1,7 @@
 module test;
 
+import std.stdio;
+
 export int freeFunction (int value) {
     return value;
 }
@@ -87,11 +89,15 @@ class c1 {
         return _refProperty = value;
     }
     
-    private ulong _valueProperty;
+    private ulong _valueProperty = 1001;
     public @property ulong valueProperty() {
         return _valueProperty;
     }
     public @property ulong valueProperty(ulong value) {
+        writeln(_valueProperty);
+        writeln(value);
+        _valueProperty = value;
+        writeln(_valueProperty);
         return _valueProperty = value;
     }
     

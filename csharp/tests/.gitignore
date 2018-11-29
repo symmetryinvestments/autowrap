@@ -2,6 +2,7 @@
 docs.json
 __dummy.html
 docs/
+csharp-tests
 csharp-tests.so
 csharp-tests.dylib
 csharp-tests.dll

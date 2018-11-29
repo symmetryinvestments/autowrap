@@ -6,6 +6,7 @@ import autowrap.reflection : AllFunctions, AllAggregates, isModule;
 import std.ascii : newline;
 import std.traits : isArray, fullyQualifiedName, moduleName, isFunction, Fields, FieldNameTuple, hasMember, functionAttributes, FunctionAttribute, ReturnType, Parameters, ParameterIdentifierTuple;
 import std.meta : allSatisfy, AliasSeq;
+import std.conv : to;
 
 enum string methodSetup = "        thread_attachThis();" ~ newline ~ "        rt_moduleTlsCtor();" ~ newline ~ "        scope(exit) rt_moduleTlsDtor();" ~ newline ~ "        scope(exit) thread_detachThis();" ~ newline;
 
@@ -124,7 +125,7 @@ private string generateMethods(T)() {
         }
 
         static if (is(typeof(__traits(getMember, T, m)))) {
-            foreach(mo; __traits(getOverloads, T, m)) {
+            foreach(oc, mo; __traits(getOverloads, T, m)) {
                 const bool isMethod = isFunction!mo;
 
                 static if(isMethod) {
@@ -142,7 +143,7 @@ private string generateMethods(T)() {
                     } else {
                         exp ~= "returnVoid";
                     }
-                    exp ~= " " ~ interfaceName ~ "(";
+                    exp ~= " " ~ interfaceName ~ to!string(oc) ~ "(";
                     if (is(T == struct)) {
                         exp ~= "ref " ~ fqn ~ " __obj__, ";
                     } else {
