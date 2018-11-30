@@ -6,6 +6,7 @@ module python.bindings;
 
 #include "Python.h"
 #include "datetime.h"
+#include "structmember.h"
 
 
 enum isPython3 = is(PyModuleDef);
@@ -23,6 +24,32 @@ enum MethodArgs {
     O = METH_O,
 }
 
+enum MemberType {
+    Short = T_SHORT,
+    Int = T_INT,
+    Long = T_LONG,
+    Float = T_FLOAT,
+    Double = T_DOUBLE,
+    String = T_STRING,
+    Object = T_OBJECT,
+    ObjectEx = T_OBJECT_EX,
+    Char = T_CHAR,
+    Byte = T_BYTE,
+    UByte = T_UBYTE,
+    UInt = T_UINT,
+    UShort = T_USHORT,
+    ULong = T_ULONG,
+    Bool = T_BOOL,
+    LongLong = T_LONGLONG,
+    ULongLong = T_ULONGLONG,
+    PySSizeT = T_PYSSIZET,
+}
+
+
+// Demacroify
+mixin template PyObjectHead() {
+    PyObject_HEAD;
+}
 
 // Demacroify
 alias ModuleInitRet = PyMODINIT_FUNC;
@@ -110,6 +137,10 @@ auto pyObjectUnicode(PyObject* obj) @nogc nothrow {
         return PyObject_Unicode(obj);
     else
         return obj;
+}
+
+auto pyObjectNew(T)(PyTypeObject* typeobj) {
+    return cast(T*) _PyObject_New(typeobj);
 }
 
 

@@ -2,7 +2,7 @@ module contract.main;
 
 import python;
 import contract.scalars;
-
+import contract.udt;
 
 mixin(
     createModuleMixin!(
@@ -26,6 +26,8 @@ mixin(
             add_days_to_datetime,
             throws_runtime_error,
             kwargs_count,
+
+            simple_struct,
         )
     )
 );

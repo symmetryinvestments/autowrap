@@ -1,9 +1,9 @@
 /**
    This module contains D code for the contract tests between Python
-   and its C API.  The functions below are meant to document the
-   behaviour of said API when values are passed through the layer
-   between the two languages, be it as function parameters or return
-   values.
+   and its C API regarding scalars.  The functions below are meant to
+   document the behaviour of said API when values are passed through
+   the layer between the two languages, be it as function parameters
+   or return values.
  */
 module contract.scalars;
 
