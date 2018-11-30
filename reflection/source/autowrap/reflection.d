@@ -220,13 +220,17 @@ private template Type(T...) if(T.length == 1) {
 package template isUserAggregate(A...) if(A.length == 1) {
     import std.datetime;
     import std.traits: Unqual, isInstanceOf;
-    import std.typecons: Tuple;
-    alias T = A[0];
+    import std.typecons: Tuple,tuple;
+    static if (!is(A[0]==struct) || !is(A[0]==class))
+    {
+    	enum isUserAggregate = false;
+    }
+    else
+    {
+	    enum isUserAggregate = !is(Unqual!(T[0]) == DateTime) && 
+	    		!isInstanceOf!(Tuple,A[0]);
 
-    enum isUserAggregate =
-        !is(Unqual!T == DateTime) &&
-        !isInstanceOf!(Tuple, T) &&
-        (is(T == struct) || is(T == class));
+    }
 }
 
 @("DateTime is not a user aggregate")
@@ -279,15 +283,20 @@ unittest {
 
 package template isExportFunction(alias F, Flag!"alwaysExport" alwaysExport = No.alwaysExport) {
     import std.traits: isFunction;
-
-    version(AutowrapAlwaysExport) {
-        enum linkage = __traits(getLinkage, F);
-        enum isExportFunction = isFunction!F && linkage != "C" && linkage != "C++";
-    } else
-          enum isExportFunction = isFunction!F && isExportSymbol!(F, alwaysExport);
+    static if(!isFunction!F)
+	    enum isExportFunction = false;
+    else
+    {
+	    version(AutowrapAlwaysExport) {
+		enum linkage =__traits(getLinkage, F);
+		enum isExportFunction = linkage != "C" && linkage != "C++";
+	    }
+	else
+	  	enum isExportFunction = isFunction!F && isExportSymbol!(F, alwaysExport);
+    }
 }
 
-
+version=AutowrapAlwaysExport;
 private template isExportSymbol(alias S, Flag!"alwaysExport" alwaysExport = No.alwaysExport) {
     import std.traits: isFunction;
 
