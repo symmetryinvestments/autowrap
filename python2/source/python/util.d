@@ -29,7 +29,7 @@ string createModuleMixin(Module module_, alias cfunctions)() if(isPython3) {
     enum ret = q{
         // This is declared as an extern C variable in python.bindings.
         // We declare it here to avoid linker errors.
-        export __gshared PyDateTime_CAPI* PyDateTimeAPI;
+        export __gshared extern(C) PyDateTime_CAPI* PyDateTimeAPI;
 
         import python: ModuleInitRet;
 
@@ -54,7 +54,7 @@ string createModuleMixin(Module module_, alias cfunctions)() if(isPython2) {
     enum ret = q{
         // This is declared as an extern C variable in python.bindings.
         // We declare it here to avoid linker errors.
-        export __gshared PyDateTime_CAPI* PyDateTimeAPI;
+        export __gshared extern(C) PyDateTime_CAPI* PyDateTimeAPI;
 
         extern(C) export void init%s() {
             import python: pyDateTimeImport, initModule;
