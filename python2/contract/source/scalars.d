@@ -5,8 +5,6 @@
    between the two languages, be it as function parameters or return
    values.
  */
-module contract;
-
 
 import python;
 
