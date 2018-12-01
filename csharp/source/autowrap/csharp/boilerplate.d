@@ -56,7 +56,7 @@ public string wrapCSharp(in Modules modules) @safe pure {
 
         immutable string t = wrapDLang!(%2$s);
         mixin(t);
-        debug: pragma(msg, t);
+        //pragma(msg, t); //Uncomment to see generated D interface code, useful for debugging.
 
         //Insert DllMain for Windows only.
         version(Windows) {

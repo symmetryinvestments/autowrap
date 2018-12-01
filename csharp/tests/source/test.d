@@ -1,7 +1,5 @@
 module test;
 
-import std.stdio;
-
 export int freeFunction (int value) {
     return value;
 }
@@ -25,6 +23,15 @@ export string testErrorMessage(bool throwError) {
         return "No Error Thrown";
 }
 
+export string[] testStringRanges(dstring[] arr) {
+    import std.conv : to;
+    string[] temp;
+    foreach(s; arr) {
+        temp ~= to!string(s);
+    }
+    return temp;
+}
+
 struct s1 {
     public float value;
     public s2 nestedStruct;
@@ -46,6 +53,9 @@ struct s2 {
 class c1 {
     public int intValue;
     protected string stringValue;
+    public @property string StringValueGetter() {
+        return stringValue;
+    }
 
     public this(string s, int i) {
         intValue = i;
@@ -94,10 +104,6 @@ class c1 {
         return _valueProperty;
     }
     public @property ulong valueProperty(ulong value) {
-        writeln(_valueProperty);
-        writeln(value);
-        _valueProperty = value;
-        writeln(_valueProperty);
         return _valueProperty = value;
     }
     

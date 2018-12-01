@@ -27,14 +27,14 @@ namespace Test {
         private static extern return_slice_error dlang_RangeFunction(slice arr);
         public static Range<Test.S2> RangeFunction(Range<Test.S2> arr) {
             var dlang_ret = dlang_RangeFunction(arr.ToSlice());
-            return new Range<Test.S2>(dlang_ret);
+            return new Range<Test.S2>(dlang_ret, DStringType.None);
         }
         [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_ClassRangeFunction", CallingConvention = CallingConvention.Cdecl)]
 
         private static extern return_slice_error dlang_ClassRangeFunction(slice arr);
         public static Range<Test.C1> ClassRangeFunction(Range<Test.C1> arr) {
             var dlang_ret = dlang_ClassRangeFunction(arr.ToSlice());
-            return new Range<Test.C1>(dlang_ret);
+            return new Range<Test.C1>(dlang_ret, DStringType.None);
         }
         [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_TestErrorMessage", CallingConvention = CallingConvention.Cdecl)]
 
@@ -42,6 +42,13 @@ namespace Test {
         public static string TestErrorMessage(bool throwError) {
             var dlang_ret = dlang_TestErrorMessage(throwError);
             return SharedFunctions.SliceToString(dlang_ret, DStringType._string);
+        }
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_TestStringRanges", CallingConvention = CallingConvention.Cdecl)]
+
+        private static extern return_slice_error dlang_TestStringRanges(slice arr);
+        public static Range<string> TestStringRanges(Range<string> arr) {
+            var dlang_ret = dlang_TestStringRanges(arr.ToSlice());
+            return new Range<string>(dlang_ret, DStringType._string);
         }
 
     }
@@ -82,6 +89,8 @@ namespace Test {
         public C1(string s, int i) : base(dlang_C1___ctor(SharedFunctions.CreateString(s), i)) { }
         internal C1(IntPtr ptr) : base(ptr) { }
 
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1_StringValueGetter0", CallingConvention = CallingConvention.Cdecl)]
+        private static extern return_slice_error dlang_C1_StringValueGetter(IntPtr __obj__);
         [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1_StructProperty0", CallingConvention = CallingConvention.Cdecl)]
         private static extern return_Test_S2_error dlang_C1_StructProperty(IntPtr __obj__);
         [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1_StructProperty1", CallingConvention = CallingConvention.Cdecl)]
@@ -131,15 +140,16 @@ namespace Test {
             return SharedFunctions.SliceToString(dlang_ret, DStringType._string);
         }
 
+        public string StringValueGetter { get => SharedFunctions.SliceToString(dlang_C1_StringValueGetter(this), DStringType._string);}
         public Test.S2 StructProperty { get => dlang_C1_StructProperty(this); set => dlang_C1_StructProperty(this, value); }
         public Test.C1 RefProperty { get => new Test.C1(dlang_C1_RefProperty(this)); set => dlang_C1_RefProperty(this, value); }
         public ulong ValueProperty { get => dlang_C1_ValueProperty(this); set => dlang_C1_ValueProperty(this, value); }
-        public Range<ulong> ValueSliceProperty { get => new Range<ulong>(dlang_C1_ValueSliceProperty(this)); set => dlang_C1_ValueSliceProperty(this, value.ToSlice()); }
-        public Range<string> StringSliceProperty { get => new Range<string>(dlang_C1_StringSliceProperty(this)); set => dlang_C1_StringSliceProperty(this, value.ToSlice()); }
-        public Range<string> WstringSliceProperty { get => new Range<string>(dlang_C1_WstringSliceProperty(this)); set => dlang_C1_WstringSliceProperty(this, value.ToSlice()); }
-        public Range<string> DstringSliceProperty { get => new Range<string>(dlang_C1_DstringSliceProperty(this)); set => dlang_C1_DstringSliceProperty(this, value.ToSlice()); }
-        public Range<Test.S1> StructSliceProperty { get => new Range<Test.S1>(dlang_C1_StructSliceProperty(this)); set => dlang_C1_StructSliceProperty(this, value.ToSlice()); }
-        public Range<Test.C1> RefSliceProperty { get => new Range<Test.C1>(dlang_C1_RefSliceProperty(this)); set => dlang_C1_RefSliceProperty(this, value.ToSlice()); }
+        public Range<ulong> ValueSliceProperty { get => new Range<ulong>(dlang_C1_ValueSliceProperty(this), DStringType.None); set => dlang_C1_ValueSliceProperty(this, value.ToSlice()); }
+        public Range<string> StringSliceProperty { get => new Range<string>(dlang_C1_StringSliceProperty(this), DStringType._string); set => dlang_C1_StringSliceProperty(this, value.ToSlice(DStringType._string)); }
+        public Range<string> WstringSliceProperty { get => new Range<string>(dlang_C1_WstringSliceProperty(this), DStringType._wstring); set => dlang_C1_WstringSliceProperty(this, value.ToSlice(DStringType._wstring)); }
+        public Range<string> DstringSliceProperty { get => new Range<string>(dlang_C1_DstringSliceProperty(this), DStringType._dstring); set => dlang_C1_DstringSliceProperty(this, value.ToSlice(DStringType._dstring)); }
+        public Range<Test.S1> StructSliceProperty { get => new Range<Test.S1>(dlang_C1_StructSliceProperty(this), DStringType.None); set => dlang_C1_StructSliceProperty(this, value.ToSlice()); }
+        public Range<Test.C1> RefSliceProperty { get => new Range<Test.C1>(dlang_C1_RefSliceProperty(this), DStringType.None); set => dlang_C1_RefSliceProperty(this, value.ToSlice()); }
         [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1_IntValue_get", CallingConvention = CallingConvention.Cdecl)]
         private static extern return_int_error dlang_intValue_get(IntPtr ptr);
         [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1_IntValue_set", CallingConvention = CallingConvention.Cdecl)]
@@ -229,12 +239,12 @@ namespace Test {
         private static extern return_slice_error dlang_refArray_get(IntPtr ptr);
         [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1_RefArray_set", CallingConvention = CallingConvention.Cdecl)]
         private static extern void dlang_refArray_set(IntPtr ptr, slice value);
-        public Range<Test.C1> RefArray { get => new Range<Test.C1>(dlang_refArray_get(this)); set => dlang_refArray_set(this, value.ToSlice()); }
+        public Range<Test.C1> RefArray { get => new Range<Test.C1>(dlang_refArray_get(this), DStringType.None); set => dlang_refArray_set(this, value.ToSlice()); }
         [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1_StructArray_get", CallingConvention = CallingConvention.Cdecl)]
         private static extern return_slice_error dlang_structArray_get(IntPtr ptr);
         [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1_StructArray_set", CallingConvention = CallingConvention.Cdecl)]
         private static extern void dlang_structArray_set(IntPtr ptr, slice value);
-        public Range<Test.S1> StructArray { get => new Range<Test.S1>(dlang_structArray_get(this)); set => dlang_structArray_set(this, value.ToSlice()); }
+        public Range<Test.S1> StructArray { get => new Range<Test.S1>(dlang_structArray_get(this), DStringType.None); set => dlang_structArray_set(this, value.ToSlice()); }
     }
 
 }
@@ -815,16 +825,29 @@ namespace Autowrap {
         }
         public long Length => _strings?.Count ?? _slice.length.ToInt64();
 
-        internal Range(slice range, DStringType type = DStringType.None) {
+        internal Range(slice range, DStringType type) {
             this._slice = range;
             this._type = type;
         }
 
-        public Range(IEnumerable<string> strings) {
-            this._strings = new List<string>(strings);
+        public Range(IEnumerable<T> values) {
+            if (typeof(T) == typeof(string)) {
+                this._strings = new List<string>();
+                foreach(var t in values) {
+                    this._strings.Add((string)(object)t);
+                }
+            } else {
+                CreateSlice(values.Count());
+                foreach(var t in values) {
+                    this.Append(t);
+                }
+            }
         }
 
         public Range(long capacity = 0) {
+            CreateSlice(capacity);
+        }
+        private void CreateSlice(long capacity) {
             if (typeof(T) == typeof(bool)) this._slice = RangeFunctions.Bool_Create(new IntPtr(capacity));
             else if (typeof(T) == typeof(sbyte)) this._slice = RangeFunctions.Byte_Create(new IntPtr(capacity));
             else if (typeof(T) == typeof(byte)) this._slice = RangeFunctions.Ubyte_Create(new IntPtr(capacity));
@@ -845,6 +868,7 @@ namespace Autowrap {
         ~Range() {
             SharedFunctions.ReleaseMemory(_slice.ptr);
         }
+
         public T this[long i] {
             get {
                 if (typeof(T) == typeof(bool)) return (T)(object)RangeFunctions.Bool_Get(_slice, new IntPtr(i));
@@ -891,73 +915,77 @@ namespace Autowrap {
             }
         }
         public Range<T> Slice(long begin) {
-            if (typeof(T) == typeof(bool)) return new Range<T>(RangeFunctions.Bool_Slice(_slice, new IntPtr(begin), _slice.length));
-            else if (typeof(T) == typeof(string) && _strings != null && _type == DStringType.None) return new Range<T>(_strings.Skip((int)begin));
+            if (typeof(T) == typeof(bool)) return new Range<T>(RangeFunctions.Bool_Slice(_slice, new IntPtr(begin), _slice.length), DStringType.None);
+            else if (typeof(T) == typeof(string) && _strings != null && _type == DStringType.None) return new Range<T>((IEnumerable<T>)_strings.Skip((int)begin));
             else if (typeof(T) == typeof(string) && _strings == null && _type == DStringType._string) return new Range<T>(RangeFunctions.String_Slice(_slice, new IntPtr(begin), _slice.length), _type);
             else if (typeof(T) == typeof(string) && _strings == null && _type == DStringType._wstring) return new Range<T>(RangeFunctions.Wstring_Slice(_slice, new IntPtr(begin), _slice.length), _type);
             else if (typeof(T) == typeof(string) && _strings == null && _type == DStringType._dstring) return new Range<T>(RangeFunctions.Dstring_Slice(_slice, new IntPtr(begin), _slice.length), _type);
-            else if (typeof(T) == typeof(sbyte)) return new Range<T>(RangeFunctions.Byte_Slice(_slice, new IntPtr(begin), _slice.length));
-            else if (typeof(T) == typeof(byte)) return new Range<T>(RangeFunctions.Ubyte_Slice(_slice, new IntPtr(begin), _slice.length));
-            else if (typeof(T) == typeof(short)) return new Range<T>(RangeFunctions.Short_Slice(_slice, new IntPtr(begin), _slice.length));
-            else if (typeof(T) == typeof(ushort)) return new Range<T>(RangeFunctions.Ushort_Slice(_slice, new IntPtr(begin), _slice.length));
-            else if (typeof(T) == typeof(int)) return new Range<T>(RangeFunctions.Int_Slice(_slice, new IntPtr(begin), _slice.length));
-            else if (typeof(T) == typeof(uint)) return new Range<T>(RangeFunctions.Uint_Slice(_slice, new IntPtr(begin), _slice.length));
-            else if (typeof(T) == typeof(long)) return new Range<T>(RangeFunctions.Long_Slice(_slice, new IntPtr(begin), _slice.length));
-            else if (typeof(T) == typeof(ulong)) return new Range<T>(RangeFunctions.Ulong_Slice(_slice, new IntPtr(begin), _slice.length));
-            else if (typeof(T) == typeof(float)) return new Range<T>(RangeFunctions.Float_Slice(_slice, new IntPtr(begin), _slice.length));
-            else if (typeof(T) == typeof(double)) return new Range<T>(RangeFunctions.Double_Slice(_slice, new IntPtr(begin), _slice.length));
-            else if (typeof(T) == typeof(Test.S1)) return new Range<T>(RangeFunctions.Test_s1_Slice(_slice, new IntPtr(begin), _slice.length));
-            else if (typeof(T) == typeof(Test.S2)) return new Range<T>(RangeFunctions.Test_s2_Slice(_slice, new IntPtr(begin), _slice.length));
-            else if (typeof(T) == typeof(Test.C1)) return new Range<T>(RangeFunctions.Test_c1_Slice(_slice, new IntPtr(begin), _slice.length));
+            else if (typeof(T) == typeof(sbyte)) return new Range<T>(RangeFunctions.Byte_Slice(_slice, new IntPtr(begin), _slice.length), DStringType.None);
+            else if (typeof(T) == typeof(byte)) return new Range<T>(RangeFunctions.Ubyte_Slice(_slice, new IntPtr(begin), _slice.length), DStringType.None);
+            else if (typeof(T) == typeof(short)) return new Range<T>(RangeFunctions.Short_Slice(_slice, new IntPtr(begin), _slice.length), DStringType.None);
+            else if (typeof(T) == typeof(ushort)) return new Range<T>(RangeFunctions.Ushort_Slice(_slice, new IntPtr(begin), _slice.length), DStringType.None);
+            else if (typeof(T) == typeof(int)) return new Range<T>(RangeFunctions.Int_Slice(_slice, new IntPtr(begin), _slice.length), DStringType.None);
+            else if (typeof(T) == typeof(uint)) return new Range<T>(RangeFunctions.Uint_Slice(_slice, new IntPtr(begin), _slice.length), DStringType.None);
+            else if (typeof(T) == typeof(long)) return new Range<T>(RangeFunctions.Long_Slice(_slice, new IntPtr(begin), _slice.length), DStringType.None);
+            else if (typeof(T) == typeof(ulong)) return new Range<T>(RangeFunctions.Ulong_Slice(_slice, new IntPtr(begin), _slice.length), DStringType.None);
+            else if (typeof(T) == typeof(float)) return new Range<T>(RangeFunctions.Float_Slice(_slice, new IntPtr(begin), _slice.length), DStringType.None);
+            else if (typeof(T) == typeof(double)) return new Range<T>(RangeFunctions.Double_Slice(_slice, new IntPtr(begin), _slice.length), DStringType.None);
+            else if (typeof(T) == typeof(Test.S1)) return new Range<T>(RangeFunctions.Test_s1_Slice(_slice, new IntPtr(begin), _slice.length), DStringType.None);
+            else if (typeof(T) == typeof(Test.S2)) return new Range<T>(RangeFunctions.Test_s2_Slice(_slice, new IntPtr(begin), _slice.length), DStringType.None);
+            else if (typeof(T) == typeof(Test.C1)) return new Range<T>(RangeFunctions.Test_c1_Slice(_slice, new IntPtr(begin), _slice.length), DStringType.None);
 
             else throw new TypeAccessException($"Range does not support type: {typeof(T).ToString()}");
         }
         public Range<T> Slice(long begin, long end) {
-            if (end > _slice.length.ToInt64()) {
+            if (end > (_strings?.Count ?? _slice.length.ToInt64())) {
                 throw new IndexOutOfRangeException("Value for parameter 'end' is greater than that length of the slice.");
             }
-            if (typeof(T) == typeof(bool)) return new Range<T>(RangeFunctions.Bool_Slice(_slice, new IntPtr(begin), new IntPtr(end)));
-            else if (typeof(T) == typeof(string) && _strings != null && _type == DStringType.None) return new Range<T>(_strings.Skip((int)begin));
+            if (typeof(T) == typeof(bool)) return new Range<T>(RangeFunctions.Bool_Slice(_slice, new IntPtr(begin), new IntPtr(end)), DStringType.None);
+            else if (typeof(T) == typeof(string) && _strings != null && _type == DStringType.None) return new Range<T>((IEnumerable<T>)_strings.Skip((int)begin).Take((int)end - (int)begin));
             else if (typeof(T) == typeof(string) && _strings == null && _type == DStringType._string) return new Range<T>(RangeFunctions.String_Slice(_slice, new IntPtr(begin), new IntPtr(end)), _type);
             else if (typeof(T) == typeof(string) && _strings == null && _type == DStringType._wstring) return new Range<T>(RangeFunctions.Wstring_Slice(_slice, new IntPtr(begin), new IntPtr(end)), _type);
             else if (typeof(T) == typeof(string) && _strings == null && _type == DStringType._dstring) return new Range<T>(RangeFunctions.Dstring_Slice(_slice, new IntPtr(begin), new IntPtr(end)), _type);
-            else if (typeof(T) == typeof(sbyte)) return new Range<T>(RangeFunctions.Byte_Slice(_slice, new IntPtr(begin), new IntPtr(end)));
-            else if (typeof(T) == typeof(byte)) return new Range<T>(RangeFunctions.Ubyte_Slice(_slice, new IntPtr(begin), new IntPtr(end)));
-            else if (typeof(T) == typeof(short)) return new Range<T>(RangeFunctions.Short_Slice(_slice, new IntPtr(begin), new IntPtr(end)));
-            else if (typeof(T) == typeof(ushort)) return new Range<T>(RangeFunctions.Ushort_Slice(_slice, new IntPtr(begin), new IntPtr(end)));
-            else if (typeof(T) == typeof(int)) return new Range<T>(RangeFunctions.Int_Slice(_slice, new IntPtr(begin), new IntPtr(end)));
-            else if (typeof(T) == typeof(uint)) return new Range<T>(RangeFunctions.Uint_Slice(_slice, new IntPtr(begin), new IntPtr(end)));
-            else if (typeof(T) == typeof(long)) return new Range<T>(RangeFunctions.Long_Slice(_slice, new IntPtr(begin), new IntPtr(end)));
-            else if (typeof(T) == typeof(ulong)) return new Range<T>(RangeFunctions.Ulong_Slice(_slice, new IntPtr(begin), new IntPtr(end)));
-            else if (typeof(T) == typeof(float)) return new Range<T>(RangeFunctions.Float_Slice(_slice, new IntPtr(begin), new IntPtr(end)));
-            else if (typeof(T) == typeof(double)) return new Range<T>(RangeFunctions.Double_Slice(_slice, new IntPtr(begin), new IntPtr(end)));
-            else if (typeof(T) == typeof(Test.S1)) return new Range<T>(RangeFunctions.Test_s1_Slice(_slice, new IntPtr(begin), new IntPtr(end)));
-            else if (typeof(T) == typeof(Test.S2)) return new Range<T>(RangeFunctions.Test_s2_Slice(_slice, new IntPtr(begin), new IntPtr(end)));
-            else if (typeof(T) == typeof(Test.C1)) return new Range<T>(RangeFunctions.Test_c1_Slice(_slice, new IntPtr(begin), new IntPtr(end)));
+            else if (typeof(T) == typeof(sbyte)) return new Range<T>(RangeFunctions.Byte_Slice(_slice, new IntPtr(begin), new IntPtr(end)), DStringType.None);
+            else if (typeof(T) == typeof(byte)) return new Range<T>(RangeFunctions.Ubyte_Slice(_slice, new IntPtr(begin), new IntPtr(end)), DStringType.None);
+            else if (typeof(T) == typeof(short)) return new Range<T>(RangeFunctions.Short_Slice(_slice, new IntPtr(begin), new IntPtr(end)), DStringType.None);
+            else if (typeof(T) == typeof(ushort)) return new Range<T>(RangeFunctions.Ushort_Slice(_slice, new IntPtr(begin), new IntPtr(end)), DStringType.None);
+            else if (typeof(T) == typeof(int)) return new Range<T>(RangeFunctions.Int_Slice(_slice, new IntPtr(begin), new IntPtr(end)), DStringType.None);
+            else if (typeof(T) == typeof(uint)) return new Range<T>(RangeFunctions.Uint_Slice(_slice, new IntPtr(begin), new IntPtr(end)), DStringType.None);
+            else if (typeof(T) == typeof(long)) return new Range<T>(RangeFunctions.Long_Slice(_slice, new IntPtr(begin), new IntPtr(end)), DStringType.None);
+            else if (typeof(T) == typeof(ulong)) return new Range<T>(RangeFunctions.Ulong_Slice(_slice, new IntPtr(begin), new IntPtr(end)), DStringType.None);
+            else if (typeof(T) == typeof(float)) return new Range<T>(RangeFunctions.Float_Slice(_slice, new IntPtr(begin), new IntPtr(end)), DStringType.None);
+            else if (typeof(T) == typeof(double)) return new Range<T>(RangeFunctions.Double_Slice(_slice, new IntPtr(begin), new IntPtr(end)), DStringType.None);
+            else if (typeof(T) == typeof(Test.S1)) return new Range<T>(RangeFunctions.Test_s1_Slice(_slice, new IntPtr(begin), new IntPtr(end)), DStringType.None);
+            else if (typeof(T) == typeof(Test.S2)) return new Range<T>(RangeFunctions.Test_s2_Slice(_slice, new IntPtr(begin), new IntPtr(end)), DStringType.None);
+            else if (typeof(T) == typeof(Test.C1)) return new Range<T>(RangeFunctions.Test_c1_Slice(_slice, new IntPtr(begin), new IntPtr(end)), DStringType.None);
+
+            else throw new TypeAccessException($"Range does not support type: {typeof(T).ToString()}");
+        }
+        private void Append(T value) {
+            if (typeof(T) == typeof(bool)) { this._slice = RangeFunctions.Bool_AppendValue(this._slice, (bool)(object)value); }
+            else if (typeof(T) == typeof(string) && this._strings != null && this._type == DStringType.None) { this._strings.Add((string)(object)value); }
+            else if (typeof(T) == typeof(string) && _strings == null && _type == DStringType._string) { _slice = RangeFunctions.String_AppendValue(_slice, SharedFunctions.CreateString((string)(object)value)); }
+            else if (typeof(T) == typeof(string) && _strings == null && _type == DStringType._wstring) { _slice = RangeFunctions.Wstring_AppendValue(_slice, SharedFunctions.CreateWstring((string)(object)value)); }
+            else if (typeof(T) == typeof(string) && _strings == null && _type == DStringType._dstring) { _slice = RangeFunctions.Dstring_AppendValue(_slice, SharedFunctions.CreateDstring((string)(object)value)); }
+            else if (typeof(T) == typeof(sbyte)) { this._slice = RangeFunctions.Byte_AppendValue(this._slice, (sbyte)(object)value); }
+            else if (typeof(T) == typeof(byte)) { this._slice = RangeFunctions.Ubyte_AppendValue(this._slice, (byte)(object)value); }
+            else if (typeof(T) == typeof(short)) { this._slice = RangeFunctions.Short_AppendValue(this._slice, (short)(object)value); }
+            else if (typeof(T) == typeof(ushort)) { this._slice = RangeFunctions.Ushort_AppendValue(this._slice, (ushort)(object)value); }
+            else if (typeof(T) == typeof(int)) { this._slice = RangeFunctions.Int_AppendValue(this._slice, (int)(object)value); }
+            else if (typeof(T) == typeof(uint)) { this._slice = RangeFunctions.Uint_AppendValue(this._slice, (uint)(object)value); }
+            else if (typeof(T) == typeof(long)) { this._slice = RangeFunctions.Long_AppendValue(this._slice, (long)(object)value); }
+            else if (typeof(T) == typeof(ulong)) { this._slice = RangeFunctions.Ulong_AppendValue(this._slice, (ulong)(object)value); }
+            else if (typeof(T) == typeof(float)) { this._slice = RangeFunctions.Float_AppendValue(this._slice, (float)(object)value); }
+            else if (typeof(T) == typeof(double)) { this._slice = RangeFunctions.Double_AppendValue(this._slice, (double)(object)value); }
+            else if (typeof(T) == typeof(Test.S1)) { this._slice = RangeFunctions.Test_s1_AppendValue(this._slice, (Test.S1)(object)value); }
+            else if (typeof(T) == typeof(Test.S2)) { this._slice = RangeFunctions.Test_s2_AppendValue(this._slice, (Test.S2)(object)value); }
+            else if (typeof(T) == typeof(Test.C1)) { this._slice = RangeFunctions.Test_c1_AppendValue(this._slice, (Test.C1)(object)value); }
 
             else throw new TypeAccessException($"Range does not support type: {typeof(T).ToString()}");
         }
         public static Range<T> operator +(Range<T> range, T value) {
-            if (typeof(T) == typeof(bool)) { range._slice = RangeFunctions.Bool_AppendValue(range._slice, (bool)(object)value); return range; }
-            else if (typeof(T) == typeof(string) && range._strings != null && range._type == DStringType.None) { range._strings.Add((string)(object)value); return range; }
-            else if (typeof(T) == typeof(string) && range._strings == null && range._type == DStringType._string) { range._slice = RangeFunctions.String_AppendValue(range._slice, SharedFunctions.CreateString((string)(object)value)); return range; }
-            else if (typeof(T) == typeof(string) && range._strings == null && range._type == DStringType._wstring) { range._slice = RangeFunctions.Wstring_AppendValue(range._slice, SharedFunctions.CreateWstring((string)(object)value)); return range; }
-            else if (typeof(T) == typeof(string) && range._strings == null && range._type == DStringType._dstring) { range._slice = RangeFunctions.Dstring_AppendValue(range._slice, SharedFunctions.CreateDstring((string)(object)value)); return range; }
-            else if (typeof(T) == typeof(sbyte)) { range._slice = RangeFunctions.Byte_AppendValue(range._slice, (sbyte)(object)value); return range; }
-            else if (typeof(T) == typeof(byte)) { range._slice = RangeFunctions.Ubyte_AppendValue(range._slice, (byte)(object)value); return range; }
-            else if (typeof(T) == typeof(short)) { range._slice = RangeFunctions.Short_AppendValue(range._slice, (short)(object)value); return range; }
-            else if (typeof(T) == typeof(ushort)) { range._slice = RangeFunctions.Ushort_AppendValue(range._slice, (ushort)(object)value); return range; }
-            else if (typeof(T) == typeof(int)) { range._slice = RangeFunctions.Int_AppendValue(range._slice, (int)(object)value); return range; }
-            else if (typeof(T) == typeof(uint)) { range._slice = RangeFunctions.Uint_AppendValue(range._slice, (uint)(object)value); return range; }
-            else if (typeof(T) == typeof(long)) { range._slice = RangeFunctions.Long_AppendValue(range._slice, (long)(object)value); return range; }
-            else if (typeof(T) == typeof(ulong)) { range._slice = RangeFunctions.Ulong_AppendValue(range._slice, (ulong)(object)value); return range; }
-            else if (typeof(T) == typeof(float)) { range._slice = RangeFunctions.Float_AppendValue(range._slice, (float)(object)value); return range; }
-            else if (typeof(T) == typeof(double)) { range._slice = RangeFunctions.Double_AppendValue(range._slice, (double)(object)value); return range; }
-            else if (typeof(T) == typeof(Test.S1)) { range._slice = RangeFunctions.Test_s1_AppendValue(range._slice, (Test.S1)(object)value); return range; }
-            else if (typeof(T) == typeof(Test.S2)) { range._slice = RangeFunctions.Test_s2_AppendValue(range._slice, (Test.S2)(object)value); return range; }
-            else if (typeof(T) == typeof(Test.C1)) { range._slice = RangeFunctions.Test_c1_AppendValue(range._slice, (Test.C1)(object)value); return range; }
-
-            else throw new TypeAccessException($"Range does not support type: {typeof(T).ToString()}");
+            range.Append(value);
+            return range;
         }
         public static Range<T> operator +(Range<T> range, Range<T> source) {
             if (typeof(T) == typeof(bool)) { range._slice = RangeFunctions.Bool_AppendSlice(range._slice, source._slice); return range; }
@@ -982,7 +1010,7 @@ namespace Autowrap {
             else throw new TypeAccessException($"Range does not support type: {typeof(T).ToString()}");
         }
         public IEnumerator<T> GetEnumerator() {
-            for(long i = 0; i < _slice.length.ToInt64(); i++) {
+            for(long i = 0; i < (_strings?.Count ?? _slice.length.ToInt64()); i++) {
                 if (typeof(T) == typeof(bool)) yield return (T)(object)RangeFunctions.Bool_Get(_slice, new IntPtr(i));
                 else if (typeof(T) == typeof(string) && _strings != null && _type == DStringType.None) yield return (T)(object)_strings[(int)i];
                 else if (typeof(T) == typeof(string) && _strings == null && _type == DStringType._string) yield return (T)(object)SharedFunctions.SliceToString(RangeFunctions.String_Get(_slice, new IntPtr(i)), DStringType._string);
@@ -1004,25 +1032,20 @@ namespace Autowrap {
 
             }
         }
+
         public static implicit operator T[](Range<T> slice) {
             return slice.ToArray();
         }
         public static implicit operator Range<T>(T[] array) {
-            var vs = new Range<T>(array.Length);
-            foreach(var t in array) {
-                vs += t;
-            }
-            return vs;
+            return new Range<T>(array);
         }
         public static implicit operator List<T>(Range<T> slice) {
             return new List<T>(slice.ToArray());
         }
         public static implicit operator Range<T>(List<T> array) {
-            var vs = new Range<T>(array.Count);
-            foreach(var t in array) {
-                vs += t;
-            }
-            return vs;
+            return new Range<T>(array);
         }
+
         System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => this.GetEnumerator();
-    }}
+    }
+}

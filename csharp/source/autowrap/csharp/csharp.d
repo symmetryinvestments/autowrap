@@ -170,22 +170,36 @@ public struct csharpRange {
         }
         public long Length => _strings?.Count ?? _slice.length.ToInt64();
 
-        internal Range(slice range, DStringType type = DStringType.None) {
+        internal Range(slice range, DStringType type) {
             this._slice = range;
             this._type = type;
         }
 
-        public Range(IEnumerable<string> strings) {
-            this._strings = new List<string>(strings);
+        public Range(IEnumerable<T> values) {
+            if (typeof(T) == typeof(string)) {
+                this._strings = new List<string>();
+                foreach(var t in values) {
+                    this._strings.Add((string)(object)t);
+                }
+            } else {
+                CreateSlice(values.Count());
+                foreach(var t in values) {
+                    this.Append(t);
+                }
+            }
         }
 
         public Range(long capacity = 0) {
+            CreateSlice(capacity);
+        }
+        private void CreateSlice(long capacity) {
 " ~ constructors ~ "
             else throw new TypeAccessException($\"Range does not support type: {typeof(T).ToString()}\");
         }
         ~Range() {
             SharedFunctions.ReleaseMemory(_slice.ptr);
         }
+
         public T this[long i] {
             get {
 " ~ getters ~ "
@@ -200,47 +214,45 @@ public struct csharpRange {
             else throw new TypeAccessException($\"Range does not support type: {typeof(T).ToString()}\");
         }
         public Range<T> Slice(long begin, long end) {
-            if (end > _slice.length.ToInt64()) {
+            if (end > (_strings?.Count ?? _slice.length.ToInt64())) {
                 throw new IndexOutOfRangeException(\"Value for parameter 'end' is greater than that length of the slice.\");
             }
 " ~ sliceRange ~ "
             else throw new TypeAccessException($\"Range does not support type: {typeof(T).ToString()}\");
         }
-        public static Range<T> operator +(Range<T> range, T value) {
+        private void Append(T value) {
 " ~ appendValues ~ "
             else throw new TypeAccessException($\"Range does not support type: {typeof(T).ToString()}\");
+        }
+        public static Range<T> operator +(Range<T> range, T value) {
+            range.Append(value);
+            return range;
         }
         public static Range<T> operator +(Range<T> range, Range<T> source) {
 " ~ appendArrays ~ "
             else throw new TypeAccessException($\"Range does not support type: {typeof(T).ToString()}\");
         }
         public IEnumerator<T> GetEnumerator() {
-            for(long i = 0; i < _slice.length.ToInt64(); i++) {
+            for(long i = 0; i < (_strings?.Count ?? _slice.length.ToInt64()); i++) {
 " ~ enumerators ~ "
             }
         }
+
         public static implicit operator T[](Range<T> slice) {
             return slice.ToArray();
         }
         public static implicit operator Range<T>(T[] array) {
-            var vs = new Range<T>(array.Length);
-            foreach(var t in array) {
-                vs += t;
-            }
-            return vs;
+            return new Range<T>(array);
         }
         public static implicit operator List<T>(Range<T> slice) {
             return new List<T>(slice.ToArray());
         }
         public static implicit operator Range<T>(List<T> array) {
-            var vs = new Range<T>(array.Count);
-            foreach(var t in array) {
-                vs += t;
-            }
-            return vs;
+            return new Range<T>(array);
         }
+
         System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => this.GetEnumerator();
-    }";
+    }" ~ newline;
     }
 }
 
@@ -478,27 +490,53 @@ private void generateProperties(T)(string libraryName, CSharpAggregate csagg) if
                 if (isProperty) {
                     string prop = string.init;
                     alias propertyType = ReturnType!(__traits(getOverloads, T, m)[0]);
-                    if (isArray!(propertyType)) {
+                    if (is(propertyType == string) || is(propertyType == wstring) || is(propertyType == dstring)) {
+                        prop = "        public string " ~ methodName ~ " { ";
+                    } else if (isArray!(propertyType)) {
                         prop = "        public Range<" ~ getCSharpInterfaceType(fullyQualifiedName!propertyType) ~ "> " ~ methodName ~ " { ";
                     } else {
                         prop = "        public " ~ getCSharpInterfaceType(fullyQualifiedName!propertyType) ~ " " ~ methodName ~ " { ";
                     }
                     if (propertyGet) {
-                        if (isArray!(propertyType)) {
-                            prop ~= "get => new Range<%3$s>(dlang_%1$s(%2$s)); ".format(methodInterfaceName, is(T == class) ? "this" : "ref this", getCSharpInterfaceType(fullyQualifiedName!propertyType));
+                        if (is(propertyType == string)) {
+                            prop ~= "get => SharedFunctions.SliceToString(dlang_%1$s(%2$sthis), DStringType._string);".format(methodInterfaceName, is(T == class) ? string.init : "ref ");
+                        } else if (is(propertyType == wstring)) {
+                            prop ~= "get => SharedFunctions.SliceToString(dlang_%1$s(%2$sthis), DStringType._wstring);".format(methodInterfaceName, is(T == class) ? string.init : "ref ");
+                        } else if (is(propertyType == dstring)) {
+                            prop ~= "get => SharedFunctions.SliceToString(dlang_%1$s(%2$sthis), DStringType._dstring);".format(methodInterfaceName, is(T == class) ? string.init : "ref ");
+                        } else if (is(propertyType == string[])) {
+                            prop ~= "get => new Range<%3$s>(dlang_%1$s(%2$sthis), DStringType._string); ".format(methodInterfaceName, is(T == class) ? string.init: "ref ", getCSharpInterfaceType(fullyQualifiedName!propertyType));
+                        } else if (is(propertyType == wstring[])) {
+                            prop ~= "get => new Range<%3$s>(dlang_%1$s(%2$sthis), DStringType._wstring); ".format(methodInterfaceName, is(T == class) ? string.init: "ref ", getCSharpInterfaceType(fullyQualifiedName!propertyType));
+                        } else if (is(propertyType == dstring[])) {
+                            prop ~= "get => new Range<%3$s>(dlang_%1$s(%2$sthis), DStringType._dstring); ".format(methodInterfaceName, is(T == class) ? string.init: "ref ", getCSharpInterfaceType(fullyQualifiedName!propertyType));
+                        } else if (isArray!(propertyType)) {
+                            prop ~= "get => new Range<%3$s>(dlang_%1$s(%2$sthis), DStringType.None); ".format(methodInterfaceName, is(T == class) ? string.init: "ref ", getCSharpInterfaceType(fullyQualifiedName!propertyType));
                         } else if (is(propertyType == class)) {
-                            prop ~= "get => new %3$s(dlang_%1$s(%2$s)); ".format(methodInterfaceName, is(T == class) ? "this" : "ref this", getCSharpInterfaceType(fullyQualifiedName!propertyType));
+                            prop ~= "get => new %3$s(dlang_%1$s(%2$sthis)); ".format(methodInterfaceName, is(T == class) ? string.init : "ref ", getCSharpInterfaceType(fullyQualifiedName!propertyType));
                         } else {
-                            prop ~= "get => dlang_%1$s(%2$s); ".format(methodInterfaceName, is(T == class) ? "this" : "ref this");
+                            prop ~= "get => dlang_%1$s(%2$sthis); ".format(methodInterfaceName, is(T == class) ? string.init : "ref ");
                         }
                     }
                     if (propertySet) {
-                        if (isArray!(propertyType)) {
-                            prop ~= "set => dlang_%1$s(%2$s, value.ToSlice()); ".format(methodInterfaceName, is(T == class) ? "this" : "ref this");
+                        if (is(propertyType == string)) {
+                            prop ~= "set => dlang_%1$s(this, SharedFunctions.CreateString(value));".format(methodInterfaceName, is(T == class) ? string.init : "ref ");
+                        } else if (is(propertyType == wstring)) {
+                            prop ~= "set => dlang_%1$s(this, SharedFunctions.CreateWstring(value));".format(methodInterfaceName, is(T == class) ? string.init : "ref ");
+                        } else if (is(propertyType == dstring)) {
+                            prop ~= "set => dlang_%1$s(this, SharedFunctions.CreateDstring(value));".format(methodInterfaceName, is(T == class) ? string.init : "ref ");
+                        } else if (is(propertyType == string[])) {
+                            prop ~= "set => dlang_%1$s(%2$sthis, value.ToSlice(DStringType._string)); ".format(methodInterfaceName, is(T == class) ? string.init : "ref ");
+                        } else if (is(propertyType == wstring[])) {
+                            prop ~= "set => dlang_%1$s(%2$sthis, value.ToSlice(DStringType._wstring)); ".format(methodInterfaceName, is(T == class) ? string.init : "ref ");
+                        } else if (is(propertyType == dstring[])) {
+                            prop ~= "set => dlang_%1$s(%2$sthis, value.ToSlice(DStringType._dstring)); ".format(methodInterfaceName, is(T == class) ? string.init : "ref ");
+                        } else if (isArray!(propertyType)) {
+                            prop ~= "set => dlang_%1$s(%2$sthis, value.ToSlice()); ".format(methodInterfaceName, is(T == class) ? string.init : "ref ");
                         } else if (is(propertyType == class)) {
-                            prop ~= "set => dlang_%1$s(%2$s, value); ".format(methodInterfaceName, is(T == class) ? "this" : "ref this");
+                            prop ~= "set => dlang_%1$s(%2$sthis, value); ".format(methodInterfaceName, is(T == class) ? string.init : "ref ");
                         } else {
-                            prop ~= "set => dlang_%1$s(%2$s, value); ".format(methodInterfaceName, is(T == class) ? "this" : "ref this");
+                            prop ~= "set => dlang_%1$s(%2$sthis, value); ".format(methodInterfaceName, is(T == class) ? string.init : "ref ");
                         }
                     }
                     prop ~= "}" ~ newline;
@@ -535,8 +573,14 @@ private void generateFields(T)(string libraryName, CSharpAggregate csagg) if (is
                     csagg.properties ~= "        public %2$s %3$s { get => SharedFunctions.SliceToString(dlang_%1$s_get(this), DStringType._wstring); set => dlang_%1$s_set(this, SharedFunctions.CreateWstring(value)); }".format(fieldNames[fc], getCSharpInterfaceType(fullyQualifiedName!(fieldTypes[fc])), getCSharpName(fieldNames[fc])) ~ newline;
                 } else if (is(fieldTypes[fc] == dstring)) {
                     csagg.properties ~= "        public %2$s %3$s { get => SharedFunctions.SliceToString(dlang_%1$s_get(this), DStringType._dstring); set => dlang_%1$s_set(this, SharedFunctions.CreateDstring(value)); }".format(fieldNames[fc], getCSharpInterfaceType(fullyQualifiedName!(fieldTypes[fc])), getCSharpName(fieldNames[fc])) ~ newline;
+                } else if (is(fieldTypes[fc] == string[])) {
+                    csagg.properties ~= "        public Range<%2$s> %3$s { get => new Range<%2$s>(dlang_%1$s_get(this), DStringType._string); set => dlang_%1$s_set(this, value.ToSlice(DStringType._string)); }".format(fieldNames[fc], getCSharpInterfaceType(fullyQualifiedName!(fieldTypes[fc])), getCSharpName(fieldNames[fc])) ~ newline;
+                } else if (is(fieldTypes[fc] == wstring[])) {
+                    csagg.properties ~= "        public Range<%2$s> %3$s { get => new Range<%2$s>(dlang_%1$s_get(this), DStringType._wstring); set => dlang_%1$s_set(this, value.ToSlice(DStringType._wstring)); }".format(fieldNames[fc], getCSharpInterfaceType(fullyQualifiedName!(fieldTypes[fc])), getCSharpName(fieldNames[fc])) ~ newline;
+                } else if (is(fieldTypes[fc] == dstring[])) {
+                    csagg.properties ~= "        public Range<%2$s> %3$s { get => new Range<%2$s>(dlang_%1$s_get(this), DStringType._dstring); set => dlang_%1$s_set(this, value.ToSlice(DStringType._dstring)); }".format(fieldNames[fc], getCSharpInterfaceType(fullyQualifiedName!(fieldTypes[fc])), getCSharpName(fieldNames[fc])) ~ newline;
                 } else if (isArray!(fieldTypes[fc])) {
-                    csagg.properties ~= "        public Range<%2$s> %3$s { get => new Range<%2$s>(dlang_%1$s_get(this)); set => dlang_%1$s_set(this, value.ToSlice()); }".format(fieldNames[fc], getCSharpInterfaceType(fullyQualifiedName!(fieldTypes[fc])), getCSharpName(fieldNames[fc])) ~ newline;
+                    csagg.properties ~= "        public Range<%2$s> %3$s { get => new Range<%2$s>(dlang_%1$s_get(this), DStringType.None); set => dlang_%1$s_set(this, value.ToSlice()); }".format(fieldNames[fc], getCSharpInterfaceType(fullyQualifiedName!(fieldTypes[fc])), getCSharpName(fieldNames[fc])) ~ newline;
                 } else if (is(fieldTypes[fc] == class)) {
                     csagg.properties ~= "        public %2$s %3$s { get => new %2$s(dlang_%1$s_get(this)); set => dlang_%1$s_set(this, value); }".format(fieldNames[fc], getCSharpInterfaceType(fullyQualifiedName!(fieldTypes[fc])), getCSharpName(fieldNames[fc])) ~ newline;
                 } else {
@@ -645,8 +689,14 @@ private void generateFunctions(Modules...)(string libraryName) if(allSatisfy!(is
                 funcStr ~= "            return SharedFunctions.SliceToString(dlang_ret, DStringType._wstring);" ~ newline;
             } else if (is(returnType == dstring)) {
                 funcStr ~= "            return SharedFunctions.SliceToString(dlang_ret, DStringType._dstring);" ~ newline;
+            } else if (is(returnType == string[])) {
+                funcStr ~= "            return new Range<%s>(dlang_ret, DStringType._string);".format(getCSharpInterfaceType(returnTypeStr)) ~ newline;
+            } else if (is(returnType == wstring[])) {
+                funcStr ~= "            return new Range<%s>(dlang_ret, DStringType._wstring);".format(getCSharpInterfaceType(returnTypeStr)) ~ newline;
+            } else if (is(returnType == dstring[])) {
+                funcStr ~= "            return new Range<%s>(dlang_ret, DStringType._dstring);".format(getCSharpInterfaceType(returnTypeStr)) ~ newline;
             } else if (isArray!(returnType)) {
-                funcStr ~= "            return new Range<%s>(dlang_ret);".format(getCSharpInterfaceType(returnTypeStr)) ~ newline;
+                funcStr ~= "            return new Range<%s>(dlang_ret, DStringType.None);".format(getCSharpInterfaceType(returnTypeStr)) ~ newline;
             } else {
                 funcStr ~= "            return dlang_ret;" ~ newline;
             }
@@ -791,10 +841,10 @@ private void generateRangeDef(T)(string libraryName) {
     rangeDef.functions ~= dllImportString.format(libraryName, getDLangSliceInterfaceName(fqn, "AppendSlice"));
     rangeDef.functions ~= externFuncString.format("return_slice_error", getCSharpMethodInterfaceName(fqn, "AppendSlice"), "slice dslice, slice array");
     rangeDef.constructors ~= "            else if (typeof(T) == typeof(%2$s)) this._slice = RangeFunctions.%1$s(new IntPtr(capacity));".format(getCSharpMethodInterfaceName(fqn, "Create"), getCSharpInterfaceType(fqn)) ~ newline;
-    rangeDef.sliceEnd ~= "            else if (typeof(T) == typeof(%2$s)) return new Range<T>(RangeFunctions.%1$s(_slice, new IntPtr(begin), _slice.length));".format(getCSharpMethodInterfaceName(fqn, "Slice"), getCSharpInterfaceType(fqn)) ~ newline;
-    rangeDef.sliceRange ~= "            else if (typeof(T) == typeof(%2$s)) return new Range<T>(RangeFunctions.%1$s(_slice, new IntPtr(begin), new IntPtr(end)));".format(getCSharpMethodInterfaceName(fqn, "Slice"), getCSharpInterfaceType(fqn)) ~ newline;
+    rangeDef.sliceEnd ~= "            else if (typeof(T) == typeof(%2$s)) return new Range<T>(RangeFunctions.%1$s(_slice, new IntPtr(begin), _slice.length), DStringType.None);".format(getCSharpMethodInterfaceName(fqn, "Slice"), getCSharpInterfaceType(fqn)) ~ newline;
+    rangeDef.sliceRange ~= "            else if (typeof(T) == typeof(%2$s)) return new Range<T>(RangeFunctions.%1$s(_slice, new IntPtr(begin), new IntPtr(end)), DStringType.None);".format(getCSharpMethodInterfaceName(fqn, "Slice"), getCSharpInterfaceType(fqn)) ~ newline;
     rangeDef.setters ~= "                else if (typeof(T) == typeof(%2$s)) RangeFunctions.%1$s(_slice, new IntPtr(i), (%2$s)(object)value);".format(getCSharpMethodInterfaceName(fqn, "Set"), getCSharpInterfaceType(fqn)) ~ newline;
-    rangeDef.appendValues ~= "            else if (typeof(T) == typeof(%2$s)) { range._slice = RangeFunctions.%1$s(range._slice, (%2$s)(object)value); return range; }".format(getCSharpMethodInterfaceName(fqn, "AppendValue"), getCSharpInterfaceType(fqn)) ~ newline;
+    rangeDef.appendValues ~= "            else if (typeof(T) == typeof(%2$s)) { this._slice = RangeFunctions.%1$s(this._slice, (%2$s)(object)value); }".format(getCSharpMethodInterfaceName(fqn, "AppendValue"), getCSharpInterfaceType(fqn)) ~ newline;
     rangeDef.appendArrays ~= "            else if (typeof(T) == typeof(%2$s)) { range._slice = RangeFunctions.%1$s(range._slice, source._slice); return range; }".format(getCSharpMethodInterfaceName(fqn, "AppendSlice"), getCSharpInterfaceType(fqn)) ~ newline;
     if (is(T == class) || is(T == interface)) {
         rangeDef.functions ~= dllImportString.format(libraryName, getDLangSliceInterfaceName(fqn, "Get"));
@@ -824,7 +874,7 @@ private void generateSliceBoilerplate(string libraryName) {
         rangeDef.setters ~= "                else if (typeof(T) == typeof(string) && _strings == null && _type == DStringType._" ~ dlangType ~ ") RangeFunctions." ~ csharpType ~ "_Set(_slice, new IntPtr(i), SharedFunctions.Create" ~ csharpType ~ "((string)(object)value));" ~ newline;
         rangeDef.sliceEnd ~= "            else if (typeof(T) == typeof(string) && _strings == null && _type == DStringType._" ~ dlangType ~ ") return new Range<T>(RangeFunctions." ~ csharpType ~ "_Slice(_slice, new IntPtr(begin), _slice.length), _type);" ~ newline;
         rangeDef.sliceRange ~= "            else if (typeof(T) == typeof(string) && _strings == null && _type == DStringType._" ~ dlangType ~ ") return new Range<T>(RangeFunctions." ~ csharpType ~ "_Slice(_slice, new IntPtr(begin), new IntPtr(end)), _type);" ~ newline;
-        rangeDef.appendValues ~= "            else if (typeof(T) == typeof(string) && range._strings == null && range._type == DStringType._" ~ dlangType ~ ") { range._slice = RangeFunctions." ~ csharpType ~ "_AppendValue(range._slice, SharedFunctions.Create" ~ csharpType ~ "((string)(object)value)); return range; }" ~ newline;
+        rangeDef.appendValues ~= "            else if (typeof(T) == typeof(string) && _strings == null && _type == DStringType._" ~ dlangType ~ ") { _slice = RangeFunctions." ~ csharpType ~ "_AppendValue(_slice, SharedFunctions.Create" ~ csharpType ~ "((string)(object)value)); }" ~ newline;
         rangeDef.appendArrays ~= "            else if (typeof(T) == typeof(string) && range._strings == null && range._type == DStringType._" ~ dlangType ~ ") { range._slice = RangeFunctions." ~ csharpType ~ "_AppendSlice(range._slice, source._slice); return range; }" ~ newline;
 
         rangeDef.functions ~= dllImportString.format(libraryName, "autowrap_csharp_" ~ csharpType ~ "_Create");
@@ -859,18 +909,18 @@ private void generateSliceBoilerplate(string libraryName) {
     rangeDef.enumerators ~= "                if (typeof(T) == typeof(bool)) yield return (T)(object)RangeFunctions.Bool_Get(_slice, new IntPtr(i));" ~ newline;
     rangeDef.getters ~= "                if (typeof(T) == typeof(bool)) return (T)(object)RangeFunctions.Bool_Get(_slice, new IntPtr(i));" ~ newline;
     rangeDef.setters ~= "                if (typeof(T) == typeof(bool)) RangeFunctions.Bool_Set(_slice, new IntPtr(i), (bool)(object)value);" ~ newline;
-    rangeDef.sliceEnd ~= "            if (typeof(T) == typeof(bool)) return new Range<T>(RangeFunctions.Bool_Slice(_slice, new IntPtr(begin), _slice.length));" ~ newline;
-    rangeDef.sliceRange ~= "            if (typeof(T) == typeof(bool)) return new Range<T>(RangeFunctions.Bool_Slice(_slice, new IntPtr(begin), new IntPtr(end)));" ~ newline;
-    rangeDef.appendValues ~= "            if (typeof(T) == typeof(bool)) { range._slice = RangeFunctions.Bool_AppendValue(range._slice, (bool)(object)value); return range; }" ~ newline;
+    rangeDef.sliceEnd ~= "            if (typeof(T) == typeof(bool)) return new Range<T>(RangeFunctions.Bool_Slice(_slice, new IntPtr(begin), _slice.length), DStringType.None);" ~ newline;
+    rangeDef.sliceRange ~= "            if (typeof(T) == typeof(bool)) return new Range<T>(RangeFunctions.Bool_Slice(_slice, new IntPtr(begin), new IntPtr(end)), DStringType.None);" ~ newline;
+    rangeDef.appendValues ~= "            if (typeof(T) == typeof(bool)) { this._slice = RangeFunctions.Bool_AppendValue(this._slice, (bool)(object)value); }" ~ newline;
     rangeDef.appendArrays ~= "            if (typeof(T) == typeof(bool)) { range._slice = RangeFunctions.Bool_AppendSlice(range._slice, source._slice); return range; }" ~ newline;
 
     rangeDef.enumerators ~= "                else if (typeof(T) == typeof(string) && _strings != null && _type == DStringType.None) yield return (T)(object)_strings[(int)i];" ~ newline;
     rangeDef.getters ~= "                else if (typeof(T) == typeof(string) && _strings != null && _type == DStringType.None) return (T)(object)_strings[(int)i];" ~ newline;
     rangeDef.setters ~= "                else if (typeof(T) == typeof(string) && _strings != null && _type == DStringType.None) _strings[(int)i] = (string)(object)value;" ~ newline;
-    rangeDef.sliceEnd ~= "            else if (typeof(T) == typeof(string) && _strings != null && _type == DStringType.None) return new Range<T>(_strings.Skip((int)begin));" ~ newline;
-    rangeDef.sliceRange ~= "            else if (typeof(T) == typeof(string) && _strings != null && _type == DStringType.None) return new Range<T>(_strings.Skip((int)begin));" ~ newline;
+    rangeDef.sliceEnd ~= "            else if (typeof(T) == typeof(string) && _strings != null && _type == DStringType.None) return new Range<T>((IEnumerable<T>)_strings.Skip((int)begin));" ~ newline;
+    rangeDef.sliceRange ~= "            else if (typeof(T) == typeof(string) && _strings != null && _type == DStringType.None) return new Range<T>((IEnumerable<T>)_strings.Skip((int)begin).Take((int)end - (int)begin));" ~ newline;
+    rangeDef.appendValues ~= "            else if (typeof(T) == typeof(string) && this._strings != null && this._type == DStringType.None) { this._strings.Add((string)(object)value); }" ~ newline;
     rangeDef.appendArrays ~= "            else if (typeof(T) == typeof(string) && range._strings != null && range._type == DStringType.None) { foreach(T s in source) range._strings.Add((string)(object)s); return range; }" ~ newline;
-    rangeDef.appendValues ~= "            else if (typeof(T) == typeof(string) && range._strings != null && range._type == DStringType.None) { range._strings.Add((string)(object)value); return range; }" ~ newline;
 
     generateStringBoilerplate("string", "String");
     generateStringBoilerplate("wstring", "Wstring");
