@@ -14,3 +14,11 @@ def test_twice_struct_func():
     assert s3.twice() == 6
     s4 = twice_struct_func(4)
     assert s4.twice() == 8
+
+
+def test_ctor():
+    from contract import MyStruct
+
+    assert MyStruct().i == 42
+    # TODO
+    # assert MyStruct(77).i == 77

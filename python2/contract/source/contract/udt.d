@@ -34,12 +34,13 @@ package PyObject* simple_struct_func(PyObject* self, PyObject *args) nothrow @no
         type.tp_name = &"MyType"[0];
         type.tp_basicsize = MyType.sizeof;
         type.tp_members = &members[0];
+
+        if(PyType_Ready(&type) < 0) {
+            PyErr_SetString(PyExc_TypeError, &"not ready"[0]);
+            return null;
+        }
     }
 
-    if(PyType_Ready(&type) < 0) {
-        PyErr_SetString(PyExc_TypeError, &"not ready"[0]);
-        return null;
-    }
 
     auto obj = pyObjectNew!MyType(&type);
     obj.i = 42;
@@ -77,8 +78,8 @@ package PyObject* twice_struct_func(PyObject* self, PyObject *args) nothrow @nog
     }
 
     static PyMethodDef[2] methods;
+    // can't use a function literal because they're not allowed to be extern(C)
     methods[0] = pyMethodDef!("twice")(&twice);
-
 
     static PyTypeObject type;
 
@@ -86,15 +87,20 @@ package PyObject* twice_struct_func(PyObject* self, PyObject *args) nothrow @nog
         type.tp_name = &"Twice"[0];
         type.tp_basicsize = Twice.sizeof;
         type.tp_methods = &methods[0];
-    }
 
-    if(PyType_Ready(&type) < 0) {
-        PyErr_SetString(PyExc_TypeError, &"not ready"[0]);
-        return null;
+        if(PyType_Ready(&type) < 0) {
+            PyErr_SetString(PyExc_TypeError, &"not ready"[0]);
+            return null;
+        }
     }
 
     auto obj = pyObjectNew!Twice(&type);
     obj.i = cast(int) PyLong_AsLong(arg);
 
     return cast(typeof(return)) obj;
+}
+
+
+struct MyStruct {
+    int i = 42;
 }

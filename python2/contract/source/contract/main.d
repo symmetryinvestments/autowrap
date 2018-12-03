@@ -29,6 +29,9 @@ mixin(
 
             simple_struct_func,
             twice_struct_func,
-        )
+        ),
+        Aggregates!(
+            MyStruct,
+        ),
     )
 );

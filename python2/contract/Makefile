@@ -1,7 +1,7 @@
 .PHONY: test
 
 test: contract.so
-	PYTHONPATH=$(PWD) pytest
+	PYTHONPATH=$(PWD) pytest -s -vv
 
 contract.so: libcontract.so
 	cp $< $@

@@ -15,15 +15,42 @@ struct Module {
 struct CFunctions(functions...) {
     alias symbols = functions;
     enum length = functions.length;
+
+    static string stringifySymbols() {
+        import std.array: join;
+
+        string[] ret;
+
+        static foreach(cfunction; symbols)
+            ret ~= __traits(identifier, cfunction);
+
+        return ret.join(", ");
+    }
 }
 
+/// A list of aggregates to wrap
+struct Aggregates(T...) {
+    alias Types = T;
+
+    static string stringifyTypes() {
+        import std.array: join;
+        string[] ret;
+
+        static foreach(T; Types)
+            ret ~= __traits(identifier, T);
+
+        return ret.join(", ");
+    }
+}
 
 /**
    A string mixin to reduce boilerplate when creating a Python module.
    Takes a module name and a variadic list of C functions to make
    available.
  */
-string createModuleMixin(Module module_, alias cfunctions)() if(isPython3) {
+string createModuleMixin(Module module_, alias cfunctions, alias aggregates)()
+    if(isPython3)
+{
     import std.format: format;
 
     enum ret = q{
@@ -41,9 +68,12 @@ string createModuleMixin(Module module_, alias cfunctions)() if(isPython3) {
                 CFunctions!(
                     %s
                 ),
+                Aggregates!(
+                    %s
+                )
             );
         }
-    }.format(module_.name, module_.name, symbols!cfunctions);
+    }.format(module_.name, module_.name, cfunctions.stringifySymbols, aggregates.stringifyTypes);
 
     return ret;
 }
@@ -66,20 +96,9 @@ string createModuleMixin(Module module_, alias cfunctions)() if(isPython2) {
                 ),
             );
         }
-    }.format(module_.name, module_.name, symbols!cfunctions);
+    }.format(module_.name, module_.name, cfunctions.stringifySymbols);
 
     return ret;
-}
-
-private string symbols(alias cfunctions)() {
-    import std.array: join;
-
-    string[] ret;
-
-    static foreach(cfunction; cfunctions.symbols)
-        ret ~= __traits(identifier, cfunction);
-
-    return ret.join(", ");
 }
 
 
@@ -87,17 +106,97 @@ private string symbols(alias cfunctions)() {
    Creates a Python3 module from the given C functions.
    Each function has the same name in Python.
  */
-auto createModule(Module module_, alias cfunctions)()
-    if(isPython3 && is(cfunctions == CFunctions!(A), A...))
+auto createModule(Module module_, alias cfunctions, alias aggregates)()
+    if(isPython3 &&
+       is(cfunctions == CFunctions!F, F...) &&
+       is(aggregates == Aggregates!T, T...))
 {
     static PyModuleDef moduleDef;
 
     auto pyMethodDefs = cFunctionsToPyMethodDefs!(cfunctions);
     moduleDef = pyModuleDef(module_.name.ptr, null /*doc*/, -1 /*size*/, pyMethodDefs);
 
-    return pyModuleCreate(&moduleDef);
+    auto module_ =  pyModuleCreate(&moduleDef);
+
+    static foreach(T; aggregates.Types) {
+        auto object = PythonType!T.object();
+        pyIncRef(object);
+        PyModule_AddObject(module_, &__traits(identifier, T)[0], object);
+    }
+
+    return module_;
 }
 
+
+/**
+   Creates storage for a `PyTypeObject` for each D type `T`.
+ */
+template PythonType(T) {
+    import std.traits: Fields;
+
+    PyTypeObject pyType;
+    private PyMemberDef[Fields!T.length + 1] members;
+
+    void init() {
+        import std.traits: Fields, FieldNameTuple;
+
+        if(pyType != pyType.init) return;
+
+        pyType.tp_name = &__traits(identifier, T)[0];
+        pyType.tp_basicsize = (PythonAggregate!T).sizeof;
+        pyType.tp_new = &PyType_GenericNew;
+        pyType.tp_init = &ctor;
+        pyType.tp_repr = &repr;
+
+        static foreach(i; 0 .. Fields!T.length) {
+            members[i].name = cast(typeof(PyMemberDef.name)) &FieldNameTuple!T[i][0];
+            members[i].type = MemberType.Int; // FIXME
+            members[i].offset = __traits(getMember, T, FieldNameTuple!T[i]).offsetof + PythonAggregate!T.original.offsetof;
+        }
+
+        pyType.tp_members = &members[0];
+
+        // TODO: methods
+
+        if(PyType_Ready(&pyType) < 0)
+            throw new Exception("Could not get type ready for `" ~ __traits(identifier, T) ~ "`");
+
+    }
+
+    PyObject* object() {
+        init;
+        return cast(PyObject*) &pyType;
+    }
+
+    extern(C) static PyObject* repr(PyObject* self_) {
+        import python: pyUnicodeDecodeUTF8;
+        import std.conv: text;
+
+        auto self = cast(PythonAggregate!T*) self_;
+        auto ret = text(self.original);
+        return pyUnicodeDecodeUTF8(ret.ptr, ret.length, null /*errors*/);
+    }
+
+    extern(C) static int ctor(PyObject* self_, PyObject* args, PyObject* kwargs) {
+        auto self = cast(PythonAggregate!T*) self_;
+        self.original = T();
+        // TODO: arguments
+        return 0;
+    }
+}
+
+
+
+/**
+   A Python extension type for a D aggregate T.
+ */
+struct PythonAggregate(T) {
+    alias Type = T;
+
+    mixin PyObjectHead;
+    T original;
+    alias original this;
+}
 
 /**
    Calls Py_InitModule. It's the Python2 way of creating a new Python module.
