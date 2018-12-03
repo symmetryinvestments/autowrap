@@ -106,7 +106,10 @@ template AllAggregates(Modules...) if(allSatisfy!(isModule, Modules)) {
         enum notAlreadyWrapped = !is(Type == Date) && !is(Type == DateTime);
     }
 
-    alias AllAggregates = Filter!(notAlreadyWrapped, copyables);
+    alias notWrapped = Filter!(notAlreadyWrapped, copyables);
+    alias public_ = Filter!(isPublicSymbol, notWrapped);
+
+    alias AllAggregates = public_;
 }
 
 private template AggregateDefinitionsInModules(Modules...) if(allSatisfy!(isModule, Modules)) {
@@ -292,8 +295,28 @@ private template isExportSymbol(alias S, Flag!"alwaysExport" alwaysExport = No.a
     import std.traits: isFunction;
 
     version(AutowrapAlwaysExport)
-        enum isExportSymbol = true;
+        enum isExportSymbol = isPublicSymbol!S;
     else
-        enum isExportSymbol = (alwaysExport || __traits(getProtection, S) == "export");
+        enum isExportSymbol = isPublicSymbol!S && (alwaysExport || __traits(getProtection, S) == "export");
+}
 
+private template isPublicSymbol(alias S) {
+    enum isPublicSymbol = __traits(getProtection, S) == "export" || __traits(getProtection, S) == "public";
+}
+
+
+@("24")
+@safe pure unittest {
+    import std.typecons: Yes;
+    import std.traits: fullyQualifiedName;
+    import std.meta: staticMap, AliasSeq;
+
+    alias functions = AllFunctions!(Module("not_public", Yes.alwaysExport));
+    enum FunctionName(alias F) = fullyQualifiedName!(F.symbol);
+    alias functionNames = staticMap!(FunctionName, functions);
+    static assert(functionNames == AliasSeq!("not_public.fun0"));
+
+    alias aggregates = AllAggregates!(Module("not_public", Yes.alwaysExport));
+    alias aggNames = staticMap!(fullyQualifiedName, aggregates);
+    static assert(aggNames == AliasSeq!("not_public.Public"));
 }
