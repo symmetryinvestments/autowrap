@@ -61,8 +61,7 @@ package PyObject* twice_struct_func(PyObject* self, PyObject *args) nothrow @nog
         }
     }
 
-    static extern(C) PyObject* twice(PyObject* self_, PyObject* args) {
-        auto self = cast(Twice*) self_;
+    static extern(C) PyObject* twice(Twice* self, PyObject* args) {
         return PyLong_FromLong(self.twice);
     }
 

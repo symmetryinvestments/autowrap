@@ -161,8 +161,18 @@ private auto pyModuleDef(A...)(auto ref A args) if(isPython3) {
    to Python (by calling std.string.toStringz or manually appending the null
    terminator).
  */
-auto pyMethodDef(string name, int flags = MethodArgs.Var | MethodArgs.Keywords, string doc = "")
-                (PyCFunction cfunction) pure
+auto pyMethodDef(string name, int flags = MethodArgs.Var | MethodArgs.Keywords, string doc = "", F)
+                (F cfunction) pure
 {
-    return PyMethodDef(name.ptr, cfunction, flags, doc.ptr);
+    import std.traits: ReturnType, Parameters, isPointer;
+    import std.meta: allSatisfy;
+
+    static assert(isPointer!(ReturnType!F),
+                  "C function method implementation must return a pointer");
+    static assert(allSatisfy!(isPointer, Parameters!F),
+                  "C function method implementation must take pointers");
+    static assert(Parameters!F.length == 2 || Parameters!F.length == 3,
+                  "C function method implementation must take 2 or 3 pointers");
+
+    return PyMethodDef(name.ptr, cast(PyCFunction) cfunction, flags, doc.ptr);
 }
