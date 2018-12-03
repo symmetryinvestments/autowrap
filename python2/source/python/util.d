@@ -144,7 +144,7 @@ template PythonType(T) {
 
         pyType.tp_name = &__traits(identifier, T)[0];
         pyType.tp_basicsize = (PythonAggregate!T).sizeof;
-        pyType.tp_flags = TypeFlags.Default;
+        pyType.tp_flags = TypeFlags.Default;  // this is important for Python2
         pyType.tp_new = &PyType_GenericNew;
         pyType.tp_init = &ctor;
         pyType.tp_repr = &repr;
