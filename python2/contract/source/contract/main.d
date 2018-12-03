@@ -27,7 +27,8 @@ mixin(
             throws_runtime_error,
             kwargs_count,
 
-            simple_struct,
+            simple_struct_func,
+            twice_struct_func,
         )
     )
 );

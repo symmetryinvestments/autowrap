@@ -11,7 +11,7 @@ import python;
 extern(C):
 
 
-package PyObject* simple_struct(PyObject* self, PyObject *args) nothrow @nogc {
+package PyObject* simple_struct_func(PyObject* self, PyObject *args) nothrow @nogc {
 
     static struct MyType {
         mixin PyObjectHead;
@@ -44,6 +44,58 @@ package PyObject* simple_struct(PyObject* self, PyObject *args) nothrow @nogc {
     auto obj = pyObjectNew!MyType(&type);
     obj.i = 42;
     obj.d = 33.3;
+
+    return cast(typeof(return)) obj;
+}
+
+
+package PyObject* twice_struct_func(PyObject* self, PyObject *args) nothrow @nogc {
+
+    import python.util: pyMethodDef;
+
+    static struct Twice {
+        mixin PyObjectHead;
+        int i;
+        int twice() @safe @nogc pure nothrow const {
+            return i * 2;
+        }
+    }
+
+    static extern(C) PyObject* twice(PyObject* self_, PyObject* args) {
+        auto self = cast(Twice*) self_;
+        return PyLong_FromLong(self.twice);
+    }
+
+    if(PyTuple_Size(args) != 1) {
+        PyErr_SetString(PyExc_TypeError, &"Must be used with one parameter"[0]);
+        return null;
+    }
+
+    auto arg = PyTuple_GetItem(args, 0);
+    if(arg is null) {
+        PyErr_SetString(PyExc_TypeError, &"Could not get 1st argument"[0]);
+        return null;
+    }
+
+    static PyMethodDef[2] methods;
+    methods[0] = pyMethodDef!("twice")(&twice);
+
+
+    static PyTypeObject type;
+
+    if(type == type.init) {
+        type.tp_name = &"Twice"[0];
+        type.tp_basicsize = Twice.sizeof;
+        type.tp_methods = &methods[0];
+    }
+
+    if(PyType_Ready(&type) < 0) {
+        PyErr_SetString(PyExc_TypeError, &"not ready"[0]);
+        return null;
+    }
+
+    auto obj = pyObjectNew!Twice(&type);
+    obj.i = cast(int) PyLong_AsLong(arg);
 
     return cast(typeof(return)) obj;
 }
