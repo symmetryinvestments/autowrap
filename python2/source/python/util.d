@@ -116,7 +116,7 @@ auto createModule(Module module_, alias cfunctions, alias aggregates)()
     auto pyMethodDefs = cFunctionsToPyMethodDefs!(cfunctions);
     moduleDef = pyModuleDef(module_.name.ptr, null /*doc*/, -1 /*size*/, pyMethodDefs);
 
-    auto module_ =  pyModuleCreate(&moduleDef);
+    auto module_ = pyModuleCreate(&moduleDef);
 
     static foreach(T; aggregates.Types) {
         auto object = PythonType!T.object();
@@ -226,19 +226,6 @@ private PyMethodDef* cFunctionsToPyMethodDefs(alias cfunctions)()
     return &methods[0];
 }
 
-
-/**
-   Create a Python3 module.
-   The strings are compile-time parameters to avoid passing GC-allocated memory
-   to Python (by calling std.string.toStringz or manually appending the null
-   terminator).
- */
-auto createModule(string name, string doc = "", long size = -1)(PyMethodDef[] methods) {
-    assert(methods[$-1] == PyMethodDef.init, "Methods array must end with a sentinel");
-    static PyModuleDef moduleDef;
-    moduleDef = pyModuleDef(name.ptr, doc.ptr, size, &methods[0]);
-    return pyModuleCreate(&moduleDef);
-}
 
 /**
    Helper function to get around the C syntax problem with
