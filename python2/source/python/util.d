@@ -78,7 +78,9 @@ string createModuleMixin(Module module_, alias cfunctions, alias aggregates)()
     return ret;
 }
 
-string createModuleMixin(Module module_, alias cfunctions)() if(isPython2) {
+string createModuleMixin(Module module_, alias cfunctions, alias aggregates)()
+    if(isPython2)
+{
     import std.format: format;
 
     enum ret = q{
@@ -94,9 +96,12 @@ string createModuleMixin(Module module_, alias cfunctions)() if(isPython2) {
                 CFunctions!(
                     %s
                 ),
+                Aggregates!(
+                    %s
+                ),
             );
         }
-    }.format(module_.name, module_.name, cfunctions.stringifySymbols);
+    }.format(module_.name, module_.name, cfunctions.stringifySymbols, aggregates.stringifyTypes);
 
     return ret;
 }
@@ -117,12 +122,7 @@ auto createModule(Module module_, alias cfunctions, alias aggregates)()
     moduleDef = pyModuleDef(module_.name.ptr, null /*doc*/, -1 /*size*/, pyMethodDefs);
 
     auto module_ = pyModuleCreate(&moduleDef);
-
-    static foreach(T; aggregates.Types) {
-        auto object = PythonType!T.object();
-        pyIncRef(object);
-        PyModule_AddObject(module_, &__traits(identifier, T)[0], object);
-    }
+    addModuleTypes!aggregates(module_);
 
     return module_;
 }
@@ -144,6 +144,7 @@ template PythonType(T) {
 
         pyType.tp_name = &__traits(identifier, T)[0];
         pyType.tp_basicsize = (PythonAggregate!T).sizeof;
+        pyType.tp_flags = TypeFlags.Default;
         pyType.tp_new = &PyType_GenericNew;
         pyType.tp_init = &ctor;
         pyType.tp_repr = &repr;
@@ -202,10 +203,21 @@ struct PythonAggregate(T) {
    Calls Py_InitModule. It's the Python2 way of creating a new Python module.
    Each function has the same name in Python.
  */
-void initModule(Module module_, alias cfunctions)()
-    if(isPython2 && is(cfunctions == CFunctions!(A), A...))
+void initModule(Module module_, alias cfunctions, alias aggregates)()
+    if(isPython2 &&
+       is(cfunctions == CFunctions!F, F...) &&
+       is(aggregates == Aggregates!T, T...))
 {
-    pyInitModule(&module_.name[0], cFunctionsToPyMethodDefs!(cfunctions));
+    auto module_ = pyInitModule(&module_.name[0], cFunctionsToPyMethodDefs!(cfunctions));
+    addModuleTypes!aggregates(module_);
+}
+
+private void addModuleTypes(alias aggregates)(PyObject* module_) {
+    static foreach(T; aggregates.Types) {
+        auto object = PythonType!T.object();
+        pyIncRef(object);
+        PyModule_AddObject(module_, &__traits(identifier, T)[0], object);
+    }
 }
 
 ///  Returns a PyMethodDef for each cfunction.

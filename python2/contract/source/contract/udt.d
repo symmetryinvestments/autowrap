@@ -34,13 +34,13 @@ package PyObject* simple_struct_func(PyObject* self, PyObject *args) nothrow @no
         type.tp_name = &"MyType"[0];
         type.tp_basicsize = MyType.sizeof;
         type.tp_members = &members[0];
+        type.tp_flags = TypeFlags.Default;
 
         if(PyType_Ready(&type) < 0) {
             PyErr_SetString(PyExc_TypeError, &"not ready"[0]);
             return null;
         }
     }
-
 
     auto obj = pyObjectNew!MyType(&type);
     obj.i = 42;
@@ -87,6 +87,7 @@ package PyObject* twice_struct_func(PyObject* self, PyObject *args) nothrow @nog
         type.tp_name = &"Twice"[0];
         type.tp_basicsize = Twice.sizeof;
         type.tp_methods = &methods[0];
+        type.tp_flags = TypeFlags.Default;
 
         if(PyType_Ready(&type) < 0) {
             PyErr_SetString(PyExc_TypeError, &"not ready"[0]);

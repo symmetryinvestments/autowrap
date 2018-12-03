@@ -45,6 +45,11 @@ enum MemberType {
     PySSizeT = T_PYSSIZET,
 }
 
+enum TypeFlags {
+    BaseType = Py_TPFLAGS_BASETYPE,
+    Default = Py_TPFLAGS_DEFAULT,
+}
+
 
 // Demacroify
 mixin template PyObjectHead() {
