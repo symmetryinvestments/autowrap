@@ -6,10 +6,12 @@ targetType "none"
 
 dependency ":reflection" version="*"
 dependency ":python" version="*"
+dependency ":pynih" version="*"
 dependency ":excel" version="*"
 
 subPackage "reflection"
 subPackage "python"
+subPackage "pynih"
 subPackage "excel"
 
 

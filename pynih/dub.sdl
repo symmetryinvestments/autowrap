@@ -1,3 +1,5 @@
-name "python"
+# Python NIH edition
+# A from scratch Python solution that doesn't depend on pyd
+name "pynih"
 
 targetType "library"
