@@ -84,30 +84,25 @@ private string symbols(alias cfunctions)() {
 
 
 /**
-   Creates a Python module from the given C functions.
+   Creates a Python3 module from the given C functions.
    Each function has the same name in Python.
  */
 auto createModule(Module module_, alias cfunctions)()
     if(isPython3 && is(cfunctions == CFunctions!(A), A...))
 {
-    // +1 due to the sentinel that Python uses to know when to
-    // stop incrementing through the pointer.
-    static PyMethodDef[cfunctions.length + 1] methods;
-
-    static foreach(i, cfunction; cfunctions.symbols) {
-        // TODO: make it possible to use a different name with a UDA
-        static assert(is(typeof(&cfunction): PyCFunction) ||
-                      is(typeof(&cfunction): PyCFunctionWithKeywords));
-        methods[i] = pyMethodDef!(__traits(identifier, cfunction))(cast(PyCFunction) &cfunction);
-    }
-
     static PyModuleDef moduleDef;
-    moduleDef = pyModuleDef(module_.name.ptr, null /*doc*/, -1 /*size*/, &methods[0]);
+
+    auto pyMethodDefs = cFunctionsToPyMethodDefs!(cfunctions);
+    moduleDef = pyModuleDef(module_.name.ptr, null /*doc*/, -1 /*size*/, pyMethodDefs);
 
     return pyModuleCreate(&moduleDef);
 }
 
 
+/**
+   Calls Py_InitModule. It's the Python2 way of creating a new Python module.
+   Each function has the same name in Python.
+ */
 void initModule(Module module_, alias cfunctions)()
     if(isPython2 && is(cfunctions == CFunctions!(A), A...))
 {
@@ -134,7 +129,7 @@ private PyMethodDef* cFunctionsToPyMethodDefs(alias cfunctions)()
 
 
 /**
-   Create a Python module.
+   Create a Python3 module.
    The strings are compile-time parameters to avoid passing GC-allocated memory
    to Python (by calling std.string.toStringz or manually appending the null
    terminator).
