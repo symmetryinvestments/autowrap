@@ -175,3 +175,12 @@ def test_wrap_all_other_string_as_param():
 def test_add_with_default():
     assert add_with_default(1, NotWrappedInt(2)) == 3
     assert add_with_default(1) == 43
+
+
+def test_struct_with_private_member():
+    from simple import StructWithPrivateMember
+
+    s = StructWithPrivateMember()
+    s.i = 42
+    with pytest.raises(AttributeError):
+        s.j = 5
