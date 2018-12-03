@@ -24,3 +24,9 @@ struct SafePureEtcStruct {
         return i * 2;
     }
 }
+
+
+struct StructWithPrivateMember {
+    int i;
+    private int j;
+}
