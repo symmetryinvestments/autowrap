@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 set -euo pipefail
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 CWD=$PWD
@@ -11,5 +11,5 @@ mv libcsharp-tests.so libcsharp-tests.x64.so
 rm -f libcsharp-tests.so
 dub run --config=emitCSharp
 dotnet build
-LD_LIBRARY_PATH=$DIR dotnet vstest ./bin/Debug/netcoreapp2.1/tests.dll
+LD_LIBRARY_PATH=$DIR dotnet test
 cd $CWD
