@@ -1,8 +1,6 @@
 language: d
-sudo: false
+sudo: required
 dist: xenial
-mono: none
-dotnet: 2.1
 
 matrix:
   include:
@@ -25,6 +23,11 @@ install:
   - virtualenv autowrapenv
   - source autowrapenv/bin/activate
   - pip install pytest
+  - wget -q https://packages.microsoft.com/config/ubuntu/16.04/packages-microsoft-prod.deb
+  - sudo dpkg -i packages-microsoft-prod.deb
+  - sudo apt-get install apt-transport-https
+  - sudo apt-get update
+  - sudo apt-get install dotnet-sdk-2.1
 
 env:
   - PYTHON_INCLUDE_DIR=/usr/include/python2.7
