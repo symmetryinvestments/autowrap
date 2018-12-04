@@ -67,7 +67,7 @@ private PyMethodDef* cFunctionsToPyMethodDefs(alias cfunctions)()
         // TODO: make it possible to use a different name with a UDA
         static assert(is(typeof(&cfunction): PyCFunction) ||
                       is(typeof(&cfunction): PyCFunctionWithKeywords),
-                      __traits(identifier, cfunction, " it not a Python C function"));
+                      __traits(identifier, cfunction) ~ " is not a Python C function");
 
         methods[i] = pyMethodDef!(__traits(identifier, cfunction))(cast(PyCFunction) &cfunction);
     }
