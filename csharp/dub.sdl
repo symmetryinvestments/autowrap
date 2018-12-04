@@ -4,4 +4,4 @@ authors "Adam Wilson"
 license "BSD"
 targetType "library"
 
-dependency "autowrap:reflection" path="../"
+dependency "autowrap:reflection" path="../reflection"
