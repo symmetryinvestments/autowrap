@@ -29,6 +29,7 @@ mixin(
 
             simple_struct_func,
             twice_struct_func,
+            struct_getset,
         ),
         Aggregates!(
             MyStruct,
