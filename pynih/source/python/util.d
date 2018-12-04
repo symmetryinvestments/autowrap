@@ -148,6 +148,7 @@ template PythonType(T) {
         _pyType.tp_new = &PyType_GenericNew;
         _pyType.tp_init = &ctor;
         _pyType.tp_repr = &repr;
+        _pyType.tp_str = &repr;
 
         static foreach(i; 0 .. Fields!T.length) {
             members[i].name = cast(typeof(PyMemberDef.name)) &FieldNameTuple!T[i][0];
@@ -158,10 +159,6 @@ template PythonType(T) {
         _pyType.tp_members = &members[0];
 
         // TODO: methods
-
-        if(PyType_Ready(&_pyType) < 0)
-            throw new Exception("Could not get type ready for `" ~ __traits(identifier, T) ~ "`");
-
     }
 
     PyObject* object() {
@@ -219,6 +216,11 @@ void initModule(Module module_, alias cfunctions, alias aggregates)()
 
 private void addModuleTypes(alias aggregates)(PyObject* module_) {
     static foreach(T; aggregates.Types) {
+
+        if(PyType_Ready(PythonType!T.pyType) < 0)
+            throw new Exception("Could not get type ready for `" ~ __traits(identifier, T) ~ "`");
+
+
         pyIncRef(PythonType!T.object);
         PyModule_AddObject(module_, &__traits(identifier, T)[0], PythonType!T.object);
     }
