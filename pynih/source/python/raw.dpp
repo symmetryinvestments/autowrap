@@ -124,6 +124,12 @@ void pyIncRef(PyObject* obj) @nogc nothrow {
 }
 
 // Demacroify
+void pyDecRef(PyObject* obj) @nogc nothrow {
+    // FIXME: d++ can't translate this due to `;` for an empty statement
+    // Py_DECREF(obj);
+}
+
+// Demacroify
 auto pyNone() @nogc nothrow {
     return Py_None;
 }

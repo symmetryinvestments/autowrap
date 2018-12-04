@@ -33,6 +33,7 @@ mixin(
             struct_getset,
 
             pyclass_int_double_struct,
+            pyclass_string_list_struct,
         ),
         Aggregates!(
             MyStruct,

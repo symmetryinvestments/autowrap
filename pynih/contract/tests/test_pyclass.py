@@ -16,3 +16,13 @@ def test_int_double_struct():
     assert s.i == 3
     s.d = 22.2
     assert s.d == 22.2
+
+
+def test_string_list_struct():
+    from contract import pyclass_string_list_struct
+
+    s = pyclass_string_list_struct(['foo', 'bar', 'baz'])
+    assert s.strings == ['foo', 'bar', 'baz']
+
+    s = pyclass_string_list_struct(['quux', 'toto'])
+    assert s.strings == ['quux', 'toto']

@@ -82,7 +82,7 @@ struct PythonAggregate(T) {
 }
 
 
-auto pythonClass(T)(auto ref T dobj) {
+auto pythonClass(T)(auto ref T dobj) if(__traits(identifier, T) == "SimpleStruct") {
 
     import python.raw: PyObject, PyObjectHead, PyGetSetDef, PyTypeObject, PyType_Ready,
         TypeFlags, PyErr_SetString, PyExc_TypeError,
@@ -147,6 +147,82 @@ auto pythonClass(T)(auto ref T dobj) {
     auto ret = pyObjectNew!PythonStruct(&type);
     ret.i = dobj.i;
     ret.d = dobj.d;
+
+    return cast(PyObject*) ret;
+}
+
+
+auto pythonClass(T)(auto ref T dobj) if(__traits(identifier, T) == "StringsStruct") {
+
+    import python.raw: PyObject, PyObjectHead, PyGetSetDef, PyTypeObject, PyType_Ready,
+        TypeFlags, PyErr_SetString, PyExc_TypeError,
+        pyObjectNew, PyList_New, PyList_SetItem, PyUnicode_FromStringAndSize;
+
+    static PyGetSetDef[2] getsets;
+
+    static struct PythonStruct {
+        mixin PyObjectHead;
+        PyObject* strings;
+    }
+
+    static extern(C) PyObject* getField0(PyObject* self_, void* closure) {
+        import python.raw: PyLong_FromLong, pyIncRef;
+
+        auto self = cast(PythonStruct*) self_;
+        pyIncRef(self.strings);
+
+        return self.strings;
+    }
+
+    static extern(C) int setField0(PyObject* self_, PyObject* value, void* closure) {
+        import python.raw: pyIncRef, pyDecRef, pyListCheck, PyErr_SetString, PyExc_TypeError;
+
+        auto self = cast(PythonStruct*) self_;
+
+        PyObject *tmp;
+
+        if(value is null) {
+            PyErr_SetString(PyExc_TypeError, "Cannot delete strings");
+            return -1;
+        }
+
+        if(!pyListCheck(value)) {
+            PyErr_SetString(PyExc_TypeError, "strings must be a list");
+            return -1;
+        }
+
+        tmp = self.strings;
+        pyIncRef(value);
+        self.strings = value;
+        pyDecRef(tmp);
+
+        return 0;
+    }
+
+    getsets[0].name = &"strings"[0];
+    getsets[0].get = &getField0;
+    getsets[0].set = &setField0;
+
+    static PyTypeObject type;
+
+    if(type == type.init) {
+        type.tp_name = &"SimpleStruct"[0];
+        type.tp_basicsize = PythonStruct.sizeof;
+        type.tp_flags = TypeFlags.Default;
+        type.tp_getset = &getsets[0];
+
+        if(PyType_Ready(&type) < 0) {
+            PyErr_SetString(PyExc_TypeError, &"not ready"[0]);
+            return null;
+        }
+    }
+
+    auto ret = pyObjectNew!PythonStruct(&type);
+    ret.strings = PyList_New(dobj.strings.length);
+
+    foreach(i, str; dobj.strings) {
+        PyList_SetItem(ret.strings, i, PyUnicode_FromStringAndSize(&str[0], str.length));
+    }
 
     return cast(PyObject*) ret;
 }
