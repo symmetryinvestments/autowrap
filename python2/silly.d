@@ -8,7 +8,8 @@ mixin(
         Module("silly"),
         CFunctions!(
             strlen_,
-        )
+        ),
+        Aggregates!(),
     )
 );
 

@@ -1,46 +1,18 @@
 /**
    This module contains D code for the contract tests between Python
-   and its C API.  The functions below are meant to document the
-   behaviour of said API when values are passed through the layer
-   between the two languages, be it as function parameters or return
-   values.
+   and its C API regarding scalars.  The functions below are meant to
+   document the behaviour of said API when values are passed through
+   the layer between the two languages, be it as function parameters
+   or return values.
  */
-module contract;
-
+module contract.scalars;
 
 import python;
 
 extern(C):
 
 
-mixin(
-    createModuleMixin!(
-        Module("contract"),
-        CFunctions!(
-            always_none,
-            the_answer,
-            one_bool_param_to_not,
-            one_int_param_to_times_two,
-            one_double_param_to_times_three,
-            one_string_param_to_length,
-            one_string_param_to_string,
-            one_string_param_to_string_manual_mem,
-            one_list_param,
-            one_tuple_param,
-            one_range_param,
-            one_list_param_to_list,
-            one_dict_param,
-            one_dict_param_to_dict,
-            add_days_to_date,
-            add_days_to_datetime,
-            throws_runtime_error,
-            kwargs_count,
-        )
-    )
-);
-
-
-private PyObject* always_none(PyObject* self, PyObject *args) nothrow @nogc {
+package PyObject* always_none(PyObject* self, PyObject *args) nothrow @nogc {
     pyIncRef(pyNone);
     return pyNone;
 }
@@ -48,7 +20,7 @@ private PyObject* always_none(PyObject* self, PyObject *args) nothrow @nogc {
 
 // Always returns 42. Takes no parameters.
 // Tests PyLongFromUnsignedLong.
-private PyObject* the_answer(PyObject* self, PyObject *args) nothrow @nogc {
+package PyObject* the_answer(PyObject* self, PyObject *args) nothrow @nogc {
 
     if(!PyArg_ParseTuple(args, ""))
         return null;
@@ -58,7 +30,7 @@ private PyObject* the_answer(PyObject* self, PyObject *args) nothrow @nogc {
 
 
 // returns the boolean opposite of the bool passed in
-private PyObject* one_bool_param_to_not(PyObject* self, PyObject *args) nothrow @nogc {
+package PyObject* one_bool_param_to_not(PyObject* self, PyObject *args) nothrow @nogc {
     if(PyTuple_Size(args) != 1) return null;
 
     auto arg = PyTuple_GetItem(args, 0);
@@ -72,7 +44,7 @@ private PyObject* one_bool_param_to_not(PyObject* self, PyObject *args) nothrow 
 
 
 // returns the number passed in multiplied by two
-private PyObject* one_int_param_to_times_two(PyObject* self, PyObject *args) nothrow @nogc {
+package PyObject* one_int_param_to_times_two(PyObject* self, PyObject *args) nothrow @nogc {
 
     long arg;
 
@@ -84,7 +56,7 @@ private PyObject* one_int_param_to_times_two(PyObject* self, PyObject *args) not
 
 
 // returns the number passed in multiplied by 3
-private PyObject* one_double_param_to_times_three(PyObject* self, PyObject *args) nothrow @nogc {
+package PyObject* one_double_param_to_times_three(PyObject* self, PyObject *args) nothrow @nogc {
 
     double arg;
 
@@ -96,7 +68,7 @@ private PyObject* one_double_param_to_times_three(PyObject* self, PyObject *args
 
 
 // returns the length of the single passed-in string
-private PyObject* one_string_param_to_length(PyObject* self, PyObject *args) nothrow @nogc {
+package PyObject* one_string_param_to_length(PyObject* self, PyObject *args) nothrow @nogc {
     import core.stdc.string: cstrlen = strlen;
 
     const char* arg;
@@ -110,7 +82,7 @@ private PyObject* one_string_param_to_length(PyObject* self, PyObject *args) not
 
 
 // appends "_suffix" to the string passed in
-private PyObject* one_string_param_to_string(PyObject* self, PyObject *args) nothrow {
+package PyObject* one_string_param_to_string(PyObject* self, PyObject *args) nothrow {
     import std.string: fromStringz;
 
     if(PyTuple_Size(args) != 1) {
@@ -146,7 +118,7 @@ private PyObject* one_string_param_to_string(PyObject* self, PyObject *args) not
 
 
 // appends "_suffix" to the string passed in without using the GC
-private PyObject* one_string_param_to_string_manual_mem(PyObject* self, PyObject *args) nothrow @nogc {
+package PyObject* one_string_param_to_string_manual_mem(PyObject* self, PyObject *args) nothrow @nogc {
     import std.string: fromStringz;
     import core.stdc.stdlib: malloc;
     import core.stdc.string: strlen;
@@ -191,7 +163,7 @@ private PyObject* one_string_param_to_string_manual_mem(PyObject* self, PyObject
 
 
 // takes a list and returns its length + 1
-private PyObject* one_list_param(PyObject* self, PyObject *args) nothrow {
+package PyObject* one_list_param(PyObject* self, PyObject *args) nothrow {
     if(PyTuple_Size(args) != 1) return null;
 
     auto arg = PyTuple_GetItem(args, 0);
@@ -206,7 +178,7 @@ private PyObject* one_list_param(PyObject* self, PyObject *args) nothrow {
 
 
 // takes a list and returns its length + 1
-private PyObject* one_list_param_to_list(PyObject* self, PyObject *args) nothrow {
+package PyObject* one_list_param_to_list(PyObject* self, PyObject *args) nothrow {
     if(PyTuple_Size(args) != 1) return null;
 
     auto arg = PyTuple_GetItem(args, 0);
@@ -227,7 +199,7 @@ private PyObject* one_list_param_to_list(PyObject* self, PyObject *args) nothrow
 
 
 // takes a tuple and returns its length + 2
-private PyObject* one_tuple_param(PyObject* self, PyObject *args) nothrow {
+package PyObject* one_tuple_param(PyObject* self, PyObject *args) nothrow {
     if(PyTuple_Size(args) != 1) return null;
 
     auto arg = PyTuple_GetItem(args, 0);
@@ -242,7 +214,7 @@ private PyObject* one_tuple_param(PyObject* self, PyObject *args) nothrow {
 
 
 // takes a range and returns its length + 3
-private PyObject* one_range_param(PyObject* self, PyObject *args) nothrow {
+package PyObject* one_range_param(PyObject* self, PyObject *args) nothrow {
     if(PyTuple_Size(args) != 1) return null;
 
     auto arg = PyTuple_GetItem(args, 0);
@@ -258,7 +230,7 @@ private PyObject* one_range_param(PyObject* self, PyObject *args) nothrow {
 
 
 // takes a range and returns its length + 3
-private PyObject* one_dict_param(PyObject* self, PyObject *args) nothrow {
+package PyObject* one_dict_param(PyObject* self, PyObject *args) nothrow {
     if(PyTuple_Size(args) != 1) return null;
 
     auto arg = PyTuple_GetItem(args, 0);
@@ -271,7 +243,7 @@ private PyObject* one_dict_param(PyObject* self, PyObject *args) nothrow {
 
 
 // takes a dict and returns a copy with an extra `"oops": "noooo"` in it
-private PyObject* one_dict_param_to_dict(PyObject* self, PyObject *args) nothrow {
+package PyObject* one_dict_param_to_dict(PyObject* self, PyObject *args) nothrow {
     if(PyTuple_Size(args) != 1) return null;
 
     auto arg = PyTuple_GetItem(args, 0);
@@ -302,7 +274,7 @@ private PyObject* one_dict_param_to_dict(PyObject* self, PyObject *args) nothrow
 
 
 // Adds a certain number of days to the passed in object
-private PyObject* add_days_to_date(PyObject* self, PyObject *args) {
+package PyObject* add_days_to_date(PyObject* self, PyObject *args) {
     import std.datetime: Date, days;
 
     if(PyTuple_Size(args) != 2) return null;
@@ -325,7 +297,7 @@ private PyObject* add_days_to_date(PyObject* self, PyObject *args) {
 
 
 // Adds a certain number of days to the passed in object
-private PyObject* add_days_to_datetime(PyObject* self, PyObject *args) {
+package PyObject* add_days_to_datetime(PyObject* self, PyObject *args) {
     import std.datetime: DateTime, days;
 
     if(PyTuple_Size(args) != 2) return null;
@@ -352,7 +324,7 @@ private PyObject* add_days_to_datetime(PyObject* self, PyObject *args) {
 
 
 
-private PyObject* throws_runtime_error(PyObject* self, PyObject *args) @nogc nothrow {
+package PyObject* throws_runtime_error(PyObject* self, PyObject *args) @nogc nothrow {
     enum str = "Generic runtime error";
     PyErr_SetString(PyExc_RuntimeError, str.ptr);
     return null;
@@ -360,7 +332,7 @@ private PyObject* throws_runtime_error(PyObject* self, PyObject *args) @nogc not
 
 
 // Returns the length of kwargs, which is a dict
-private PyObject* kwargs_count(PyObject* self, PyObject *args, PyObject* kwargs) @nogc nothrow {
+package PyObject* kwargs_count(PyObject* self, PyObject *args, PyObject* kwargs) @nogc nothrow {
     if(PyTuple_Size(args) != 2) {
         PyErr_BadArgument();
         return null;
