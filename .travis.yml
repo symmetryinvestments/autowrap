@@ -1,6 +1,7 @@
 language: d
 sudo: false
 dist: xenial
+dotnet: 2.1.500
 
 matrix:
   include:
