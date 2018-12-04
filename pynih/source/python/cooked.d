@@ -4,108 +4,7 @@
 module python.cooked;
 
 import python.raw;
-
-/// For a nicer API
-struct Module {
-    string name;
-}
-
-
-/// For a nicer API
-struct CFunctions(functions...) {
-    alias symbols = functions;
-    enum length = functions.length;
-
-    static string stringifySymbols() {
-        import std.array: join;
-
-        string[] ret;
-
-        static foreach(cfunction; symbols)
-            ret ~= __traits(identifier, cfunction);
-
-        return ret.join(", ");
-    }
-}
-
-/// A list of aggregates to wrap
-struct Aggregates(T...) {
-    alias Types = T;
-
-    static string stringifyTypes() {
-        import std.array: join;
-        string[] ret;
-
-        static foreach(T; Types)
-            ret ~= T.stringof;
-
-        return ret.join(", ");
-    }
-}
-
-/**
-   A string mixin to reduce boilerplate when creating a Python module.
-   Takes a module name and a variadic list of C functions to make
-   available.
- */
-string createModuleMixin(Module module_, alias cfunctions, alias aggregates)()
-    if(isPython3)
-{
-    import std.format: format;
-
-    enum ret = q{
-        // This is declared as an extern C variable in python.bindings.
-        // We declare it here to avoid linker errors.
-        export __gshared extern(C) PyDateTime_CAPI* PyDateTimeAPI;
-
-        import python: ModuleInitRet;
-
-        extern(C) export ModuleInitRet PyInit_%s() {
-            import python: pyDateTimeImport;
-            pyDateTimeImport;
-            return createModule!(
-                Module("%s"),
-                CFunctions!(
-                    %s
-                ),
-                Aggregates!(
-                    %s
-                )
-            );
-        }
-    }.format(module_.name, module_.name, cfunctions.stringifySymbols, aggregates.stringifyTypes);
-
-    return ret;
-}
-
-string createModuleMixin(Module module_, alias cfunctions, alias aggregates)()
-    if(isPython2)
-{
-    import std.format: format;
-
-    enum ret = q{
-        // This is declared as an extern C variable in python.bindings.
-        // We declare it here to avoid linker errors.
-        export __gshared extern(C) PyDateTime_CAPI* PyDateTimeAPI;
-
-        extern(C) export void init%s() {
-            import python: pyDateTimeImport, initModule;
-            pyDateTimeImport;
-            initModule!(
-                Module("%s"),
-                CFunctions!(
-                    %s
-                ),
-                Aggregates!(
-                    %s
-                ),
-            );
-        }
-    }.format(module_.name, module_.name, cfunctions.stringifySymbols, aggregates.stringifyTypes);
-
-    return ret;
-}
-
+import python.boilerplate: Module, CFunctions, Aggregates;
 
 /**
    Creates a Python3 module from the given C functions.
@@ -128,78 +27,6 @@ auto createModule(Module module_, alias cfunctions, alias aggregates)()
 }
 
 
-/**
-   Creates storage for a `PyTypeObject` for each D type `T`.
- */
-template PythonType(T) {
-    import std.traits: Fields;
-
-    private PyTypeObject _pyType;
-    private PyMemberDef[Fields!T.length + 1] members;
-
-    void init() {
-        import std.traits: Fields, FieldNameTuple;
-
-        if(_pyType != _pyType.init) return;
-
-        _pyType.tp_name = &__traits(identifier, T)[0];
-        _pyType.tp_basicsize = (PythonAggregate!T).sizeof;
-        _pyType.tp_flags = TypeFlags.Default;  // this is important for Python2
-        _pyType.tp_new = &PyType_GenericNew;
-        _pyType.tp_init = &ctor;
-        _pyType.tp_repr = &repr;
-        _pyType.tp_str = &repr;
-
-        static foreach(i; 0 .. Fields!T.length) {
-            members[i].name = cast(typeof(PyMemberDef.name)) &FieldNameTuple!T[i][0];
-            members[i].type = MemberType.Int; // FIXME
-            members[i].offset = __traits(getMember, T, FieldNameTuple!T[i]).offsetof + PythonAggregate!T.original.offsetof;
-        }
-
-        _pyType.tp_members = &members[0];
-
-        // TODO: methods
-    }
-
-    PyObject* object() {
-        init;
-        return cast(PyObject*) &_pyType;
-    }
-
-    PyTypeObject* pyType() {
-        init;
-        return &_pyType;
-    }
-
-    extern(C) static PyObject* repr(PyObject* self_) {
-        import python: pyUnicodeDecodeUTF8;
-        import std.conv: text;
-
-        auto self = cast(PythonAggregate!T*) self_;
-        auto ret = text(self.original);
-        return pyUnicodeDecodeUTF8(ret.ptr, ret.length, null /*errors*/);
-    }
-
-    extern(C) static int ctor(PyObject* self_, PyObject* args, PyObject* kwargs) {
-        auto self = cast(PythonAggregate!T*) self_;
-        self.original = T();
-        // TODO: arguments
-        return 0;
-    }
-}
-
-
-
-/**
-   A Python extension type for a D aggregate T.
- */
-struct PythonAggregate(T) {
-    alias Type = T;
-
-    mixin PyObjectHead;
-    T original;
-    alias original this;
-}
 
 /**
    Calls Py_InitModule. It's the Python2 way of creating a new Python module.
@@ -215,6 +42,8 @@ void initModule(Module module_, alias cfunctions, alias aggregates)()
 }
 
 private void addModuleTypes(alias aggregates)(PyObject* module_) {
+    import python.type: PythonType;
+
     static foreach(T; aggregates.Types) {
 
         if(PyType_Ready(PythonType!T.pyType) < 0)

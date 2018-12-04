@@ -53,6 +53,7 @@ enum TypeFlags {
 
 // Demacroify
 mixin template PyObjectHead() {
+    import python.raw: PyObject;
     PyObject_HEAD;
 }
 
