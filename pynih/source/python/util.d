@@ -37,7 +37,7 @@ struct Aggregates(T...) {
         string[] ret;
 
         static foreach(T; Types)
-            ret ~= __traits(identifier, T);
+            ret ~= T.stringof;
 
         return ret.join(", ");
     }
@@ -134,20 +134,20 @@ auto createModule(Module module_, alias cfunctions, alias aggregates)()
 template PythonType(T) {
     import std.traits: Fields;
 
-    PyTypeObject pyType;
+    private PyTypeObject _pyType;
     private PyMemberDef[Fields!T.length + 1] members;
 
     void init() {
         import std.traits: Fields, FieldNameTuple;
 
-        if(pyType != pyType.init) return;
+        if(_pyType != _pyType.init) return;
 
-        pyType.tp_name = &__traits(identifier, T)[0];
-        pyType.tp_basicsize = (PythonAggregate!T).sizeof;
-        pyType.tp_flags = TypeFlags.Default;  // this is important for Python2
-        pyType.tp_new = &PyType_GenericNew;
-        pyType.tp_init = &ctor;
-        pyType.tp_repr = &repr;
+        _pyType.tp_name = &__traits(identifier, T)[0];
+        _pyType.tp_basicsize = (PythonAggregate!T).sizeof;
+        _pyType.tp_flags = TypeFlags.Default;  // this is important for Python2
+        _pyType.tp_new = &PyType_GenericNew;
+        _pyType.tp_init = &ctor;
+        _pyType.tp_repr = &repr;
 
         static foreach(i; 0 .. Fields!T.length) {
             members[i].name = cast(typeof(PyMemberDef.name)) &FieldNameTuple!T[i][0];
@@ -155,18 +155,23 @@ template PythonType(T) {
             members[i].offset = __traits(getMember, T, FieldNameTuple!T[i]).offsetof + PythonAggregate!T.original.offsetof;
         }
 
-        pyType.tp_members = &members[0];
+        _pyType.tp_members = &members[0];
 
         // TODO: methods
 
-        if(PyType_Ready(&pyType) < 0)
+        if(PyType_Ready(&_pyType) < 0)
             throw new Exception("Could not get type ready for `" ~ __traits(identifier, T) ~ "`");
 
     }
 
     PyObject* object() {
         init;
-        return cast(PyObject*) &pyType;
+        return cast(PyObject*) &_pyType;
+    }
+
+    PyTypeObject* pyType() {
+        init;
+        return &_pyType;
     }
 
     extern(C) static PyObject* repr(PyObject* self_) {
@@ -214,9 +219,8 @@ void initModule(Module module_, alias cfunctions, alias aggregates)()
 
 private void addModuleTypes(alias aggregates)(PyObject* module_) {
     static foreach(T; aggregates.Types) {
-        auto object = PythonType!T.object();
-        pyIncRef(object);
-        PyModule_AddObject(module_, &__traits(identifier, T)[0], object);
+        pyIncRef(PythonType!T.object);
+        PyModule_AddObject(module_, &__traits(identifier, T)[0], PythonType!T.object);
     }
 }
 
@@ -231,7 +235,9 @@ private PyMethodDef* cFunctionsToPyMethodDefs(alias cfunctions)()
     static foreach(i, cfunction; cfunctions.symbols) {
         // TODO: make it possible to use a different name with a UDA
         static assert(is(typeof(&cfunction): PyCFunction) ||
-                      is(typeof(&cfunction): PyCFunctionWithKeywords));
+                      is(typeof(&cfunction): PyCFunctionWithKeywords),
+                      __traits(identifier, cfunction, " it not a Python C function"));
+
         methods[i] = pyMethodDef!(__traits(identifier, cfunction))(cast(PyCFunction) &cfunction);
     }
 

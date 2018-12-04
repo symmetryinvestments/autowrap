@@ -17,6 +17,7 @@ subPackage "excel"
 
 configuration "unittest" {
     targetType "executable"
+    targetPath "bin"
     targetName "ut"
     sourcePaths "python/source" "reflection/source" "tests/d_modules"
     importPaths "python/source" "reflection/source" "tests/d_modules"
@@ -26,6 +27,7 @@ configuration "unittest" {
 
 configuration "unittest-travis" {
     targetType "executable"
+    targetPath "bin"
     targetName "ut"
     sourcePaths "python/source" "reflection/source" "tests/d_modules"
     importPaths "python/source" "reflection/source" "tests/d_modules"
