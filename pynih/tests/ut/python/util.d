@@ -2,7 +2,7 @@ module ut.python.util;
 
 
 import unit_threaded;
-import python.util;
+import python.cooked;
 
 
 @("Aggregates.stringifyTypes with templated struct")

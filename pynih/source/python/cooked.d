@@ -1,9 +1,9 @@
 /**
    Helper functions to interact with the Python C API
  */
-module python.util;
+module python.cooked;
 
-import python.bindings;
+import python.raw;
 
 /// For a nicer API
 struct Module {

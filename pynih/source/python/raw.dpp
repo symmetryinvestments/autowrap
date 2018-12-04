@@ -1,7 +1,7 @@
 /**
    Python.d + D symbols instead of C macros
  */
-module python.bindings;
+module python.raw;
 
 
 #include "Python.h"
