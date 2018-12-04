@@ -17,8 +17,8 @@ subPackage "csharp"
 configuration "unittest" {
     targetType "executable"
     targetName "ut"
-    sourcePaths "python/source"
-    importPaths "python/source"
+    sourcePaths "python/source" "reflection/source" "tests/d_modules"
+    importPaths "python/source" "reflection/source" "tests/d_modules"
     versions "XllDummyGetter"
     dflags "-main"
 }
@@ -26,8 +26,8 @@ configuration "unittest" {
 configuration "unittest-travis" {
     targetType "executable"
     targetName "ut"
-    sourcePaths "python/source"
-    importPaths "python/source"
+    sourcePaths "python/source" "reflection/source" "tests/d_modules"
+    importPaths "python/source" "reflection/source" "tests/d_modules"
     versions "XllDummyGetter"
     dflags "-main"
     subConfiguration ":python" "python27"

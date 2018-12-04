@@ -1,0 +1,192 @@
+/**
+   Python.d + D symbols instead of C macros
+ */
+module python.bindings;
+
+
+#include "Python.h"
+#include "datetime.h"
+#include "structmember.h"
+
+
+enum isPython3 = is(PyModuleDef);
+enum isPython2 = !isPython3;
+
+
+/**
+    All of the enum cases are macros instead of values in an enum
+    so we make them available to D code with MethodArgs instead.
+*/
+enum MethodArgs {
+    Var = METH_VARARGS,
+    Keywords = METH_KEYWORDS,
+    None = METH_NOARGS,
+    O = METH_O,
+}
+
+enum MemberType {
+    Short = T_SHORT,
+    Int = T_INT,
+    Long = T_LONG,
+    Float = T_FLOAT,
+    Double = T_DOUBLE,
+    String = T_STRING,
+    Object = T_OBJECT,
+    ObjectEx = T_OBJECT_EX,
+    Char = T_CHAR,
+    Byte = T_BYTE,
+    UByte = T_UBYTE,
+    UInt = T_UINT,
+    UShort = T_USHORT,
+    ULong = T_ULONG,
+    Bool = T_BOOL,
+    LongLong = T_LONGLONG,
+    ULongLong = T_ULONGLONG,
+    PySSizeT = T_PYSSIZET,
+}
+
+enum TypeFlags {
+    BaseType = Py_TPFLAGS_BASETYPE,
+    Default = Py_TPFLAGS_DEFAULT,
+}
+
+
+// Demacroify
+mixin template PyObjectHead() {
+    PyObject_HEAD;
+}
+
+// Demacroify
+alias ModuleInitRet = PyMODINIT_FUNC;
+
+
+// Demacroify for Python2
+static if(isPython2) {
+
+    auto pyInitModule(const(char)* name, PyMethodDef* methods) {
+        return Py_InitModule(name, methods);
+    }
+}
+
+
+// Demacroify for Python3
+static if(isPython3) {
+    auto pyModuleCreate(PyModuleDef* moduleDef) @nogc nothrow {
+        return PyModule_Create(moduleDef);
+    }
+}
+
+// Demacroify
+bool pyListCheck(PyObject* obj) @nogc nothrow {
+    return PyList_Check(obj);
+}
+
+
+// Demacroify
+bool pyTupleCheck(PyObject* obj) @nogc nothrow {
+    return PyTuple_Check(obj);
+}
+
+
+// Demacroify
+bool pyDictCheck(PyObject *obj) @nogc nothrow {
+    return PyDict_Check(obj);
+}
+
+// Demacroify
+bool pyBoolCheck(PyObject *obj) @nogc nothrow {
+    return PyBool_Check(obj);
+}
+
+// Demacroify
+bool pyUnicodeCheck(PyObject* obj) @nogc nothrow {
+    return PyUnicode_Check(obj);
+
+}
+
+// Demacroify
+auto pyTrue() {
+    return Py_True;
+}
+
+// Demacroify
+auto pyFalse() {
+    return Py_False;
+}
+
+
+// Demacroify
+void pyIncRef(PyObject* obj) @nogc nothrow {
+    Py_INCREF(obj);
+}
+
+// Demacroify
+auto pyNone() @nogc nothrow {
+    return Py_None;
+}
+
+auto pyUnicodeDecodeUTF8(const(char)* str, c_long length, const(char)* errors = null) @nogc nothrow {
+    return PyUnicode_DecodeUTF8(str, length, errors);
+}
+
+auto pyUnicodeAsUtf8String(PyObject* obj) @nogc nothrow {
+    return PyUnicode_AsUTF8String(obj);
+}
+
+auto pyBytesAsString(PyObject* obj) @nogc nothrow {
+    return PyBytes_AsString(obj);
+}
+
+auto pyObjectUnicode(PyObject* obj) @nogc nothrow {
+    static if(isPython2)
+        return PyObject_Unicode(obj);
+    else
+        return obj;
+}
+
+auto pyObjectNew(T)(PyTypeObject* typeobj) {
+    return cast(T*) _PyObject_New(typeobj);
+}
+
+
+// Demacroify
+void pyDateTimeImport() @nogc nothrow {
+    PyDateTime_IMPORT;
+}
+
+auto pyDateTimeYear(PyObject* obj) @nogc nothrow {
+    return PyDateTime_GET_YEAR(obj);
+}
+
+auto pyDateTimeMonth(PyObject* obj) @nogc nothrow {
+    return PyDateTime_GET_MONTH(obj);
+}
+
+auto pyDateTimeDay(PyObject* obj) @nogc nothrow {
+    return PyDateTime_GET_DAY(obj);
+}
+
+auto pyDateTimeHour(PyObject* obj) @nogc nothrow {
+    return PyDateTime_DATE_GET_HOUR(obj);
+}
+
+auto pyDateTimeMinute(PyObject* obj) @nogc nothrow {
+    return PyDateTime_DATE_GET_MINUTE(obj);
+}
+
+auto pyDateTimeSecond(PyObject* obj) @nogc nothrow {
+    return PyDateTime_DATE_GET_SECOND(obj);
+}
+
+auto pyDateTimeUsec(PyObject* obj) @nogc nothrow {
+    return PyDateTime_DATE_GET_MICROSECOND(obj);
+}
+
+auto pyDateFromDate(int year, int month, int day) {
+    return PyDate_FromDate(year, month, day);
+}
+
+
+auto pyDateTimeFromDateAndTime(int year, int month, int day, int hour = 0, int minute = 0, int second = 0, int usec = 0) {
+    return PyDateTime_FromDateAndTime(year, month, day, hour, minute, second, usec);
+}

@@ -1,0 +1,8 @@
+*.o
+*.so
+*.dynlib
+*.dll
+*.lib
+*.exp
+__pycache__
+*.pyc
