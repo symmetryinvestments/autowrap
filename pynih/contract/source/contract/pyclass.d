@@ -93,3 +93,58 @@ package PyObject* pyclass_string_list_struct(PyObject* self, PyObject *args) {
 
     return pythonClass(StringsStruct(cast(string[]) strings));
 }
+
+
+package PyObject* pyclass_twice_struct(PyObject* self, PyObject *args) {
+    if(PyTuple_Size(args) != 1) {
+        PyErr_SetString(PyExc_TypeError, &"Wrong number of arguments"[0]);
+        return null;
+    }
+
+    auto arg = PyTuple_GetItem(args, 0);
+    if(arg is null) {
+        PyErr_SetString(PyExc_TypeError, &"Could not get first argument"[0]);
+        return null;
+    }
+
+    const darg = cast(int) PyLong_AsLong(arg);
+
+    static struct TwiceStruct {
+        int i;
+        int twice() @safe @nogc pure nothrow const {
+            return i * 2;
+        }
+    }
+
+    return pythonClass(TwiceStruct(darg));
+}
+
+
+package PyObject* pyclass_thrice_struct(PyObject* self, PyObject *args) {
+    if(PyTuple_Size(args) != 1) {
+        PyErr_SetString(PyExc_TypeError, &"Wrong number of arguments"[0]);
+        return null;
+    }
+
+    auto arg = PyTuple_GetItem(args, 0);
+    if(arg is null) {
+        PyErr_SetString(PyExc_TypeError, &"Could not get first argument"[0]);
+        return null;
+    }
+
+    const darg = PyFloat_AsDouble(arg);
+
+    static struct ThriceStruct {
+        double d;
+
+        double thrice() @safe @nogc pure nothrow const {
+            return d * 3;
+        }
+
+        double quadruple() @safe @nogc pure nothrow const {
+            return d * 4;
+        }
+    }
+
+    return pythonClass(ThriceStruct(darg));
+}

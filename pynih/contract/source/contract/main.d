@@ -34,6 +34,8 @@ mixin(
 
             pyclass_int_double_struct,
             pyclass_string_list_struct,
+            pyclass_twice_struct,
+            pyclass_thrice_struct,
         ),
         Aggregates!(
             MyStruct,

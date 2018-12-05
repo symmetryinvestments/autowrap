@@ -85,7 +85,7 @@ struct PythonAggregate(T) {
 
 
 struct NewPythonType(T) {
-    import python.raw: PyTypeObject, PyGetSetDef;
+    import python.raw: PyTypeObject;
     import std.traits: FieldNameTuple, Fields;
 
     alias fieldNames = FieldNameTuple!T;
@@ -110,20 +110,12 @@ struct NewPythonType(T) {
 
         if(_pyType != _pyType.init) return;
 
-        // +1 due to the sentinel
-        static PyGetSetDef[fieldNames.length + 1] getsets;
-
-        static foreach(i; 0 .. fieldNames.length) {
-            getsets[i].name = fieldNames[i];
-            getsets[i].get = &PythonClass!T.get!i;
-            getsets[i].set = &PythonClass!T.set!i;
-        }
-
         if(_pyType == _pyType.init) {
-            _pyType.tp_name = &"SimpleStruct"[0];
+            _pyType.tp_name = T.stringof;
             _pyType.tp_basicsize = PythonClass!T.sizeof;
             _pyType.tp_flags = TypeFlags.Default;
-            _pyType.tp_getset = &getsets[0];
+            _pyType.tp_getset = getsetDefs;
+            _pyType.tp_methods = methodDefs;
 
             if(PyType_Ready(&_pyType) < 0) {
                 PyErr_SetString(PyExc_TypeError, &"not ready"[0]);
@@ -131,9 +123,80 @@ struct NewPythonType(T) {
             }
         }
     }
+
+    private static auto getsetDefs() {
+        import python.raw: PyGetSetDef;
+
+        // +1 due to the sentinel
+        static PyGetSetDef[fieldNames.length + 1] getsets;
+
+        if(getsets != getsets.init) return &getsets[0];
+
+        static foreach(i; 0 .. fieldNames.length) {
+            getsets[i].name = fieldNames[i];
+            getsets[i].get = &PythonClass!T.get!i;
+            getsets[i].set = &PythonClass!T.set!i;
+        }
+
+        return &getsets[0];
+    }
+
+    private static auto methodDefs()() {
+        import python.raw: PyMethodDef;
+        import python.cooked: pyMethodDef;
+        import std.meta: AliasSeq, Alias, staticMap, Filter;
+        import std.traits: isSomeFunction;
+
+        alias memberNames = AliasSeq!(__traits(allMembers, T));
+        alias Member(string name) = Alias!(__traits(getMember, T, name));
+        alias members = staticMap!(Member, memberNames);
+        alias memberFunctions = Filter!(isSomeFunction, members);
+
+        // +1 due to sentinel
+        static PyMethodDef[memberFunctions.length + 1] methods;
+
+        if(methods != methods.init) return &methods[0];
+
+        static foreach(i, memberFunction; memberFunctions) {
+            methods[i] = pyMethodDef!(__traits(identifier, memberFunction))(&PythonMethod!(T, memberFunction).impl);
+        }
+
+        return &methods[0];
+    }
 }
 
 
+/**
+   The C API implementation of a Python method F of aggregate type T
+ */
+struct PythonMethod(T, alias F) {
+    static extern(C) PyObject* impl(PyObject* self_, PyObject* args, PyObject* kwargs) {
+        import python.raw: PyTuple_Size;
+        import python.conv: toPython, to;
+        import std.traits: Parameters;
+        import std.typecons: Tuple;
+
+        assert(PyTuple_Size(args) == Parameters!F.length);
+
+        Tuple!(Parameters!F) dArgs;
+
+        static foreach(i; 0 .. Parameters!F.length) {
+            dArgs[i] = PyTuple_GetItem(args, i).to!(Parameters!F[i]);
+        }
+
+        auto dAggregate = self_.to!T;
+
+        // e.g. `auto dRet = dAggregate.myMethod(dArgs[0], dArgs[1]);`
+        mixin(`auto dRet = dAggregate.`, __traits(identifier, F), `(dArgs.expand);`);
+
+        return dRet.toPython;
+    }
+}
+
+/**
+   Creates an instance of a Python class that is equivalent to the D type `T`.
+   Return PyObject*.
+ */
 auto pythonClass(T)(auto ref T dobj) {
 
     import python.conv: toPython;
@@ -216,7 +279,7 @@ struct PythonClass(T) {
         return 0;
     }
 
-    private PyObject* getField(int FieldIndex)() {
+    PyObject* getField(int FieldIndex)() {
         mixin(`return this.`, fieldNames[FieldIndex], `;`);
     }
 

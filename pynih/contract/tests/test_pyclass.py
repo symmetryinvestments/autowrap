@@ -1,4 +1,5 @@
 # coding=utf8
+import pytest
 
 
 def test_int_double_struct():
@@ -26,3 +27,25 @@ def test_string_list_struct():
 
     s = pyclass_string_list_struct(['quux', 'toto'])
     assert s.strings == ['quux', 'toto']
+
+
+def test_twice_struct():
+    from contract import pyclass_twice_struct
+
+    s = pyclass_twice_struct(3)
+    assert s.twice() == 6
+
+    s = pyclass_twice_struct(4)
+    assert s.twice() == 8
+
+
+def test_thrice_struct():
+    from contract import pyclass_thrice_struct
+
+    s = pyclass_thrice_struct(33.3)
+    assert s.thrice() == pytest.approx(99.9, 0.1)
+    assert s.quadruple() == pytest.approx(133.2, 0.1)
+
+    s = pyclass_thrice_struct(11.1)
+    assert s.thrice() == pytest.approx(33.3, 0.1)
+    assert s.quadruple() == pytest.approx(44.4, 0.1)
