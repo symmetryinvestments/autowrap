@@ -1,5 +1,5 @@
 #!/bin/bash
-set -euo pipefail
+#set -euo pipefail
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 CWD=$PWD
 
@@ -16,6 +16,10 @@ ls -la $CWD
 ls -la $PWD
 ls -la $DIR/bin/Debug/netcoreapp2.1
 
-LD_DEBUG=libs LD_LIBRARY_PATH=$DIR/bin/Debug/netcoreapp2.1 dotnet test
+LD_LIBRARY_PATH=$DIR/bin/Debug/netcoreapp2.1 dotnet test
+
+ls -la $CWD
+ls -la $PWD
+ls -la $DIR/bin/Debug/netcoreapp2.1
 
 cd $CWD
