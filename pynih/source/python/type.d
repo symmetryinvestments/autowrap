@@ -194,7 +194,7 @@ struct PythonMethod(T, alias F) {
         }
 
         assert(self_ !is null);
-        auto dAggregate = self_.to!T;
+        auto dAggregate = self_.to!(Unqual!T);
 
         static if(is(ReturnType!F == void))
             enum dret = "";
@@ -303,6 +303,7 @@ struct PythonClass(T) {
             return -1;
         }
 
+        // FIXME
         // if(!checkPythonType!(fieldTypes[FieldIndex])(value)) {
         //     return -1;
         // }

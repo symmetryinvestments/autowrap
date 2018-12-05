@@ -4,6 +4,7 @@ module python.conv;
 import python.raw: PyObject;
 import std.traits: Unqual, isIntegral, isFloatingPoint, isAggregateType, isArray, isStaticArray;
 import std.range: isInputRange;
+import std.datetime: DateTime, Date;
 
 
 PyObject* toPython(T)(T value) @trusted if(isIntegral!T) {
@@ -72,7 +73,9 @@ T to(T)(PyObject* value) @trusted if(isFloatingPoint!T) {
 }
 
 
-T to(T)(PyObject* value) if(isAggregateType!T) {
+private enum isDateOrDateTime(T) = is(Unqual!T == DateTime) || is(Unqual!T == Date);
+
+T to(T)(PyObject* value) if(isAggregateType!T && !isDateOrDateTime!T) {
     import python.type: PythonClass;
 
     auto pyclass = cast(PythonClass!T*) value;
@@ -84,6 +87,27 @@ T to(T)(PyObject* value) if(isAggregateType!T) {
     }
 
     return ret;
+}
+
+T to(T)(PyObject* value) if(is(Unqual!T == DateTime)) {
+    import python.raw;
+
+    return DateTime(pyDateTimeYear(value),
+                    pyDateTimeMonth(value),
+                    pyDateTimeDay(value),
+                    pyDateTimeHour(value),
+                    pyDateTimeMinute(value),
+                    pyDateTimeSecond(value));
+
+}
+
+
+T to(T)(PyObject* value) if(is(Unqual!T == Date)) {
+    import python.raw;
+
+    return Date(pyDateTimeYear(value),
+                pyDateTimeMonth(value),
+                pyDateTimeDay(value));
 }
 
 
