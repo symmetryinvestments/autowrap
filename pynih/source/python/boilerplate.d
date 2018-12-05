@@ -62,6 +62,7 @@ string createModuleMixin(Module module_, alias cfunctions, alias aggregates)()
         extern(C) export ModuleInitRet PyInit_%s() {
             import python.raw: pyDateTimeImport;
             import python.cooked: createModule;
+            import python.boilerplate: Module, CFunctions, Aggregates;
 
             pyDateTimeImport;
 
@@ -94,6 +95,7 @@ string createModuleMixin(Module module_, alias cfunctions, alias aggregates)()
 
         extern(C) export void init%s() {
             import python.raw: pyDateTimeImport, initModule;
+            import python.boilerplate: Module, CFunctions, Aggregates;
 
             pyDateTimeImport;
             initModule!(
