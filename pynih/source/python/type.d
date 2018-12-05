@@ -91,16 +91,10 @@ auto pythonClass(T)(auto ref T dobj) if(__traits(identifier, T) == "SimpleStruct
 
     static PyGetSetDef[3] getsets;
 
-    static struct PythonStruct {
-        mixin PyObjectHead;
-        PyObject* i;
-        PyObject* d;
-    }
-
     static extern(C) PyObject* getField0(PyObject* self_, void* closure) {
         import python.raw: pyIncRef;
 
-        auto self = cast(PythonStruct*) self_;
+        auto self = cast(PythonClass!T*) self_;
         pyIncRef(self.i);
 
         return self.i;
@@ -109,7 +103,7 @@ auto pythonClass(T)(auto ref T dobj) if(__traits(identifier, T) == "SimpleStruct
     static extern(C) int setField0(PyObject* self_, PyObject* value, void* closure) {
         import python.raw: pyIncRef, pyDecRef, pyLongCheck, PyErr_SetString, PyExc_TypeError;
 
-        auto self = cast(PythonStruct*) self_;
+        auto self = cast(PythonClass!T*) self_;
 
         PyObject *tmp;
 
@@ -138,7 +132,7 @@ auto pythonClass(T)(auto ref T dobj) if(__traits(identifier, T) == "SimpleStruct
     static extern(C) PyObject* getField1(PyObject* self_, void* closure) {
         import python.raw: pyIncRef;
 
-        auto self = cast(PythonStruct*) self_;
+        auto self = cast(PythonClass!T*) self_;
         pyIncRef(self.d);
 
         return self.d;
@@ -147,7 +141,7 @@ auto pythonClass(T)(auto ref T dobj) if(__traits(identifier, T) == "SimpleStruct
     static extern(C) int setField1(PyObject* self_, PyObject* value, void* closure) {
         import python.raw: pyIncRef, pyDecRef, pyFloatCheck, PyErr_SetString, PyExc_TypeError;
 
-        auto self = cast(PythonStruct*) self_;
+        auto self = cast(PythonClass!T*) self_;
 
         PyObject *tmp;
 
@@ -177,7 +171,7 @@ auto pythonClass(T)(auto ref T dobj) if(__traits(identifier, T) == "SimpleStruct
 
     if(type == type.init) {
         type.tp_name = &"SimpleStruct"[0];
-        type.tp_basicsize = PythonStruct.sizeof;
+        type.tp_basicsize = PythonClass!T.sizeof;
         type.tp_flags = TypeFlags.Default;
         type.tp_getset = &getsets[0];
 
@@ -187,7 +181,7 @@ auto pythonClass(T)(auto ref T dobj) if(__traits(identifier, T) == "SimpleStruct
         }
     }
 
-    auto ret = pyObjectNew!PythonStruct(&type);
+    auto ret = pyObjectNew!(PythonClass!T)(&type);
     ret.i = PyLong_FromLong(dobj.i);
     ret.d = PyFloat_FromDouble(dobj.d);
 
@@ -203,15 +197,10 @@ auto pythonClass(T)(auto ref T dobj) if(__traits(identifier, T) == "StringsStruc
 
     static PyGetSetDef[2] getsets;
 
-    static struct PythonStruct {
-        mixin PyObjectHead;
-        PyObject* strings;
-    }
-
     static extern(C) PyObject* getField0(PyObject* self_, void* closure) {
         import python.raw: pyIncRef;
 
-        auto self = cast(PythonStruct*) self_;
+        auto self = cast(PythonClass!T*) self_;
         pyIncRef(self.strings);
 
         return self.strings;
@@ -220,7 +209,7 @@ auto pythonClass(T)(auto ref T dobj) if(__traits(identifier, T) == "StringsStruc
     static extern(C) int setField0(PyObject* self_, PyObject* value, void* closure) {
         import python.raw: pyIncRef, pyDecRef, pyListCheck, PyErr_SetString, PyExc_TypeError;
 
-        auto self = cast(PythonStruct*) self_;
+        auto self = cast(PythonClass!T*) self_;
 
         PyObject *tmp;
 
@@ -250,7 +239,7 @@ auto pythonClass(T)(auto ref T dobj) if(__traits(identifier, T) == "StringsStruc
 
     if(type == type.init) {
         type.tp_name = &"SimpleStruct"[0];
-        type.tp_basicsize = PythonStruct.sizeof;
+        type.tp_basicsize = PythonClass!T.sizeof;
         type.tp_flags = TypeFlags.Default;
         type.tp_getset = &getsets[0];
 
@@ -260,7 +249,7 @@ auto pythonClass(T)(auto ref T dobj) if(__traits(identifier, T) == "StringsStruc
         }
     }
 
-    auto ret = pyObjectNew!PythonStruct(&type);
+    auto ret = pyObjectNew!(PythonClass!T)(&type);
     ret.strings = PyList_New(dobj.strings.length);
 
     foreach(i, str; dobj.strings) {
@@ -268,4 +257,23 @@ auto pythonClass(T)(auto ref T dobj) if(__traits(identifier, T) == "StringsStruc
     }
 
     return cast(PyObject*) ret;
+}
+
+
+/**
+   A Python class that mirrors the D type `T`.
+ */
+struct PythonClass(T) {
+    import python.raw: PyObjectHead;
+    import std.traits: FieldNameTuple;
+
+    alias fieldNames = FieldNameTuple!T;
+
+    // Every python object must have this
+    mixin PyObjectHead;
+    // Generate a python object field for every field in T
+    static foreach(fieldName; fieldNames) {
+        mixin(`PyObject* `, fieldName, `;`);
+    }
+
 }
