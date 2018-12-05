@@ -19,6 +19,8 @@ def test_int_double_struct():
     assert s.d == 22.2
 
     assert str(type(s)) == u"<class 'SimpleStruct'>"
+    assert repr(s) == u'SimpleStruct(3, 22.2)'
+    assert str(s) == u'SimpleStruct(3, 22.2)'
 
 
 def test_string_list_struct():
@@ -31,6 +33,8 @@ def test_string_list_struct():
     assert s.strings == ['quux', 'toto']
 
     assert str(type(s)) == u"<class 'StringsStruct'>"
+    assert repr(s) == u'StringsStruct(["quux", "toto"])'
+    assert str(s) == u'StringsStruct(["quux", "toto"])'
 
 
 def test_twice_struct():
@@ -43,6 +47,8 @@ def test_twice_struct():
     assert s.twice() == 8
 
     assert str(type(s)) == u"<class 'TwiceStruct'>"
+    assert repr(s) == u'TwiceStruct(4)'
+    assert str(s) == u'TwiceStruct(4)'
 
 
 def test_thrice_struct():
@@ -57,3 +63,5 @@ def test_thrice_struct():
     assert s.quadruple() == pytest.approx(44.4, 0.1)
 
     assert str(type(s)) == u"<class 'ThriceStruct'>"
+    assert repr(s) == u'ThriceStruct(11.1)'
+    assert str(s) == u'ThriceStruct(11.1)'

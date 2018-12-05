@@ -116,6 +116,7 @@ struct NewPythonType(T) {
             _pyType.tp_flags = TypeFlags.Default;
             _pyType.tp_getset = getsetDefs;
             _pyType.tp_methods = methodDefs;
+            _pyType.tp_repr = &repr;
 
             if(PyType_Ready(&_pyType) < 0) {
                 PyErr_SetString(PyExc_TypeError, &"not ready"[0]);
@@ -158,11 +159,22 @@ struct NewPythonType(T) {
         if(methods != methods.init) return &methods[0];
 
         static foreach(i, memberFunction; memberFunctions) {
-            methods[i] = pyMethodDef!(__traits(identifier, memberFunction))(&PythonMethod!(T, memberFunction).impl);
+            methods[i] = pyMethodDef!(__traits(identifier, memberFunction))
+                                     (&PythonMethod!(T, memberFunction).impl);
         }
 
         return &methods[0];
     }
+
+    private static extern(C) PyObject* repr(PyObject* self_) {
+        import python: pyUnicodeDecodeUTF8;
+        import python.conv: to;
+        import std.conv: text;
+
+        auto ret = text(self_.to!T);
+        return pyUnicodeDecodeUTF8(ret.ptr, ret.length, null /*errors*/);
+    }
+
 }
 
 
@@ -192,6 +204,7 @@ struct PythonMethod(T, alias F) {
         return dRet.toPython;
     }
 }
+
 
 /**
    Creates an instance of a Python class that is equivalent to the D type `T`.

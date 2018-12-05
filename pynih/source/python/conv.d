@@ -2,7 +2,7 @@ module python.conv;
 
 
 import python.raw: PyObject;
-import std.traits: isIntegral, isFloatingPoint, isAggregateType;
+import std.traits: isIntegral, isFloatingPoint, isAggregateType, isArray;
 
 
 PyObject* toPython(int value) @trusted {
@@ -59,4 +59,35 @@ T to(T)(PyObject* value) if(isAggregateType!T) {
     }
 
     return ret;
+}
+
+
+T to(T)(PyObject* value) if(isArray!T && !is(T == string)) {
+    import python.raw: PyList_Size, PyList_GetItem;
+    import std.range: ElementType;
+
+    T ret;
+    ret.length = PyList_Size(value);
+
+    foreach(i, ref elt; ret) {
+        elt = PyList_GetItem(value, i).to!(ElementType!T);
+    }
+
+    return ret;
+}
+
+
+T to(T)(PyObject* value) if(is(T == string)) {
+    import python.raw: PyUnicode_AsUnicodeAndSize, pyUnicodeCheck,
+        pyBytesAsString, pyObjectUnicode, pyUnicodeAsUtf8String, Py_ssize_t;
+
+    value = pyObjectUnicode(value);
+
+    Py_ssize_t length;
+    PyUnicode_AsUnicodeAndSize(value, &length);
+
+    auto ptr = pyBytesAsString(pyUnicodeAsUtf8String(value));
+    assert(length == 0 || ptr !is null);
+
+    return ptr[0 .. length].idup;
 }
