@@ -110,6 +110,7 @@ struct StructUserCtor {
     int i = 42;
     double d = 33.3;
     string s = "foobar";
+    private int _shouldBeOk;
 
     this(int i, string s) {
         this.i = i;

@@ -3,8 +3,10 @@
  */
 module python.type;
 
+
 import python.raw: PyObject;
 import std.traits: isArray, isIntegral, isBoolean, isFloatingPoint;
+import std.datetime: DateTime, Date;
 
 
 /**
@@ -80,8 +82,10 @@ struct PythonType(T) {
         import std.traits: isSomeFunction;
 
         alias memberNames = AliasSeq!(__traits(allMembers, T));
+        enum ispublic(string name) = isPublic!(T, name);
+        alias publicMemberNames = Filter!(ispublic, memberNames);
         alias Member(string name) = Alias!(__traits(getMember, T, name));
-        alias members = staticMap!(Member, memberNames);
+        alias members = staticMap!(Member, publicMemberNames);
         alias memberFunctions = Filter!(isSomeFunction, members);
 
         // +1 due to sentinel
@@ -212,12 +216,18 @@ PyObject* pythonClass(T)(auto ref T dobj) {
     auto ret = pyObjectNew!(PythonClass!T)(PythonType!T.pyType);
 
     static foreach(fieldName; FieldNameTuple!T) {
-        mixin(`ret.`, fieldName, ` = dobj.`, fieldName, `.toPython;`);
+        static if(isPublic!(T, fieldName))
+            mixin(`ret.`, fieldName, ` = dobj.`, fieldName, `.toPython;`);
     }
 
     return cast(PyObject*) ret;
 }
 
+
+private template isPublic(T, string memberName) {
+    enum protection = __traits(getProtection, __traits(getMember, T, memberName));
+    enum isPublic = protection == "public" || protection == "export";
+}
 
 /**
    A Python class that mirrors the D type `T`.
@@ -275,9 +285,9 @@ struct PythonClass(T) {
             return -1;
         }
 
-        if(!checkPythonType!(fieldTypes[FieldIndex])(value)) {
-            return -1;
-        }
+        // if(!checkPythonType!(fieldTypes[FieldIndex])(value)) {
+        //     return -1;
+        // }
 
         assert(self_ !is null);
         auto self = cast(PythonClass!T*) self_;
@@ -322,6 +332,23 @@ private bool checkPythonType(T)(PyObject* value) if(isFloatingPoint!T) {
     if(!ret) setPyErrTypeString!"float";
     return ret;
 }
+
+
+private bool checkPythonType(T)(PyObject* value) if(is(T == DateTime)) {
+    import python.raw: pyDateTimeCheck;
+    const ret = pyDateTimeCheck(value);
+    if(!ret) setPyErrTypeString!"DateTime";
+    return ret;
+}
+
+
+private bool checkPythonType(T)(PyObject* value) if(is(T == Date)) {
+    import python.raw: pyDateCheck;
+    const ret = pyDateCheck(value);
+    if(!ret) setPyErrTypeString!"Date";
+    return ret;
+}
+
 
 
 private void setPyErrTypeString(string type)() @trusted @nogc nothrow {
