@@ -91,15 +91,6 @@ auto pythonClass(T)(auto ref T dobj) if(__traits(identifier, T) == "SimpleStruct
 
     static PyGetSetDef[3] getsets;
 
-    static extern(C) PyObject* getField0(PyObject* self_, void* closure) {
-        import python.raw: pyIncRef;
-
-        auto self = cast(PythonClass!T*) self_;
-        pyIncRef(self.i);
-
-        return self.i;
-    }
-
     static extern(C) int setField0(PyObject* self_, PyObject* value, void* closure) {
         import python.raw: pyIncRef, pyDecRef, pyLongCheck, PyErr_SetString, PyExc_TypeError;
 
@@ -126,17 +117,8 @@ auto pythonClass(T)(auto ref T dobj) if(__traits(identifier, T) == "SimpleStruct
     }
 
     getsets[0].name = &"i"[0];
-    getsets[0].get = &getField0;
+    getsets[0].get = &PythonClass!T.get!0;
     getsets[0].set = &setField0;
-
-    static extern(C) PyObject* getField1(PyObject* self_, void* closure) {
-        import python.raw: pyIncRef;
-
-        auto self = cast(PythonClass!T*) self_;
-        pyIncRef(self.d);
-
-        return self.d;
-    }
 
     static extern(C) int setField1(PyObject* self_, PyObject* value, void* closure) {
         import python.raw: pyIncRef, pyDecRef, pyFloatCheck, PyErr_SetString, PyExc_TypeError;
@@ -164,7 +146,7 @@ auto pythonClass(T)(auto ref T dobj) if(__traits(identifier, T) == "SimpleStruct
     }
 
     getsets[1].name = &"d"[0];
-    getsets[1].get = &getField1;
+    getsets[1].get = &PythonClass!T.get!1;
     getsets[1].set = &setField1;
 
     static PyTypeObject type;
@@ -197,15 +179,6 @@ auto pythonClass(T)(auto ref T dobj) if(__traits(identifier, T) == "StringsStruc
 
     static PyGetSetDef[2] getsets;
 
-    static extern(C) PyObject* getField0(PyObject* self_, void* closure) {
-        import python.raw: pyIncRef;
-
-        auto self = cast(PythonClass!T*) self_;
-        pyIncRef(self.strings);
-
-        return self.strings;
-    }
-
     static extern(C) int setField0(PyObject* self_, PyObject* value, void* closure) {
         import python.raw: pyIncRef, pyDecRef, pyListCheck, PyErr_SetString, PyExc_TypeError;
 
@@ -232,7 +205,7 @@ auto pythonClass(T)(auto ref T dobj) if(__traits(identifier, T) == "StringsStruc
     }
 
     getsets[0].name = &"strings"[0];
-    getsets[0].get = &getField0;
+    getsets[0].get = &PythonClass!T.get!0;
     getsets[0].set = &setField0;
 
     static PyTypeObject type;
@@ -262,6 +235,17 @@ auto pythonClass(T)(auto ref T dobj) if(__traits(identifier, T) == "StringsStruc
 
 /**
    A Python class that mirrors the D type `T`.
+   For instance, this struct:
+   ----------
+   struct Foo {
+       int i;
+       string s;
+   }
+   ----------
+
+   Will generate a Python class called `Foo` with two members, and trying to
+   assign anything but an integer to `Foo.i` or a string to `Foo.s` in Python
+   will raise `TypeError`.
  */
 struct PythonClass(T) {
     import python.raw: PyObjectHead;
@@ -274,6 +258,19 @@ struct PythonClass(T) {
     // Generate a python object field for every field in T
     static foreach(fieldName; fieldNames) {
         mixin(`PyObject* `, fieldName, `;`);
+    }
+
+    private static extern(C) PyObject* get(int FieldIndex)(PyObject* self_, void* closure) {
+        import python.raw: pyIncRef;
+
+        auto self = cast(PythonClass*) self_;
+        pyIncRef(self.getField!FieldIndex);
+
+        return self.getField!FieldIndex;
+    }
+
+    private PyObject* getField(int FieldIndex)() {
+        mixin(`return this.`, fieldNames[FieldIndex], `;`);
     }
 
 }
