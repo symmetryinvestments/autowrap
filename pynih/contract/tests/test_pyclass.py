@@ -18,6 +18,8 @@ def test_int_double_struct():
     s.d = 22.2
     assert s.d == 22.2
 
+    assert str(type(s)) == u"<class 'SimpleStruct'>"
+
 
 def test_string_list_struct():
     from contract import pyclass_string_list_struct
@@ -28,6 +30,8 @@ def test_string_list_struct():
     s = pyclass_string_list_struct(['quux', 'toto'])
     assert s.strings == ['quux', 'toto']
 
+    assert str(type(s)) == u"<class 'StringsStruct'>"
+
 
 def test_twice_struct():
     from contract import pyclass_twice_struct
@@ -37,6 +41,8 @@ def test_twice_struct():
 
     s = pyclass_twice_struct(4)
     assert s.twice() == 8
+
+    assert str(type(s)) == u"<class 'TwiceStruct'>"
 
 
 def test_thrice_struct():
@@ -49,3 +55,5 @@ def test_thrice_struct():
     s = pyclass_thrice_struct(11.1)
     assert s.thrice() == pytest.approx(33.3, 0.1)
     assert s.quadruple() == pytest.approx(44.4, 0.1)
+
+    assert str(type(s)) == u"<class 'ThriceStruct'>"
