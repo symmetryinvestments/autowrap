@@ -104,8 +104,16 @@ bool pyBoolCheck(PyObject *obj) @nogc nothrow {
 // Demacroify
 bool pyUnicodeCheck(PyObject* obj) @nogc nothrow {
     return PyUnicode_Check(obj);
-
 }
+
+bool pyLongCheck(PyObject* obj) @nogc nothrow {
+    return PyLong_Check(obj);
+}
+
+bool pyFloatCheck(PyObject* obj) @nogc nothrow {
+    return PyFloat_Check(obj);
+}
+
 
 // Demacroify
 auto pyTrue() {

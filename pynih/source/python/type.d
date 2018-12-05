@@ -86,26 +86,48 @@ auto pythonClass(T)(auto ref T dobj) if(__traits(identifier, T) == "SimpleStruct
 
     import python.raw: PyObject, PyObjectHead, PyGetSetDef, PyTypeObject, PyType_Ready,
         TypeFlags, PyErr_SetString, PyExc_TypeError,
-        pyObjectNew;
+        pyObjectNew, PyLong_FromLong, PyFloat_FromDouble
+        ;
 
     static PyGetSetDef[3] getsets;
 
     static struct PythonStruct {
         mixin PyObjectHead;
-        int i;
-        double d;
+        PyObject* i;
+        PyObject* d;
     }
 
     static extern(C) PyObject* getField0(PyObject* self_, void* closure) {
-        import python.raw: PyLong_FromLong;
+        import python.raw: pyIncRef;
+
         auto self = cast(PythonStruct*) self_;
-        return PyLong_FromLong(self.i);
+        pyIncRef(self.i);
+
+        return self.i;
     }
 
     static extern(C) int setField0(PyObject* self_, PyObject* value, void* closure) {
-        import python.raw: PyLong_AsLong;
+        import python.raw: pyIncRef, pyDecRef, pyLongCheck, PyErr_SetString, PyExc_TypeError;
+
         auto self = cast(PythonStruct*) self_;
-        self.i = cast(int) PyLong_AsLong(value);
+
+        PyObject *tmp;
+
+        if(value is null) {
+            PyErr_SetString(PyExc_TypeError, "Cannot delete i");
+            return -1;
+        }
+
+        if(!pyLongCheck(value)) {
+            PyErr_SetString(PyExc_TypeError, "i must be a long");
+            return -1;
+        }
+
+        tmp = self.i;
+        pyIncRef(value);
+        self.i = value;
+        pyDecRef(tmp);
+
         return 0;
     }
 
@@ -114,15 +136,36 @@ auto pythonClass(T)(auto ref T dobj) if(__traits(identifier, T) == "SimpleStruct
     getsets[0].set = &setField0;
 
     static extern(C) PyObject* getField1(PyObject* self_, void* closure) {
-        import python.raw: PyFloat_FromDouble;
+        import python.raw: pyIncRef;
+
         auto self = cast(PythonStruct*) self_;
-        return PyFloat_FromDouble(self.d);
+        pyIncRef(self.d);
+
+        return self.d;
     }
 
     static extern(C) int setField1(PyObject* self_, PyObject* value, void* closure) {
-        import python.raw: PyFloat_AsDouble;
+        import python.raw: pyIncRef, pyDecRef, pyFloatCheck, PyErr_SetString, PyExc_TypeError;
+
         auto self = cast(PythonStruct*) self_;
-        self.d = PyFloat_AsDouble(value);
+
+        PyObject *tmp;
+
+        if(value is null) {
+            PyErr_SetString(PyExc_TypeError, "Cannot delete d");
+            return -1;
+        }
+
+        if(!pyFloatCheck(value)) {
+            PyErr_SetString(PyExc_TypeError, "i must be a float");
+            return -1;
+        }
+
+        tmp = self.d;
+        pyIncRef(value);
+        self.d = value;
+        pyDecRef(tmp);
+
         return 0;
     }
 
@@ -145,8 +188,8 @@ auto pythonClass(T)(auto ref T dobj) if(__traits(identifier, T) == "SimpleStruct
     }
 
     auto ret = pyObjectNew!PythonStruct(&type);
-    ret.i = dobj.i;
-    ret.d = dobj.d;
+    ret.i = PyLong_FromLong(dobj.i);
+    ret.d = PyFloat_FromDouble(dobj.d);
 
     return cast(PyObject*) ret;
 }
@@ -166,7 +209,7 @@ auto pythonClass(T)(auto ref T dobj) if(__traits(identifier, T) == "StringsStruc
     }
 
     static extern(C) PyObject* getField0(PyObject* self_, void* closure) {
-        import python.raw: PyLong_FromLong, pyIncRef;
+        import python.raw: pyIncRef;
 
         auto self = cast(PythonStruct*) self_;
         pyIncRef(self.strings);
