@@ -187,8 +187,8 @@ struct PythonType(T) {
     }
 
     private static extern(C) PyObject* new_(PyTypeObject *type, PyObject* args, PyObject* kwargs) {
-        import python.conv: toPython;
-        import python.raw: PyTuple_Size, PyErr_SetString, PyExc_TypeError;
+        import python.conv: toPython, to;
+        import python.raw: PyTuple_Size, PyTuple_GetItem;
         import std.traits: hasMember;
         import std.meta: AliasSeq;
 
@@ -198,16 +198,23 @@ struct PythonType(T) {
             return toPython(T());
 
         // TODO: parameters
-
         static if(hasMember!(T, "__ctor"))
             alias constructors = AliasSeq!(__traits(getOverloads, T, "__ctor"));
         else
             alias constructors = AliasSeq!();
 
         static if(constructors.length == 0) {
-            enum str = "Cannot call constructor on " ~T.stringof;
-            PyErr_SetString(PyExc_TypeError, str);
-            return null;
+
+            import std.typecons: Tuple;
+
+            Tuple!fieldTypes dArgs;
+
+            static foreach(i; 0 .. T.tupleof.length) {
+                dArgs[i] = PyTuple_GetItem(args, i).to!(fieldTypes[i]);
+            }
+
+            return toPython(T(dArgs.expand));
+
         } else {
 
             return toPython(T());
@@ -217,6 +224,8 @@ struct PythonType(T) {
 
     }
 }
+
+private alias Type(alias A) = typeof(A);
 
 
 /**

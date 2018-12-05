@@ -44,10 +44,8 @@ def test_struct_getset():
     assert s.inner.d == 55.5
 
 
-def test_ctor():
+def test_default_ctor():
     from contract import MyStruct
 
     assert MyStruct().i == 42
-    # FIXME
-    with pytest.raises(TypeError):
-        assert MyStruct(77).i == 77
+    assert MyStruct(77).i == 77
