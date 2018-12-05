@@ -84,6 +84,56 @@ struct PythonAggregate(T) {
 }
 
 
+struct NewPythonType(T) {
+    import python.raw: PyTypeObject, PyGetSetDef;
+    import std.traits: FieldNameTuple, Fields;
+
+    alias fieldNames = FieldNameTuple!T;
+    alias fieldTypes = Fields!T;
+
+    static PyTypeObject _pyType;
+    static bool failedToReady;
+
+    static PyObject* pyObject() {
+        initialise;
+        return failedToReady ? null : cast(PyObject*) &_pyType;
+    }
+
+    static PyTypeObject* pyType() {
+        initialise;
+        return failedToReady ? null : &_pyType;
+    }
+
+    private static void initialise() {
+        import python.raw: PyType_GenericNew, PyType_Ready, TypeFlags,
+            PyErr_SetString, PyExc_TypeError;
+
+        if(_pyType != _pyType.init) return;
+
+        // +1 due to the sentinel
+        static PyGetSetDef[fieldNames.length + 1] getsets;
+
+        static foreach(i; 0 .. fieldNames.length) {
+            getsets[i].name = fieldNames[i];
+            getsets[i].get = &PythonClass!T.get!i;
+            getsets[i].set = &PythonClass!T.set!i;
+        }
+
+        if(_pyType == _pyType.init) {
+            _pyType.tp_name = &"SimpleStruct"[0];
+            _pyType.tp_basicsize = PythonClass!T.sizeof;
+            _pyType.tp_flags = TypeFlags.Default;
+            _pyType.tp_getset = &getsets[0];
+
+            if(PyType_Ready(&_pyType) < 0) {
+                PyErr_SetString(PyExc_TypeError, &"not ready"[0]);
+                failedToReady = true;
+            }
+        }
+    }
+}
+
+
 auto pythonClass(T)(auto ref T dobj) if(__traits(identifier, T) == "SimpleStruct") {
 
     import python.raw: PyObject, PyObjectHead, PyGetSetDef, PyTypeObject, PyType_Ready,
@@ -91,36 +141,14 @@ auto pythonClass(T)(auto ref T dobj) if(__traits(identifier, T) == "SimpleStruct
         pyObjectNew, PyLong_FromLong, PyFloat_FromDouble
         ;
 
-    static PyGetSetDef[3] getsets;
+    auto ret = pyObjectNew!(PythonClass!T)(NewPythonType!T.pyType);
 
-    getsets[0].name = &"i"[0];
-    getsets[0].get = &PythonClass!T.get!0;
-    getsets[0].set = &PythonClass!T.set!0;
-
-    getsets[1].name = &"d"[0];
-    getsets[1].get = &PythonClass!T.get!1;
-    getsets[1].set = &PythonClass!T.set!1;
-
-    static PyTypeObject type;
-
-    if(type == type.init) {
-        type.tp_name = &"SimpleStruct"[0];
-        type.tp_basicsize = PythonClass!T.sizeof;
-        type.tp_flags = TypeFlags.Default;
-        type.tp_getset = &getsets[0];
-
-        if(PyType_Ready(&type) < 0) {
-            PyErr_SetString(PyExc_TypeError, &"not ready"[0]);
-            return null;
-        }
-    }
-
-    auto ret = pyObjectNew!(PythonClass!T)(&type);
     ret.i = PyLong_FromLong(dobj.i);
     ret.d = PyFloat_FromDouble(dobj.d);
 
     return cast(PyObject*) ret;
 }
+
 
 
 auto pythonClass(T)(auto ref T dobj) if(__traits(identifier, T) == "StringsStruct") {
@@ -129,29 +157,9 @@ auto pythonClass(T)(auto ref T dobj) if(__traits(identifier, T) == "StringsStruc
         TypeFlags, PyErr_SetString, PyExc_TypeError,
         pyObjectNew, PyList_New, PyList_SetItem, PyUnicode_FromStringAndSize;
 
-    static PyGetSetDef[2] getsets;
+    auto ret = pyObjectNew!(PythonClass!T)(NewPythonType!T.pyType);
 
-    getsets[0].name = &"strings"[0];
-    getsets[0].get = &PythonClass!T.get!0;
-    getsets[0].set = &PythonClass!T.set!0;
-
-    static PyTypeObject type;
-
-    if(type == type.init) {
-        type.tp_name = &"SimpleStruct"[0];
-        type.tp_basicsize = PythonClass!T.sizeof;
-        type.tp_flags = TypeFlags.Default;
-        type.tp_getset = &getsets[0];
-
-        if(PyType_Ready(&type) < 0) {
-            PyErr_SetString(PyExc_TypeError, &"not ready"[0]);
-            return null;
-        }
-    }
-
-    auto ret = pyObjectNew!(PythonClass!T)(&type);
     ret.strings = PyList_New(dobj.strings.length);
-
     foreach(i, str; dobj.strings) {
         PyList_SetItem(ret.strings, i, PyUnicode_FromStringAndSize(&str[0], str.length));
     }
@@ -175,12 +183,16 @@ auto pythonClass(T)(auto ref T dobj) if(__traits(identifier, T) == "StringsStruc
    will raise `TypeError`.
  */
 struct PythonClass(T) {
-    import python.raw: PyObjectHead;
+    import python.raw: PyObjectHead, PyGetSetDef;
     import std.traits: FieldNameTuple, Fields;
 
     alias fieldNames = FieldNameTuple!T;
     alias fieldTypes = Fields!T;
 
+    // +1 for the sentinel
+    static PyGetSetDef[fieldNames.length + 1] getsets;
+
+    /// Field members
     // Every python object must have this
     mixin PyObjectHead;
     // Generate a python object field for every field in T
@@ -188,6 +200,7 @@ struct PythonClass(T) {
         mixin(`PyObject* `, fieldName, `;`);
     }
 
+    // The function pointer for PyGetSetDef.get
     private static extern(C) PyObject* get(int FieldIndex)(PyObject* self_, void* closure) {
         import python.raw: pyIncRef;
 
@@ -197,6 +210,7 @@ struct PythonClass(T) {
         return self.getField!FieldIndex;
     }
 
+    // The function pointer for PyGetSetDef.set
     static extern(C) int set(int FieldIndex)(PyObject* self_, PyObject* value, void* closure) {
         import python.raw: pyIncRef, pyDecRef, PyErr_SetString, PyExc_TypeError;
 
@@ -229,6 +243,7 @@ struct PythonClass(T) {
     }
 }
 
+
 private bool checkPythonType(T)(PyObject* value) if(isArray!T) {
     import python.raw: pyListCheck;
     const ret = pyListCheck(value);
@@ -253,7 +268,7 @@ private bool checkPythonType(T)(PyObject* value) if(isFloatingPoint!T) {
 }
 
 
-void setPyErrTypeString(string type)() @trusted @nogc nothrow {
+private void setPyErrTypeString(string type)() @trusted @nogc nothrow {
     import python.raw: PyErr_SetString, PyExc_TypeError;
     enum str = "must be a " ~ type;
     PyErr_SetString(PyExc_TypeError, &str[0]);
