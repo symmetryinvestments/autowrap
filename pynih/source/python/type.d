@@ -136,15 +136,13 @@ struct NewPythonType(T) {
 
 auto pythonClass(T)(auto ref T dobj) if(__traits(identifier, T) == "SimpleStruct") {
 
-    import python.raw: PyObject, PyObjectHead, PyGetSetDef, PyTypeObject, PyType_Ready,
-        TypeFlags, PyErr_SetString, PyExc_TypeError,
-        pyObjectNew, PyLong_FromLong, PyFloat_FromDouble
-        ;
+    import python.conv: toPython;
+    import python.raw: pyObjectNew;
 
     auto ret = pyObjectNew!(PythonClass!T)(NewPythonType!T.pyType);
 
-    ret.i = PyLong_FromLong(dobj.i);
-    ret.d = PyFloat_FromDouble(dobj.d);
+    ret.i = dobj.i.toPython;
+    ret.d = dobj.d.toPython;
 
     return cast(PyObject*) ret;
 }
@@ -153,16 +151,12 @@ auto pythonClass(T)(auto ref T dobj) if(__traits(identifier, T) == "SimpleStruct
 
 auto pythonClass(T)(auto ref T dobj) if(__traits(identifier, T) == "StringsStruct") {
 
-    import python.raw: PyObject, PyObjectHead, PyGetSetDef, PyTypeObject, PyType_Ready,
-        TypeFlags, PyErr_SetString, PyExc_TypeError,
-        pyObjectNew, PyList_New, PyList_SetItem, PyUnicode_FromStringAndSize;
+    import python.conv: toPython;
+    import python.raw: pyObjectNew;
 
     auto ret = pyObjectNew!(PythonClass!T)(NewPythonType!T.pyType);
 
-    ret.strings = PyList_New(dobj.strings.length);
-    foreach(i, str; dobj.strings) {
-        PyList_SetItem(ret.strings, i, PyUnicode_FromStringAndSize(&str[0], str.length));
-    }
+    ret.strings = dobj.strings.toPython;
 
     return cast(PyObject*) ret;
 }
