@@ -8,7 +8,7 @@ echo $CWD
 echo $PWD
 echo $DIR/bin/Debug/netcoreapp2.1
 dub build --arch=x86_64 --force > /dev/null 2>&1
-mv libcsharp-tests.so libcsharp-tests.x64.so
+cp libcsharp-tests.so libcsharp-tests.x64.so
 dub run --config=emitCSharp
 dotnet build
 
