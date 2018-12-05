@@ -3,6 +3,7 @@ module python.conv;
 
 import python.raw: PyObject;
 import std.traits: isIntegral, isFloatingPoint, isAggregateType, isArray;
+import std.range: isInputRange;
 
 
 PyObject* toPython(T)(T value) @trusted if(isIntegral!T) {
@@ -17,21 +18,29 @@ PyObject* toPython(T)(T value) @trusted if(isFloatingPoint!T) {
 }
 
 
-PyObject* toPython(T)(T value) @trusted if(is(T == string[])) {
-    import python.raw: PyList_New, PyList_SetItem, PyUnicode_FromStringAndSize;
+PyObject* toPython(T)(T value) if(isInputRange!T && !is(T == string)) {
+    import python.raw: PyList_New, PyList_SetItem;
 
     auto ret = PyList_New(value.length);
 
-    foreach(i, str; value) {
-        PyList_SetItem(ret, i, PyUnicode_FromStringAndSize(&str[0], str.length));
+    foreach(i, elt; value) {
+        PyList_SetItem(ret, i, toPython(elt));
     }
 
     return ret;
+
 }
+
 
 PyObject* toPython(T)(T value) if(isAggregateType!T) {
     import python.type: pythonClass;
     return pythonClass(value);
+}
+
+
+PyObject* toPython(T)(T value) if(is(T == string)) {
+    import python.raw: PyUnicode_FromStringAndSize;
+    return PyUnicode_FromStringAndSize(value.ptr, value.length);
 }
 
 

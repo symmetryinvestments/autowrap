@@ -38,7 +38,8 @@ mixin(
             pyclass_thrice_struct,
         ),
         Aggregates!(
-            MyStruct,
+            StructDefaultCtor,
+            StructUserCtor,
         ),
     )
 );

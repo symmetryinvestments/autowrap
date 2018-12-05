@@ -216,9 +216,25 @@ struct PythonType(T) {
             return toPython(T(dArgs.expand));
 
         } else {
+            import python.raw: PyErr_SetString, PyExc_TypeError;
+            import std.traits: Parameters;
+            import std.typecons: Tuple;
 
-            return toPython(T());
+            static foreach(constructor; constructors) {
+                if(Parameters!constructor.length == numArgs) {
 
+                    Tuple!(Parameters!constructor) dArgs;
+
+                    static foreach(i; 0 .. Parameters!constructor.length) {
+                        dArgs[i] = PyTuple_GetItem(args, i).to!(Parameters!constructor[i]);
+                    }
+
+                    return toPython(T(dArgs.expand));
+                }
+            }
+
+            PyErr_SetString(PyExc_TypeError, "Could not find a suitable constructor");
+            return null;
         }
 
 
@@ -233,7 +249,7 @@ private alias Type(alias A) = typeof(A);
  */
 struct PythonMethod(T, alias F) {
     static extern(C) PyObject* impl(PyObject* self_, PyObject* args, PyObject* kwargs) {
-        import python.raw: PyTuple_Size;
+        import python.raw: PyTuple_Size, PyTuple_GetItem;
         import python.conv: toPython, to;
         import std.traits: Parameters;
         import std.typecons: Tuple;

@@ -45,7 +45,25 @@ def test_struct_getset():
 
 
 def test_default_ctor():
-    from contract import MyStruct
+    from contract import StructDefaultCtor
 
-    assert MyStruct().i == 42
-    assert MyStruct(77).i == 77
+    assert StructDefaultCtor().i == 42
+    assert StructDefaultCtor(77).i == 77
+
+
+def test_user_ctor():
+    from contract import StructUserCtor
+
+    assert StructUserCtor().i == 42
+    assert StructUserCtor().d == 33.3
+    assert StructUserCtor().s == u'foobar'
+
+    s = StructUserCtor(2, 11.1, u'quux')
+    assert s.i == 2
+    assert s.d == 11.1
+    assert s.s == u'quux'
+
+    s = StructUserCtor(5, u'toto')
+    assert s.i == 5
+    assert s.d == 77.7
+    assert s.s == u'toto'
