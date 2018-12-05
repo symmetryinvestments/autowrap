@@ -7,6 +7,9 @@ import std.range: isInputRange;
 import std.datetime: DateTime, Date;
 
 
+private enum isDateOrDateTime(T) = is(Unqual!T == DateTime) || is(Unqual!T == Date);
+
+
 PyObject* toPython(T)(T value) @trusted if(isIntegral!T) {
     import python.raw: PyLong_FromLong;
     return PyLong_FromLong(value);
@@ -33,9 +36,22 @@ PyObject* toPython(T)(T value) if(isInputRange!T && !is(T == string) && !isStati
 }
 
 
-PyObject* toPython(T)(T value) if(isAggregateType!T && !isInputRange!T) {
+PyObject* toPython(T)(T value) if(isAggregateType!T && !isInputRange!T && !isDateOrDateTime!T) {
     import python.type: pythonClass;
     return pythonClass(value);
+}
+
+
+PyObject* toPython(T)(T value) if(is(Unqual!T == DateTime)) {
+    import python.raw: pyDateTimeFromDateAndTime;
+    return pyDateTimeFromDateAndTime(value.year, value.month, value.day,
+                                     value.hour, value.minute, value.second);
+}
+
+
+PyObject* toPython(T)(T value) if(is(Unqual!T == Date)) {
+    import python.raw: pyDateFromDate;
+    return pyDateFromDate(value.year, value.month, value.day);
 }
 
 
@@ -72,8 +88,6 @@ T to(T)(PyObject* value) @trusted if(isFloatingPoint!T) {
     return cast(T) ret;
 }
 
-
-private enum isDateOrDateTime(T) = is(Unqual!T == DateTime) || is(Unqual!T == Date);
 
 T to(T)(PyObject* value) if(isAggregateType!T && !isDateOrDateTime!T) {
     import python.type: PythonClass;

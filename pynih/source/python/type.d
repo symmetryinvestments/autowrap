@@ -5,7 +5,7 @@ module python.type;
 
 
 import python.raw: PyObject;
-import std.traits: isArray, isIntegral, isBoolean, isFloatingPoint;
+import std.traits: isArray, isIntegral, isBoolean, isFloatingPoint, isAggregateType;
 import std.datetime: DateTime, Date;
 
 
@@ -139,7 +139,7 @@ struct PythonType(T) {
 
             Tuple!fieldTypes dArgs;
 
-            static foreach(i; 0 .. T.tupleof.length) {
+            static foreach(i; 0 .. fieldTypes.length) {
                 dArgs[i] = PyTuple_GetItem(args, i).to!(fieldTypes[i]);
             }
 
@@ -247,6 +247,10 @@ private template isPublic(T, string memberName) {
     enum isPublic = protection == "public" || protection == "export";
 }
 
+
+private enum isDateOrDateTime(T) = is(Unqual!T == DateTime) || is(Unqual!T == Date);
+
+
 /**
    A Python class that mirrors the D type `T`.
    For instance, this struct:
@@ -261,7 +265,7 @@ private template isPublic(T, string memberName) {
    assign anything but an integer to `Foo.i` or a string to `Foo.s` in Python
    will raise `TypeError`.
  */
-struct PythonClass(T) {
+struct PythonClass(T) if(isAggregateType!T && !isDateOrDateTime!T) {
     import python.raw: PyObjectHead, PyGetSetDef;
     import std.traits: FieldNameTuple, Fields;
 
