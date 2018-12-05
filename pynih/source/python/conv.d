@@ -5,19 +5,19 @@ import python.raw: PyObject;
 import std.traits: isIntegral, isFloatingPoint, isAggregateType, isArray;
 
 
-PyObject* toPython(int value) @trusted {
+PyObject* toPython(T)(T value) @trusted if(isIntegral!T) {
     import python.raw: PyLong_FromLong;
     return PyLong_FromLong(value);
 }
 
 
-PyObject* toPython(double value) @trusted {
+PyObject* toPython(T)(T value) @trusted if(isFloatingPoint!T) {
     import python.raw: PyFloat_FromDouble;
     return PyFloat_FromDouble(value);
 }
 
 
-PyObject* toPython(string[] value) @trusted {
+PyObject* toPython(T)(T value) @trusted if(is(T == string[])) {
     import python.raw: PyList_New, PyList_SetItem, PyUnicode_FromStringAndSize;
 
     auto ret = PyList_New(value.length);
@@ -27,6 +27,11 @@ PyObject* toPython(string[] value) @trusted {
     }
 
     return ret;
+}
+
+PyObject* toPython(T)(T value) if(isAggregateType!T) {
+    import python.type: pythonClass;
+    return pythonClass(value);
 }
 
 

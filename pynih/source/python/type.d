@@ -9,7 +9,7 @@ import std.traits: isArray, isIntegral, isBoolean, isFloatingPoint;
 /**
    Creates storage for a `PyTypeObject` for each D type `T`.
  */
-template PythonType(T) {
+template OldPythonType(T) {
     import python.raw: PyObject, PyTypeObject, PyMemberDef;
     import std.traits: Fields;
 
@@ -41,7 +41,7 @@ template PythonType(T) {
         // TODO: methods
     }
 
-    PyObject* object() {
+    PyObject* pyObject() {
         init;
         return cast(PyObject*) &_pyType;
     }
@@ -55,12 +55,14 @@ template PythonType(T) {
         import python: pyUnicodeDecodeUTF8;
         import std.conv: text;
 
+        assert(self_ !is null);
         auto self = cast(PythonAggregate!T*) self_;
         auto ret = text(self.original);
         return pyUnicodeDecodeUTF8(ret.ptr, ret.length, null /*errors*/);
     }
 
     extern(C) static int ctor(PyObject* self_, PyObject* args, PyObject* kwargs) {
+        assert(self_ !is null);
         auto self = cast(PythonAggregate!T*) self_;
         self.original = T();
         // TODO: arguments
@@ -84,7 +86,7 @@ struct PythonAggregate(T) {
 }
 
 
-struct NewPythonType(T) {
+struct PythonType(T) {
     import python.raw: PyTypeObject;
     import std.traits: FieldNameTuple, Fields;
 
@@ -114,9 +116,12 @@ struct NewPythonType(T) {
             _pyType.tp_name = T.stringof;
             _pyType.tp_basicsize = PythonClass!T.sizeof;
             _pyType.tp_flags = TypeFlags.Default;
+            _pyType.tp_new = &PyType_GenericNew;
             _pyType.tp_getset = getsetDefs;
             _pyType.tp_methods = methodDefs;
             _pyType.tp_repr = &repr;
+            _pyType.tp_init = &init;
+            _pyType.tp_new = &new_;
 
             if(PyType_Ready(&_pyType) < 0) {
                 PyErr_SetString(PyExc_TypeError, &"not ready"[0]);
@@ -171,10 +176,46 @@ struct NewPythonType(T) {
         import python.conv: to;
         import std.conv: text;
 
+        assert(self_ !is null);
         auto ret = text(self_.to!T);
         return pyUnicodeDecodeUTF8(ret.ptr, ret.length, null /*errors*/);
     }
 
+    private static extern(C) int init(PyObject* self_, PyObject* args, PyObject* kwargs) {
+        // nothing to do
+        return 0;
+    }
+
+    private static extern(C) PyObject* new_(PyTypeObject *type, PyObject* args, PyObject* kwargs) {
+        import python.conv: toPython;
+        import python.raw: PyTuple_Size, PyErr_SetString, PyExc_TypeError;
+        import std.traits: hasMember;
+        import std.meta: AliasSeq;
+
+        const numArgs = PyTuple_Size(args);
+
+        if(numArgs == 0)
+            return toPython(T());
+
+        // TODO: parameters
+
+        static if(hasMember!(T, "__ctor"))
+            alias constructors = AliasSeq!(__traits(getOverloads, T, "__ctor"));
+        else
+            alias constructors = AliasSeq!();
+
+        static if(constructors.length == 0) {
+            enum str = "Cannot call constructor on " ~T.stringof;
+            PyErr_SetString(PyExc_TypeError, str);
+            return null;
+        } else {
+
+            return toPython(T());
+
+        }
+
+
+    }
 }
 
 
@@ -196,6 +237,7 @@ struct PythonMethod(T, alias F) {
             dArgs[i] = PyTuple_GetItem(args, i).to!(Parameters!F[i]);
         }
 
+        assert(self_ !is null);
         auto dAggregate = self_.to!T;
 
         // e.g. `auto dRet = dAggregate.myMethod(dArgs[0], dArgs[1]);`
@@ -210,13 +252,13 @@ struct PythonMethod(T, alias F) {
    Creates an instance of a Python class that is equivalent to the D type `T`.
    Return PyObject*.
  */
-auto pythonClass(T)(auto ref T dobj) {
+PyObject* pythonClass(T)(auto ref T dobj) {
 
     import python.conv: toPython;
     import python.raw: pyObjectNew;
     import std.traits: FieldNameTuple;
 
-    auto ret = pyObjectNew!(PythonClass!T)(NewPythonType!T.pyType);
+    auto ret = pyObjectNew!(PythonClass!T)(PythonType!T.pyType);
 
     static foreach(fieldName; FieldNameTuple!T) {
         mixin(`ret.`, fieldName, ` = dobj.`, fieldName, `.toPython;`);
@@ -262,10 +304,14 @@ struct PythonClass(T) {
     private static extern(C) PyObject* get(int FieldIndex)(PyObject* self_, void* closure) {
         import python.raw: pyIncRef;
 
+        assert(self_ !is null);
         auto self = cast(PythonClass*) self_;
-        pyIncRef(self.getField!FieldIndex);
 
-        return self.getField!FieldIndex;
+        auto field = self.getField!FieldIndex;
+        assert(field !is null, "Cannot increase reference count on null field");
+        pyIncRef(field);
+
+        return field;
     }
 
     // The function pointer for PyGetSetDef.set
@@ -282,6 +328,7 @@ struct PythonClass(T) {
             return -1;
         }
 
+        assert(self_ !is null);
         auto self = cast(PythonClass!T*) self_;
         auto tmp = self.getField!FieldIndex;
 
