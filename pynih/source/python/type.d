@@ -179,9 +179,9 @@ private alias Type(alias A) = typeof(A);
  */
 struct PythonMethod(T, alias F) {
     static extern(C) PyObject* impl(PyObject* self_, PyObject* args, PyObject* kwargs) {
-        import python.raw: PyTuple_Size, PyTuple_GetItem;
+        import python.raw: PyTuple_Size, PyTuple_GetItem, pyIncRef, pyNone, pyDecRef;
         import python.conv: toPython, to;
-        import std.traits: Parameters;
+        import std.traits: Parameters, ReturnType, FunctionAttribute, functionAttributes;
         import std.typecons: Tuple;
 
         assert(PyTuple_Size(args) == Parameters!F.length);
@@ -195,10 +195,27 @@ struct PythonMethod(T, alias F) {
         assert(self_ !is null);
         auto dAggregate = self_.to!T;
 
-        // e.g. `auto dRet = dAggregate.myMethod(dArgs[0], dArgs[1]);`
-        mixin(`auto dRet = dAggregate.`, __traits(identifier, F), `(dArgs.expand);`);
+        static if(is(ReturnType!F == void))
+            enum dret = "";
+        else
+            enum dret = "auto dRet = ";
 
-        return dRet.toPython;
+        // e.g. `auto dRet = dAggregate.myMethod(dArgs[0], dArgs[1]);`
+        mixin(dret, `dAggregate.`, __traits(identifier, F), `(dArgs.expand);`);
+
+        // The member function could have side-effects, need to copy the changes
+        // back to the Python object
+        // FIXME: ref count?
+        // FIXME: crashes with certain structs
+        static if(!(functionAttributes!F & FunctionAttribute.const_))
+            * cast(PythonClass!T*) self_ = * cast(PythonClass!T*) toPython(dAggregate);
+
+        static if(!is(ReturnType!F == void))
+            return dRet.toPython;
+        else {
+            pyIncRef(pyNone);
+            return pyNone;
+        }
     }
 }
 
