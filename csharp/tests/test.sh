@@ -11,13 +11,6 @@ cp libcsharp-tests.so libcsharp-tests.x64.so
 dub run --config=emitCSharp
 dotnet build
 
-ls -la $PWD
-ls -la $DIR/bin/Debug/netcoreapp2.1
-
 dotnet test
-LD_LIBRARY_PATH=$DIR/bin/Debug/netcoreapp2.1 dotnet test
-
-ls -la $PWD
-ls -la $DIR/bin/Debug/netcoreapp2.1
 
 cd $CWD
