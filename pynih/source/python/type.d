@@ -134,29 +134,17 @@ struct NewPythonType(T) {
 }
 
 
-auto pythonClass(T)(auto ref T dobj) if(__traits(identifier, T) == "SimpleStruct") {
+auto pythonClass(T)(auto ref T dobj) {
 
     import python.conv: toPython;
     import python.raw: pyObjectNew;
+    import std.traits: FieldNameTuple;
 
     auto ret = pyObjectNew!(PythonClass!T)(NewPythonType!T.pyType);
 
-    ret.i = dobj.i.toPython;
-    ret.d = dobj.d.toPython;
-
-    return cast(PyObject*) ret;
-}
-
-
-
-auto pythonClass(T)(auto ref T dobj) if(__traits(identifier, T) == "StringsStruct") {
-
-    import python.conv: toPython;
-    import python.raw: pyObjectNew;
-
-    auto ret = pyObjectNew!(PythonClass!T)(NewPythonType!T.pyType);
-
-    ret.strings = dobj.strings.toPython;
+    static foreach(fieldName; FieldNameTuple!T) {
+        mixin(`ret.`, fieldName, ` = dobj.`, fieldName, `.toPython;`);
+    }
 
     return cast(PyObject*) ret;
 }
