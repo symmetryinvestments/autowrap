@@ -8,5 +8,5 @@ dub build --arch=x86_64 --force > /dev/null 2>&1
 mv libcsharp-tests.so libcsharp-tests.x64.so
 dub run --config=emitCSharp
 dotnet build
-LD_LIBRARY_PATH=$DIR dotnet test
+LD_LIBRARY_PATH=$DIR/bin/Debug/netcoreapp2.1 dotnet test
 cd $CWD
