@@ -3,6 +3,8 @@
  */
 module python.type;
 
+import python.raw: PyObject;
+import std.traits: isArray, isIntegral, isBoolean, isFloatingPoint;
 
 /**
    Creates storage for a `PyTypeObject` for each D type `T`.
@@ -91,63 +93,13 @@ auto pythonClass(T)(auto ref T dobj) if(__traits(identifier, T) == "SimpleStruct
 
     static PyGetSetDef[3] getsets;
 
-    static extern(C) int setField0(PyObject* self_, PyObject* value, void* closure) {
-        import python.raw: pyIncRef, pyDecRef, pyLongCheck, PyErr_SetString, PyExc_TypeError;
-
-        auto self = cast(PythonClass!T*) self_;
-
-        PyObject *tmp;
-
-        if(value is null) {
-            PyErr_SetString(PyExc_TypeError, "Cannot delete i");
-            return -1;
-        }
-
-        if(!pyLongCheck(value)) {
-            PyErr_SetString(PyExc_TypeError, "i must be a long");
-            return -1;
-        }
-
-        tmp = self.i;
-        pyIncRef(value);
-        self.i = value;
-        pyDecRef(tmp);
-
-        return 0;
-    }
-
     getsets[0].name = &"i"[0];
     getsets[0].get = &PythonClass!T.get!0;
-    getsets[0].set = &setField0;
-
-    static extern(C) int setField1(PyObject* self_, PyObject* value, void* closure) {
-        import python.raw: pyIncRef, pyDecRef, pyFloatCheck, PyErr_SetString, PyExc_TypeError;
-
-        auto self = cast(PythonClass!T*) self_;
-
-        PyObject *tmp;
-
-        if(value is null) {
-            PyErr_SetString(PyExc_TypeError, "Cannot delete d");
-            return -1;
-        }
-
-        if(!pyFloatCheck(value)) {
-            PyErr_SetString(PyExc_TypeError, "i must be a float");
-            return -1;
-        }
-
-        tmp = self.d;
-        pyIncRef(value);
-        self.d = value;
-        pyDecRef(tmp);
-
-        return 0;
-    }
+    getsets[0].set = &PythonClass!T.set!0;
 
     getsets[1].name = &"d"[0];
     getsets[1].get = &PythonClass!T.get!1;
-    getsets[1].set = &setField1;
+    getsets[1].set = &PythonClass!T.set!1;
 
     static PyTypeObject type;
 
@@ -179,34 +131,9 @@ auto pythonClass(T)(auto ref T dobj) if(__traits(identifier, T) == "StringsStruc
 
     static PyGetSetDef[2] getsets;
 
-    static extern(C) int setField0(PyObject* self_, PyObject* value, void* closure) {
-        import python.raw: pyIncRef, pyDecRef, pyListCheck, PyErr_SetString, PyExc_TypeError;
-
-        auto self = cast(PythonClass!T*) self_;
-
-        PyObject *tmp;
-
-        if(value is null) {
-            PyErr_SetString(PyExc_TypeError, "Cannot delete strings");
-            return -1;
-        }
-
-        if(!pyListCheck(value)) {
-            PyErr_SetString(PyExc_TypeError, "strings must be a list");
-            return -1;
-        }
-
-        tmp = self.strings;
-        pyIncRef(value);
-        self.strings = value;
-        pyDecRef(tmp);
-
-        return 0;
-    }
-
     getsets[0].name = &"strings"[0];
     getsets[0].get = &PythonClass!T.get!0;
-    getsets[0].set = &setField0;
+    getsets[0].set = &PythonClass!T.set!0;
 
     static PyTypeObject type;
 
@@ -249,9 +176,10 @@ auto pythonClass(T)(auto ref T dobj) if(__traits(identifier, T) == "StringsStruc
  */
 struct PythonClass(T) {
     import python.raw: PyObjectHead;
-    import std.traits: FieldNameTuple;
+    import std.traits: FieldNameTuple, Fields;
 
     alias fieldNames = FieldNameTuple!T;
+    alias fieldTypes = Fields!T;
 
     // Every python object must have this
     mixin PyObjectHead;
@@ -269,8 +197,64 @@ struct PythonClass(T) {
         return self.getField!FieldIndex;
     }
 
+    static extern(C) int set(int FieldIndex)(PyObject* self_, PyObject* value, void* closure) {
+        import python.raw: pyIncRef, pyDecRef, PyErr_SetString, PyExc_TypeError;
+
+        if(value is null) {
+            enum deleteErrStr = "Cannot delete " ~ fieldNames[FieldIndex];
+            PyErr_SetString(PyExc_TypeError, deleteErrStr);
+            return -1;
+        }
+
+        if(!checkPythonType!(fieldTypes[FieldIndex])(value)) {
+            return -1;
+        }
+
+        auto self = cast(PythonClass!T*) self_;
+        auto tmp = self.getField!FieldIndex;
+
+        pyIncRef(value);
+        self.setField!FieldIndex(value);
+        pyDecRef(tmp);
+
+        return 0;
+    }
+
     private PyObject* getField(int FieldIndex)() {
         mixin(`return this.`, fieldNames[FieldIndex], `;`);
     }
 
+    private void setField(int FieldIndex)(PyObject* value) {
+        mixin(`this.`, fieldNames[FieldIndex], ` = value;`);
+    }
+}
+
+private bool checkPythonType(T)(PyObject* value) if(isArray!T) {
+    import python.raw: pyListCheck;
+    const ret = pyListCheck(value);
+    if(!ret) setPyErrTypeString!"list";
+    return ret;
+}
+
+
+private bool checkPythonType(T)(PyObject* value) if(isIntegral!T) {
+    import python.raw: pyLongCheck;
+    const ret = pyLongCheck(value);
+    if(!ret) setPyErrTypeString!"long";
+    return ret;
+}
+
+
+private bool checkPythonType(T)(PyObject* value) if(isFloatingPoint!T) {
+    import python.raw: pyFloatCheck;
+    const ret = pyFloatCheck(value);
+    if(!ret) setPyErrTypeString!"float";
+    return ret;
+}
+
+
+void setPyErrTypeString(string type)() @trusted @nogc nothrow {
+    import python.raw: PyErr_SetString, PyExc_TypeError;
+    enum str = "must be a " ~ type;
+    PyErr_SetString(PyExc_TypeError, &str[0]);
 }
