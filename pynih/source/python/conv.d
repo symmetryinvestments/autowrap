@@ -2,7 +2,7 @@ module python.conv;
 
 
 import python.raw: PyObject;
-import std.traits: Unqual, isIntegral, isFloatingPoint, isAggregateType, isArray;
+import std.traits: Unqual, isIntegral, isFloatingPoint, isAggregateType, isArray, isStaticArray;
 import std.range: isInputRange;
 
 
@@ -18,7 +18,7 @@ PyObject* toPython(T)(T value) @trusted if(isFloatingPoint!T) {
 }
 
 
-PyObject* toPython(T)(T value) if(isInputRange!T && !is(T == string)) {
+PyObject* toPython(T)(T value) if(isInputRange!T && !is(T == string) && !isStaticArray!T) {
     import python.raw: PyList_New, PyList_SetItem;
 
     auto ret = PyList_New(value.length);
@@ -32,7 +32,7 @@ PyObject* toPython(T)(T value) if(isInputRange!T && !is(T == string)) {
 }
 
 
-PyObject* toPython(T)(T value) if(isAggregateType!T) {
+PyObject* toPython(T)(T value) if(isAggregateType!T && !isInputRange!T) {
     import python.type: pythonClass;
     return pythonClass(value);
 }
@@ -43,9 +43,15 @@ PyObject* toPython(T)(T value) if(is(T == string)) {
     return pyUnicodeFromStringAndSize(value.ptr, value.length);
 }
 
+
 PyObject* toPython(T)(T value) if(is(Unqual!T == bool)) {
     import python.raw: PyBool_FromLong;
     return PyBool_FromLong(value);
+}
+
+
+PyObject* toPython(T)(T value) if(isStaticArray!T) {
+    return toPython(value[]);
 }
 
 
@@ -71,7 +77,7 @@ T to(T)(PyObject* value) if(isAggregateType!T) {
 
     auto pyclass = cast(PythonClass!T*) value;
 
-    T ret;
+    Unqual!T ret;
 
     static foreach(i; 0 .. T.tupleof.length) {
         ret.tupleof[i] = pyclass.getField!i.to!(typeof(T.tupleof[i]));
@@ -114,7 +120,7 @@ T to(T)(PyObject* value) if(is(T == string)) {
 }
 
 
-T to(T)(PyObject* value) if(is(T == bool)) {
+T to(T)(PyObject* value) if(is(Unqual!T == bool)) {
     import python.raw: pyTrue;
     return value is pyTrue;
 }

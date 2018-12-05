@@ -181,12 +181,13 @@ struct PythonMethod(T, alias F) {
     static extern(C) PyObject* impl(PyObject* self_, PyObject* args, PyObject* kwargs) {
         import python.raw: PyTuple_Size, PyTuple_GetItem, pyIncRef, pyNone, pyDecRef;
         import python.conv: toPython, to;
-        import std.traits: Parameters, ReturnType, FunctionAttribute, functionAttributes;
+        import std.traits: Parameters, ReturnType, FunctionAttribute, functionAttributes, Unqual;
         import std.typecons: Tuple;
+        import std.meta: staticMap;
 
         assert(PyTuple_Size(args) == Parameters!F.length);
 
-        Tuple!(Parameters!F) dArgs;
+        Tuple!(staticMap!(Unqual, Parameters!F)) dArgs;
 
         static foreach(i; 0 .. Parameters!F.length) {
             dArgs[i] = PyTuple_GetItem(args, i).to!(Parameters!F[i]);

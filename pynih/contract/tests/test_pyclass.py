@@ -90,3 +90,12 @@ def test_thrice_struct():
 
     assert repr(s) == u'ThriceStruct(11.1)'
     assert str(s) == u'ThriceStruct(11.1)'
+
+
+def test_void_method():
+    from contract import pyclass_void_struct
+
+    s = pyclass_void_struct()
+    assert s.i == 42
+    s.setValue(33)
+    assert s.i == 33
