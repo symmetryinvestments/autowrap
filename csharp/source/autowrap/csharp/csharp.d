@@ -1035,7 +1035,7 @@ private string writeCSharpBoilerplate(string libraryName, string rootNamespace) 
     public static class SharedFunctions {
         static SharedFunctions() {
             Stream stream = null;
-            var outputName = Path.Combine(Environment.CurrentDirectory, RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? "libcsharp-tests.dylib" : RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? "libcsharp-tests.so" : "csharp-tests.dll");
+            var outputName = Path.Combine(Environment.CurrentDirectory, RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? \"libcsharp-tests.dylib\" : RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? \"libcsharp-tests.so\" : \"csharp-tests.dll\");
             Console.WriteLine($\"Library Path: {outputName}\");
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
