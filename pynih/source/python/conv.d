@@ -2,7 +2,7 @@ module python.conv;
 
 
 import python.raw: PyObject;
-import std.traits: isIntegral, isFloatingPoint, isAggregateType, isArray;
+import std.traits: Unqual, isIntegral, isFloatingPoint, isAggregateType, isArray;
 import std.range: isInputRange;
 
 
@@ -43,6 +43,11 @@ PyObject* toPython(T)(T value) if(is(T == string)) {
     return pyUnicodeFromStringAndSize(value.ptr, value.length);
 }
 
+PyObject* toPython(T)(T value) if(is(Unqual!T == bool)) {
+    import python.raw: PyBool_FromLong;
+    return PyBool_FromLong(value);
+}
+
 
 T to(T)(PyObject* value) @trusted if(isIntegral!T) {
     import python.raw: PyLong_AsLong;
@@ -81,7 +86,8 @@ T to(T)(PyObject* value) if(isArray!T && !is(T == string)) {
     import std.range: ElementType;
 
     T ret;
-    ret.length = PyList_Size(value);
+    static if(__traits(compiles, ret.length = 1))
+        ret.length = PyList_Size(value);
 
     foreach(i, ref elt; ret) {
         elt = PyList_GetItem(value, i).to!(ElementType!T);
@@ -105,4 +111,10 @@ T to(T)(PyObject* value) if(is(T == string)) {
     assert(length == 0 || ptr !is null);
 
     return ptr[0 .. length].idup;
+}
+
+
+T to(T)(PyObject* value) if(is(T == bool)) {
+    import python.raw: pyTrue;
+    return value is pyTrue;
 }
