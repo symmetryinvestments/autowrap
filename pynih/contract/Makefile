@@ -9,5 +9,5 @@ contract.so: libcontract.so
 libcontract.so: dub.sdl dub.selections.json source/contract/main.d source/contract/scalars.d source/contract/udt.d ../libpython.a
 	dub build -q
 
-../libpython.a: ../source/python/bindings.dpp ../source/python/util.d
+../libpython.a: ../source/python/raw.dpp ../source/python/cooked.d
 	make -C ..
