@@ -21,3 +21,15 @@ configuration "unittest" {
     libs "python3.7m"
     dependency "unit-threaded" version="*"
 }
+
+
+configuration "unittest-travis" {
+    targetType "executable"
+    targetPath "bin"
+    targetName "ut"
+    sourcePaths "tests"
+    importPaths "tests"
+    mainSourceFile "tests/main.d"
+    libs "python2.7"
+    dependency "unit-threaded" version="*"
+}

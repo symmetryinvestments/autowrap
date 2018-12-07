@@ -7,4 +7,4 @@ PYTHON_INCLUDE_DIR="${PYTHON_INCLUDE_DIR:-/usr/include/python3.7m}"
 
 cd "$SCRIPT_DIR"/contract
 make
-dub test
+dub run -c unittest-travis --build=unittest-cov
