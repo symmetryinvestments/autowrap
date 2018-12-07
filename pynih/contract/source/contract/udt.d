@@ -194,12 +194,12 @@ package PyObject* struct_getset(PyObject* self, PyObject *args) nothrow @nogc {
 
     if(outerType == outerType.init) {
 
-        outerGetSets[0].name = &"i"[0];
+        outerGetSets[0].name = cast(typeof(PyGetSetDef.name)) &"i"[0];
         outerGetSets[0].get = &getOuterInt;
-        outerGetSets[1].name = &"d"[0];
+        outerGetSets[1].name = cast(typeof(PyGetSetDef.name)) &"d"[0];
         outerGetSets[1].get = &getOuterDouble;
         outerGetSets[1].set = &setOuterDouble;
-        outerGetSets[2].name = &"inner"[0];
+        outerGetSets[2].name = cast(typeof(PyGetSetDef.name)) &"inner"[0];
         outerGetSets[2].get = &getInner;
 
         outerType.tp_name = &"StructGetSet"[0];
@@ -213,10 +213,10 @@ package PyObject* struct_getset(PyObject* self, PyObject *args) nothrow @nogc {
             return null;
         }
 
-        innerGetSets[0].name = &"i"[0];
+        innerGetSets[0].name = cast(typeof(PyGetSetDef.name)) &"i"[0];
         innerGetSets[0].get = &getInnerInt;
         innerGetSets[0].set = &setInnerInt;
-        innerGetSets[1].name = &"d"[0];
+        innerGetSets[1].name = cast(typeof(PyGetSetDef.name)) &"d"[0];
         innerGetSets[1].get = &getInnerDouble;
         innerGetSets[1].set = &setInnerDouble;
 
