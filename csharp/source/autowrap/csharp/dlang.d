@@ -79,7 +79,7 @@ private string generateConstructors(T)() {
             exp ~= fullyQualifiedName!(paramTypes[pc]) ~ " " ~ paramNames[pc] ~ ", ";
         }
         if (paramTypes.length > 0) {
-            exp = exp[0..$-2];
+            //exp = exp[0..$-2];
         }
         exp ~= ") nothrow {" ~ newline;
         exp ~= "    try {" ~ newline;
@@ -91,7 +91,7 @@ private string generateConstructors(T)() {
                 exp ~= paramNames[pc] ~ ", ";
             }
             if (paramTypes.length > 0) {
-                exp = exp[0..$-2];
+                //exp = exp[0..$-2];
             }
             exp ~= ");" ~ newline;
             exp ~= "        pinPointer(cast(void*)__temp__);" ~ newline;
@@ -102,7 +102,7 @@ private string generateConstructors(T)() {
                 exp ~= pn ~ ", ";
             }
             if (paramTypes.length > 0) {
-                exp = exp[0..$-2];
+                //exp = exp[0..$-2];
             }
             exp ~= ");" ~ newline;
         }
@@ -112,7 +112,6 @@ private string generateConstructors(T)() {
         exp ~= "}" ~ newline;
         ret ~= exp;
     }
-
     return ret;
 }
 
@@ -152,7 +151,7 @@ private string generateMethods(T)() {
                     static foreach(pc; 0..paramNames.length) {
                         exp ~= fullyQualifiedName!(paramTypes[pc]) ~ " " ~ paramNames[pc] ~ ", ";
                     }
-                    exp = exp[0..$-2];
+                    //exp = exp[0..$-2];
                     exp ~= ") nothrow {" ~ newline;
                     exp ~= "    try {" ~ newline;
                     exp ~= methodSetup;
@@ -166,7 +165,8 @@ private string generateMethods(T)() {
                         exp ~= paramNames[pc] ~ ", ";
                     }
                     if (paramNames.length > 0) {
-                        exp = exp[0..$-2];
+                        //exp = exp[0..$];
+                        //exp = exp[0..$-2]; FIXME
                     }
                     exp ~= ");" ~ newline;
                     if (!is(returnType == void)) {
@@ -235,7 +235,7 @@ private string generateFunctions(Modules...)() if(allSatisfy!(isModule, Modules)
         static foreach(pc; 0..paramNames.length) {
             funcStr ~= fullyQualifiedName!(paramTypes[pc]) ~ " " ~ paramNames[pc] ~ ", ";
         }
-        funcStr = funcStr[0..$-2];
+        //funcStr = funcStr[0..$-2];
         funcStr ~= ") nothrow {" ~ newline;
         funcStr ~= "    try {" ~ newline;
         funcStr ~= methodSetup;
@@ -244,14 +244,14 @@ private string generateFunctions(Modules...)() if(allSatisfy!(isModule, Modules)
             foreach(pName; paramNames) {
                 funcStr ~= pName ~ ", ";
             }
-            funcStr = funcStr[0..$-2];
+            //funcStr = funcStr[0..$-2];
             funcStr ~= "));" ~ newline;
         } else {
             funcStr ~= func.name ~ "(";
             static foreach(pc; 0..paramNames.length) {
                 funcStr ~= paramNames[pc] ~ ", ";
             }
-            funcStr = funcStr[0..$-2];
+            //funcStr = funcStr[0..$-2];
             funcStr ~= ");" ~ newline;
             funcStr ~= "        return returnVoid();" ~ newline;
         }
