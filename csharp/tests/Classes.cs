@@ -21,6 +21,13 @@ namespace Autowrap.CSharp.Tests
         }
 
         [TestMethod]
+        public void ClassParameterlessFunction() {
+            var t = new C1("Hello World!", 1);
+            var result = t.ParameterlessMethod();
+            Assert.AreEqual("Parameterless Method", result, "Incorrect Return Value for t.ParameterlessMethod");
+        }
+
+        [TestMethod]
         public void ClassValueMembers() {
             var t = new C1("Hello World!", 1);
             t.BoolMember = true;

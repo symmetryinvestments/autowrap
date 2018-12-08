@@ -1,5 +1,9 @@
 module test;
 
+export string parameterlessFunction() {
+    return "Parameterless Function";
+}
+
 export int freeFunction (int value) {
     return value;
 }
@@ -43,6 +47,10 @@ struct s1 {
     public void setNestedStruct(s2 nested) {
         nestedStruct = nested;
     }
+
+    public string parameterlessMethod() {
+        return "Parameterless Method";
+    }
 }
 
 struct s2 {
@@ -60,6 +68,10 @@ class c1 {
     public this(string s, int i) {
         intValue = i;
         stringValue = s;
+    }
+
+    public string parameterlessMethod() {
+        return "Parameterless Method";
     }
 
     //Member variable test cases

@@ -235,7 +235,9 @@ private string generateFunctions(Modules...)() if(allSatisfy!(isModule, Modules)
         static foreach(pc; 0..paramNames.length) {
             funcStr ~= fullyQualifiedName!(paramTypes[pc]) ~ " " ~ paramNames[pc] ~ ", ";
         }
-        funcStr = funcStr[0..$-2];
+        if(paramNames.length > 0) {
+            funcStr = funcStr[0..$-2];
+        }
         funcStr ~= ") nothrow {" ~ newline;
         funcStr ~= "    try {" ~ newline;
         funcStr ~= methodSetup;
@@ -244,14 +246,18 @@ private string generateFunctions(Modules...)() if(allSatisfy!(isModule, Modules)
             foreach(pName; paramNames) {
                 funcStr ~= pName ~ ", ";
             }
-            funcStr = funcStr[0..$-2];
+            if(paramNames.length > 0) {
+                funcStr = funcStr[0..$-2];
+            }
             funcStr ~= "));" ~ newline;
         } else {
             funcStr ~= func.name ~ "(";
             static foreach(pc; 0..paramNames.length) {
                 funcStr ~= paramNames[pc] ~ ", ";
             }
-            funcStr = funcStr[0..$-2];
+            if(paramNames.length > 0) {
+                funcStr = funcStr[0..$-2];
+            }
             funcStr ~= ");" ~ newline;
             funcStr ~= "        return returnVoid();" ~ newline;
         }

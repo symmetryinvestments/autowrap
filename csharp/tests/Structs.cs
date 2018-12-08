@@ -13,6 +13,13 @@ namespace Autowrap.CSharp.Tests
         }
 
         [TestMethod]
+        public void StructParameterlessFunction() {
+            S1 t = new S1();
+            var result = t.ParameterlessMethod();
+            Assert.AreEqual("Parameterless Method", result, "Incorrect Return Value for t.ParameterlessMethod");
+        }
+
+        [TestMethod]
         public void StructFunction() {
             S2 x = new S2();
             x.Value = 1;

@@ -8,6 +8,13 @@ namespace Test {
     using Autowrap;
 
     public static class Functions {
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_ParameterlessFunction", CallingConvention = CallingConvention.Cdecl)]
+
+        private static extern return_slice_error dlang_ParameterlessFunction();
+        public static string ParameterlessFunction() {
+            var dlang_ret = dlang_ParameterlessFunction();
+            return SharedFunctions.SliceToString(dlang_ret, DStringType._string);
+        }
         [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_FreeFunction", CallingConvention = CallingConvention.Cdecl)]
 
         private static extern return_int_error dlang_FreeFunction(int value);
@@ -75,6 +82,12 @@ namespace Test {
         public void SetNestedStruct(Test.S2 nested) {
             var dlang_ret = dlang_S1_SetNestedStruct(ref this, nested);
         }
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_S1_ParameterlessMethod0", CallingConvention = CallingConvention.Cdecl)]
+        private static extern return_slice_error dlang_S1_ParameterlessMethod(ref Test.S1 __obj__);
+        public string ParameterlessMethod() {
+            var dlang_ret = dlang_S1_ParameterlessMethod(ref this);
+            return SharedFunctions.SliceToString(dlang_ret, DStringType._string);
+        }
 
         public float Value;
         public Test.S2 NestedStruct;
@@ -91,6 +104,12 @@ namespace Test {
 
         [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1_StringValueGetter0", CallingConvention = CallingConvention.Cdecl)]
         private static extern return_slice_error dlang_C1_StringValueGetter(IntPtr __obj__);
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1_ParameterlessMethod0", CallingConvention = CallingConvention.Cdecl)]
+        private static extern return_slice_error dlang_C1_ParameterlessMethod(IntPtr __obj__);
+        public string ParameterlessMethod() {
+            var dlang_ret = dlang_C1_ParameterlessMethod(this);
+            return SharedFunctions.SliceToString(dlang_ret, DStringType._string);
+        }
         [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1_StructProperty0", CallingConvention = CallingConvention.Cdecl)]
         private static extern return_Test_S2_error dlang_C1_StructProperty(IntPtr __obj__);
         [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1_StructProperty1", CallingConvention = CallingConvention.Cdecl)]

@@ -13,6 +13,12 @@ namespace Autowrap.CSharp.Tests
         }
 
         [TestMethod]
+        public void ParameterlessFunction() {
+            var result = Test.Functions.ParameterlessFunction();
+            Assert.AreEqual("Parameterless Function", result, "Unexpected FreeFunction Result");
+        }
+
+        [TestMethod]
         public void FreeFunction() {
             var testValue = 1;
             var result = Test.Functions.FreeFunction(testValue);
