@@ -345,10 +345,9 @@ private void generateConstructors(T)(string libraryName, CSharpAggregate csagg) 
             if (paramNames.length > 0) {
                 ctor = ctor[0..$-2];
             }
-            ctor ~= ")) { ";
-        } else if (is(T == struct)) {
+            ctor ~= ")";
         }
-        ctor ~= "}" ~ newline;
+        ctor ~= ") { }" ~ newline;
         csagg.constructors ~= ctor;
     }
     if (is(T == class)) {
@@ -405,11 +404,7 @@ private void generateMethods(T)(string libraryName, CSharpAggregate csagg) if (i
                     exp = exp[0..$-2];
                     exp ~= ");" ~ newline;
                     if (!isProperty) {
-                        if (methodName == "ToString") {
-                            exp ~= "        public override %s %s(".format(getCSharpInterfaceType(returnTypeStr), methodName);
-                        } else {
-                            exp ~= "        public %s %s(".format(getCSharpInterfaceType(returnTypeStr), methodName);
-                        }
+                        exp ~= "        public %s%s %s(".format(methodName == "ToString" ? "override " : string.init, getCSharpInterfaceType(returnTypeStr), methodName);
                         static foreach(pc; 0..paramNames.length) {
                             if (is(paramTypes[pc] == string) || is(paramTypes[pc] == wstring) || is(paramTypes[pc] == dstring)) {
                                 exp ~= getCSharpInterfaceType(fullyQualifiedName!(paramTypes[pc])) ~ " " ~ paramNames[pc] ~ ", ";
@@ -469,24 +464,24 @@ private void generateProperties(T)(string libraryName, CSharpAggregate csagg) if
         const string methodInterfaceName = getCSharpMethodInterfaceName(aggName, cast(string)m);
 
         static if (is(typeof(__traits(getMember, T, m)))) {
-            bool isProperty = false;
-            bool propertyGet = false;
-            bool propertySet = false;
-            foreach(mo; __traits(getOverloads, T, m)) {
-                static if (cast(bool)(functionAttributes!mo & FunctionAttribute.property)) {
-                    isProperty = true;
-                    alias returnType = ReturnType!mo;
-                    alias paramTypes = Parameters!mo;
-                    if (paramTypes.length == 0) {
-                        propertyGet = true;
-                    } else {
-                        propertySet = true;
+            const olc = __traits(getOverloads, T, m).length;
+            static if(olc > 0 && olc <= 2) {
+                bool isProperty = false;
+                bool propertyGet = false;
+                bool propertySet = false;
+                foreach(mo; __traits(getOverloads, T, m)) {
+                    static if (cast(bool)(functionAttributes!mo & FunctionAttribute.property)) {
+                        isProperty = true;
+                        alias returnType = ReturnType!mo;
+                        alias paramTypes = Parameters!mo;
+                        if (paramTypes.length == 0) {
+                            propertyGet = true;
+                        } else {
+                            propertySet = true;
+                        }
                     }
                 }
-            }
 
-            const olc = __traits(getOverloads, T, m).length;
-            static if(olc > 0) {
                 if (isProperty) {
                     string prop = string.init;
                     alias propertyType = ReturnType!(__traits(getOverloads, T, m)[0]);
@@ -533,8 +528,6 @@ private void generateProperties(T)(string libraryName, CSharpAggregate csagg) if
                             prop ~= "set => dlang_%1$s(%2$sthis, value.ToSlice(DStringType._dstring)); ".format(methodInterfaceName, is(T == class) ? string.init : "ref ");
                         } else if (isArray!(propertyType)) {
                             prop ~= "set => dlang_%1$s(%2$sthis, value.ToSlice()); ".format(methodInterfaceName, is(T == class) ? string.init : "ref ");
-                        } else if (is(propertyType == class)) {
-                            prop ~= "set => dlang_%1$s(%2$sthis, value); ".format(methodInterfaceName, is(T == class) ? string.init : "ref ");
                         } else {
                             prop ~= "set => dlang_%1$s(%2$sthis, value); ".format(methodInterfaceName, is(T == class) ? string.init : "ref ");
                         }
@@ -567,6 +560,7 @@ private void generateFields(T)(string libraryName, CSharpAggregate csagg) if (is
                     csagg.properties ~= dllImportString.format(libraryName, getDLangInterfaceName(fqn, fieldNames[fc] ~ "_set"));
                     csagg.properties ~= "        private static extern void dlang_%1$s_set(IntPtr ptr, %2$s value);".format(fieldNames[fc], getDLangInterfaceType(fullyQualifiedName!(fieldTypes[fc]))) ~ newline;
                 }
+
                 if (is(fieldTypes[fc] == string)) {
                     csagg.properties ~= "        public %2$s %3$s { get => SharedFunctions.SliceToString(dlang_%1$s_get(this), DStringType._string); set => dlang_%1$s_set(this, SharedFunctions.CreateString(value)); }".format(fieldNames[fc], getCSharpInterfaceType(fullyQualifiedName!(fieldTypes[fc])), getCSharpName(fieldNames[fc])) ~ newline;
                 } else if (is(fieldTypes[fc] == wstring)) {

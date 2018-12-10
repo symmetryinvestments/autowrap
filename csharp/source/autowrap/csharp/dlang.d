@@ -156,10 +156,9 @@ private string generateMethods(T)() {
                     exp ~= ") nothrow {" ~ newline;
                     exp ~= "    try {" ~ newline;
                     exp ~= methodSetup;
+                    exp ~= "        ";
                     if (!is(returnType == void)) {
-                        exp ~= "        auto __result__ = ";
-                    } else {
-                        exp ~= "        ";
+                        exp ~= "auto __result__ = ";
                     }
                     exp ~= "__obj__." ~ m ~ "(";
                     static foreach(pc; 0..paramNames.length) {
