@@ -1,0 +1,7 @@
+{
+	"fileVersion": 1,
+	"versions": {
+		"pynih": {"path":".."},
+		"unit-threaded": "0.7.53"
+	}
+}

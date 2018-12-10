@@ -37,8 +37,8 @@ script:
   - dub run pyd:setup && source pyd_set_env_vars.sh
   - DUB_CONFIGURATION=env make
   - dub run -c unittest-travis --build=unittest-cov
-  - python2/ci.sh
   - csharp/tests/test.sh
+  - pynih/ci.sh
 
 after_success:
  - bash <(curl -s https://codecov.io/bash)

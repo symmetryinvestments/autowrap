@@ -1,0 +1,35 @@
+# Python NIH edition
+# A from scratch Python solution that doesn't depend on pyd
+name "pynih"
+targetType "library"
+
+preBuildCommands "[ -e $PACKAGE_DIR/druntime.o ] || gcc -c -fPIC $PACKAGE_DIR/source/druntime.c -o $PACKAGE_DIR/druntime.o" platform="linux"
+sourceFiles "$PACKAGE_DIR/druntime.o" platform="linux"
+
+configuration "default" {
+
+}
+
+
+configuration "unittest" {
+    targetType "executable"
+    targetPath "bin"
+    targetName "ut"
+    sourcePaths "tests"
+    importPaths "tests"
+    mainSourceFile "tests/main.d"
+    libs "python3.7m"
+    dependency "unit-threaded" version="*"
+}
+
+
+configuration "unittest-travis" {
+    targetType "executable"
+    targetPath "bin"
+    targetName "ut"
+    sourcePaths "tests"
+    importPaths "tests"
+    mainSourceFile "tests/main.d"
+    libs "python2.7"
+    dependency "unit-threaded" version="*"
+}

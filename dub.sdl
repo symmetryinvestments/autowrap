@@ -6,16 +6,19 @@ targetType "none"
 
 dependency ":reflection" version="*"
 dependency ":python" version="*"
+dependency ":pynih" version="*"
 dependency ":excel" version="*"
 dependency ":csharp" version="*"
 
 subPackage "reflection"
 subPackage "python"
+subPackage "pynih"
 subPackage "excel"
 subPackage "csharp"
 
 configuration "unittest" {
     targetType "executable"
+    targetPath "bin"
     targetName "ut"
     sourcePaths "python/source" "reflection/source" "tests/d_modules"
     importPaths "python/source" "reflection/source" "tests/d_modules"
@@ -25,6 +28,7 @@ configuration "unittest" {
 
 configuration "unittest-travis" {
     targetType "executable"
+    targetPath "bin"
     targetName "ut"
     sourcePaths "python/source" "reflection/source" "tests/d_modules"
     importPaths "python/source" "reflection/source" "tests/d_modules"
