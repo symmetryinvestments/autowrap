@@ -147,8 +147,6 @@ T to(T)(PyObject* value) if(is(T == string)) {
 
     value = pyObjectUnicode(value);
 
-    //Py_ssize_t length;
-    //PyUnicode_AsUnicodeAndSize(value, &length);
     const length = pyUnicodeGetSize(value);
 
     auto ptr = pyBytesAsString(pyUnicodeAsUtf8String(value));

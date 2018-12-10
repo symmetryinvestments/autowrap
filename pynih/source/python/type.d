@@ -204,12 +204,20 @@ struct PythonMethod(T, alias F) {
         // e.g. `auto dRet = dAggregate.myMethod(dArgs[0], dArgs[1]);`
         mixin(dret, `dAggregate.`, __traits(identifier, F), `(dArgs.expand);`);
 
-        // The member function could have side-effects, need to copy the changes
-        // back to the Python object
-        // FIXME: ref count?
-        // FIXME: crashes with certain structs
-        static if(!(functionAttributes!F & FunctionAttribute.const_))
-            * cast(PythonClass!T*) self_ = * cast(PythonClass!T*) toPython(dAggregate);
+        // The member function could have side-effects, we need to copy the changes
+        // back to the Python object.
+        static if(!(functionAttributes!F & FunctionAttribute.const_)) {
+            auto newSelf = toPython(dAggregate);
+            scope(exit) {
+                pyDecRef(newSelf);
+            }
+            auto pyClassSelf = cast(PythonClass!T*) self_;
+            auto pyClassNewSelf = cast(PythonClass!T*) newSelf;
+
+            static foreach(i; 0 .. PythonClass!T.fieldNames.length) {
+                pyClassSelf.set!i(self_, pyClassNewSelf.get!i(newSelf));
+            }
+        }
 
         static if(!is(ReturnType!F == void))
             return dRet.toPython;
@@ -284,7 +292,7 @@ struct PythonClass(T) if(isAggregateType!T && !isDateOrDateTime!T) {
     }
 
     // The function pointer for PyGetSetDef.get
-    private static extern(C) PyObject* get(int FieldIndex)(PyObject* self_, void* closure) {
+    private static extern(C) PyObject* get(int FieldIndex)(PyObject* self_, void* closure = null) {
         import python.raw: pyIncRef;
 
         assert(self_ !is null);
@@ -298,7 +306,7 @@ struct PythonClass(T) if(isAggregateType!T && !isDateOrDateTime!T) {
     }
 
     // The function pointer for PyGetSetDef.set
-    static extern(C) int set(int FieldIndex)(PyObject* self_, PyObject* value, void* closure) {
+    static extern(C) int set(int FieldIndex)(PyObject* self_, PyObject* value, void* closure = null) {
         import python.raw: pyIncRef, pyDecRef, PyErr_SetString, PyExc_TypeError;
 
         if(value is null) {

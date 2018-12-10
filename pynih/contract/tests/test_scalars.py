@@ -21,8 +21,8 @@ def test_one_bool():
 
 def test_one_string():
     from contract import one_string_param_to_length
-    assert one_string_param_to_length('foo') == 3
-    assert one_string_param_to_length('quux') == 4
+    assert one_string_param_to_length(u'foo') == 3
+    assert one_string_param_to_length(u'quux') == 4
 
 
 def test_one_int():
@@ -44,15 +44,15 @@ def test_one_double():
 
 def test_one_string_param_to_string():
     from contract import one_string_param_to_string
-    assert one_string_param_to_string('foo') == 'foo_suffix'
-    assert one_string_param_to_string('quux') == 'quux_suffix'
+    assert one_string_param_to_string(u'foo') == u'foo_suffix'
+    assert one_string_param_to_string(u'quux') == u'quux_suffix'
     assert one_string_param_to_string(u'café') == u'café_suffix'
 
 
 def test_one_string_param_to_string_manual_mem():
     from contract import one_string_param_to_string_manual_mem
-    assert one_string_param_to_string_manual_mem('foo') == 'foo_suffix'
-    assert one_string_param_to_string_manual_mem('quux') == 'quux_suffix'
+    assert one_string_param_to_string_manual_mem(u'foo') == u'foo_suffix'
+    assert one_string_param_to_string_manual_mem(u'quux') == u'quux_suffix'
     assert one_string_param_to_string_manual_mem(u'café') == u'café_suffix'
 
 
@@ -65,7 +65,7 @@ def test_one_list_param():
 def test_one_list_param_to_list():
     from contract import one_list_param_to_list
     assert one_list_param_to_list([1, 2, 3]) == [1, 2, 3, 4, 5]
-    assert one_list_param_to_list(['foo', 'bar']) == ['foo', 'bar', 4, 5]
+    assert one_list_param_to_list([u'foo', u'bar']) == [u'foo', u'bar', 4, 5]
 
 
 def test_one_tuple_param():
@@ -81,14 +81,14 @@ def test_one_range_param():
 
 def test_one_dict_param():
     from contract import one_dict_param
-    assert one_dict_param({'foo': 'bar'}) == 1
-    assert one_dict_param({'foo': 'bar', 'quux': 'toto'}) == 2
+    assert one_dict_param({u'foo': u'bar'}) == 1
+    assert one_dict_param({u'foo': u'bar', u'quux': u'toto'}) == 2
 
 
 def test_one_dict_param_to_dict():
     from contract import one_dict_param_to_dict
-    ret = one_dict_param_to_dict({'foo': 'bar'})
-    assert ret == {'foo': 'bar', 'oops': 'noooo'}
+    ret = one_dict_param_to_dict({u'foo': u'bar'})
+    assert ret == {u'foo': u'bar', u'oops': u'noooo'}
 
 
 def test_add_days_to_date():

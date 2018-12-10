@@ -94,7 +94,8 @@ string createModuleMixin(Module module_, alias cfunctions, alias aggregates)()
         export __gshared extern(C) PyDateTime_CAPI* PyDateTimeAPI;
 
         extern(C) export void init%s() {
-            import python.raw: pyDateTimeImport, initModule;
+            import python.raw: pyDateTimeImport;
+            import python.cooked: initModule;
             import python.boilerplate: Module, CFunctions, Aggregates;
 
             pyDateTimeImport;
