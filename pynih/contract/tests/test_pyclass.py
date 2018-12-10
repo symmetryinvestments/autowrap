@@ -1,5 +1,14 @@
 # coding=utf8
 import pytest
+import sys
+
+
+if sys.version_info >= (3, 0):
+    is_python_3 = True
+    is_python_2 = False
+else:
+    is_python_3 = False
+    is_python_2 = True
 
 
 def test_int_double_struct():
@@ -18,7 +27,11 @@ def test_int_double_struct():
     s.d = 22.2
     assert s.d == 22.2
 
-    assert str(type(s)) == u"<class 'SimpleStruct'>"
+    if is_python_3:
+        assert str(type(s)) == u"<class 'SimpleStruct'>"
+    else:
+        assert str(type(s)) == u"<type 'SimpleStruct'>"
+
     assert repr(s) == u'SimpleStruct(3, 22.2)'
     assert str(s) == u'SimpleStruct(3, 22.2)'
 
@@ -26,13 +39,17 @@ def test_int_double_struct():
 def test_string_list_struct():
     from contract import pyclass_string_list_struct
 
-    s = pyclass_string_list_struct(['foo', 'bar', 'baz'])
-    assert s.strings == ['foo', 'bar', 'baz']
+    s = pyclass_string_list_struct([u'foo', u'bar', u'baz'])
+    assert s.strings == [u'foo', u'bar', u'baz']
 
-    s = pyclass_string_list_struct(['quux', 'toto'])
-    assert s.strings == ['quux', 'toto']
+    s = pyclass_string_list_struct([u'quux', u'toto'])
+    assert s.strings == [u'quux', u'toto']
 
-    assert str(type(s)) == u"<class 'StringsStruct'>"
+    if is_python_3:
+        assert str(type(s)) == u"<class 'StringsStruct'>"
+    else:
+        assert str(type(s)) == u"<type 'StringsStruct'>"
+
     assert repr(s) == u'StringsStruct(["quux", "toto"])'
     assert str(s) == u'StringsStruct(["quux", "toto"])'
 
@@ -46,7 +63,11 @@ def test_twice_struct():
     s = pyclass_twice_struct(4)
     assert s.twice() == 8
 
-    assert str(type(s)) == u"<class 'TwiceStruct'>"
+    if is_python_3:
+        assert str(type(s)) == u"<class 'TwiceStruct'>"
+    else:
+        assert str(type(s)) == u"<type 'TwiceStruct'>"
+
     assert repr(s) == u'TwiceStruct(4)'
     assert str(s) == u'TwiceStruct(4)'
 
@@ -62,6 +83,10 @@ def test_thrice_struct():
     assert s.thrice() == pytest.approx(33.3, 0.1)
     assert s.quadruple() == pytest.approx(44.4, 0.1)
 
-    assert str(type(s)) == u"<class 'ThriceStruct'>"
+    if is_python_3:
+        assert str(type(s)) == u"<class 'ThriceStruct'>"
+    else:
+        assert str(type(s)) == u"<type 'ThriceStruct'>"
+
     assert repr(s) == u'ThriceStruct(11.1)'
     assert str(s) == u'ThriceStruct(11.1)'

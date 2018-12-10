@@ -106,6 +106,15 @@ bool pyUnicodeCheck(PyObject* obj) @nogc nothrow {
     return PyUnicode_Check(obj);
 }
 
+bool pyIntCheck(PyObject* obj) @nogc nothrow {
+    static if(isPython3)
+        return pyLongCheck(obj);
+    else static if(isPython2)
+        return PyInt_Check(obj);
+    else
+        static assert(false);
+}
+
 bool pyLongCheck(PyObject* obj) @nogc nothrow {
     return PyLong_Check(obj);
 }
@@ -159,6 +168,14 @@ auto pyObjectUnicode(PyObject* obj) @nogc nothrow {
         return PyObject_Unicode(obj);
     else
         return obj;
+}
+
+auto pyUnicodeGetSize(PyObject* obj) @nogc nothrow {
+    return PyUnicode_GetSize(obj);
+}
+
+auto pyUnicodeFromStringAndSize(const(char)* ptr, Py_ssize_t size) {
+    return PyUnicode_FromStringAndSize(ptr, size);
 }
 
 auto pyObjectNew(T)(PyTypeObject* typeobj) {

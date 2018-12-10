@@ -65,7 +65,7 @@ struct PythonType(T) {
         if(getsets != getsets.init) return &getsets[0];
 
         static foreach(i; 0 .. fieldNames.length) {
-            getsets[i].name = fieldNames[i];
+            getsets[i].name = cast(typeof(PyGetSetDef.name))fieldNames[i];
             getsets[i].get = &PythonClass!T.get!i;
             getsets[i].set = &PythonClass!T.set!i;
         }
@@ -309,8 +309,8 @@ private bool checkPythonType(T)(PyObject* value) if(isArray!T) {
 
 
 private bool checkPythonType(T)(PyObject* value) if(isIntegral!T) {
-    import python.raw: pyLongCheck;
-    const ret = pyLongCheck(value);
+    import python.raw: pyIntCheck, pyLongCheck;
+    const ret = pyLongCheck(value) || pyIntCheck(value);
     if(!ret) setPyErrTypeString!"long";
     return ret;
 }

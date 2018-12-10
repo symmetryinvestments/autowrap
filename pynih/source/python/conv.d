@@ -39,8 +39,8 @@ PyObject* toPython(T)(T value) if(isAggregateType!T) {
 
 
 PyObject* toPython(T)(T value) if(is(T == string)) {
-    import python.raw: PyUnicode_FromStringAndSize;
-    return PyUnicode_FromStringAndSize(value.ptr, value.length);
+    import python.raw: pyUnicodeFromStringAndSize;
+    return pyUnicodeFromStringAndSize(value.ptr, value.length);
 }
 
 
@@ -92,13 +92,14 @@ T to(T)(PyObject* value) if(isArray!T && !is(T == string)) {
 
 
 T to(T)(PyObject* value) if(is(T == string)) {
-    import python.raw: PyUnicode_AsUnicodeAndSize, pyUnicodeCheck,
+    import python.raw: pyUnicodeGetSize, pyUnicodeCheck,
         pyBytesAsString, pyObjectUnicode, pyUnicodeAsUtf8String, Py_ssize_t;
 
     value = pyObjectUnicode(value);
 
-    Py_ssize_t length;
-    PyUnicode_AsUnicodeAndSize(value, &length);
+    //Py_ssize_t length;
+    //PyUnicode_AsUnicodeAndSize(value, &length);
+    const length = pyUnicodeGetSize(value);
 
     auto ptr = pyBytesAsString(pyUnicodeAsUtf8String(value));
     assert(length == 0 || ptr !is null);
