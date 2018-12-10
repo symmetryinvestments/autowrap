@@ -17,14 +17,6 @@ def test_twice_struct_func():
     assert s4.twice() == 8
 
 
-def test_ctor():
-    from contract import MyStruct
-
-    assert MyStruct().i == 42
-    # TODO
-    # assert MyStruct(77).i == 77
-
-
 def test_struct_getset():
     from contract import struct_getset
     s = struct_getset()
@@ -50,3 +42,28 @@ def test_struct_getset():
     assert s.inner.d == 777.77
     s.inner.d = 55.5
     assert s.inner.d == 55.5
+
+
+def test_default_ctor():
+    from contract import StructDefaultCtor
+
+    assert StructDefaultCtor().i == 42
+    assert StructDefaultCtor(77).i == 77
+
+
+def test_user_ctor():
+    from contract import StructUserCtor
+
+    assert StructUserCtor().i == 42
+    assert StructUserCtor().d == 33.3
+    assert StructUserCtor().s == u'foobar'
+
+    s = StructUserCtor(2, 11.1, u'quux')
+    assert s.i == 2
+    assert s.d == 11.1
+    assert s.s == u'quux'
+
+    s = StructUserCtor(5, u'toto')
+    assert s.i == 5
+    assert s.d == 77.7
+    assert s.s == u'toto'
