@@ -3,8 +3,10 @@
  */
 module python.type;
 
+
 import python.raw: PyObject;
-import std.traits: isArray, isIntegral, isBoolean, isFloatingPoint;
+import std.traits: isArray, isIntegral, isBoolean, isFloatingPoint, isAggregateType;
+import std.datetime: DateTime, Date;
 
 
 /**
@@ -80,8 +82,10 @@ struct PythonType(T) {
         import std.traits: isSomeFunction;
 
         alias memberNames = AliasSeq!(__traits(allMembers, T));
+        enum ispublic(string name) = isPublic!(T, name);
+        alias publicMemberNames = Filter!(ispublic, memberNames);
         alias Member(string name) = Alias!(__traits(getMember, T, name));
-        alias members = staticMap!(Member, memberNames);
+        alias members = staticMap!(Member, publicMemberNames);
         alias memberFunctions = Filter!(isSomeFunction, members);
 
         // +1 due to sentinel
@@ -135,7 +139,7 @@ struct PythonType(T) {
 
             Tuple!fieldTypes dArgs;
 
-            static foreach(i; 0 .. T.tupleof.length) {
+            static foreach(i; 0 .. fieldTypes.length) {
                 dArgs[i] = PyTuple_GetItem(args, i).to!(fieldTypes[i]);
             }
 
@@ -175,26 +179,52 @@ private alias Type(alias A) = typeof(A);
  */
 struct PythonMethod(T, alias F) {
     static extern(C) PyObject* impl(PyObject* self_, PyObject* args, PyObject* kwargs) {
-        import python.raw: PyTuple_Size, PyTuple_GetItem;
+        import python.raw: PyTuple_Size, PyTuple_GetItem, pyIncRef, pyNone, pyDecRef;
         import python.conv: toPython, to;
-        import std.traits: Parameters;
+        import std.traits: Parameters, ReturnType, FunctionAttribute, functionAttributes, Unqual;
         import std.typecons: Tuple;
+        import std.meta: staticMap;
 
         assert(PyTuple_Size(args) == Parameters!F.length);
 
-        Tuple!(Parameters!F) dArgs;
+        Tuple!(staticMap!(Unqual, Parameters!F)) dArgs;
 
         static foreach(i; 0 .. Parameters!F.length) {
             dArgs[i] = PyTuple_GetItem(args, i).to!(Parameters!F[i]);
         }
 
         assert(self_ !is null);
-        auto dAggregate = self_.to!T;
+        auto dAggregate = self_.to!(Unqual!T);
+
+        static if(is(ReturnType!F == void))
+            enum dret = "";
+        else
+            enum dret = "auto dRet = ";
 
         // e.g. `auto dRet = dAggregate.myMethod(dArgs[0], dArgs[1]);`
-        mixin(`auto dRet = dAggregate.`, __traits(identifier, F), `(dArgs.expand);`);
+        mixin(dret, `dAggregate.`, __traits(identifier, F), `(dArgs.expand);`);
 
-        return dRet.toPython;
+        // The member function could have side-effects, we need to copy the changes
+        // back to the Python object.
+        static if(!(functionAttributes!F & FunctionAttribute.const_)) {
+            auto newSelf = toPython(dAggregate);
+            scope(exit) {
+                pyDecRef(newSelf);
+            }
+            auto pyClassSelf = cast(PythonClass!T*) self_;
+            auto pyClassNewSelf = cast(PythonClass!T*) newSelf;
+
+            static foreach(i; 0 .. PythonClass!T.fieldNames.length) {
+                pyClassSelf.set!i(self_, pyClassNewSelf.get!i(newSelf));
+            }
+        }
+
+        static if(!is(ReturnType!F == void))
+            return dRet.toPython;
+        else {
+            pyIncRef(pyNone);
+            return pyNone;
+        }
     }
 }
 
@@ -212,11 +242,21 @@ PyObject* pythonClass(T)(auto ref T dobj) {
     auto ret = pyObjectNew!(PythonClass!T)(PythonType!T.pyType);
 
     static foreach(fieldName; FieldNameTuple!T) {
-        mixin(`ret.`, fieldName, ` = dobj.`, fieldName, `.toPython;`);
+        static if(isPublic!(T, fieldName))
+            mixin(`ret.`, fieldName, ` = dobj.`, fieldName, `.toPython;`);
     }
 
     return cast(PyObject*) ret;
 }
+
+
+private template isPublic(T, string memberName) {
+    enum protection = __traits(getProtection, __traits(getMember, T, memberName));
+    enum isPublic = protection == "public" || protection == "export";
+}
+
+
+private enum isDateOrDateTime(T) = is(Unqual!T == DateTime) || is(Unqual!T == Date);
 
 
 /**
@@ -233,7 +273,7 @@ PyObject* pythonClass(T)(auto ref T dobj) {
    assign anything but an integer to `Foo.i` or a string to `Foo.s` in Python
    will raise `TypeError`.
  */
-struct PythonClass(T) {
+struct PythonClass(T) if(isAggregateType!T && !isDateOrDateTime!T) {
     import python.raw: PyObjectHead, PyGetSetDef;
     import std.traits: FieldNameTuple, Fields;
 
@@ -252,7 +292,7 @@ struct PythonClass(T) {
     }
 
     // The function pointer for PyGetSetDef.get
-    private static extern(C) PyObject* get(int FieldIndex)(PyObject* self_, void* closure) {
+    private static extern(C) PyObject* get(int FieldIndex)(PyObject* self_, void* closure = null) {
         import python.raw: pyIncRef;
 
         assert(self_ !is null);
@@ -266,7 +306,7 @@ struct PythonClass(T) {
     }
 
     // The function pointer for PyGetSetDef.set
-    static extern(C) int set(int FieldIndex)(PyObject* self_, PyObject* value, void* closure) {
+    static extern(C) int set(int FieldIndex)(PyObject* self_, PyObject* value, void* closure = null) {
         import python.raw: pyIncRef, pyDecRef, PyErr_SetString, PyExc_TypeError;
 
         if(value is null) {
@@ -275,9 +315,10 @@ struct PythonClass(T) {
             return -1;
         }
 
-        if(!checkPythonType!(fieldTypes[FieldIndex])(value)) {
-            return -1;
-        }
+        // FIXME
+        // if(!checkPythonType!(fieldTypes[FieldIndex])(value)) {
+        //     return -1;
+        // }
 
         assert(self_ !is null);
         auto self = cast(PythonClass!T*) self_;
@@ -322,6 +363,23 @@ private bool checkPythonType(T)(PyObject* value) if(isFloatingPoint!T) {
     if(!ret) setPyErrTypeString!"float";
     return ret;
 }
+
+
+private bool checkPythonType(T)(PyObject* value) if(is(T == DateTime)) {
+    import python.raw: pyDateTimeCheck;
+    const ret = pyDateTimeCheck(value);
+    if(!ret) setPyErrTypeString!"DateTime";
+    return ret;
+}
+
+
+private bool checkPythonType(T)(PyObject* value) if(is(T == Date)) {
+    import python.raw: pyDateCheck;
+    const ret = pyDateCheck(value);
+    if(!ret) setPyErrTypeString!"Date";
+    return ret;
+}
+
 
 
 private void setPyErrTypeString(string type)() @trusted @nogc nothrow {

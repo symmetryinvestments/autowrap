@@ -52,6 +52,7 @@ string createModuleMixin(Module module_, alias cfunctions, alias aggregates)()
     import std.format: format;
 
     enum ret = q{
+        import python.raw: PyDateTime_CAPI;
         // This is declared as an extern C variable in python.bindings.
         // We declare it here to avoid linker errors.
         export __gshared extern(C) PyDateTime_CAPI* PyDateTimeAPI;
@@ -59,8 +60,12 @@ string createModuleMixin(Module module_, alias cfunctions, alias aggregates)()
         import python: ModuleInitRet;
 
         extern(C) export ModuleInitRet PyInit_%s() {
-            import python: pyDateTimeImport;
+            import python.raw: pyDateTimeImport;
+            import python.cooked: createModule;
+            import python.boilerplate: Module, CFunctions, Aggregates;
+
             pyDateTimeImport;
+
             return createModule!(
                 Module("%s"),
                 CFunctions!(
@@ -82,12 +87,17 @@ string createModuleMixin(Module module_, alias cfunctions, alias aggregates)()
     import std.format: format;
 
     enum ret = q{
+        import python.raw: PyDateTime_CAPI;
+
         // This is declared as an extern C variable in python.bindings.
         // We declare it here to avoid linker errors.
         export __gshared extern(C) PyDateTime_CAPI* PyDateTimeAPI;
 
         extern(C) export void init%s() {
-            import python: pyDateTimeImport, initModule;
+            import python.raw: pyDateTimeImport;
+            import python.cooked: initModule;
+            import python.boilerplate: Module, CFunctions, Aggregates;
+
             pyDateTimeImport;
             initModule!(
                 Module("%s"),

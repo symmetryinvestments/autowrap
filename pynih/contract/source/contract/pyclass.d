@@ -147,3 +147,17 @@ package PyObject* pyclass_thrice_struct(PyObject* self, PyObject *args) {
 
     return pythonClass(ThriceStruct(darg));
 }
+
+
+package PyObject* pyclass_void_struct(PyObject* self, PyObject *args) {
+
+    static struct VoidStruct {
+        int i = 42;
+
+        void setValue(int i) {
+            this.i = i;
+        }
+    }
+
+    return pythonClass(VoidStruct());
+}

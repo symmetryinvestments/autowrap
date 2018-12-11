@@ -36,6 +36,7 @@ mixin(
             pyclass_string_list_struct,
             pyclass_twice_struct,
             pyclass_thrice_struct,
+            pyclass_void_struct,
         ),
         Aggregates!(
             StructDefaultCtor,

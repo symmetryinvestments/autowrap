@@ -123,6 +123,14 @@ bool pyFloatCheck(PyObject* obj) @nogc nothrow {
     return PyFloat_Check(obj);
 }
 
+bool pyDateTimeCheck(PyObject* obj) @nogc nothrow {
+    return PyDateTime_Check(obj);
+}
+
+bool pyDateCheck(PyObject* obj) @nogc nothrow {
+    return PyDate_Check(obj);
+}
+
 
 // Demacroify
 auto pyTrue() {
