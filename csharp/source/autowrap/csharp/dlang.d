@@ -1,12 +1,8 @@
 module autowrap.csharp.dlang;
 
-import autowrap.csharp.common : camelToPascalCase, getDLangSliceInterfaceName, getDLangInterfaceName;
-import autowrap.reflection : AllFunctions, AllAggregates, isModule;
-
+import autowrap.reflection : isModule;
 import std.ascii : newline;
-import std.traits : isArray, fullyQualifiedName, moduleName, isFunction, Fields, FieldNameTuple, hasMember, functionAttributes, FunctionAttribute, ReturnType, Parameters, ParameterIdentifierTuple;
-import std.meta : allSatisfy, AliasSeq;
-import std.conv : to;
+import std.meta : allSatisfy;
 
 enum string methodSetup = "        thread_attachThis();
         rt_moduleTlsCtor();
@@ -15,8 +11,12 @@ enum string methodSetup = "        thread_attachThis();
 
 // Wrap global functions from multiple modules
 public string wrapDLang(Modules...)() if(allSatisfy!(isModule, Modules)) {
-    string ret = string.init;
+    import autowrap.csharp.common : getDLangInterfaceName;
+    import autowrap.reflection : AllAggregates;
+    import std.traits : fullyQualifiedName, moduleName;
+    import std.meta : AliasSeq;
 
+    string ret = string.init;
     ret ~= "import core.thread : thread_attachThis, thread_detachThis;" ~ newline;
     ret ~= "extern(C) void rt_moduleTlsCtor();" ~ newline;
     ret ~= "extern(C) void rt_moduleTlsDtor();" ~ newline;
@@ -48,6 +48,10 @@ public string wrapDLang(Modules...)() if(allSatisfy!(isModule, Modules)) {
 }
 
 private string generateConstructors(T)() {
+    import autowrap.csharp.common : getDLangInterfaceName;
+    import std.traits : fullyQualifiedName, hasMember, Parameters, ParameterIdentifierTuple;
+    import std.meta : AliasSeq;
+
     string ret = string.init;
     alias fqn = fullyQualifiedName!T;
     static if(hasMember!(T, "__ctor")) {
@@ -108,6 +112,10 @@ private string generateConstructors(T)() {
 }
 
 private string generateMethods(T)() {
+    import autowrap.csharp.common : getDLangInterfaceName;
+    import std.traits : isFunction, fullyQualifiedName, ReturnType, Parameters, ParameterIdentifierTuple;
+    import std.conv : to;
+
     string ret = string.init;
     alias fqn = fullyQualifiedName!T;
     foreach(m; __traits(allMembers, T)) {
@@ -182,6 +190,9 @@ private string generateMethods(T)() {
 }
 
 private string generateFields(T)() {
+    import autowrap.csharp.common : getDLangInterfaceName;
+    import std.traits : fullyQualifiedName, Fields, FieldNameTuple;
+
     string ret = string.init;
     alias fqn = fullyQualifiedName!T;
     if (is(T == class) || is(T == interface)) {
@@ -202,6 +213,10 @@ private string generateFields(T)() {
 }
 
 private string generateFunctions(Modules...)() if(allSatisfy!(isModule, Modules)) {
+    import autowrap.csharp.common : getDLangInterfaceName;
+    import autowrap.reflection: AllFunctions;
+    import std.traits : fullyQualifiedName, hasMember, functionAttributes, FunctionAttribute, ReturnType, Parameters, ParameterIdentifierTuple;
+
     string ret = string.init;
     foreach(func; AllFunctions!Modules) {
         alias modName = func.moduleName;
@@ -263,6 +278,8 @@ private string generateFunctions(Modules...)() if(allSatisfy!(isModule, Modules)
 }
 
 private string generateSliceMethods(T)() {
+    import autowrap.csharp.common : getDLangSliceInterfaceName;
+    import std.traits : fullyQualifiedName;
     string ret = string.init;
     alias fqn = fullyQualifiedName!T;
 

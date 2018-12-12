@@ -104,8 +104,33 @@ bool pyBoolCheck(PyObject *obj) @nogc nothrow {
 // Demacroify
 bool pyUnicodeCheck(PyObject* obj) @nogc nothrow {
     return PyUnicode_Check(obj);
-
 }
+
+bool pyIntCheck(PyObject* obj) @nogc nothrow {
+    static if(isPython3)
+        return pyLongCheck(obj);
+    else static if(isPython2)
+        return PyInt_Check(obj);
+    else
+        static assert(false);
+}
+
+bool pyLongCheck(PyObject* obj) @nogc nothrow {
+    return PyLong_Check(obj);
+}
+
+bool pyFloatCheck(PyObject* obj) @nogc nothrow {
+    return PyFloat_Check(obj);
+}
+
+bool pyDateTimeCheck(PyObject* obj) @nogc nothrow {
+    return PyDateTime_Check(obj);
+}
+
+bool pyDateCheck(PyObject* obj) @nogc nothrow {
+    return PyDate_Check(obj);
+}
+
 
 // Demacroify
 auto pyTrue() {
@@ -121,6 +146,12 @@ auto pyFalse() {
 // Demacroify
 void pyIncRef(PyObject* obj) @nogc nothrow {
     Py_INCREF(obj);
+}
+
+// Demacroify
+void pyDecRef(PyObject* obj) @nogc nothrow {
+    // FIXME: d++ can't translate this due to `;` for an empty statement
+    // Py_DECREF(obj);
 }
 
 // Demacroify
@@ -145,6 +176,14 @@ auto pyObjectUnicode(PyObject* obj) @nogc nothrow {
         return PyObject_Unicode(obj);
     else
         return obj;
+}
+
+auto pyUnicodeGetSize(PyObject* obj) @nogc nothrow {
+    return PyUnicode_GetSize(obj);
+}
+
+auto pyUnicodeFromStringAndSize(const(char)* ptr, Py_ssize_t size) {
+    return PyUnicode_FromStringAndSize(ptr, size);
 }
 
 auto pyObjectNew(T)(PyTypeObject* typeobj) {

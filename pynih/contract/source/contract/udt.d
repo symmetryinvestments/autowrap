@@ -102,8 +102,27 @@ package PyObject* twice_struct_func(PyObject* self, PyObject *args) nothrow @nog
 }
 
 
-struct MyStruct {
+struct StructDefaultCtor {
     int i = 42;
+}
+
+struct StructUserCtor {
+    int i = 42;
+    double d = 33.3;
+    string s = "foobar";
+    private int _shouldBeOk;
+
+    this(int i, string s) {
+        this.i = i;
+        this.d = 77.7;
+        this.s = s;
+    }
+
+    this(int i, double d, string s) {
+        this.i = i;
+        this.d = d;
+        this.s = s;
+    }
 }
 
 

@@ -1,13 +1,11 @@
 module autowrap.csharp.csharp;
 
-import autowrap.csharp.common : LibraryName, RootNamespace, camelToPascalCase, getDLangSliceInterfaceName, getDLangInterfaceName;
-import autowrap.reflection : AllFunctions, AllAggregates, isModule;
+import autowrap.csharp.common : LibraryName, RootNamespace;
+import autowrap.reflection : isModule;
 
 import std.ascii : newline;
-import std.meta: allSatisfy, AliasSeq;
-import std.traits : isArray, fullyQualifiedName, moduleName, isFunction, Fields, FieldNameTuple, hasMember, functionAttributes, FunctionAttribute, ReturnType, Parameters, ParameterIdentifierTuple;
-import std.string : format, replace;
-import std.conv : to;
+import std.meta: allSatisfy;
+import std.string : format;
 
 private string[string] returnTypes;
 private CSharpNamespace[string] namespaces;
@@ -96,6 +94,8 @@ private final class CSharpAggregate {
     }
 
     public override string toString() {
+        import autowrap.csharp.common : camelToPascalCase;
+
         char[] ret;
         ret.reserve(aggregateReservationSize);
         ret ~= "    [GeneratedCodeAttribute(\"Autowrap\", \"1.0.0.0\")]" ~ newline;
@@ -134,6 +134,8 @@ public struct csharpRange {
 }
 
 public string generateCSharp(Modules...)(LibraryName libraryName, RootNamespace rootNamespace) if(allSatisfy!(isModule, Modules)) {
+    import autowrap.reflection : AllAggregates;
+    import std.traits : moduleName;
     generateSliceBoilerplate(libraryName.value);
 
     foreach(agg; AllAggregates!Modules) {
@@ -166,6 +168,10 @@ public string generateCSharp(Modules...)(LibraryName libraryName, RootNamespace 
 }
 
 private void generateConstructors(T)(string libraryName, CSharpAggregate csagg) if (is(T == class) || is(T == struct)) {
+    import autowrap.csharp.common : getDLangInterfaceName;
+    import std.traits : fullyQualifiedName, hasMember, Parameters, ParameterIdentifierTuple;
+    import std.meta: AliasSeq;
+
     const string aggName = __traits(identifier, T);
     alias fqn = fullyQualifiedName!T;
 
@@ -233,6 +239,10 @@ private void generateConstructors(T)(string libraryName, CSharpAggregate csagg) 
 }
 
 private void generateMethods(T)(string libraryName, CSharpAggregate csagg) if (is(T == class) || is(T == interface) || is(T == struct)) {
+    import autowrap.csharp.common : camelToPascalCase, getDLangInterfaceName;
+    import std.traits : isArray, fullyQualifiedName, isFunction, functionAttributes, FunctionAttribute, ReturnType, Parameters, ParameterIdentifierTuple;
+    import std.conv : to;
+
     const string aggName = __traits(identifier, T);
     alias fqn = fullyQualifiedName!T;
 
@@ -330,6 +340,9 @@ private void generateMethods(T)(string libraryName, CSharpAggregate csagg) if (i
 }
 
 private void generateProperties(T)(string libraryName, CSharpAggregate csagg) if (is(T == class) || is(T == interface) || is(T == struct)) {
+    import autowrap.csharp.common : camelToPascalCase;
+    import std.traits : isArray, fullyQualifiedName, functionAttributes, FunctionAttribute, ReturnType, Parameters;
+
     const string aggName = __traits(identifier, T);
     alias fqn = fullyQualifiedName!T;
 
@@ -418,6 +431,9 @@ private void generateProperties(T)(string libraryName, CSharpAggregate csagg) if
 }
 
 private void generateFields(T)(string libraryName, CSharpAggregate csagg) if (is(T == class) || is(T == interface) || is(T == struct)) {
+    import autowrap.csharp.common : getDLangInterfaceName;
+    import std.traits : isArray, fullyQualifiedName, Fields, FieldNameTuple;
+
     const string aggName = __traits(identifier, T);
     alias fqn = fullyQualifiedName!T;
     alias fieldTypes = Fields!T;
@@ -485,7 +501,9 @@ private void generateFields(T)(string libraryName, CSharpAggregate csagg) if (is
 }
 
 private void generateFunctions(Modules...)(string libraryName) if(allSatisfy!(isModule, Modules)) {
+    import autowrap.csharp.common : getDLangInterfaceName;
     import autowrap.reflection: AllFunctions;
+    import std.traits : isArray, fullyQualifiedName, ReturnType, Parameters, ParameterIdentifierTuple;
 
     foreach(func; AllFunctions!Modules) {
         alias modName = func.moduleName;
@@ -669,9 +687,11 @@ private string getDLangReturnType(string type, bool isClass) {
 }
 
 private string getCSharpMethodInterfaceName(string aggName, string funcName) {
+    import autowrap.csharp.common : camelToPascalCase;
     import std.string : split;
-    string name = string.init;
+    import std.string : replace;
 
+    string name = string.init;
     if (aggName !is null && aggName != string.init) {
         name ~= camelToPascalCase(aggName) ~ "_";
     }
@@ -686,6 +706,7 @@ private string getReturnErrorTypeName(string aggName) {
 }
 
 private string getCSharpName(string dlangName) {
+    import autowrap.csharp.common : camelToPascalCase;
     import std.algorithm : map;
     import std.string : split;
     import std.array : join;
@@ -702,6 +723,9 @@ private CSharpAggregate getAggregate(string namespace, string name, bool isStruc
 }
 
 private void generateRangeDef(T)(string libraryName) {
+    import autowrap.csharp.common : getDLangSliceInterfaceName;
+    import std.traits : fullyQualifiedName;
+
     alias fqn = fullyQualifiedName!T;
     const string csn = getCSharpName(fqn);
 

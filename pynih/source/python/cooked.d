@@ -50,8 +50,8 @@ private void addModuleTypes(alias aggregates)(PyObject* module_) {
             throw new Exception("Could not get type ready for `" ~ __traits(identifier, T) ~ "`");
 
 
-        pyIncRef(PythonType!T.object);
-        PyModule_AddObject(module_, &__traits(identifier, T)[0], PythonType!T.object);
+        pyIncRef(PythonType!T.pyObject);
+        PyModule_AddObject(module_, __traits(identifier, T), PythonType!T.pyObject);
     }
 }
 
@@ -67,7 +67,7 @@ private PyMethodDef* cFunctionsToPyMethodDefs(alias cfunctions)()
         // TODO: make it possible to use a different name with a UDA
         static assert(is(typeof(&cfunction): PyCFunction) ||
                       is(typeof(&cfunction): PyCFunctionWithKeywords),
-                      __traits(identifier, cfunction, " it not a Python C function"));
+                      __traits(identifier, cfunction) ~ " is not a Python C function");
 
         methods[i] = pyMethodDef!(__traits(identifier, cfunction))(cast(PyCFunction) &cfunction);
     }

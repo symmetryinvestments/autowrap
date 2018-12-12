@@ -3,6 +3,7 @@ module contract.main;
 import python;
 import contract.scalars;
 import contract.udt;
+import contract.pyclass;
 
 mixin(
     createModuleMixin!(
@@ -30,9 +31,16 @@ mixin(
             simple_struct_func,
             twice_struct_func,
             struct_getset,
+
+            pyclass_int_double_struct,
+            pyclass_string_list_struct,
+            pyclass_twice_struct,
+            pyclass_thrice_struct,
+            pyclass_void_struct,
         ),
         Aggregates!(
-            MyStruct,
+            StructDefaultCtor,
+            StructUserCtor,
         ),
     )
 );
