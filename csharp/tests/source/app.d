@@ -3,19 +3,15 @@ module app;
 import test;
 import autowrap.csharp;
 
+immutable Modules modules = Modules(Module("test"));
+
 mixin(
-    wrapCSharp(
-        Modules(
-            Module("test")
-        )
-    )
+    wrapCSharp(modules)
 );
 
 mixin(
     emitCSharp(
-        Modules( 
-            Module("test")
-        ),
+        modules,
         OutputFileName("Wrapper.cs"),
         LibraryName("csharp-tests"),
         RootNamespace("Autowrap.CSharp.Tests")
