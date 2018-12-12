@@ -18,26 +18,7 @@ public struct OutputFileName {
     string value;
 }
 
-public string emitCSharp(in Modules modules, OutputFileName outputFile, LibraryName libraryName, RootNamespace rootNamespace) {
-    import std.format : format;
-    import std.algorithm: map;
-    import std.array: join;
-
-    if(!__ctfe) return null;
-
-    const modulesList = modules.value.map!(a => a.toString).join(", ");
-
-    return q{
-        void main() {
-            import std.stdio;
-            string generated = generateCSharp!(%1$s)(LibraryName("%2$s"), RootNamespace("%3$s"));
-            auto f = File("%4$s", "w");
-            f.writeln(generated);
-        }
-    }.format(modulesList, libraryName.value, rootNamespace.value, outputFile.value);
-}
-
-public string wrapCSharp(in Modules modules) @safe pure {
+public string wrapCSharp(in Modules modules, OutputFileName outputFile, LibraryName libraryName, RootNamespace rootNamespace) @safe pure {
     import std.format : format;
     import std.algorithm: map;
     import std.array: join;
@@ -62,7 +43,14 @@ public string wrapCSharp(in Modules modules) @safe pure {
         version(Windows) {
             %3$s
         }
-    }.format(commonBoilerplate(), modulesList, dllMainMixinStr());
+
+        void main() {
+            import std.stdio;
+            string generated = generateCSharp!(%2$s)(LibraryName("%4$s"), RootNamespace("%5$s"));
+            auto f = File("%6$s", "w");
+            f.writeln(generated);
+        }
+    }.format(commonBoilerplate(), modulesList, dllMainMixinStr(), libraryName.value, rootNamespace.value, outputFile.value);
 }
 
 /**

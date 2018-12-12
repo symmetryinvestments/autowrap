@@ -167,12 +167,10 @@ import autowrap.csharp;
 immutable Modules modules = Modules(Module("test"));
 
 mixin(
-    wrapCSharp(modules)
-);
-
-mixin(
-    emitCSharp(
-        modules,
+    wrapCSharp(
+        Modules(
+            Module("csharp.library")
+        ),
         OutputFileName("Wrapper.cs"),
         LibraryName("csharp"),
         RootNamespace("csharp")

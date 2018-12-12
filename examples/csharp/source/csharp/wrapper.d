@@ -7,14 +7,6 @@ mixin(
     wrapCSharp(
         Modules(
             Module("csharp.library")
-        )
-    )
-);
-
-mixin(
-    emitCSharp(
-        Modules(
-            Module("csharp.library")
         ),
         OutputFileName("Wrapper.cs"),
         LibraryName("csharp"),
