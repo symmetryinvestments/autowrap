@@ -4,4 +4,6 @@ authors "Adam Wilson"
 license "BSD"
 targetType "library"
 
+stringImportPaths "source/autowrap/csharp"
+
 dependency "autowrap:reflection" path="../reflection"
