@@ -8,24 +8,25 @@ public struct RootNamespace {
     string value;
 }
 
-package string getInterfaceTypeString(TypeInfo type) {
-    import std.datetime : DateTime;
+package string getInterfaceTypeString(T)() {
+    import std.datetime : DateTime, SysTime;
+    import std.traits : fullyQualifiedName;
 
-    if (typeid(DateTime) == type) {
-        return type.toString();
+    if (is(T == DateTime) || is(T == SysTime)) {
+        return fullyQualifiedName!T;
     }
 
-    return type.toString();
+    return fullyQualifiedName!T;
 }
 
 package string getDLangInterfaceName(string moduleName, string aggName, string funcName) {
+    import std.algorithm : map;
     import std.string : split;
+    import std.array : join;
     string name = "autowrap_csharp_";
+    name ~= moduleName.split(".").map!camelToPascalCase.join("_");
 
-    foreach(string namePart; moduleName.split(".")) {
-        name ~= camelToPascalCase(namePart) ~ "_";
-    }
-    if (aggName !is null && aggName != string.init) {
+    if (aggName != string.init) {
         name ~= camelToPascalCase(aggName) ~ "_";
     }
     name ~= camelToPascalCase(funcName);
@@ -33,23 +34,23 @@ package string getDLangInterfaceName(string moduleName, string aggName, string f
 }
 
 package string getDLangInterfaceName(string fqn, string funcName) {
+    import std.algorithm : map;
     import std.string : split;
+    import std.array : join;
     string name = "autowrap_csharp_";
 
-    foreach(string namePart; fqn.split(".")) {
-        name ~= camelToPascalCase(namePart) ~ "_";
-    }
+    name ~= fqn.split(".").map!camelToPascalCase.join("_");
     name ~= camelToPascalCase(funcName);
     return name;
 }
 
 package string getDLangSliceInterfaceName(string fqn, string funcName) {
+    import std.algorithm : map;
     import std.string : split;
+    import std.array : join;
     string name = "autowrap_csharp_slice_";
 
-    foreach(string namePart; fqn.split(".")) {
-        name ~= camelToPascalCase(namePart) ~ "_";
-    }
+    name ~= fqn.split(".").map!camelToPascalCase.join("_");
     name ~= camelToPascalCase(funcName);
     return name;
 }

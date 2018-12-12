@@ -8,49 +8,49 @@ namespace Test {
     using Autowrap;
 
     public static class Functions {
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_ParameterlessFunction", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_TestParameterlessFunction", CallingConvention = CallingConvention.Cdecl)]
 
         private static extern return_slice_error dlang_ParameterlessFunction();
         public static string ParameterlessFunction() {
             var dlang_ret = dlang_ParameterlessFunction();
             return SharedFunctions.SliceToString(dlang_ret, DStringType._string);
         }
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_FreeFunction", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_TestFreeFunction", CallingConvention = CallingConvention.Cdecl)]
 
         private static extern return_int_error dlang_FreeFunction(int value);
         public static int FreeFunction(int value) {
             var dlang_ret = dlang_FreeFunction(value);
             return dlang_ret;
         }
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_StringFunction", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_TestStringFunction", CallingConvention = CallingConvention.Cdecl)]
 
         private static extern return_slice_error dlang_StringFunction(slice value);
         public static string StringFunction(string value) {
             var dlang_ret = dlang_StringFunction(SharedFunctions.CreateString(value));
             return SharedFunctions.SliceToString(dlang_ret, DStringType._string);
         }
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_RangeFunction", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_TestRangeFunction", CallingConvention = CallingConvention.Cdecl)]
 
         private static extern return_slice_error dlang_RangeFunction(slice arr);
         public static Range<Test.S2> RangeFunction(Range<Test.S2> arr) {
             var dlang_ret = dlang_RangeFunction(arr.ToSlice());
             return new Range<Test.S2>(dlang_ret, DStringType.None);
         }
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_ClassRangeFunction", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_TestClassRangeFunction", CallingConvention = CallingConvention.Cdecl)]
 
         private static extern return_slice_error dlang_ClassRangeFunction(slice arr);
         public static Range<Test.C1> ClassRangeFunction(Range<Test.C1> arr) {
             var dlang_ret = dlang_ClassRangeFunction(arr.ToSlice());
             return new Range<Test.C1>(dlang_ret, DStringType.None);
         }
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_TestErrorMessage", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_TestTestErrorMessage", CallingConvention = CallingConvention.Cdecl)]
 
         private static extern return_slice_error dlang_TestErrorMessage([MarshalAs(UnmanagedType.Bool)]bool throwError);
         public static string TestErrorMessage(bool throwError) {
             var dlang_ret = dlang_TestErrorMessage(throwError);
             return SharedFunctions.SliceToString(dlang_ret, DStringType._string);
         }
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_TestStringRanges", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_TestTestStringRanges", CallingConvention = CallingConvention.Cdecl)]
 
         private static extern return_slice_error dlang_TestStringRanges(slice arr);
         public static Range<string> TestStringRanges(Range<string> arr) {
@@ -71,18 +71,18 @@ namespace Test {
     [GeneratedCodeAttribute("Autowrap", "1.0.0.0")]
     [StructLayout(LayoutKind.Sequential)]
     public struct S1 {
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_S1_GetValue0", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_S1GetValue0", CallingConvention = CallingConvention.Cdecl)]
         private static extern return_float_error dlang_S1_GetValue(ref Test.S1 __obj__);
         public float GetValue() {
             var dlang_ret = dlang_S1_GetValue(ref this);
             return dlang_ret;
         }
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_S1_SetNestedStruct0", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_S1SetNestedStruct0", CallingConvention = CallingConvention.Cdecl)]
         private static extern return_void_error dlang_S1_SetNestedStruct(ref Test.S1 __obj__, Test.S2 nested);
         public void SetNestedStruct(Test.S2 nested) {
             var dlang_ret = dlang_S1_SetNestedStruct(ref this, nested);
         }
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_S1_ParameterlessMethod0", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_S1ParameterlessMethod0", CallingConvention = CallingConvention.Cdecl)]
         private static extern return_slice_error dlang_S1_ParameterlessMethod(ref Test.S1 __obj__);
         public string ParameterlessMethod() {
             var dlang_ret = dlang_S1_ParameterlessMethod(ref this);
@@ -97,62 +97,62 @@ namespace Test {
     public class C1 : DLangObject {
         public static implicit operator IntPtr(C1 ret) { return ret.DLangPointer; }
         public static implicit operator C1(IntPtr ret) { return new C1(ret); }
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1___ctor", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1__ctor", CallingConvention = CallingConvention.Cdecl)]
         private static extern return_C1_error dlang_C1___ctor(slice s, int i);
         public C1(string s, int i) : base(dlang_C1___ctor(SharedFunctions.CreateString(s), i)) { }
         internal C1(IntPtr ptr) : base(ptr) { }
 
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1_StringValueGetter0", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1StringValueGetter0", CallingConvention = CallingConvention.Cdecl)]
         private static extern return_slice_error dlang_C1_StringValueGetter(IntPtr __obj__);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1_ParameterlessMethod0", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1ParameterlessMethod0", CallingConvention = CallingConvention.Cdecl)]
         private static extern return_slice_error dlang_C1_ParameterlessMethod(IntPtr __obj__);
         public string ParameterlessMethod() {
             var dlang_ret = dlang_C1_ParameterlessMethod(this);
             return SharedFunctions.SliceToString(dlang_ret, DStringType._string);
         }
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1_StructProperty0", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1StructProperty0", CallingConvention = CallingConvention.Cdecl)]
         private static extern return_Test_S2_error dlang_C1_StructProperty(IntPtr __obj__);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1_StructProperty1", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1StructProperty1", CallingConvention = CallingConvention.Cdecl)]
         private static extern return_Test_S2_error dlang_C1_StructProperty(IntPtr __obj__, Test.S2 value);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1_RefProperty0", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1RefProperty0", CallingConvention = CallingConvention.Cdecl)]
         private static extern return_Test_C1_error dlang_C1_RefProperty(IntPtr __obj__);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1_RefProperty1", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1RefProperty1", CallingConvention = CallingConvention.Cdecl)]
         private static extern return_Test_C1_error dlang_C1_RefProperty(IntPtr __obj__, IntPtr value);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1_ValueProperty0", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1ValueProperty0", CallingConvention = CallingConvention.Cdecl)]
         private static extern return_ulong_error dlang_C1_ValueProperty(IntPtr __obj__);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1_ValueProperty1", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1ValueProperty1", CallingConvention = CallingConvention.Cdecl)]
         private static extern return_ulong_error dlang_C1_ValueProperty(IntPtr __obj__, ulong value);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1_ValueSliceProperty0", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1ValueSliceProperty0", CallingConvention = CallingConvention.Cdecl)]
         private static extern return_slice_error dlang_C1_ValueSliceProperty(IntPtr __obj__);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1_ValueSliceProperty1", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1ValueSliceProperty1", CallingConvention = CallingConvention.Cdecl)]
         private static extern return_slice_error dlang_C1_ValueSliceProperty(IntPtr __obj__, slice value);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1_StringSliceProperty0", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1StringSliceProperty0", CallingConvention = CallingConvention.Cdecl)]
         private static extern return_slice_error dlang_C1_StringSliceProperty(IntPtr __obj__);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1_StringSliceProperty1", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1StringSliceProperty1", CallingConvention = CallingConvention.Cdecl)]
         private static extern return_slice_error dlang_C1_StringSliceProperty(IntPtr __obj__, slice value);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1_WstringSliceProperty0", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1WstringSliceProperty0", CallingConvention = CallingConvention.Cdecl)]
         private static extern return_slice_error dlang_C1_WstringSliceProperty(IntPtr __obj__);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1_WstringSliceProperty1", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1WstringSliceProperty1", CallingConvention = CallingConvention.Cdecl)]
         private static extern return_slice_error dlang_C1_WstringSliceProperty(IntPtr __obj__, slice value);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1_DstringSliceProperty0", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1DstringSliceProperty0", CallingConvention = CallingConvention.Cdecl)]
         private static extern return_slice_error dlang_C1_DstringSliceProperty(IntPtr __obj__);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1_DstringSliceProperty1", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1DstringSliceProperty1", CallingConvention = CallingConvention.Cdecl)]
         private static extern return_slice_error dlang_C1_DstringSliceProperty(IntPtr __obj__, slice value);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1_StructSliceProperty0", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1StructSliceProperty0", CallingConvention = CallingConvention.Cdecl)]
         private static extern return_slice_error dlang_C1_StructSliceProperty(IntPtr __obj__);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1_StructSliceProperty1", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1StructSliceProperty1", CallingConvention = CallingConvention.Cdecl)]
         private static extern return_slice_error dlang_C1_StructSliceProperty(IntPtr __obj__, slice value);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1_RefSliceProperty0", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1RefSliceProperty0", CallingConvention = CallingConvention.Cdecl)]
         private static extern return_slice_error dlang_C1_RefSliceProperty(IntPtr __obj__);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1_RefSliceProperty1", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1RefSliceProperty1", CallingConvention = CallingConvention.Cdecl)]
         private static extern return_slice_error dlang_C1_RefSliceProperty(IntPtr __obj__, slice value);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1_TestMemberFunction0", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1TestMemberFunction0", CallingConvention = CallingConvention.Cdecl)]
         private static extern return_slice_error dlang_C1_TestMemberFunction(IntPtr __obj__, slice test, Test.S1 value);
         public string TestMemberFunction(string test, Test.S1 value) {
             var dlang_ret = dlang_C1_TestMemberFunction(this, SharedFunctions.CreateString(test), value);
             return SharedFunctions.SliceToString(dlang_ret, DStringType._string);
         }
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1_ToString0", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1ToString0", CallingConvention = CallingConvention.Cdecl)]
         private static extern return_slice_error dlang_C1_ToString(IntPtr __obj__);
         public override string ToString() {
             var dlang_ret = dlang_C1_ToString(this);
@@ -169,99 +169,99 @@ namespace Test {
         public Range<string> DstringSliceProperty { get => new Range<string>(dlang_C1_DstringSliceProperty(this), DStringType._dstring); set => dlang_C1_DstringSliceProperty(this, value.ToSlice(DStringType._dstring)); }
         public Range<Test.S1> StructSliceProperty { get => new Range<Test.S1>(dlang_C1_StructSliceProperty(this), DStringType.None); set => dlang_C1_StructSliceProperty(this, value.ToSlice()); }
         public Range<Test.C1> RefSliceProperty { get => new Range<Test.C1>(dlang_C1_RefSliceProperty(this), DStringType.None); set => dlang_C1_RefSliceProperty(this, value.ToSlice()); }
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1_IntValue_get", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1IntValue_get", CallingConvention = CallingConvention.Cdecl)]
         private static extern return_int_error dlang_intValue_get(IntPtr ptr);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1_IntValue_set", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1IntValue_set", CallingConvention = CallingConvention.Cdecl)]
         private static extern void dlang_intValue_set(IntPtr ptr, int value);
         public int IntValue { get => dlang_intValue_get(this); set => dlang_intValue_set(this, value); }
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1_BoolMember_get", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1BoolMember_get", CallingConvention = CallingConvention.Cdecl)]
         private static extern return_bool_error dlang_boolMember_get(IntPtr ptr);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1_BoolMember_set", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1BoolMember_set", CallingConvention = CallingConvention.Cdecl)]
         private static extern void dlang_boolMember_set(IntPtr ptr, [MarshalAs(UnmanagedType.Bool)] bool value);
         public bool BoolMember { get => dlang_boolMember_get(this); set => dlang_boolMember_set(this, value); }
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1_ByteMember_get", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1ByteMember_get", CallingConvention = CallingConvention.Cdecl)]
         private static extern return_sbyte_error dlang_byteMember_get(IntPtr ptr);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1_ByteMember_set", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1ByteMember_set", CallingConvention = CallingConvention.Cdecl)]
         private static extern void dlang_byteMember_set(IntPtr ptr, sbyte value);
         public sbyte ByteMember { get => dlang_byteMember_get(this); set => dlang_byteMember_set(this, value); }
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1_UbyteMember_get", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1UbyteMember_get", CallingConvention = CallingConvention.Cdecl)]
         private static extern return_byte_error dlang_ubyteMember_get(IntPtr ptr);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1_UbyteMember_set", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1UbyteMember_set", CallingConvention = CallingConvention.Cdecl)]
         private static extern void dlang_ubyteMember_set(IntPtr ptr, byte value);
         public byte UbyteMember { get => dlang_ubyteMember_get(this); set => dlang_ubyteMember_set(this, value); }
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1_ShortMember_get", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1ShortMember_get", CallingConvention = CallingConvention.Cdecl)]
         private static extern return_short_error dlang_shortMember_get(IntPtr ptr);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1_ShortMember_set", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1ShortMember_set", CallingConvention = CallingConvention.Cdecl)]
         private static extern void dlang_shortMember_set(IntPtr ptr, short value);
         public short ShortMember { get => dlang_shortMember_get(this); set => dlang_shortMember_set(this, value); }
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1_UshortMember_get", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1UshortMember_get", CallingConvention = CallingConvention.Cdecl)]
         private static extern return_ushort_error dlang_ushortMember_get(IntPtr ptr);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1_UshortMember_set", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1UshortMember_set", CallingConvention = CallingConvention.Cdecl)]
         private static extern void dlang_ushortMember_set(IntPtr ptr, ushort value);
         public ushort UshortMember { get => dlang_ushortMember_get(this); set => dlang_ushortMember_set(this, value); }
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1_IntMember_get", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1IntMember_get", CallingConvention = CallingConvention.Cdecl)]
         private static extern return_int_error dlang_intMember_get(IntPtr ptr);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1_IntMember_set", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1IntMember_set", CallingConvention = CallingConvention.Cdecl)]
         private static extern void dlang_intMember_set(IntPtr ptr, int value);
         public int IntMember { get => dlang_intMember_get(this); set => dlang_intMember_set(this, value); }
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1_UintMember_get", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1UintMember_get", CallingConvention = CallingConvention.Cdecl)]
         private static extern return_uint_error dlang_uintMember_get(IntPtr ptr);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1_UintMember_set", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1UintMember_set", CallingConvention = CallingConvention.Cdecl)]
         private static extern void dlang_uintMember_set(IntPtr ptr, uint value);
         public uint UintMember { get => dlang_uintMember_get(this); set => dlang_uintMember_set(this, value); }
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1_LongMember_get", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1LongMember_get", CallingConvention = CallingConvention.Cdecl)]
         private static extern return_long_error dlang_longMember_get(IntPtr ptr);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1_LongMember_set", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1LongMember_set", CallingConvention = CallingConvention.Cdecl)]
         private static extern void dlang_longMember_set(IntPtr ptr, long value);
         public long LongMember { get => dlang_longMember_get(this); set => dlang_longMember_set(this, value); }
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1_UlongMember_get", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1UlongMember_get", CallingConvention = CallingConvention.Cdecl)]
         private static extern return_ulong_error dlang_ulongMember_get(IntPtr ptr);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1_UlongMember_set", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1UlongMember_set", CallingConvention = CallingConvention.Cdecl)]
         private static extern void dlang_ulongMember_set(IntPtr ptr, ulong value);
         public ulong UlongMember { get => dlang_ulongMember_get(this); set => dlang_ulongMember_set(this, value); }
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1_FloatMember_get", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1FloatMember_get", CallingConvention = CallingConvention.Cdecl)]
         private static extern return_float_error dlang_floatMember_get(IntPtr ptr);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1_FloatMember_set", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1FloatMember_set", CallingConvention = CallingConvention.Cdecl)]
         private static extern void dlang_floatMember_set(IntPtr ptr, float value);
         public float FloatMember { get => dlang_floatMember_get(this); set => dlang_floatMember_set(this, value); }
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1_DoubleMember_get", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1DoubleMember_get", CallingConvention = CallingConvention.Cdecl)]
         private static extern return_double_error dlang_doubleMember_get(IntPtr ptr);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1_DoubleMember_set", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1DoubleMember_set", CallingConvention = CallingConvention.Cdecl)]
         private static extern void dlang_doubleMember_set(IntPtr ptr, double value);
         public double DoubleMember { get => dlang_doubleMember_get(this); set => dlang_doubleMember_set(this, value); }
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1_StringMember_get", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1StringMember_get", CallingConvention = CallingConvention.Cdecl)]
         private static extern return_slice_error dlang_stringMember_get(IntPtr ptr);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1_StringMember_set", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1StringMember_set", CallingConvention = CallingConvention.Cdecl)]
         private static extern void dlang_stringMember_set(IntPtr ptr, slice value);
         public string StringMember { get => SharedFunctions.SliceToString(dlang_stringMember_get(this), DStringType._string); set => dlang_stringMember_set(this, SharedFunctions.CreateString(value)); }
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1_WstringMember_get", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1WstringMember_get", CallingConvention = CallingConvention.Cdecl)]
         private static extern return_slice_error dlang_wstringMember_get(IntPtr ptr);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1_WstringMember_set", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1WstringMember_set", CallingConvention = CallingConvention.Cdecl)]
         private static extern void dlang_wstringMember_set(IntPtr ptr, slice value);
         public string WstringMember { get => SharedFunctions.SliceToString(dlang_wstringMember_get(this), DStringType._wstring); set => dlang_wstringMember_set(this, SharedFunctions.CreateWstring(value)); }
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1_DstringMember_get", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1DstringMember_get", CallingConvention = CallingConvention.Cdecl)]
         private static extern return_slice_error dlang_dstringMember_get(IntPtr ptr);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1_DstringMember_set", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1DstringMember_set", CallingConvention = CallingConvention.Cdecl)]
         private static extern void dlang_dstringMember_set(IntPtr ptr, slice value);
         public string DstringMember { get => SharedFunctions.SliceToString(dlang_dstringMember_get(this), DStringType._dstring); set => dlang_dstringMember_set(this, SharedFunctions.CreateDstring(value)); }
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1_ValueMember_get", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1ValueMember_get", CallingConvention = CallingConvention.Cdecl)]
         private static extern return_Test_S1_error dlang_valueMember_get(IntPtr ptr);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1_ValueMember_set", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1ValueMember_set", CallingConvention = CallingConvention.Cdecl)]
         private static extern void dlang_valueMember_set(IntPtr ptr, Test.S1 value);
         public Test.S1 ValueMember { get => dlang_valueMember_get(this); set => dlang_valueMember_set(this, value); }
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1_RefMember_get", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1RefMember_get", CallingConvention = CallingConvention.Cdecl)]
         private static extern return_Test_C1_error dlang_refMember_get(IntPtr ptr);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1_RefMember_set", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1RefMember_set", CallingConvention = CallingConvention.Cdecl)]
         private static extern void dlang_refMember_set(IntPtr ptr, IntPtr value);
         public Test.C1 RefMember { get => new Test.C1(dlang_refMember_get(this)); set => dlang_refMember_set(this, value); }
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1_RefArray_get", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1RefArray_get", CallingConvention = CallingConvention.Cdecl)]
         private static extern return_slice_error dlang_refArray_get(IntPtr ptr);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1_RefArray_set", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1RefArray_set", CallingConvention = CallingConvention.Cdecl)]
         private static extern void dlang_refArray_set(IntPtr ptr, slice value);
         public Range<Test.C1> RefArray { get => new Range<Test.C1>(dlang_refArray_get(this), DStringType.None); set => dlang_refArray_set(this, value.ToSlice()); }
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1_StructArray_get", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1StructArray_get", CallingConvention = CallingConvention.Cdecl)]
         private static extern return_slice_error dlang_structArray_get(IntPtr ptr);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1_StructArray_set", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1StructArray_set", CallingConvention = CallingConvention.Cdecl)]
         private static extern void dlang_structArray_set(IntPtr ptr, slice value);
         public Range<Test.S1> StructArray { get => new Range<Test.S1>(dlang_structArray_get(this), DStringType.None); set => dlang_structArray_set(this, value.ToSlice()); }
     }
@@ -649,161 +649,161 @@ namespace Autowrap {
         internal static extern return_slice_error Dstring_AppendValue(slice dslice, slice value);
         [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Dstring_AppendSlice", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_slice_error Dstring_AppendSlice(slice dslice, slice array);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Byte_Create", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_ByteCreate", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_slice_error Byte_Create(IntPtr capacity);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Byte_Slice", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_ByteSlice", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_slice_error Byte_Slice(slice dslice, IntPtr begin, IntPtr end);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Byte_AppendSlice", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_ByteAppendSlice", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_slice_error Byte_AppendSlice(slice dslice, slice array);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Byte_Get", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_ByteGet", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_sbyte_error Byte_Get(slice dslice, IntPtr index);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Byte_Set", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_ByteSet", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_void_error Byte_Set(slice dslice, IntPtr index, sbyte value);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Byte_AppendValue", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_ByteAppendValue", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_slice_error Byte_AppendValue(slice dslice, sbyte value);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Ubyte_Create", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_UbyteCreate", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_slice_error Ubyte_Create(IntPtr capacity);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Ubyte_Slice", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_UbyteSlice", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_slice_error Ubyte_Slice(slice dslice, IntPtr begin, IntPtr end);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Ubyte_AppendSlice", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_UbyteAppendSlice", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_slice_error Ubyte_AppendSlice(slice dslice, slice array);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Ubyte_Get", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_UbyteGet", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_byte_error Ubyte_Get(slice dslice, IntPtr index);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Ubyte_Set", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_UbyteSet", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_void_error Ubyte_Set(slice dslice, IntPtr index, byte value);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Ubyte_AppendValue", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_UbyteAppendValue", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_slice_error Ubyte_AppendValue(slice dslice, byte value);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Short_Create", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_ShortCreate", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_slice_error Short_Create(IntPtr capacity);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Short_Slice", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_ShortSlice", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_slice_error Short_Slice(slice dslice, IntPtr begin, IntPtr end);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Short_AppendSlice", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_ShortAppendSlice", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_slice_error Short_AppendSlice(slice dslice, slice array);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Short_Get", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_ShortGet", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_short_error Short_Get(slice dslice, IntPtr index);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Short_Set", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_ShortSet", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_void_error Short_Set(slice dslice, IntPtr index, short value);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Short_AppendValue", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_ShortAppendValue", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_slice_error Short_AppendValue(slice dslice, short value);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Ushort_Create", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_UshortCreate", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_slice_error Ushort_Create(IntPtr capacity);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Ushort_Slice", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_UshortSlice", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_slice_error Ushort_Slice(slice dslice, IntPtr begin, IntPtr end);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Ushort_AppendSlice", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_UshortAppendSlice", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_slice_error Ushort_AppendSlice(slice dslice, slice array);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Ushort_Get", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_UshortGet", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_ushort_error Ushort_Get(slice dslice, IntPtr index);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Ushort_Set", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_UshortSet", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_void_error Ushort_Set(slice dslice, IntPtr index, ushort value);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Ushort_AppendValue", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_UshortAppendValue", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_slice_error Ushort_AppendValue(slice dslice, ushort value);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Int_Create", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_IntCreate", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_slice_error Int_Create(IntPtr capacity);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Int_Slice", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_IntSlice", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_slice_error Int_Slice(slice dslice, IntPtr begin, IntPtr end);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Int_AppendSlice", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_IntAppendSlice", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_slice_error Int_AppendSlice(slice dslice, slice array);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Int_Get", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_IntGet", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_int_error Int_Get(slice dslice, IntPtr index);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Int_Set", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_IntSet", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_void_error Int_Set(slice dslice, IntPtr index, int value);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Int_AppendValue", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_IntAppendValue", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_slice_error Int_AppendValue(slice dslice, int value);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Uint_Create", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_UintCreate", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_slice_error Uint_Create(IntPtr capacity);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Uint_Slice", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_UintSlice", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_slice_error Uint_Slice(slice dslice, IntPtr begin, IntPtr end);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Uint_AppendSlice", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_UintAppendSlice", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_slice_error Uint_AppendSlice(slice dslice, slice array);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Uint_Get", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_UintGet", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_uint_error Uint_Get(slice dslice, IntPtr index);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Uint_Set", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_UintSet", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_void_error Uint_Set(slice dslice, IntPtr index, uint value);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Uint_AppendValue", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_UintAppendValue", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_slice_error Uint_AppendValue(slice dslice, uint value);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Long_Create", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_LongCreate", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_slice_error Long_Create(IntPtr capacity);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Long_Slice", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_LongSlice", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_slice_error Long_Slice(slice dslice, IntPtr begin, IntPtr end);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Long_AppendSlice", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_LongAppendSlice", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_slice_error Long_AppendSlice(slice dslice, slice array);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Long_Get", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_LongGet", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_long_error Long_Get(slice dslice, IntPtr index);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Long_Set", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_LongSet", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_void_error Long_Set(slice dslice, IntPtr index, long value);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Long_AppendValue", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_LongAppendValue", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_slice_error Long_AppendValue(slice dslice, long value);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Ulong_Create", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_UlongCreate", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_slice_error Ulong_Create(IntPtr capacity);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Ulong_Slice", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_UlongSlice", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_slice_error Ulong_Slice(slice dslice, IntPtr begin, IntPtr end);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Ulong_AppendSlice", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_UlongAppendSlice", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_slice_error Ulong_AppendSlice(slice dslice, slice array);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Ulong_Get", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_UlongGet", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_ulong_error Ulong_Get(slice dslice, IntPtr index);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Ulong_Set", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_UlongSet", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_void_error Ulong_Set(slice dslice, IntPtr index, ulong value);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Ulong_AppendValue", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_UlongAppendValue", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_slice_error Ulong_AppendValue(slice dslice, ulong value);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Float_Create", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_FloatCreate", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_slice_error Float_Create(IntPtr capacity);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Float_Slice", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_FloatSlice", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_slice_error Float_Slice(slice dslice, IntPtr begin, IntPtr end);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Float_AppendSlice", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_FloatAppendSlice", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_slice_error Float_AppendSlice(slice dslice, slice array);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Float_Get", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_FloatGet", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_float_error Float_Get(slice dslice, IntPtr index);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Float_Set", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_FloatSet", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_void_error Float_Set(slice dslice, IntPtr index, float value);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Float_AppendValue", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_FloatAppendValue", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_slice_error Float_AppendValue(slice dslice, float value);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Double_Create", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_DoubleCreate", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_slice_error Double_Create(IntPtr capacity);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Double_Slice", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_DoubleSlice", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_slice_error Double_Slice(slice dslice, IntPtr begin, IntPtr end);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Double_AppendSlice", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_DoubleAppendSlice", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_slice_error Double_AppendSlice(slice dslice, slice array);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Double_Get", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_DoubleGet", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_double_error Double_Get(slice dslice, IntPtr index);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Double_Set", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_DoubleSet", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_void_error Double_Set(slice dslice, IntPtr index, double value);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Double_AppendValue", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_DoubleAppendValue", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_slice_error Double_AppendValue(slice dslice, double value);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Test_S1_Create", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Test_S1Create", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_slice_error Test_s1_Create(IntPtr capacity);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Test_S1_Slice", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Test_S1Slice", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_slice_error Test_s1_Slice(slice dslice, IntPtr begin, IntPtr end);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Test_S1_AppendSlice", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Test_S1AppendSlice", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_slice_error Test_s1_AppendSlice(slice dslice, slice array);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Test_S1_Get", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Test_S1Get", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_Test_S1_error Test_s1_Get(slice dslice, IntPtr index);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Test_S1_Set", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Test_S1Set", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_void_error Test_s1_Set(slice dslice, IntPtr index, Test.S1 value);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Test_S1_AppendValue", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Test_S1AppendValue", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_slice_error Test_s1_AppendValue(slice dslice, Test.S1 value);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Test_S2_Create", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Test_S2Create", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_slice_error Test_s2_Create(IntPtr capacity);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Test_S2_Slice", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Test_S2Slice", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_slice_error Test_s2_Slice(slice dslice, IntPtr begin, IntPtr end);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Test_S2_AppendSlice", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Test_S2AppendSlice", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_slice_error Test_s2_AppendSlice(slice dslice, slice array);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Test_S2_Get", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Test_S2Get", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_Test_S2_error Test_s2_Get(slice dslice, IntPtr index);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Test_S2_Set", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Test_S2Set", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_void_error Test_s2_Set(slice dslice, IntPtr index, Test.S2 value);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Test_S2_AppendValue", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Test_S2AppendValue", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_slice_error Test_s2_AppendValue(slice dslice, Test.S2 value);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Test_C1_Create", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Test_C1Create", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_slice_error Test_c1_Create(IntPtr capacity);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Test_C1_Slice", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Test_C1Slice", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_slice_error Test_c1_Slice(slice dslice, IntPtr begin, IntPtr end);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Test_C1_AppendSlice", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Test_C1AppendSlice", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_slice_error Test_c1_AppendSlice(slice dslice, slice array);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Test_C1_Get", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Test_C1Get", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_Test_C1_error Test_c1_Get(slice dslice, IntPtr index);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Test_C1_Set", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Test_C1Set", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_void_error Test_c1_Set(slice dslice, IntPtr index, IntPtr value);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Test_C1_AppendValue", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Test_C1AppendValue", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_slice_error Test_c1_AppendValue(slice dslice, IntPtr value);
 
     }

@@ -8,7 +8,10 @@ import std.traits : isArray, fullyQualifiedName, moduleName, isFunction, Fields,
 import std.meta : allSatisfy, AliasSeq;
 import std.conv : to;
 
-enum string methodSetup = "        thread_attachThis();" ~ newline ~ "        rt_moduleTlsCtor();" ~ newline ~ "        scope(exit) rt_moduleTlsDtor();" ~ newline ~ "        scope(exit) thread_detachThis();" ~ newline;
+enum string methodSetup = "        thread_attachThis();
+        rt_moduleTlsCtor();
+        scope(exit) rt_moduleTlsDtor();
+        scope(exit) thread_detachThis();";
 
 // Wrap global functions from multiple modules
 public string wrapDLang(Modules...)() if(allSatisfy!(isModule, Modules)) {
@@ -22,21 +25,9 @@ public string wrapDLang(Modules...)() if(allSatisfy!(isModule, Modules)) {
     }
     ret ~= newline;
 
-    ret ~= generateSliceMethods!string();
-    ret ~= generateSliceMethods!wstring();
-    ret ~= generateSliceMethods!dstring();
-
-    ret ~= generateSliceMethods!bool();
-    ret ~= generateSliceMethods!byte();
-    ret ~= generateSliceMethods!ubyte();
-    ret ~= generateSliceMethods!short();
-    ret ~= generateSliceMethods!ushort();
-    ret ~= generateSliceMethods!int();
-    ret ~= generateSliceMethods!uint();
-    ret ~= generateSliceMethods!long();
-    ret ~= generateSliceMethods!ulong();
-    ret ~= generateSliceMethods!float();
-    ret ~= generateSliceMethods!double();
+    static foreach(t; AliasSeq!(string, wstring, dstring, bool, byte, ubyte, short, ushort, int, uint, long, ulong, float, double)) {
+        ret ~= generateSliceMethods!t();
+    }
 
     foreach(agg; AllAggregates!Modules) {
         alias modName = moduleName!agg;
@@ -83,7 +74,7 @@ private string generateConstructors(T)() {
         }
         exp ~= ") nothrow {" ~ newline;
         exp ~= "    try {" ~ newline;
-        exp ~= methodSetup;
+        exp ~= methodSetup ~ newline;
         if (is(T == class)) {
             exp ~= "        import std.stdio : writeln;" ~ newline;
             exp ~= "        " ~ fqn ~ " __temp__ = new " ~ fqn ~ "(";
@@ -155,7 +146,7 @@ private string generateMethods(T)() {
                     exp = exp[0..$-2];
                     exp ~= ") nothrow {" ~ newline;
                     exp ~= "    try {" ~ newline;
-                    exp ~= methodSetup;
+                    exp ~= methodSetup ~ newline;
                     exp ~= "        ";
                     if (!is(returnType == void)) {
                         exp ~= "auto __result__ = ";
@@ -239,7 +230,7 @@ private string generateFunctions(Modules...)() if(allSatisfy!(isModule, Modules)
         }
         funcStr ~= ") nothrow {" ~ newline;
         funcStr ~= "    try {" ~ newline;
-        funcStr ~= methodSetup;
+        funcStr ~= methodSetup ~ newline;
         if (!is(returnType == void)) {
             funcStr ~= "        return " ~ retType ~ "(" ~ func.name ~ "(";
             foreach(pName; paramNames) {
@@ -316,7 +307,7 @@ private string generateSliceMethods(T)() {
 private string generateMethodErrorHandling(string insideCode, string returnType) {
     string ret = string.init;
     ret ~= "    try {" ~ newline;
-    ret ~= methodSetup;
+    ret ~= methodSetup ~ newline;
     ret ~= insideCode ~ newline;
     ret ~= "    } catch (Exception __ex__) {" ~ newline;
     ret ~= "        return " ~ returnType ~ "(__ex__);" ~ newline;

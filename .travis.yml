@@ -38,7 +38,6 @@ script:
   - DUB_CONFIGURATION=env make
   - dub run -c unittest-travis --build=unittest-cov
   - csharp/tests/test.sh
-  - pynih/ci.sh
 
 after_success:
  - bash <(curl -s https://codecov.io/bash)
