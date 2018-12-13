@@ -6,7 +6,6 @@ targetType "none"
 
 dependency ":reflection" version="*"
 dependency ":python" version="*"
-dependency ":pynih" version="*"
 dependency ":excel" version="*"
 dependency ":csharp" version="*"
 
@@ -16,6 +15,10 @@ subPackage "pynih"
 subPackage "excel"
 subPackage "csharp"
 
+
+# The reason it's done like this is because `dub test` fails to even
+# compile in the python subpackage directory because of its dependency
+# on the reflection subpackage.
 configuration "unittest" {
     targetType "executable"
     targetPath "bin"
