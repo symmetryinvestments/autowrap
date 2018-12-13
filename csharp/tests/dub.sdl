@@ -1,0 +1,17 @@
+name "csharp-tests"
+description "Autowrap C# Tests"
+authors "Adam Wilson"
+copyright "Copyright © 2018, Symmetry Investments LP"
+license "BSD 3-clause"
+
+dependency "autowrap:csharp" path="../../"
+
+configuration "buildSharedLib" {
+    targetType "dynamicLibrary"
+    releaseMode
+}
+
+configuration "emitCSharp" {
+    targetType "executable"
+    versions "EmitCSharp"
+}

@@ -1,0 +1,15 @@
+.dub
+docs.json
+__dummy.html
+docs/
+csharp-tests
+csharp-tests.so
+csharp-tests.dylib
+csharp-tests.dll
+csharp-tests.a
+csharp-tests.lib
+csharp-tests-test-*
+*.exe
+*.o
+*.obj
+*.lst

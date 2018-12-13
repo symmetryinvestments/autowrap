@@ -1,0 +1,9 @@
+name "csharp"
+description "Wrap existing D code for use in .NET projects."
+authors "Adam Wilson"
+license "BSD"
+targetType "library"
+
+stringImportPaths "source/autowrap/csharp"
+
+dependency "autowrap:reflection" path="../reflection"

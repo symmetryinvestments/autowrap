@@ -1,0 +1,16 @@
+name "csharp"
+description "Wrap existing D code for use in C#."
+authors "Adam Wilson"
+license "BSD 3-clause"
+copyright "Copyright © 2018, Symmetry Investments LP"
+
+dependency "autowrap:csharp" path="../../"
+
+configuration "buildSharedLib" {
+    targetType "dynamicLibrary"
+}
+
+configuration "emitCSharp" {
+    targetType "executable"
+    versions "EmitCSharp"
+}

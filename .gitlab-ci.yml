@@ -1,0 +1,95 @@
+before_script:
+  - "git submodule sync --recursive"
+  - "git clean -fdx"
+  - "git submodule update --init --recursive"
+  - "cd ./examples/csharp/"
+
+stages:
+  - native
+  - dotnet
+  - cleanup
+
+Build Autowrap CSharp Linux x64 Native:
+  stage: native
+  tags:
+    - linux
+    - dmd
+    - dub 
+  only:
+    - csharp
+
+  script:
+    - "dub build --arch=x86_64 --force"
+    - "mv libcsharp.so libcsharp.x64.so"
+
+  artifacts:
+    paths:
+    - libcsharp.x64.so
+    expire_in: 1 week
+
+Build Autowrap CSharp Linux x86 Native:
+  stage: native
+  tags:
+    - linux
+    - dmd
+    - dub 
+  only:
+    - csharp
+
+  script:
+    - "dub build --arch=x86 --force"
+    - "mv libcsharp.so libcsharp.x86.so"
+
+  artifacts:
+    paths:
+    - libcsharp.x86.so
+    expire_in: 1 week
+
+Build Autowrap CSharp Windows x64 Native:
+  stage: native
+  tags:
+    - windows
+    - dmd
+    - dub 
+  only:
+    - csharp
+
+  script:
+    - "dub build --arch=x86_64 --force"
+    - "move csharp.dll csharp.x64.dll"
+
+  artifacts:
+    paths:
+    - csharp.x64.dll
+    expire_in: 1 week
+
+Build Autowrap CSharp Windows x86 Native:
+  stage: native
+  tags:
+    - windows
+    - dmd
+    - dub 
+  only:
+    - csharp
+
+  script:
+    - "dub build --arch=x86 --force"
+    - "move csharp.dll csharp.x86.dll"
+
+  artifacts:
+    paths:
+    - csharp.x86.dll
+    expire_in: 1 week
+
+Build Autowrap CSharp .NET Library:
+  stage: dotnet
+  tags:
+    - linux
+    - dotnet
+  only:
+    - csharp
+
+  script:
+    - "dub run --config=emitCSharp"
+    - "dotnet build"
+    - "dotnet pack"

@@ -2,9 +2,9 @@
 
 [![Build Status](https://travis-ci.org/kaleidicassociates/autowrap.png?branch=master)](https://travis-ci.org/kaleidicassociates/autowrap)
 
-Wrap existing D code for use in other environments such as Python and Excel.
+Wrap existing D code for use in other environments such as Python, Excel, and .NET.
 
-## About
+# About
 
 There are projects already to make it possible to use D code
 [from Python](https://github.com/ariovistus/pyd) and
@@ -91,8 +91,94 @@ scripts, which you can copy to your current working directory by running
 [the pyd docs](https://pyd.readthedocs.io/en/latest/dub.html) for more
 information.
 
+# .NET Support
 
-### Our sponsors
+Autowrap can also generate C# bindings to D libraries. Generating bindings for C# is a two-step process. First we must generate a C# compatible C-interface for the D library, then we build and run a version of the library that emits the corresponding C# interface code.
+
+### What Works:
+
+* Module Functions
+* Primitive Types
+  * string
+  * wstring
+  * dstring
+  * byte
+  * ubyte
+  * short
+  * ushort
+  * int
+  * uint
+  * long
+  * ulong
+  * float
+  * double
+* Structs
+  * Fields
+  * Properties
+  * Methods
+* Classes
+  * Constructors
+  * Fields
+  * Properties
+  * Methods
+
+1-Dimensional Ranges are implemented but only lightly tested and may not work in all cases. Higher dimensional ranges are not supported.
+
+## Generating .NET Interfaces
+
+To generate the C-interface use the following example replacing "csharp" with the dub name of your library (ex: csharp builds to libcsharp&#46;so) and replace "csharp.library" with the name of the module you want to wrap.
+
+```d
+import csharp.library;
+import autowrap.csharp;
+
+mixin(
+    wrapCSharp("csharp",
+        Modules(
+            Module("csharp.library")
+        )
+    )
+);
+```
+
+To generate the C# interface use the emitCSharp mixin as follows to dump the output to a location of your choice. This mixin creates a void main() function that will need to be executed by running the code. (This is due to the inability of CTFE to write files to the disk.)
+
+```d
+mixin(
+    emitCSharp(
+        Modules(
+            Module("csharp.library")
+        ),
+        OutputFileName("Wrapper.cs"),
+        LibraryName("csharp"),
+        RootNamespace("csharp")
+    )
+);
+```
+
+## Full Example
+
+```d
+module csharp.wrapper;
+
+import csharp.library;
+import autowrap.csharp;
+
+immutable Modules modules = Modules(Module("test"));
+
+mixin(
+    wrapCSharp(
+        Modules(
+            Module("csharp.library")
+        ),
+        OutputFileName("Wrapper.cs"),
+        LibraryName("csharp"),
+        RootNamespace("csharp")
+    )
+);
+```
+
+# Our sponsors
 
 [<img src="https://raw.githubusercontent.com/libmir/mir-algorithm/master/images/symmetry.png" height="80" />](http://symmetryinvestments.com/) 	&nbsp; 	&nbsp;	&nbsp;	&nbsp;
 [<img src="https://raw.githubusercontent.com/libmir/mir-algorithm/master/images/kaleidic.jpeg" height="80" />](https://github.com/kaleidicassociates)

@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp2.1</TargetFramework>
+    <RootNamespace>csharp</RootNamespace>
+    <LangVersion>7.3</LangVersion>
+    <!--<RuntimeIdentifiers>linux-x64;linux-x86;windows-x64;windows-x86;osx-x64</RuntimeIdentifiers>-->
+    <RuntimeIdentifiers>linux-x64;linux-x86</RuntimeIdentifiers>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <AssemblyName>Autowrap.CSharp</AssemblyName>
+
+    <!--NuGet Spec Properties-->
+    <PackageVersion>1.0.0</PackageVersion>
+    <Title>Autowrap.CSharp</Title>
+    <Copyright>Copyright © 2018, Symmetry Investments LP</Copyright>
+    <Authors>Adam Wilson</Authors>
+    <!--<Owners>Symmetry Investments LP</Owners>-->
+    <PackageLicenseUrl>https://opensource.org/licenses/BSD-3-Clause</PackageLicenseUrl>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <Description>C# support for Autowrap example.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Mono.Posix.NETStandard" Version="1.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="libcsharp.x64.so" />
+    <EmbeddedResource Include="libcsharp.x86.so" />
+    <!--
+    <EmbeddedResource Include="csharp.x64.dll" />
+    <EmbeddedResource Include="csharp.x86.dll" />
+    <EmbeddedResource Include="libcsharp.dylib" />
+    -->
+  </ItemGroup>
+
+</Project>

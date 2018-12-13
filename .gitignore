@@ -11,3 +11,5 @@ bin
 *.so
 *.a
 *.lst
+*.exe
+.vscode/

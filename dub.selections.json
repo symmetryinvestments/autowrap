@@ -4,9 +4,9 @@
 		"automem": "0.4.4",
 		"excel-d": "0.3.9",
 		"nogc": "0.0.3",
-		"pyd": "0.10.4",
+		"pyd": "0.10.5",
 		"stdx-allocator": "2.77.4",
 		"test_allocator": "0.2.5",
-		"unit-threaded": "0.7.52"
+		"unit-threaded": "0.7.53"
 	}
 }

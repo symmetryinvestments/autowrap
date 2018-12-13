@@ -1,11 +1,12 @@
 language: d
-sudo: false
+sudo: required
 dist: xenial
 
 matrix:
   include:
     - d: dmd-nightly
-    - d: dmd-2.083.0
+    - d: dmd-2.083.1
+    - d: ldc-1.12.0
   allow_failures:
     - d: dmd-nightly
 
@@ -21,6 +22,11 @@ install:
   - virtualenv autowrapenv
   - source autowrapenv/bin/activate
   - pip install pytest
+  - wget -q https://packages.microsoft.com/config/ubuntu/16.04/packages-microsoft-prod.deb
+  - sudo dpkg -i packages-microsoft-prod.deb
+  - sudo apt-get install apt-transport-https
+  - sudo apt-get update
+  - sudo apt-get install dotnet-sdk-2.1
 
 env:
   - PYTHON_INCLUDE_DIR=/usr/include/python2.7
@@ -31,6 +37,7 @@ script:
   - dub run pyd:setup && source pyd_set_env_vars.sh
   - DUB_CONFIGURATION=env make
   - dub run -c unittest-travis --build=unittest-cov
+  - csharp/tests/test.sh
 
 after_success:
  - bash <(curl -s https://codecov.io/bash)

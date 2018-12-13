@@ -1,13 +1,35 @@
 module autowrap.reflection;
 
-
 import std.meta: allSatisfy;
-import std.traits: isArray, Unqual;
+import std.traits: isArray, Unqual, moduleName;
 import std.typecons: Flag, No;
 
 private alias I(alias T) = T;
 private enum isString(alias T) = is(typeof(T) == string);
 enum isModule(alias T) = is(Unqual!(typeof(T)) == Module);
+
+/**
+   The list of modules to automatically wrap for consumption by other languages.
+ */
+struct Modules {
+    import autowrap.reflection: Module;
+    import std.traits: Unqual;
+    import std.meta: allSatisfy;
+
+    Module[] value;
+
+    this(A...)(auto ref A modules) {
+
+        foreach(module_; modules) {
+            static if(is(Unqual!(typeof(module_)) == Module))
+                value ~= module_;
+            else static if(is(Unqual!(typeof(module_)) == string))
+                value ~= Module(module_);
+            else
+                static assert(false, "Modules must either be `string` or `Module`");
+        }
+    }
+}
 
 /**
    A module to automatically wrap.
@@ -57,12 +79,14 @@ template Functions(alias module_, Flag!"alwaysExport" alwaysExport = No.alwaysEx
         static if(__traits(compiles, I!(__traits(getMember, module_, memberName)))) {
             alias member = I!(__traits(getMember, module_, memberName));
 
-            static if(isExportFunction!(member, alwaysExport))
-                alias Function = FunctionSymbol!(memberName, member);
-            else
+            static if(isExportFunction!(member, alwaysExport)) {
+                alias Function = FunctionSymbol!(memberName, module_, moduleName!member, member);
+            } else {
                 alias Function = void;
-        } else
+            }
+        } else {
             alias Function = void;
+        }
     }
 
     template notVoid(A...) if(A.length == 1) {
@@ -73,8 +97,10 @@ template Functions(alias module_, Flag!"alwaysExport" alwaysExport = No.alwaysEx
     alias Functions = Filter!(notVoid, staticMap!(Function, __traits(allMembers, module_)));
 }
 
-template FunctionSymbol(string N, alias S) {
+template FunctionSymbol(string N, alias M, string MN, alias S) {
     alias name = N;
+    alias module_ = M;
+    alias moduleName = MN;
     alias symbol = S;
 }
 
@@ -286,8 +312,9 @@ package template isExportFunction(alias F, Flag!"alwaysExport" alwaysExport = No
     version(AutowrapAlwaysExport) {
         enum linkage = __traits(getLinkage, F);
         enum isExportFunction = isFunction!F && linkage != "C" && linkage != "C++";
-    } else
-          enum isExportFunction = isFunction!F && isExportSymbol!(F, alwaysExport);
+    } else {
+        enum isExportFunction = isFunction!F && isExportSymbol!(F, alwaysExport);
+    }
 }
 
 
