@@ -5,8 +5,7 @@ dist: xenial
 matrix:
   include:
     - d: dmd-nightly
-    - d: dmd-2.083.0
-    - d: dmd-2.082.1
+    - d: dmd-2.083.1
     - d: ldc-1.12.0
   allow_failures:
     - d: dmd-nightly
@@ -33,6 +32,7 @@ env:
   - PYTHON_INCLUDE_DIR=/usr/include/python2.7
 
 script:
+  - pynih/ci.sh
   - DUB_CONFIGURATION=python27 make
   - dub run pyd:setup && source pyd_set_env_vars.sh
   - DUB_CONFIGURATION=env make
