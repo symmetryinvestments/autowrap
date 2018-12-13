@@ -4,10 +4,6 @@ authors "Atila Neves" "Adam Wilson"
 license "BSD"
 targetType "none"
 
-dependency ":reflection" version="*"
-dependency ":python" version="*"
-dependency ":excel" version="*"
-dependency ":csharp" version="*"
 
 subPackage "reflection"
 subPackage "python"
