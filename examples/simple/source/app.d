@@ -28,3 +28,15 @@ version(WrapCSharp)
 	    )
 	);
 }
+
+version(WrapExcel)
+{
+	import xlld:wrapAll;
+
+	mixin(
+	    wrapAll!(
+		    "prefix", "adder", "structs", "templates", "api","wrap_all"
+		),
+        );
+}
+

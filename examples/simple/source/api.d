@@ -1,10 +1,35 @@
-import std.datetime: DateTime, Date;
+version(WrapExcel)
+{
+	struct DateTime
+	{
+		int year,month,day,hour,minute,second;
+	}
+	struct Date
+	{
+		int year,month,day;
+	}
+}
+else
+{
+	import std.datetime: DateTime, Date;
+}
 
 import not_wrapped: NotWrappedInt;
 
-export auto createIntPoint(int x, int y) {
-    import templates: Point;
-    return Point!int(x, y);
+version(WrapExcel)
+{
+	// some kind of nogc inference problem
+	export auto createIntPoint()(int x, int y) {
+	    import templates: Point;
+	    return Point!int(x, y);
+	}
+}
+else
+{
+	export auto createIntPoint()(int x, int y) {
+	    import templates: Point;
+	    return Point!int(x, y);
+	}
 }
 
 export auto createIntString(int i, string s) {
@@ -15,10 +40,11 @@ export auto createIntString(int i, string s) {
 export auto createOuter(double x, double y, double value, string string1, string string2) {
     import templates;
     import structs: String;
+
     return Outer!double([
-                            Inner1!double(Point!double(x, y), value),
-                            Inner1!double(Point!double(x, y), value + 1),
-                        ],
+    				Inner1!double(Point!double(x, y), value),
+    				Inner1!double(Point!double(x, y), value+1),
+			],
                         Inner2!double(EvenInner!double(value)),
                         String(string1),
                         String(string2));
@@ -27,13 +53,13 @@ export auto createOuter(double x, double y, double value, string string1, string
 export auto createOuters(double x, double y, double value, string string1, string string2) {
     import templates;
     import structs: String;
-    return [Outer!double([
-                             Inner1!double(Point!double(x, y), value),
-                             Inner1!double(Point!double(x, y), value + 2)
-                         ],
-                        Inner2!double(EvenInner!double(value)),
-                        String(string1),
-                        String(string2))];
+    return Outer!double([
+				Inner1!double(Point!double(x,y),value),
+				Inner1!double(Point!double(x,y),value+2),
+			],
+			Inner2!double(EvenInner!double(value)),
+			String(string1),
+			String(string2));
 }
 
 
