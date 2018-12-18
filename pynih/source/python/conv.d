@@ -2,7 +2,8 @@ module python.conv;
 
 
 import python.raw: PyObject;
-import std.traits: Unqual, isIntegral, isFloatingPoint, isAggregateType, isArray, isStaticArray;
+import std.traits: Unqual, isIntegral, isFloatingPoint, isAggregateType, isArray,
+    isStaticArray, isAssociativeArray;
 import std.range: isInputRange;
 import std.datetime: DateTime, Date;
 
@@ -71,6 +72,18 @@ PyObject* toPython(T)(T value) if(isStaticArray!T) {
     return toPython(value[]);
 }
 
+
+PyObject* toPython(T)(T value) if(isAssociativeArray!T) {
+    import python.raw: PyDict_New, PyDict_SetItem;
+
+    auto ret = PyDict_New;
+
+    foreach(k, v; value) {
+        PyDict_SetItem(ret, k.toPython, v.toPython);
+    }
+
+    return ret;
+}
 
 T to(T)(PyObject* value) @trusted if(isIntegral!T) {
     import python.raw: PyLong_AsLong;
@@ -159,4 +172,39 @@ T to(T)(PyObject* value) if(is(T == string)) {
 T to(T)(PyObject* value) if(is(Unqual!T == bool)) {
     import python.raw: pyTrue;
     return value is pyTrue;
+}
+
+
+
+T to(T)(PyObject* value) if(isAssociativeArray!T)
+{
+    import python.raw: pyDictCheck, PyDict_Keys, PyList_Size, PyList_GetItem, PyDict_GetItem;
+
+    assert(pyDictCheck(value));
+
+    // this enum is to get K and V whilst avoiding auto-decoding, which is why we're not using
+    // std.traits
+    enum _ = is(T == V[K], V, K);
+    alias KeyType = Unqual!K;
+    alias ValueType = Unqual!V;
+
+    ValueType[KeyType] ret;
+
+    auto keys = PyDict_Keys(value);
+
+    foreach(i; 0 .. PyList_Size(keys)) {
+        auto k = PyList_GetItem(keys, i);
+        auto v = PyDict_GetItem(value, k);
+        auto dk = k.to!KeyType;
+        auto dv = v.to!ValueType;
+
+        version(unittest) {
+            import unit_threaded.io;
+            writelnUt("dkey: ", dk, "  dvalue: ", dv);
+        }
+
+        ret[dk] = dv;
+    }
+
+    return ret;
 }

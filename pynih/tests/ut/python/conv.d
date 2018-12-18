@@ -12,12 +12,11 @@ struct IntString {
 }
 
 
-@Serial
 @UnitTest
 @Types!(
     bool,
     byte, ubyte, short, ushort, int, uint, long, ulong,  // integral
-    float, double,  // floating point
+    float, double,
     int[], double[],
 )
 void backAndForth(T)()
@@ -26,7 +25,6 @@ void backAndForth(T)()
 }
 
 
-@Serial
 @("DateTime")
 unittest {
     const value = DateTime(2018, 1, 2, 3, 4, 5);
@@ -34,7 +32,6 @@ unittest {
 }
 
 
-@Serial
 @("Date")
 unittest {
     const value = Date(2018, 1, 2);
@@ -43,7 +40,6 @@ unittest {
 
 
 // FIXME: failing for unicode
-@Serial
 @Values("foobar", "quux", /*"café"*/)
 @("string")
 unittest {
@@ -52,7 +48,6 @@ unittest {
 }
 
 
-@Serial
 @("array.static.int")
 unittest {
     int[2] value = [1, 2];
@@ -60,9 +55,22 @@ unittest {
 }
 
 
-@Serial
 @("array.static.double")
 unittest {
     double[3] value = [11.1, 22.2, 33.3];
     value.toPython.to!(double[3]).should == value;
+}
+
+
+@("aa.int.string")
+unittest {
+    const value = [1: "foo", 2: "bar"];
+    value.toPython.to!(typeof(value)).should == value;
+}
+
+
+@("aa.string.int")
+unittest {
+    const value = ["foo": 1, "bar": 2];
+    value.toPython.to!(typeof(value)).should == value;
 }
