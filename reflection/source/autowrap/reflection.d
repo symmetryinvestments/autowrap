@@ -234,7 +234,7 @@ private mixin template RecursiveAggregateImpl(T, alias Other) {
         else
             alias RecursiveAggregateImpl = AliasSeq!(aggregates, staticMap!(Other, aggregates));
     } else
-        alias RecursiveAggregatesImpl = T;
+        alias RecursiveAggregateImpl = T;
 }
 
 
