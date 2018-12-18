@@ -91,7 +91,7 @@ struct PythonType(T) {
         alias memberNames = AliasSeq!(__traits(allMembers, T));
         enum ispublic(string name) = isPublic!(T, name);
         alias publicMemberNames = Filter!(ispublic, memberNames);
-        alias Member(string name) = AliasSeq!(__traits(getMember, T, name));
+        alias Member(string name) = Alias!(__traits(getMember, T, name));
         alias members = staticMap!(Member, publicMemberNames);
         alias memberFunctions = Filter!(isSomeFunction, members);
 
