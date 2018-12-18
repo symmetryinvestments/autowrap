@@ -7,7 +7,7 @@ DUB_CONFIGURATION ?= python37
 all: test_simple
 test: test_simple
 
-test_simple: tests/test_simple.py examples/simple/simple.so
+test_simple: tests/test_simple.py tests/test_issues.py examples/simple/simple.so
 	PYTHONPATH=$(PWD)/examples/simple pytest -s -vv tests
 
 examples/simple/simple.so: examples/simple/libsimple.so
