@@ -281,7 +281,7 @@ private template isPublic(T, string memberName) {
    assign anything but an integer to `Foo.i` or a string to `Foo.s` in Python
    will raise `TypeError`.
  */
-struct PythonClass(T) if(isAggregateType!T && !isDateOrDateTime!T) {
+struct PythonClass(T) if(isUserAggregate!T) {
     import python.raw: PyObjectHead, PyGetSetDef;
     import std.traits: FieldNameTuple, Fields;
 
