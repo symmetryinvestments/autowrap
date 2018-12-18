@@ -125,7 +125,8 @@ template AllAggregates(Modules...) if(allSatisfy!(isModule, Modules)) {
     // return and parameter types
     alias functionTypes = FunctionTypesInModules!Modules;
 
-    alias copyables = Filter!(isCopyable, NoDuplicates!(aggregates, functionTypes));
+    //alias copyables = Filter!(isCopyable, NoDuplicates!(aggregates, functionTypes));
+    alias copyables = NoDuplicates!(aggregates, functionTypes);
 
     template notAlreadyWrapped(T) {
         alias Type = Unqual!T;
@@ -156,6 +157,7 @@ private template AggregateDefinitionsInModule(Module module_) {
     alias AggregateDefinitionsInModule = NoDuplicates!all;
 }
 
+	
 
 // All return and parameter types of the functions in the given modules
 private template FunctionTypesInModules(Modules...) if(allSatisfy!(isModule, Modules)) {
@@ -211,7 +213,7 @@ private template RecursiveAggregateHelper(T) {
  */
 private mixin template RecursiveAggregateImpl(T, alias Other) {
     import std.meta: staticMap, Filter, AliasSeq, NoDuplicates;
-    import std.traits: isInstanceOf, Unqual;
+    import std.traits: isInstanceOf, Unqual,isPointer;
     import std.typecons: Typedef, TypedefType;
     import std.datetime: Date;
 
@@ -234,9 +236,8 @@ private mixin template RecursiveAggregateImpl(T, alias Other) {
         else
             alias RecursiveAggregateImpl = AliasSeq!(aggregates, staticMap!(Other, aggregates));
     } else
-        alias RecursiveAggregatesImpl = T;
+        alias RecursiveAggregateImpl = T;
 }
-
 
 private template Type(T...) if(T.length == 1) {
     static if(is(T[0]))
@@ -248,14 +249,21 @@ private template Type(T...) if(T.length == 1) {
 // if a type is a struct or a class
 package template isUserAggregate(A...) if(A.length == 1) {
     import std.datetime;
-    import std.traits: Unqual, isInstanceOf;
+    import std.traits: Unqual, isInstanceOf,isFunctionPointer,isFunction;
     import std.typecons: Tuple;
     alias T = A[0];
 
-    enum isUserAggregate =
+    static if (isFunction!T)
+    {
+    	enum isUserAggregate=false;
+    }
+
+    else {
+      enum isUserAggregate =
         !is(Unqual!T == DateTime) &&
         !isInstanceOf!(Tuple, T) &&
         (is(T == struct) || is(T == class));
+    }
 }
 
 @("DateTime is not a user aggregate")
@@ -283,16 +291,20 @@ package template Symbol(alias parent, string memberName) {
 // T -> T, T[] -> T, T[][] -> T
 private template PrimordialType(T) if(isArray!T) {
     import std.range.primitives: ElementType;
-    static if(isArray!(ElementType!T))
+    //static if(isArray!(ElementType!T))
         alias PrimordialType = PrimordialType!(ElementType!T);
-    else
-        alias PrimordialType = ElementType!T;
+    //else
+     //   alias PrimordialType = PrimordialType!(ElementType!T);
 }
 
 
 // T -> T, T[] -> T, T[][] -> T
 private template PrimordialType(T) if(!isArray!T) {
-    alias PrimordialType = T;
+	import std.traits:isPointer;
+    static if(isPointer!T)
+	    alias PrimordialType = PrimordialType!(typeof(*T));
+    else
+	    alias PrimordialType = T;
 }
 
 
@@ -319,12 +331,19 @@ package template isExportFunction(alias F, Flag!"alwaysExport" alwaysExport = No
 
 
 private template isExportSymbol(alias S, Flag!"alwaysExport" alwaysExport = No.alwaysExport) {
-    import std.traits: isFunction;
-
-    version(AutowrapAlwaysExport)
-        enum isExportSymbol = isPublicSymbol!S;
+    import std.traits: isFunction, isPointer;
+/+    static if (is(isPointer!(typeof(S))))
+    {
+	    alias T = typeof(S);
+	    enum isExportSymbol = isExportSymbol!(*T);
+    }
     else
-        enum isExportSymbol = isPublicSymbol!S && (alwaysExport || __traits(getProtection, S) == "export");
+    { +/
+	    version(AutowrapAlwaysExport)
+		enum isExportSymbol = isPublicSymbol!S;
+	    else
+		enum isExportSymbol = isPublicSymbol!S && (alwaysExport || __traits(getProtection, S) == "export");
+    //}
 }
 
 private template isPublicSymbol(alias S) {

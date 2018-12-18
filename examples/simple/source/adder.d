@@ -1,5 +1,5 @@
 module adder;
-
+@nogc:
 struct Adder {
     int value;
 

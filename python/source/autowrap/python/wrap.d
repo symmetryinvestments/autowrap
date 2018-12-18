@@ -20,7 +20,12 @@ void wrapAllFunctions(Modules...)() if(allSatisfy!(isModule, Modules)) {
     import pyd.pyd: def, PyName;
 
     static foreach(function_; AllFunctions!Modules)
-        def!(function_.symbol, PyName!(toSnakeCase(function_.name)))();
+    {
+        static if(__traits(compiles,def!(function_.symbol,PyName!(toSnakeCase(function_.name)))()))
+		def!(function_.symbol, PyName!(toSnakeCase(function_.name)))();
+	else
+		pragma(msg,"- " ~ function_.name);
+    }
 }
 
 
@@ -96,7 +101,7 @@ void wrapAllAggregates(Modules...)() if(allSatisfy!(isModule, Modules)) {
         static if(__traits(compiles, wrapAggregate!aggregate))
             wrapAggregate!aggregate;
         else {
-            pragma(msg, "\nERROR! Autowrap could not wrap aggregate `", fullyQualifiedName!aggregate, "` for Python\n");
+            pragma(msg, "\nERROR! Autowrap could not wrap aggregate `", fullyQualifiedName!aggregate, "` for Python");
             //wrapAggregate!aggregate; // uncomment to see the error messages from the compiler
         }
     }
@@ -106,12 +111,11 @@ void wrapAllAggregates(Modules...)() if(allSatisfy!(isModule, Modules)) {
    Wrap aggregate of type T.
  */
 auto wrapAggregate(T)() if(isUserAggregate!T) {
-
     import autowrap.reflection: Symbol;
-    import autowrap.python.pyd.class_wrap: MemberFunction;
+    import autowrap.python.pyd.class_wrap: MemberFunction,validMemberFunction;
     import pyd.pyd: wrap_class, Member, Init;
     import std.meta: staticMap, Filter, AliasSeq;
-    import std.traits: Parameters, FieldNameTuple, hasMember;
+    import std.traits: Parameters, FieldNameTuple, hasMember,isCopyable;
     import std.typecons: Tuple;
 
     alias AggMember(string memberName) = Symbol!(T, memberName);
@@ -138,30 +142,83 @@ auto wrapAggregate(T)() if(isUserAggregate!T) {
     // Apply pyd's Init to the unpacked types of the parameter Tuple.
     alias InitTuple(alias Tuple) = Init!(Tuple.Types);
 
-    enum isPublic(string fieldName) = __traits(getProtection, __traits(getMember, T, fieldName)) == "public";
+    enum isPublic(string fieldName) =isPublicSymbol!(T,fieldName);
     alias publicFields = Filter!(isPublic, FieldNameTuple!T);
 
+    template validF(A...)
+    {
+	    import std.string:startsWith;
+	    enum notOpAssign = !(__traits(identifier,A[0]).startsWith("opAssign"));
+	   static if (!isCopyable!T)
+		   enum validF= validMemberFunction!(T,A);
+		   //enum validF= notOpAssign && validMemberFunction!(T,A);
+	   else
+		   enum validF= validMemberFunction!(T,A);
+    }
+    alias validMemberFunctions = Filter!(validF,memberFunctions);
     wrap_class!(
         T,
         staticMap!(Member, publicFields),
-        staticMap!(MemberFunction, memberFunctions),
+        staticMap!(MemberFunction,validMemberFunctions),
         staticMap!(InitTuple, constructorParamTuples),
    );
 }
 
 
+
 // must be a global template
 private template isMemberFunction(A...) if(A.length == 1) {
     alias T = A[0];
-    static if(__traits(compiles, __traits(identifier, T)))
-        enum isMemberFunction = isPublicFunction!T && __traits(identifier, T) != "__ctor";
+    static if (__traits(compiles,isPublicFunction!T && !isInternalField!T))
+	    enum isMemberFunction = isPublicFunction!T && !isInternalField!T;
     else
-        enum isMemberFunction = false;
+	    enum isMemberFunction = false;
+}
+
+private template isInternalFieldHelper(string fieldName)
+{
+	import std.string:startsWith;
+	import std.algorithm:any;
+	import std.meta:AliasSeq;
+	enum isInternalFieldHelper = any!(field=>fieldName.startsWith(field))(["__ctor","__field","__aggr","__postblit","__dtor"]);
+}
+
+private template isInternalField(alias T)
+{
+	import std.string:startsWith;
+	import std.algorithm:any;
+	import std.meta:AliasSeq;
+	static if(__traits(compiles, __traits(identifier, T)))
+	{
+		enum field = __traits(identifier,T);
+		enum isInternalField = isInternalFieldHelper!field;
+	}
+	else
+	{
+		enum isInternalField = false;
+	}
 }
 
 
+private template isPublicSymbol(alias T, string fieldName)
+{
+	static if (__traits(compiles,isPublicSymbol!( __traits(getMember, T, fieldName))))
+		enum isPublicSymbol = isPublicSymbol!(__traits(getMember,T,fieldName));
+	else
+		enum isPublicSymbol = false;
+}
+
 private template isPublicFunction(alias F) {
     import std.traits: isFunction;
-    enum prot = __traits(getProtection, F);
-    enum isPublicFunction = isFunction!F && (prot == "export" || prot == "public");
+    enum isPublicFunction = isPublicSymbol!F && isFunction!F;
+}
+
+private template isPublicSymbol(alias S) {
+    static if (__traits(compiles,__traits(getProtection,S)))
+    {
+	    enum prot = __traits(getProtection, S);
+	    enum isPublicSymbol =  (prot == "export" || prot == "public");
+    }
+    else
+	    emum isPublicSymbol = false;
 }

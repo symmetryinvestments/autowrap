@@ -1,6 +1,7 @@
+import autowrap.python:PreModuleInitCode,PostModuleInitCode;
 import std.datetime: DateTime, Date;
-
 import not_wrapped: NotWrappedInt;
+
 
 export auto createIntPoint(int x, int y) {
     import templates: Point;
@@ -118,3 +119,145 @@ export int theYear(Date d) {
 export int addWithDefault(int i, NotWrappedInt j = NotWrappedInt(42)) {
     return i + j.value;
 }
+
+export
+struct Unwrappable
+{
+	@disable this(this);
+	double x_;
+	alias x this;
+	export double x()
+	{
+		return x_;
+	}
+}
+
+
+import std.traits:isInstanceOf;
+import std.typecons;
+import std.typecons:refCounted;
+import std.algorithm.mutation:move;
+import core.stdc.stdlib:free,malloc;
+
+export struct Wrappable(T)
+{
+	import std.stdio;
+	//import std.experimental.allocator.common:forwardToMember;
+	//mixin(forwardToMember("store",["x"]));
+	export auto x()
+	{
+		return store.val.x();
+	}
+
+	struct Store
+	{
+		auto x()
+		{
+			return val.x();
+		}
+		//mixin(forwardToMember("val",["x"]));
+		private T* val;
+		private long refCount=0;
+	}
+	private Store* store;
+
+	this(T* t)
+	{
+		store = new Store;
+		store.val=t;
+		++store.refCount;
+	}
+	this(this)
+	{
+		incRef();
+	}
+	~this()
+	{
+		writeln("wrapable.desitroy",store.refCount);
+		if (--store.refCount)
+			return;
+		destroy(store.val);
+		store.val=null;
+		store=null;
+	}
+	void incRef()
+	{
+		writeln("wrapable.incRef",store.refCount);
+		if(store !is null)
+			++store.refCount;
+	}
+}
+@trusted:
+struct Wrapped
+{
+	import std.stdio;
+	@trusted:
+	private Wrappable!Unwrappable* val;
+	this(this)
+	{
+		writeln("wrapped.incRef");
+		val.incRef();
+	}
+	~this()
+	{
+		writeln("wrapped.destroy");
+		destroy(*val);
+	}
+	export double x()
+	{
+		return val.x();
+	}
+	this(Wrappable!(Unwrappable)* val) @trusted
+	{
+		this.val=val;
+	}
+	auto opAssign(ref Wrappable!(Unwrappable)* val) @trusted
+	{
+		this.val=val;
+		return val;
+	}
+}
+private auto wrappable(T)(T* val)
+{
+	return new Wrappable!T(val);
+}
+
+export auto unwrappable(double x) @trusted
+{
+	return new Unwrappable(x);
+	/+auto val =new Unwrappable(x);
+	auto ret = wrappable(val);
+	return new Wrapped(ret);+/
+}
+
+struct FooFoo
+{
+	double x_;
+	double x()
+	{
+		return x_*2.0;
+	}
+	static double Z()
+	{
+		return 1.234;
+	}
+}
+export auto foo()
+{
+	return new FooFoo(10.0);
+}
+
+enum preModuleInitCode = PreModuleInitCode(q{
+	import pyd.pyd:ex_d_to_python;
+	import std.traits:ReturnType;
+	import api:unwrappable,Unwrappable;
+	import autowrap.python.wrap:wrapAggregate;
+	//ex_d_to_python((ReturnType!unwrappable r) => *r);
+});
+
+enum postModuleInitCode = PostModuleInitCode(q{
+	import api:unwrappable,Unwrappable;
+	import pyd.pyd:wrap_class,Def;
+	//wrapAggregate!Unwrappable;
+	//wrap_class!(Unwrappable,Def!(Unwrappable.x,double function()))();
+});

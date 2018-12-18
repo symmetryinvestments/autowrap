@@ -20,9 +20,37 @@ pyname = The name of the function as it will appear in Python. Defaults to
 fn's name in D
 docstring = The function's docstring. Defaults to "".
 */
+
+template validMemberFunction(alias T, alias fn, Options...)
+{
+	import std.traits:ReturnType;
+    enum ClassName = T.stringof;
+    alias TT = T;
+
+    import pyd.def: Args;
+    alias args = Args!("", "", __traits(identifier, fn), "", Options);
+
+    static if(args.rem.length) {
+        alias fn_t = args.rem[0];
+    } else {
+        alias fn_t = typeof(&fn);
+    }
+    static if(  __traits(compiles,{
+    			    mixin MemberFunctionImpl!(fn, args.pyname, fn_t, args.docstring);
+			    call!(ClassName,fn_t);}))
+    {
+	    pragma(msg,"+ " ~ ClassName~ "." ~ args.pyname);
+	    enum validMemberFunction = true;
+    }
+    else
+    {
+	    pragma(msg,"- " ~ ClassName~ "." ~ args.pyname);
+	    enum validMemberFunction = false;
+    }
+}
+
 struct MemberFunction(alias fn, Options...) {
     import pyd.def: Args;
-
     alias args = Args!("", "", __traits(identifier, fn), "", Options);
 
     static if(args.rem.length) {
@@ -38,13 +66,14 @@ private template MemberFunctionImpl(alias _fn, string name, fn_t, string docstri
     import pyd.class_wrap: wrapped_method_list;
     import pyd.references: PydTypeObject;
     import pyd.def: def_selector;
-    import pyd.func_wrap: minArgs, method_wrap;
+    import pyd.func_wrap: minArgs, method_wrap, function_wrap;
     import util.typeinfo: ApplyConstness, constness;
-    import deimos.python.methodobject: PyMethodDef, PyCFunction, METH_VARARGS, METH_KEYWORDS;
+    import deimos.python.methodobject: PyMethodDef, PyCFunction, METH_VARARGS, METH_KEYWORDS, METH_STATIC;
 
     alias func = def_selector!(_fn, fn_t).FN;
-    static assert(!__traits(isStaticFunction, func),
-                  "Cannot register " ~ name ~ " because static member functions are not yet supported");
+    enum isStatic = __traits(isStaticFunction,func);
+//    static assert(!__traits(isStaticFunction, func),
+ //                 "Cannot register " ~ name ~ " because static member functions are not yet supported");
     alias /*StripSafeTrusted!*/fn_t func_t;
     enum realname = __traits(identifier,func);
     enum funcname = name;
@@ -57,8 +86,16 @@ private template MemberFunctionImpl(alias _fn, string name, fn_t, string docstri
         alias list = wrapped_method_list!(T);
 
         list[$ - 1].ml_name = (name ~ "\0").ptr;
-        list[$ - 1].ml_meth = cast(PyCFunction) &method_wrap!(cT, func, classname ~ "." ~ name).func;
-        list[$ - 1].ml_flags = METH_VARARGS | METH_KEYWORDS;
+	static if (isStatic)
+	{
+		list[$ - 1].ml_meth = cast(PyCFunction) &function_wrap!(func, classname ~ "." ~ name).func;
+		list[$ - 1].ml_flags = METH_VARARGS | METH_STATIC | METH_KEYWORDS;
+	}
+	else
+	{
+		list[$ - 1].ml_meth = cast(PyCFunction) &method_wrap!(cT, func, classname ~ "." ~ name).func;
+		list[$ - 1].ml_flags = METH_VARARGS | METH_KEYWORDS;
+	}
         list[$ - 1].ml_doc = (docstring~"\0").ptr;
         list ~= empty;
         // It's possible that appending the empty item invalidated the
@@ -67,18 +104,25 @@ private template MemberFunctionImpl(alias _fn, string name, fn_t, string docstri
     }
 
     template shim(size_t i, T) {
-        import util.replace: Replace;
-        enum shim = Replace!(q{
-            alias __pyd_p$i = Params[$i];
-            $override ReturnType!(__pyd_p$i.func_t) $realname(ParameterTypeTuple!(__pyd_p$i.func_t) t) $attrs {
-                return __pyd_get_overload!("$realname", __pyd_p$i.func_t).func!(ParameterTypeTuple!(__pyd_p$i.func_t))("$name", t);
-            }
-            alias T.$realname $realname;
-        },
-            "$i", i, "$realname", realname, "$name", name,
-            "$attrs", attrs_to_string(functionAttributes!func_t) ~ " " ~ tattrs_to_string!func_t(),
-            "$override",
-            //TODO: figure out what's going on here
-            (variadicFunctionStyle!func == Variadic.no ? "override": ""));
+	static if (isStatic)
+	{
+		enum shim="";
+	}
+	else
+	{
+		import util.replace: Replace;
+		enum shim = Replace!(q{
+		    alias __pyd_p$i = Params[$i];
+		    $override ReturnType!(__pyd_p$i.func_t) $realname(ParameterTypeTuple!(__pyd_p$i.func_t) t) $attrs {
+			return __pyd_get_overload!("$realname", __pyd_p$i.func_t).func!(ParameterTypeTuple!(__pyd_p$i.func_t))("$name", t);
+		    }
+		    alias T.$realname $realname;
+		},
+		    "$i", i, "$realname", realname, "$name", name,
+		    "$attrs", attrs_to_string(functionAttributes!func_t) ~ " " ~ tattrs_to_string!func_t(),
+		    "$override",
+		    //TODO: figure out what's going on here
+		    (variadicFunctionStyle!func == Variadic.no ? "override": ""));
+	    }
     }
 }

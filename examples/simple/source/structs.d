@@ -1,3 +1,4 @@
+@nogc:
 struct IntString {
 
     int i;
