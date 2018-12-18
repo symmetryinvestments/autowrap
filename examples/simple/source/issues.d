@@ -84,3 +84,10 @@ export extern(C) int cAdd(int i, int j) {
 export extern(C++) int cppAdd(int i, int j) {
     return i + j;
 }
+
+
+struct StaticMemberFunctions {
+    static int add(int i, int j) {
+        return i + j;
+    }
+}

@@ -113,8 +113,8 @@ auto wrapAggregate(T)() if(isUserAggregate!T) {
 
     import autowrap.reflection: Symbol;
     import autowrap.python.pyd.class_wrap: MemberFunction;
-    import pyd.pyd: wrap_class, Member, Init;
-    import std.meta: staticMap, Filter, AliasSeq;
+    import pyd.pyd: wrap_class, Member, Init, StaticDef;
+    import std.meta: staticMap, Filter, AliasSeq, templateNot;
     import std.traits: Parameters, FieldNameTuple, hasMember;
     import std.typecons: Tuple;
 
@@ -145,10 +145,14 @@ auto wrapAggregate(T)() if(isUserAggregate!T) {
     enum isPublic(string fieldName) = __traits(getProtection, __traits(getMember, T, fieldName)) == "public";
     alias publicFields = Filter!(isPublic, FieldNameTuple!T);
 
+    alias staticMemberFunctions = Filter!(isStatic, memberFunctions);
+    alias nonStaticMemberFunctions = Filter!(templateNot!isStatic, memberFunctions);
+
     wrap_class!(
         T,
         staticMap!(Member, publicFields),
-        staticMap!(MemberFunction, memberFunctions),
+        staticMap!(MemberFunction, nonStaticMemberFunctions),
+        staticMap!(StaticDef, staticMemberFunctions),
         staticMap!(InitTuple, constructorParamTuples),
    );
 }
@@ -175,4 +179,20 @@ private template isPublicFunction(alias F) {
     import std.traits: isFunction;
     enum prot = __traits(getProtection, F);
     enum isPublicFunction = isFunction!F && (prot == "export" || prot == "public");
+}
+
+
+private template isStatic(alias F) {
+    import std.traits: hasStaticMember;
+    enum isStatic = hasStaticMember!(__traits(parent, F), __traits(identifier, F));
+}
+
+@safe pure unittest {
+    static struct Struct {
+        int foo();
+        static int bar();
+    }
+
+    static assert(!isStatic!(Struct.foo));
+    static assert( isStatic!(Struct.bar));
 }

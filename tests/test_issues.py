@@ -1,3 +1,11 @@
+def test_issue_39():
+    from simple import StaticMemberFunctions
+    s = StaticMemberFunctions()
+    assert s.add(1, 2) == 3
+    assert s.add(2, 3) == 5
+    assert StaticMemberFunctions.add(3, 4) == 7
+
+
 def test_issue_40_c():
     from simple import c_add
     assert c_add(2, 3) == 5
