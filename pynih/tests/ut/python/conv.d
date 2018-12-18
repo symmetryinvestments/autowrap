@@ -4,11 +4,19 @@ module ut.python.conv;
 import unit_threaded;
 import python.conv;
 import std.datetime: Date, DateTime;
+import std.typecons: tuple;
 
 
 struct IntString {
     int i;
     string s;
+}
+
+
+private void backAndForth(T)
+                         (T value, in string file = __FILE__, in size_t line = __LINE__)
+{
+    value.toPython.to!(typeof(value)).shouldEqual(value, file, line);
 }
 
 
@@ -19,7 +27,7 @@ struct IntString {
     float, double,
     int[], double[],
 )
-void backAndForth(T)()
+void backAndForthTypes(T)()
 {
     check!((T d) => d.toPython.to!T == d);
 }
@@ -27,15 +35,13 @@ void backAndForth(T)()
 
 @("DateTime")
 unittest {
-    const value = DateTime(2018, 1, 2, 3, 4, 5);
-    value.toPython.to!DateTime.should == value;
+    backAndForth(DateTime(2018, 1, 2, 3, 4, 5));
 }
 
 
 @("Date")
 unittest {
-    const value = Date(2018, 1, 2);
-    value.toPython.to!Date.should == value;
+    backAndForth(Date(2018, 1, 2));
 }
 
 
@@ -44,33 +50,31 @@ unittest {
 @("string")
 unittest {
     const value = getValue!string;
-    value.toPython.to!string.should == value;
+    backAndForth(value);
 }
 
 
 @("array.static.int")
 unittest {
     int[2] value = [1, 2];
-    value.toPython.to!(int[2]).should == value;
+    backAndForth(value);
 }
 
 
 @("array.static.double")
 unittest {
     double[3] value = [11.1, 22.2, 33.3];
-    value.toPython.to!(double[3]).should == value;
+    backAndForth(value);
 }
 
 
 @("aa.int.string")
 unittest {
-    const value = [1: "foo", 2: "bar"];
-    value.toPython.to!(typeof(value)).should == value;
+    backAndForth([1: "foo", 2: "bar"]);
 }
 
 
 @("aa.string.int")
 unittest {
-    const value = ["foo": 1, "bar": 2];
-    value.toPython.to!(typeof(value)).should == value;
+    backAndForth(["foo": 1, "bar": 2]);
 }
