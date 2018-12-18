@@ -53,7 +53,8 @@ struct Module {
 
 template AllFunctions(Modules...) if(allSatisfy!(isString, Modules)) {
     import std.meta: staticMap;
-    enum module_(string name) = Module(name);
+    import std.typecons:Flag,Yes;
+    enum module_(string name) = Module(name,Flag!"alwaysExport".Yes);
     alias AllFunctions = staticMap!(Functions, staticMap!(module_, Modules));
 }
 
@@ -176,7 +177,14 @@ private template FunctionTypesInModule(Module module_) {
 
     alias Member(string memberName) = Symbol!(dmodule, memberName);
     alias members = staticMap!(Member, __traits(allMembers, dmodule));
-    enum isWantedExportFunction(alias F) = isExportFunction!(F, module_.alwaysExport);
+    template isWantedExportFunction(alias F)
+    {
+	   enum isWantedExportFunction = isExportFunction!(F, module_.alwaysExport);
+    }
+    template isWantedExportFunction(F)
+    {
+	    enum isWantedExportFunction = false;
+    }
     alias functions = Filter!(isWantedExportFunction, members);
 
     // all return types of all functions
@@ -194,9 +202,24 @@ private template FunctionTypesInModule(Module module_) {
 }
 
 
-private template RecursiveAggregates(T) {
-    mixin RecursiveAggregateImpl!(T, RecursiveAggregateHelper);
-    alias RecursiveAggregates = RecursiveAggregateImpl;
+private template RecursiveAggregates(U) {
+    import std.traits: Unqual;
+    import std.meta:AliasSeq;
+	alias T = Unqual!U;
+    static if (__traits(compiles,{
+			    mixin RecursiveAggregateImpl!(T, RecursiveAggregateHelper);
+			    alias RecursiveAggregates = RecursiveAggregateImpl;
+			    }))
+    {
+			    mixin RecursiveAggregateImpl!(T, RecursiveAggregateHelper);
+			    alias RecursiveAggregates = RecursiveAggregateImpl;
+    }
+    else
+    {
+	    pragma(msg,"error recursing for " ~T.stringof);
+	    alias RecursiveAggregates = AliasSeq!();
+    }
+
 }
 
 // Only exists because if RecursiveAggregate recurses using itself dmd complains.
@@ -217,7 +240,12 @@ private mixin template RecursiveAggregateImpl(T, alias Other) {
     import std.typecons: Typedef, TypedefType;
     import std.datetime: Date;
 
-    static if(isInstanceOf!(Typedef, T)) {
+    pragma(msg,"recurse: " ~T.stringof);
+    static if (isInstanceOf!(mir_series,T)) {
+	    pragma(msg,"avoiding!");
+	    alias RecursiveAggregateImpl = T;
+    }
+    else static if(isInstanceOf!(Typedef, T)) {
         alias RecursiveAggregateImpl = TypedefType!T;
     } else static if (is(T == Date)) {
         alias RecursiveAggregateImpl = Date;
@@ -226,17 +254,24 @@ private mixin template RecursiveAggregateImpl(T, alias Other) {
         alias members = staticMap!(AggMember, __traits(allMembers, T));
         enum isNotMe(U) = !is(Unqual!T == Unqual!U);
 
-        alias types = staticMap!(Type, members);
-        alias primordials = staticMap!(PrimordialType, types);
-        alias userAggregates = Filter!(isUserAggregate, primordials);
-        alias aggregates = NoDuplicates!(Filter!(isNotMe, userAggregates));
+        static if(__traits(compiles,staticMap!(Type,members)))
+	{
+		alias types = staticMap!(Type, members);
+		alias primordials = staticMap!(PrimordialType, types);
+		alias userAggregates = Filter!(isUserAggregate, primordials);
+		alias aggregates = NoDuplicates!(Filter!(isNotMe, userAggregates));
 
-        static if(aggregates.length == 0)
-            alias RecursiveAggregateImpl = T;
-        else
-            alias RecursiveAggregateImpl = AliasSeq!(aggregates, staticMap!(Other, aggregates));
+		static if(aggregates.length == 0)
+		    alias RecursiveAggregateImpl = T;
+		else
+		    alias RecursiveAggregateImpl = AliasSeq!(aggregates, staticMap!(Other, aggregates));
+	}
+	else
+	{
+		alias RecursiveAggregateImpl = T;
+	}
     } else
-        alias RecursiveAggregateImpl = T;
+	alias RecursiveAggregateImpl = T;
 }
 
 private template Type(T...) if(T.length == 1) {
@@ -322,10 +357,15 @@ package template isExportFunction(alias F, Flag!"alwaysExport" alwaysExport = No
     import std.traits: isFunction;
 
     version(AutowrapAlwaysExport) {
-        enum linkage = __traits(getLinkage, F);
-        enum isExportFunction = isFunction!F && linkage != "C" && linkage != "C++";
+        static if (isPublicSymbol!F)
+	{
+		enum linkage = __traits(getLinkage, F);
+		enum isExportFunction = isFunction!F && linkage != "C" && linkage != "C++";
+	}
+	else
+		enum isExportFunction = false;
     } else {
-        enum isExportFunction = isFunction!F && isExportSymbol!(F, alwaysExport);
+        enum isExportFunction = isPublicSymbol!F && isFunction!F && isExportSymbol!(F, alwaysExport);
     }
 }
 

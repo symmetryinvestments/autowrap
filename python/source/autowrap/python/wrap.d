@@ -22,7 +22,10 @@ void wrapAllFunctions(Modules...)() if(allSatisfy!(isModule, Modules)) {
     static foreach(function_; AllFunctions!Modules)
     {
         static if(__traits(compiles,def!(function_.symbol,PyName!(toSnakeCase(function_.name)))()))
+	{
+		//pragma(msg,"+ " ~ function_.name);
 		def!(function_.symbol, PyName!(toSnakeCase(function_.name)))();
+	}
 	else
 		pragma(msg,"- " ~ function_.name);
     }
@@ -95,13 +98,21 @@ void wrapAllAggregates(Modules...)() if(allSatisfy!(isModule, Modules)) {
 
     import autowrap.reflection: AllAggregates, Module;
     import std.meta: staticMap;
-    import std.traits: fullyQualifiedName;
+    import std.traits: fullyQualifiedName,Unqual;
+	import symmetry.integration.common;
+	import symmetry.integration.dcpp;
+	import symmetry.generative;
 
     static foreach(aggregate; AllAggregates!Modules) {
         static if(__traits(compiles, wrapAggregate!aggregate))
-            wrapAggregate!aggregate;
+	{
+            //pragma(msg, "+ " ~ fullyQualifiedName!aggregate);
+            //wrapAggregate!(Unqual!aggregate);
+            wrapAggregate!(aggregate);
+	}
         else {
-            pragma(msg, "\nERROR! Autowrap could not wrap aggregate `", fullyQualifiedName!aggregate, "` for Python");
+            //wrapAggregate!aggregate; // uncomment to see the error messages from the compiler
+            pragma(msg, "- " ~ fullyQualifiedName!aggregate);
             //wrapAggregate!aggregate; // uncomment to see the error messages from the compiler
         }
     }
@@ -118,6 +129,7 @@ auto wrapAggregate(T)() if(isUserAggregate!T) {
     import std.traits: Parameters, FieldNameTuple, hasMember,isCopyable;
     import std.typecons: Tuple;
 
+    //pragma(msg,"wrapping " ~T.stringof);
     alias AggMember(string memberName) = Symbol!(T, memberName);
     alias members = staticMap!(AggMember, __traits(allMembers, T));
 

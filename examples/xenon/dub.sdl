@@ -1,0 +1,26 @@
+name "xenon-wrap"
+targetType "dynamicLibrary"
+dependency "autowrap:python" path="../../"
+dependency "xenon" version="*"
+dflags "-defaultlib=phobos2-ldc,druntime-ldc"
+//"-link-defaultlib-shared"
+	 
+configuration "python37" {
+    subConfiguration "autowrap:python" "python37"
+}
+
+configuration "python36" {
+    subConfiguration "autowrap:python" "python36"
+}
+
+configuration "python33" {
+    subConfiguration "autowrap:python" "python33"
+}
+
+configuration "python27" {
+    subConfiguration "autowrap:python" "python27"
+}
+
+configuration "env" {
+    subConfiguration "autowrap:python" "env"
+}

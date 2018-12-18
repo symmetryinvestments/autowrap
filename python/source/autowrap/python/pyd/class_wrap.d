@@ -39,7 +39,7 @@ template validMemberFunction(alias T, alias fn, Options...)
     			    mixin MemberFunctionImpl!(fn, args.pyname, fn_t, args.docstring);
 			    call!(ClassName,fn_t);}))
     {
-	    pragma(msg,"+ " ~ ClassName~ "." ~ args.pyname);
+	    //pragma(msg,"+ " ~ ClassName~ "." ~ args.pyname);
 	    enum validMemberFunction = true;
     }
     else
