@@ -78,3 +78,15 @@ unittest {
 unittest {
     backAndForth(["foo": 1, "bar": 2]);
 }
+
+
+@("tuple.int.int.int")
+unittest {
+    backAndForth(tuple(3, 5, 7));
+}
+
+
+@("tuple.int.string")
+unittest {
+    backAndForth(tuple(42, "foo"));
+}

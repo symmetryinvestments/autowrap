@@ -5,8 +5,15 @@ module python.type;
 
 
 import python.raw: PyObject;
-import std.traits: isArray, isIntegral, isBoolean, isFloatingPoint, isAggregateType;
+import std.traits: Unqual, isArray, isIntegral, isBoolean, isFloatingPoint, isAggregateType;
 import std.datetime: DateTime, Date;
+import std.typecons: Tuple;
+
+
+package enum isPhobos(T) = isDateOrDateTime!T || isTuple!T;
+package enum isDateOrDateTime(T) = is(Unqual!T == DateTime) || is(Unqual!T == Date);
+package enum isTuple(T) = is(T: Tuple!A, A...);
+package enum isUserAggregate(T) = isAggregateType!T && !isPhobos!(T);
 
 
 /**
@@ -84,7 +91,7 @@ struct PythonType(T) {
         alias memberNames = AliasSeq!(__traits(allMembers, T));
         enum ispublic(string name) = isPublic!(T, name);
         alias publicMemberNames = Filter!(ispublic, memberNames);
-        alias Member(string name) = Alias!(__traits(getMember, T, name));
+        alias Member(string name) = AliasSeq!(__traits(getMember, T, name));
         alias members = staticMap!(Member, publicMemberNames);
         alias memberFunctions = Filter!(isSomeFunction, members);
 
@@ -251,12 +258,13 @@ PyObject* pythonClass(T)(auto ref T dobj) {
 
 
 private template isPublic(T, string memberName) {
-    enum protection = __traits(getProtection, __traits(getMember, T, memberName));
-    enum isPublic = protection == "public" || protection == "export";
+
+    static if(__traits(compiles, __traits(getProtection, __traits(getMember, T, memberName)))) {
+        enum protection = __traits(getProtection, __traits(getMember, T, memberName));
+        enum isPublic = protection == "public" || protection == "export";
+    } else
+        enum isPublic = false;
 }
-
-
-private enum isDateOrDateTime(T) = is(Unqual!T == DateTime) || is(Unqual!T == Date);
 
 
 /**

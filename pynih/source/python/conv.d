@@ -2,13 +2,12 @@ module python.conv;
 
 
 import python.raw: PyObject;
+import python.type: isUserAggregate, isTuple;
 import std.traits: Unqual, isIntegral, isFloatingPoint, isAggregateType, isArray,
     isStaticArray, isAssociativeArray;
 import std.range: isInputRange;
 import std.datetime: DateTime, Date;
 
-
-private enum isDateOrDateTime(T) = is(Unqual!T == DateTime) || is(Unqual!T == Date);
 
 
 PyObject* toPython(T)(T value) @trusted if(isIntegral!T) {
@@ -37,7 +36,7 @@ PyObject* toPython(T)(T value) if(isInputRange!T && !is(T == string) && !isStati
 }
 
 
-PyObject* toPython(T)(T value) if(isAggregateType!T && !isInputRange!T && !isDateOrDateTime!T) {
+PyObject* toPython(T)(T value) if(isUserAggregate!T && !isInputRange!T) {
     import python.type: pythonClass;
     return pythonClass(value);
 }
@@ -85,6 +84,19 @@ PyObject* toPython(T)(T value) if(isAssociativeArray!T) {
     return ret;
 }
 
+PyObject* toPython(T)(T value) if(isTuple!T) {
+    import python.raw: PyTuple_New, PyTuple_SetItem;
+
+    auto ret = PyTuple_New(value.length);
+
+    static foreach(i; 0 .. T.length) {
+        PyTuple_SetItem(ret, i, value[i].toPython);
+    }
+
+    return ret;
+}
+
+
 T to(T)(PyObject* value) @trusted if(isIntegral!T) {
     import python.raw: PyLong_AsLong;
 
@@ -102,7 +114,7 @@ T to(T)(PyObject* value) @trusted if(isFloatingPoint!T) {
 }
 
 
-T to(T)(PyObject* value) if(isAggregateType!T && !isDateOrDateTime!T) {
+T to(T)(PyObject* value) if(isUserAggregate!T) {
     import python.type: PythonClass;
 
     auto pyclass = cast(PythonClass!T*) value;
@@ -204,6 +216,22 @@ T to(T)(PyObject* value) if(isAssociativeArray!T)
         }
 
         ret[dk] = dv;
+    }
+
+    return ret;
+}
+
+
+T to(T)(PyObject* value) if(isTuple!T) {
+    import python.raw: pyTupleCheck, PyTuple_Size, PyTuple_GetItem;
+
+    assert(pyTupleCheck(value));
+    assert(PyTuple_Size(value) == T.length);
+
+    T ret;
+
+    static foreach(i; 0 .. T.length) {
+        ret[i] = PyTuple_GetItem(value, i).to!(typeof(ret[i]));
     }
 
     return ret;
