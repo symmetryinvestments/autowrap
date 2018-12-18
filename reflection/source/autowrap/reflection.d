@@ -280,9 +280,11 @@ package template Symbol(alias parent, string memberName) {
 }
 
 
-// T -> T, T[] -> T, T[][] -> T
+// T -> T, T[] -> T, T[][] -> T, T* -> T
 private template PrimordialType(T) if(isArray!T) {
+
     import std.range.primitives: ElementType;
+
     static if(isArray!(ElementType!T))
         alias PrimordialType = PrimordialType!(ElementType!T);
     else
@@ -290,9 +292,18 @@ private template PrimordialType(T) if(isArray!T) {
 }
 
 
-// T -> T, T[] -> T, T[][] -> T
+// T -> T, T[] -> T, T[][] -> T, T* -> T
 private template PrimordialType(T) if(!isArray!T) {
-    alias PrimordialType = T;
+
+    import std.traits: isPointer, PointerTarget;
+
+    static if(isPointer!T) {
+        static if(isPointer!(PointerTarget!T))
+            alias PrimordialType = PrimordialType!(PointerTarget!T);
+        else
+            alias PrimordialType = PointerTarget!T;
+    } else
+        alias PrimordialType = T;
 }
 
 
@@ -303,6 +314,8 @@ unittest {
     static assert(is(PrimordialType!(int[][]) == int));
     static assert(is(PrimordialType!(double[][]) == double));
     static assert(is(PrimordialType!(string[][]) == dchar));
+    static assert(is(PrimordialType!(int*) == int));
+    static assert(is(PrimordialType!(int**) == int));
 }
 
 
