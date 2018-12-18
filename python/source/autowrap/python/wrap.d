@@ -101,7 +101,7 @@ void wrapAllAggregates(Modules...)() if(allSatisfy!(isModule, Modules)) {
             wrapAggregate!aggregate;
         else {
             pragma(msg, "\nERROR! Autowrap could not wrap aggregate `", fullyQualifiedName!aggregate, "` for Python\n");
-            //wrapAggregate!aggregate; // uncomment to see the error messages from the compiler
+            // wrapAggregate!aggregate; // uncomment to see the error messages from the compiler
         }
     }
 }
@@ -156,9 +156,16 @@ auto wrapAggregate(T)() if(isUserAggregate!T) {
 
 // must be a global template
 private template isMemberFunction(A...) if(A.length == 1) {
+    import std.algorithm: startsWith;
+
     alias T = A[0];
+
     static if(__traits(compiles, __traits(identifier, T)))
-        enum isMemberFunction = isPublicFunction!T && __traits(identifier, T) != "__ctor";
+        enum isMemberFunction =
+            isPublicFunction!T &&
+            !__traits(identifier, T).startsWith("__") &&
+            __traits(identifier, T) != "opAssign"
+            ;
     else
         enum isMemberFunction = false;
 }
