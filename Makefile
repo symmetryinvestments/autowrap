@@ -8,7 +8,7 @@ all: test_simple
 test: test_simple
 
 test_simple: tests/test_simple.py examples/simple/simple.so
-	PYTHONPATH=$(PWD)/examples/simple pytest -s -vv $<
+	PYTHONPATH=$(PWD)/examples/simple pytest -s -vv tests
 
 examples/simple/simple.so: examples/simple/libsimple.so
 	cp $^ $@
