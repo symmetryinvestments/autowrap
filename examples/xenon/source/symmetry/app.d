@@ -129,7 +129,7 @@ enum modules = AliasSeq!(
 	"symmetry.math.bivariate_normal",
 	"symmetry.xenon.numeric.optimiser",
 	"symmetry.xenon.surface",
-	// "symmetry.xenon.option-core", //FAILS
+	 //"symmetry.xenon.option-core", //FAILS
 	"symmetry.xenon.pricing",
 	"symmetry.xenon.product",
 	//"symmetry.xenon.rates-calculation",
@@ -146,20 +146,20 @@ enum modules = AliasSeq!(
 
 	"symmetry.xenon.temporal",
 	"symmetry.xenon.volatility.bump",
-	//"symmetry.xenon.volatility-extra",
+	//"symmetry.xenon.volatility.extra",
 	"mir.date",
 	"symmetry.xenon.curve.decorator",
 	"symmetry.xenon.curve.decorator.jump",
 	"symmetry.xenon.curve.decorator.turn",
 	"symmetry.xenon.product.accrual_period",
 	"symmetry.algebraic",
-	//"symmetry.exception",
+	"symmetry.exception",
 	//"symmetry.generative",
 	"symmetry.heterogeneous_map",
 	//"symmetry.integration.common",
 	//"symmetry.integration.dcpp",
 	//"symmetry.integration.dcpp_test",
-	//"symmetry.integration.stdcpp",
+	"symmetry.integration.stdcpp",
 	"symmetry.math.bivariate_normal",
 	"symmetry.math.heaviside",
 	"symmetry.math.normal",
@@ -176,17 +176,17 @@ enum modules = AliasSeq!(
 	"symmetry.xenon.calibration.constraint.overnight_rate",
 	"symmetry.xenon.calibration.constraint.swap",
 	"symmetry.xenon.calibration.credit_rates",
-	// "symmetry.xenon.calibration.inflation_curve", // slow
+	 "symmetry.xenon.calibration.inflation_curve", // slow
 	"symmetry.xenon.calibration.purpose",
 	//"symmetry.xenon.calibration.rates",
-	// "symmetry.xenon.calibration.rates_cost", // slow
-	// "symmetry.xenon.calibration.rates_curve_definition", // slow
+	 "symmetry.xenon.calibration.rates_cost",
+	 "symmetry.xenon.calibration.rates_curve_definition",
 	"symmetry.xenon.convention",
 	"symmetry.xenon.convention.wrap",
 	"symmetry.xenon.convention.bond.base",
-		 "symmetry.xenon.convention.bond.fixed", // slow
-		 "symmetry.xenon.convention.bond.zero", // slow
-		 "symmetry.xenon.convention.cds", // slow
+		 "symmetry.xenon.convention.bond.fixed",
+		 "symmetry.xenon.convention.bond.zero",
+		 "symmetry.xenon.convention.cds",
 		 "symmetry.xenon.convention.credit_funding",
 		 "symmetry.xenon.convention.currency",
 		 "symmetry.xenon.convention.currency_amount",
@@ -199,12 +199,12 @@ enum modules = AliasSeq!(
 		 "symmetry.xenon.convention.future",
 		 "symmetry.xenon.convention.fx_rate",
 	"symmetry.xenon.convention.initialization",
-		 "symmetry.xenon.convention.isda_swap_constraint", // slow
-		 "symmetry.xenon.convention.money_market_constraint",//slow
+		 "symmetry.xenon.convention.isda_swap_constraint",
+		 "symmetry.xenon.convention.money_market_constraint",
 	"symmetry.xenon.convention.multi_currency_amount",
 	"symmetry.xenon.convention.name_builder",
-		 "symmetry.xenon.convention.price_index", // slow
-		 "symmetry.xenon.convention.rate_index.base", //slow
+		 "symmetry.xenon.convention.price_index", 
+		 "symmetry.xenon.convention.rate_index.base",
 		 "symmetry.xenon.convention.rate_index.ibor",
 		 "symmetry.xenon.convention.rate_index.overnight",
 	"symmetry.xenon.convention.rounding",
@@ -219,7 +219,7 @@ enum modules = AliasSeq!(
 	//"symmetry.xenon.curve.test",
 	"symmetry.xenon.numeric.comparisons",
 	"symmetry.xenon.numeric.extrapolate",
-	//"symmetry.xenon.numeric.extrapolate.exception",
+	"symmetry.xenon.numeric.extrapolate.exception",
 	"symmetry.xenon.numeric.extrapolate.extrapolant",
 	"symmetry.xenon.numeric.extrapolate.interfaces",
 	"symmetry.xenon.numeric.extrapolate.structs",
@@ -227,7 +227,7 @@ enum modules = AliasSeq!(
 	"symmetry.xenon.numeric.integration_impl",
 	"symmetry.xenon.numeric.interfaces",
 	"symmetry.xenon.numeric.interpolate",
-	//"symmetry.xenon.numeric.interpolate.exception",
+	"symmetry.xenon.numeric.interpolate.exception",
 	"symmetry.xenon.numeric.interpolate.interfaces",
 	"symmetry.xenon.numeric.interpolate.interpolant",
 	"symmetry.xenon.numeric.interpolate.interpolator",
@@ -311,7 +311,7 @@ enum modules = AliasSeq!(
 	"symmetry.xenon.rates.calculation.overnight_averaged",
 	"symmetry.xenon.rates.calculation.overnight_compounded",
 	//"symmetry.xenon.rates.calculation.test",
-		//"symmetry.xenon.rates.fx_test",
+	//"symmetry.xenon.rates.fx_test",
 	"symmetry.xenon.rates.provider",
 	"symmetry.xenon.rates.provider.credit",
 	"symmetry.xenon.rates.provider.discount_factors",
@@ -325,6 +325,7 @@ enum modules = AliasSeq!(
 	"symmetry.xenon.rates.provider.index_fixings",
 			//"symmetry.xenon.rates.provider.overnight_test",
 	"symmetry.xenon.rates.provider.price_index",
+	/+
 	"symmetry.xenon.surface",
 	"symmetry.xenon.temporal",
 	"symmetry.xenon.temporal.adjuster",
@@ -338,13 +339,12 @@ enum modules = AliasSeq!(
 	/+
 	"symmetry.xenon.temporal.schedule",
 	//"symmetry.xenon.temporal.schedule_test",
+	+/
 	"symmetry.xenon.temporal.stub_type",
 	"symmetry.xenon.temporal.tenor",
 	"symmetry.xenon.temporal.unit",
 	"symmetry.xenon.temporal.vol_day_count",
 	"symmetry.xenon.temporal.year_month",
-	+/
-	/+
 	"symmetry.xenon.volatility.bump",
 	"symmetry.xenon.volatility.constructor",
 		//"symmetry.xenon.volatility.constructor_test",
