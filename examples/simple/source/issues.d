@@ -40,3 +40,37 @@ struct DoubleUnderscore {
     this(this) { }
     ~this() {}
 }
+
+
+struct IssueString {
+    string value;
+    this(string value) { this.value = value; }
+}
+
+export void takesInString(in IssueString str) {
+
+}
+
+export void takesScopeString(scope IssueString str) {
+
+}
+
+export void takesRefString(ref IssueString str) {
+
+}
+
+
+export void takesRefConstString(ref const(IssueString) str) {
+
+}
+
+
+export ref const(IssueString) returnsRefConstString() {
+    static IssueString ret = IssueString("quux");
+    return ret;
+}
+
+
+export const(IssueString) returnsConstString() {
+    return const IssueString("quux");
+}
