@@ -74,3 +74,13 @@ export ref const(IssueString) returnsRefConstString() {
 export const(IssueString) returnsConstString() {
     return const IssueString("quux");
 }
+
+
+export extern(C) int cAdd(int i, int j) {
+    return i + j;
+}
+
+
+export extern(C++) int cppAdd(int i, int j) {
+    return i + j;
+}

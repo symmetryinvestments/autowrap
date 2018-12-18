@@ -1,3 +1,13 @@
+def test_issue_40_c():
+    from simple import c_add
+    assert c_add(2, 3) == 5
+
+
+def test_issue_40_cpp():
+    from simple import cpp_add
+    assert cpp_add(2, 3) == 5
+
+
 def test_issue_42_takes_in():
     from simple import IssueString, takes_in_string
     import pytest
