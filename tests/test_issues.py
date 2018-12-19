@@ -77,3 +77,13 @@ def test_issue_47():
     with pytest.raises(RuntimeError):
         assert uncopiable_ptr(33.3).d == 33.3
         assert uncopiable_ptr(44.4).d == 44.4
+
+
+def test_issue_54():
+    from issues import Issue54
+    import pytest
+
+    c = Issue54(10)
+    # FIXME
+    with pytest.raises(AttributeError):
+        assert c.i == 10

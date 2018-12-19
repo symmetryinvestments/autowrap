@@ -91,3 +91,9 @@ struct StaticMemberFunctions {
         return i + j;
     }
 }
+
+
+class Issue54 {
+    int i;
+    this(int i) { this.i = i; }
+}

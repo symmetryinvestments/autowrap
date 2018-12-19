@@ -68,6 +68,8 @@ private template MemberFunctionImpl(alias _fn, string name, fn_t, string docstri
 
     template shim(size_t i, T) {
         import util.replace: Replace;
+        import std.traits: functionAttributes, variadicFunctionStyle, Variadic;
+
         enum shim = Replace!(q{
             alias __pyd_p$i = Params[$i];
             $override ReturnType!(__pyd_p$i.func_t) $realname(ParameterTypeTuple!(__pyd_p$i.func_t) t) $attrs {
@@ -81,4 +83,75 @@ private template MemberFunctionImpl(alias _fn, string name, fn_t, string docstri
             //TODO: figure out what's going on here
             (variadicFunctionStyle!func == Variadic.no ? "override": ""));
     }
+}
+
+
+private string attrs_to_string(uint attrs) {
+    import std.traits: FunctionAttribute;
+    import std.compiler: version_major, version_minor;
+
+    string s = "";
+    with(FunctionAttribute) {
+        if(attrs & pure_) s ~= " pure";
+        if(attrs & nothrow_) s ~= " nothrow";
+        if(attrs & ref_) s ~= " ref";
+        if(attrs & property) s ~= " @property";
+        if(attrs & trusted) s ~= " @trusted";
+        if(attrs & safe) s ~= " @safe";
+        if(attrs & nogc) s ~= " @nogc";
+        static if(version_major == 2 && version_minor >= 67) {
+            if(attrs & return_) s ~= " return";
+        }
+    }
+    return s;
+}
+
+
+private string tattrs_to_string(fn_t)() {
+    string s;
+    if(isConstFunction!fn_t) {
+        s ~= " const";
+    }
+    if(isImmutableFunction!fn_t) {
+        s ~= " immutable";
+    }
+    if(isSharedFunction!fn_t) {
+        s ~= " shared";
+    }
+    if(isWildcardFunction!fn_t) {
+        s ~= " inout";
+    }
+    return s;
+}
+
+private template isImmutableFunction(T...) if (T.length == 1) {
+    alias funcTarget!T func_t;
+    enum isImmutableFunction = is(func_t == immutable);
+}
+private template isConstFunction(T...) if (T.length == 1) {
+    alias funcTarget!T func_t;
+    enum isConstFunction = is(func_t == const);
+}
+private template isMutableFunction(T...) if (T.length == 1) {
+    alias funcTarget!T func_t;
+    enum isMutableFunction = !is(func_t == inout) && !is(func_t == const) && !is(func_t == immutable);
+}
+private template isWildcardFunction(T...) if (T.length == 1) {
+    alias funcTarget!T func_t;
+    enum isWildcardFunction = is(func_t == inout);
+}
+private template isSharedFunction(T...) if (T.length == 1) {
+    alias funcTarget!T func_t;
+    enum isSharedFunction = is(func_t == shared);
+}
+
+private template funcTarget(T...) if(T.length == 1) {
+    import std.traits;
+    static if(isPointer!(T[0]) && is(PointerTarget!(T[0]) == function)) {
+        alias PointerTarget!(T[0]) funcTarget;
+    }else static if(is(T[0] == function)) {
+        alias T[0] funcTarget;
+    }else static if(is(T[0] == delegate)) {
+        alias PointerTarget!(typeof((T[0]).init.funcptr)) funcTarget;
+    }else static assert(false);
 }
