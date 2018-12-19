@@ -113,7 +113,7 @@ auto wrapAggregate(T)() if(isUserAggregate!T) {
 
     import autowrap.reflection: Symbol;
     import autowrap.python.pyd.class_wrap: MemberFunction;
-    import pyd.pyd: wrap_class, Member, Init, StaticDef;
+    import pyd.pyd: wrap_class, Member, Init, StaticDef, Repr;
     import std.meta: staticMap, Filter, AliasSeq, templateNot;
     import std.traits: Parameters, FieldNameTuple, hasMember;
     import std.typecons: Tuple;
@@ -147,13 +147,22 @@ auto wrapAggregate(T)() if(isUserAggregate!T) {
 
     alias staticMemberFunctions = Filter!(isStatic, memberFunctions);
     alias nonStaticMemberFunctions = Filter!(templateNot!isStatic, memberFunctions);
+    enum isToString(alias F) = __traits(identifier, F) == "toString";
+    alias toStrings = Filter!(isToString, memberFunctions);
+
+    // FIXME - See #54
+    static if(is(T == class))
+        alias realPublicFields = AliasSeq!();
+    else
+        alias realPublicFields = publicFields;
 
     wrap_class!(
         T,
-        staticMap!(Member, publicFields),
+        staticMap!(Member, realPublicFields),
         staticMap!(MemberFunction, nonStaticMemberFunctions),
         staticMap!(StaticDef, staticMemberFunctions),
         staticMap!(InitTuple, constructorParamTuples),
+        staticMap!(Repr, toStrings),
    );
 }
 
@@ -164,13 +173,15 @@ private template isMemberFunction(A...) if(A.length == 1) {
 
     alias T = A[0];
 
-    static if(__traits(compiles, __traits(identifier, T)))
+    static if(__traits(compiles, __traits(identifier, T))) {
+        enum name = __traits(identifier, T);
         enum isMemberFunction =
-            isPublicFunction!T &&
-            !__traits(identifier, T).startsWith("__") &&
-            __traits(identifier, T) != "opAssign"
+            isPublicFunction!T
+            && !name.startsWith("__")
+            && !name.startsWith("op")
+            && name != "toHash"
             ;
-    else
+    } else
         enum isMemberFunction = false;
 }
 
