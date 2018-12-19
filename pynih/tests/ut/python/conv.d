@@ -90,3 +90,9 @@ unittest {
 unittest {
     backAndForth(tuple(42, "foo"));
 }
+
+
+@("udt.intstring")
+unittest {
+    backAndForth(IntString(42, "quux"));
+}
