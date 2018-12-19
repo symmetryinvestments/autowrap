@@ -1,6 +1,7 @@
 # autowrap
 
 [![Build Status](https://travis-ci.org/kaleidicassociates/autowrap.png?branch=master)](https://travis-ci.org/kaleidicassociates/autowrap)
+[![Coverage](https://codecov.io/gh/atilaneves/autowrap/branch/master/graph/badge.svg)](https://codecov.io/gh/atilaneves/autowrap)
 
 Wrap existing D code for use in other environments such as Python, Excel, and .NET.
 
