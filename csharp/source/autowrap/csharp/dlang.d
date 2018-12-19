@@ -1,6 +1,6 @@
 module autowrap.csharp.dlang;
 
-import scriptlike;
+import scriptlike : interp, interp_text;
 
 import autowrap.reflection : isModule;
 import std.ascii : newline;

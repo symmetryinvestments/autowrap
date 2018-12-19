@@ -1,6 +1,6 @@
 module autowrap.csharp.csharp;
 
-import scriptlike;
+import scriptlike : interp, interp_text;
 
 import autowrap.csharp.common : LibraryName, RootNamespace;
 import autowrap.reflection : isModule;
