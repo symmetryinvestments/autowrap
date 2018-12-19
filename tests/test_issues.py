@@ -79,6 +79,11 @@ def test_issue_47():
         assert uncopiable_ptr(44.4).d == 44.4
 
 
+def test_issue_50():
+    from issues import String, takes_string
+    takes_string(String())
+
+
 def test_issue_54():
     from issues import Issue54
     import pytest

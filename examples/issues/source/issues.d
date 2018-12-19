@@ -1,6 +1,8 @@
 module issues;
 
 
+import extra: String;
+
 struct Uncopiable {
     @disable this(this);
     double x;
@@ -96,4 +98,8 @@ struct StaticMemberFunctions {
 class Issue54 {
     int i;
     this(int i) { this.i = i; }
+}
+
+export void takesString(String str) {
+
 }
