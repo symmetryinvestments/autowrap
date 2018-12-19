@@ -23,7 +23,7 @@ public string wrapDLang(Modules...)() if(allSatisfy!(isModule, Modules)) {
     ret ~= "extern(C) void rt_moduleTlsCtor();" ~ newline;
     ret ~= "extern(C) void rt_moduleTlsDtor();" ~ newline;
     foreach(mod; Modules) {
-        ret ~= "import " ~ mod.name ~ ";" ~ newline;
+        ret ~= mixin(interp!"import ${mod.name};${newline}");
     }
     ret ~= newline;
 
