@@ -92,7 +92,14 @@ unittest {
 }
 
 
-@("udt.intstring")
+@("udt.intstring.val")
 unittest {
     backAndForth(IntString(42, "quux"));
+}
+
+@("udt.intstring.ptr")
+unittest {
+    const value = new IntString(42, "quux");
+    const back = value.toPython.to!(typeof(value));
+    (*back).should == *value;
 }

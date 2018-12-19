@@ -8,12 +8,14 @@ import python.raw: PyObject;
 import std.traits: Unqual, isArray, isIntegral, isBoolean, isFloatingPoint, isAggregateType;
 import std.datetime: DateTime, Date;
 import std.typecons: Tuple;
+import std.range.primitives: isInputRange;
 
 
 package enum isPhobos(T) = isDateOrDateTime!T || isTuple!T;
 package enum isDateOrDateTime(T) = is(Unqual!T == DateTime) || is(Unqual!T == Date);
 package enum isTuple(T) = is(T: Tuple!A, A...);
 package enum isUserAggregate(T) = isAggregateType!T && !isPhobos!(T);
+package enum isNonRangeUDT(T) = isUserAggregate!T && !isInputRange!T;
 
 
 /**
@@ -126,8 +128,8 @@ struct PythonType(T) {
     private static extern(C) PyObject* new_(PyTypeObject *type, PyObject* args, PyObject* kwargs) {
         import python.conv: toPython, to;
         import python.raw: PyTuple_Size, PyTuple_GetItem;
-        import std.traits: hasMember;
-        import std.meta: AliasSeq;
+        import std.traits: hasMember, Unqual;
+        import std.meta: AliasSeq, staticMap;
 
         const numArgs = PyTuple_Size(args);
 
@@ -144,7 +146,7 @@ struct PythonType(T) {
 
             import std.typecons: Tuple;
 
-            Tuple!fieldTypes dArgs;
+            Tuple!(staticMap!(Unqual, fieldTypes)) dArgs;
 
             static foreach(i; 0 .. fieldTypes.length) {
                 dArgs[i] = PyTuple_GetItem(args, i).to!(fieldTypes[i]);

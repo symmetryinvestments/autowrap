@@ -4,7 +4,7 @@ module python.conv.python_to_d;
 import python.raw: PyObject;
 import python.type: isUserAggregate, isTuple;
 import std.traits: Unqual, isIntegral, isFloatingPoint, isAggregateType, isArray,
-    isStaticArray, isAssociativeArray;
+    isStaticArray, isAssociativeArray, isPointer, PointerTarget;
 import std.range: isInputRange;
 import std.datetime: DateTime, Date;
 
@@ -40,6 +40,14 @@ T to(T)(PyObject* value) if(isUserAggregate!T) {
     return ret;
 }
 
+
+T to(T)(PyObject* value) if(isPointer!T && isUserAggregate!(PointerTarget!T)) {
+    auto ret = new Unqual!(PointerTarget!T);
+    *ret = to!(PointerTarget!T)(value);
+    return ret;
+}
+
+
 T to(T)(PyObject* value) if(is(Unqual!T == DateTime)) {
     import python.raw;
 
@@ -62,7 +70,7 @@ T to(T)(PyObject* value) if(is(Unqual!T == Date)) {
 }
 
 
-T to(T)(PyObject* value) if(isArray!T && !is(T == string)) {
+T to(T)(PyObject* value) if(isArray!T && !is(Unqual!T == string)) {
     import python.raw: PyList_Size, PyList_GetItem;
     import std.range: ElementType;
 
@@ -78,7 +86,7 @@ T to(T)(PyObject* value) if(isArray!T && !is(T == string)) {
 }
 
 
-T to(T)(PyObject* value) if(is(T == string)) {
+T to(T)(PyObject* value) if(is(Unqual!T == string)) {
     import python.raw: pyUnicodeGetSize, pyUnicodeCheck,
         pyBytesAsString, pyObjectUnicode, pyUnicodeAsUtf8String, Py_ssize_t;
 
