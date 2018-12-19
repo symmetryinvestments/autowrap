@@ -129,7 +129,7 @@ struct PythonType(T) {
         import python.conv: toPython, to;
         import python.raw: PyTuple_Size, PyTuple_GetItem;
         import std.traits: hasMember, Unqual;
-        import std.meta: AliasSeq, staticMap;
+        import std.meta: AliasSeq;
 
         const numArgs = PyTuple_Size(args);
 
@@ -144,30 +144,16 @@ struct PythonType(T) {
 
         static if(constructors.length == 0) {
 
-            import std.typecons: Tuple;
-
-            Tuple!(staticMap!(Unqual, fieldTypes)) dArgs;
-
-            static foreach(i; 0 .. fieldTypes.length) {
-                dArgs[i] = PyTuple_GetItem(args, i).to!(fieldTypes[i]);
-            }
-
+            auto dArgs = pythonArgsToDArgs!fieldTypes(args);
             return toPython(T(dArgs.expand));
 
         } else {
             import python.raw: PyErr_SetString, PyExc_TypeError;
             import std.traits: Parameters;
-            import std.typecons: Tuple;
 
             static foreach(constructor; constructors) {
                 if(Parameters!constructor.length == numArgs) {
-
-                    Tuple!(Parameters!constructor) dArgs;
-
-                    static foreach(i; 0 .. Parameters!constructor.length) {
-                        dArgs[i] = PyTuple_GetItem(args, i).to!(Parameters!constructor[i]);
-                    }
-
+                    auto dArgs = pythonArgsToDArgs!(Parameters!constructor)(args);
                     return toPython(T(dArgs.expand));
                 }
             }
@@ -175,10 +161,28 @@ struct PythonType(T) {
             PyErr_SetString(PyExc_TypeError, "Could not find a suitable constructor");
             return null;
         }
-
-
     }
 }
+
+private auto pythonArgsToDArgs(A...)(PyObject* args) {
+    import python.raw: PyTuple_Size, PyTuple_GetItem;
+    import python.conv: to;
+    import std.typecons: Tuple;
+    import std.meta: staticMap;
+    import std.traits: Unqual;
+
+    if(PyTuple_Size(args) != A.length)
+        throw new Exception("Lengths must match");
+
+    Tuple!(staticMap!(Unqual, A)) dArgs;
+
+    static foreach(i; 0 .. A.length) {
+        dArgs[i] = PyTuple_GetItem(args, i).to!(A[i]);
+    }
+
+    return dArgs;
+}
+
 
 private alias Type(alias A) = typeof(A);
 
@@ -191,16 +195,10 @@ struct PythonMethod(T, alias F) {
         import python.raw: PyTuple_Size, PyTuple_GetItem, pyIncRef, pyNone, pyDecRef;
         import python.conv: toPython, to;
         import std.traits: Parameters, ReturnType, FunctionAttribute, functionAttributes, Unqual;
-        import std.typecons: Tuple;
-        import std.meta: staticMap;
 
         assert(PyTuple_Size(args) == Parameters!F.length);
 
-        Tuple!(staticMap!(Unqual, Parameters!F)) dArgs;
-
-        static foreach(i; 0 .. Parameters!F.length) {
-            dArgs[i] = PyTuple_GetItem(args, i).to!(Parameters!F[i]);
-        }
+        auto dArgs = pythonArgsToDArgs!(Parameters!F)(args);
 
         assert(self_ !is null);
         auto dAggregate = self_.to!(Unqual!T);
