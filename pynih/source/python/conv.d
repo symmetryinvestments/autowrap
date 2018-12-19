@@ -2,12 +2,12 @@ module python.conv;
 
 
 import python.raw: PyObject;
-import std.traits: Unqual, isIntegral, isFloatingPoint, isAggregateType, isArray, isStaticArray;
+import python.type: isUserAggregate, isTuple;
+import std.traits: Unqual, isIntegral, isFloatingPoint, isAggregateType, isArray,
+    isStaticArray, isAssociativeArray;
 import std.range: isInputRange;
 import std.datetime: DateTime, Date;
 
-
-private enum isDateOrDateTime(T) = is(Unqual!T == DateTime) || is(Unqual!T == Date);
 
 
 PyObject* toPython(T)(T value) @trusted if(isIntegral!T) {
@@ -36,7 +36,7 @@ PyObject* toPython(T)(T value) if(isInputRange!T && !is(T == string) && !isStati
 }
 
 
-PyObject* toPython(T)(T value) if(isAggregateType!T && !isInputRange!T && !isDateOrDateTime!T) {
+PyObject* toPython(T)(T value) if(isUserAggregate!T && !isInputRange!T) {
     import python.type: pythonClass;
     return pythonClass(value);
 }
@@ -72,6 +72,31 @@ PyObject* toPython(T)(T value) if(isStaticArray!T) {
 }
 
 
+PyObject* toPython(T)(T value) if(isAssociativeArray!T) {
+    import python.raw: PyDict_New, PyDict_SetItem;
+
+    auto ret = PyDict_New;
+
+    foreach(k, v; value) {
+        PyDict_SetItem(ret, k.toPython, v.toPython);
+    }
+
+    return ret;
+}
+
+PyObject* toPython(T)(T value) if(isTuple!T) {
+    import python.raw: PyTuple_New, PyTuple_SetItem;
+
+    auto ret = PyTuple_New(value.length);
+
+    static foreach(i; 0 .. T.length) {
+        PyTuple_SetItem(ret, i, value[i].toPython);
+    }
+
+    return ret;
+}
+
+
 T to(T)(PyObject* value) @trusted if(isIntegral!T) {
     import python.raw: PyLong_AsLong;
 
@@ -89,7 +114,7 @@ T to(T)(PyObject* value) @trusted if(isFloatingPoint!T) {
 }
 
 
-T to(T)(PyObject* value) if(isAggregateType!T && !isDateOrDateTime!T) {
+T to(T)(PyObject* value) if(isUserAggregate!T) {
     import python.type: PythonClass;
 
     auto pyclass = cast(PythonClass!T*) value;
@@ -159,4 +184,55 @@ T to(T)(PyObject* value) if(is(T == string)) {
 T to(T)(PyObject* value) if(is(Unqual!T == bool)) {
     import python.raw: pyTrue;
     return value is pyTrue;
+}
+
+
+
+T to(T)(PyObject* value) if(isAssociativeArray!T)
+{
+    import python.raw: pyDictCheck, PyDict_Keys, PyList_Size, PyList_GetItem, PyDict_GetItem;
+
+    assert(pyDictCheck(value));
+
+    // this enum is to get K and V whilst avoiding auto-decoding, which is why we're not using
+    // std.traits
+    enum _ = is(T == V[K], V, K);
+    alias KeyType = Unqual!K;
+    alias ValueType = Unqual!V;
+
+    ValueType[KeyType] ret;
+
+    auto keys = PyDict_Keys(value);
+
+    foreach(i; 0 .. PyList_Size(keys)) {
+        auto k = PyList_GetItem(keys, i);
+        auto v = PyDict_GetItem(value, k);
+        auto dk = k.to!KeyType;
+        auto dv = v.to!ValueType;
+
+        version(unittest) {
+            import unit_threaded.io;
+            writelnUt("dkey: ", dk, "  dvalue: ", dv);
+        }
+
+        ret[dk] = dv;
+    }
+
+    return ret;
+}
+
+
+T to(T)(PyObject* value) if(isTuple!T) {
+    import python.raw: pyTupleCheck, PyTuple_Size, PyTuple_GetItem;
+
+    assert(pyTupleCheck(value));
+    assert(PyTuple_Size(value) == T.length);
+
+    T ret;
+
+    static foreach(i; 0 .. T.length) {
+        ret[i] = PyTuple_GetItem(value, i).to!(typeof(ret[i]));
+    }
+
+    return ret;
 }

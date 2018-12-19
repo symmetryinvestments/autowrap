@@ -5,8 +5,15 @@ module python.type;
 
 
 import python.raw: PyObject;
-import std.traits: isArray, isIntegral, isBoolean, isFloatingPoint, isAggregateType;
+import std.traits: Unqual, isArray, isIntegral, isBoolean, isFloatingPoint, isAggregateType;
 import std.datetime: DateTime, Date;
+import std.typecons: Tuple;
+
+
+package enum isPhobos(T) = isDateOrDateTime!T || isTuple!T;
+package enum isDateOrDateTime(T) = is(Unqual!T == DateTime) || is(Unqual!T == Date);
+package enum isTuple(T) = is(T: Tuple!A, A...);
+package enum isUserAggregate(T) = isAggregateType!T && !isPhobos!(T);
 
 
 /**
@@ -251,12 +258,13 @@ PyObject* pythonClass(T)(auto ref T dobj) {
 
 
 private template isPublic(T, string memberName) {
-    enum protection = __traits(getProtection, __traits(getMember, T, memberName));
-    enum isPublic = protection == "public" || protection == "export";
+
+    static if(__traits(compiles, __traits(getProtection, __traits(getMember, T, memberName)))) {
+        enum protection = __traits(getProtection, __traits(getMember, T, memberName));
+        enum isPublic = protection == "public" || protection == "export";
+    } else
+        enum isPublic = false;
 }
-
-
-private enum isDateOrDateTime(T) = is(Unqual!T == DateTime) || is(Unqual!T == Date);
 
 
 /**
@@ -273,7 +281,7 @@ private enum isDateOrDateTime(T) = is(Unqual!T == DateTime) || is(Unqual!T == Da
    assign anything but an integer to `Foo.i` or a string to `Foo.s` in Python
    will raise `TypeError`.
  */
-struct PythonClass(T) if(isAggregateType!T && !isDateOrDateTime!T) {
+struct PythonClass(T) if(isUserAggregate!T) {
     import python.raw: PyObjectHead, PyGetSetDef;
     import std.traits: FieldNameTuple, Fields;
 
