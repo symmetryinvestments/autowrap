@@ -113,19 +113,19 @@ private string commonBoilerplate() @safe pure {
         }
 
         extern(C) export string autowrap_csharp_createString(wchar* str) nothrow {
-            string temp = toUTF8(to!wstring(str.fromStringz()));
+            string temp = toUTF8(to!wstring(str.fromStringz())).idup;
             pinPointer(cast(void*)temp.ptr);
             return temp;
         }
 
         extern(C) export wstring autowrap_csharp_createWString(wchar* str) nothrow {
-            wstring temp = toUTF16(to!wstring(str.fromStringz()));
+            wstring temp = toUTF16(to!wstring(str.fromStringz())).idup;
             pinPointer(cast(void*)temp.ptr);
             return temp;
         }
 
         extern(C) export dstring autowrap_csharp_createDString(wchar* str) nothrow {
-            dstring temp = toUTF32(to!wstring(str.fromStringz()));
+            dstring temp = toUTF32(to!wstring(str.fromStringz())).idup;
             pinPointer(cast(void*)temp.ptr);
             return temp;
         }
