@@ -85,6 +85,29 @@ namespace Autowrap {
         private slice _error;
     }
 
+    [GeneratedCodeAttribute("Autowrap", "1.0.0.0")]
+    internal static class DateTimeExtensions {
+        public static DateTime DateTimeFromSlice(slice wstring) {
+            var iso = SharedFunctions.SliceToString(slice, DStringType._wstring);
+            return DateTime.Parse(iso);
+        }
+
+        public static DateTimeOffset DateTimeOffsetFromSlice(slice wstring) {
+            var iso = SharedFunctions.SliceToString(slice, DStringType._wstring);
+            return DateTimeOffset.Parse(iso);
+        }
+
+        public static slice ToSlice(this DateTime dateTime) {
+            var iso = dateTime.ToString("o");
+            return SharedFunctions.CreateWstring(iso);
+        }
+
+        public static slice ToSlice(this DateTimeOffset dateTime) {
+            var iso = dateTime.ToString("o");
+            return SharedFunctions.CreateWstring(iso);
+        }
+    }
+
 %3$s    [GeneratedCodeAttribute("Autowrap", "1.0.0.0")]
     public static class SharedFunctions {
         static SharedFunctions() {

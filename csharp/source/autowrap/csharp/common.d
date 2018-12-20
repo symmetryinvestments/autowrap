@@ -13,7 +13,7 @@ package string getInterfaceTypeString(T)() {
     import std.traits : fullyQualifiedName;
 
     if (is(T == DateTime) || is(T == SysTime)) {
-        return fullyQualifiedName!T;
+        return "wstring";
     }
 
     return fullyQualifiedName!T;

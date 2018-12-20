@@ -604,6 +604,8 @@ private string getDLangInterfaceType(string type) {
         case stringTypeString: return "slice";
         case wstringTypeString: return "slice";
         case dstringTypeString: return "slice";
+        case dateTimeTypeString: return "slice";
+        case sysTimeTypeString: return "slice";
         case boolTypeString: return "bool";
 
         //Types that can be marshalled by default
@@ -633,6 +635,8 @@ private string getCSharpInterfaceType(string type) {
         case stringTypeString: return "string";
         case wstringTypeString: return "string";
         case dstringTypeString: return "string";
+        case dateTimeTypeString: return "DateTime";
+        case sysTimeTypeString: return "DateTimeOffset";
         case boolTypeString: return "bool";
 
         //Types that can be marshalled by default
