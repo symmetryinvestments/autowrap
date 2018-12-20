@@ -98,9 +98,7 @@ def test_testdll():
     assert str(ex.value) == "'pyd.TestDllFoo' object is not iterable"
 
     spam_foo = testdll_spam(foo)
-    # FIXME
-    with pytest.raises(AssertionError):
-        assert str(spam_foo) == 'TestDllFoo(110)'
+    assert str(spam_foo) == 'TestDllFoo(60)'
 
     assert TestDllFoo(1, 2).i == 3
     assert TestDllFoo(2, 3).i == 5
