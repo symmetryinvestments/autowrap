@@ -86,19 +86,9 @@ def test_testdll():
     foo = TestDllFoo(10)
     assert foo.foo() == 'Foo.foo(): i = 10'
 
-    # FIXME
-    with pytest.raises(AssertionError):
-        assert foo.i == 10
-
-    # FIXME
-    with pytest.raises(AttributeError) as ex:
-        foo.i = 50
-    assert str(ex.value) == \
-        "'pyd.TestDllFoo' object attribute 'i' is read-only"
-
-    # FIXME
-    with pytest.raises(AssertionError):
-        assert foo.i == 50
+    assert foo.i == 10
+    foo.i = 50
+    assert foo.i == 50
 
     # FIXME
     with pytest.raises(TypeError):
@@ -113,6 +103,9 @@ def test_testdll():
     # FIXME
     with pytest.raises(AssertionError):
         assert str(spam_foo) == 'TestDllFoo(110)'
+
+    assert TestDllFoo(1, 2).i == 3
+    assert TestDllFoo(2, 3).i == 5
 
     with pytest.raises(RuntimeError) as ex:
         testdll_throws()

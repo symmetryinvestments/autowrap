@@ -113,10 +113,11 @@ auto wrapAggregate(T)() if(isUserAggregate!T) {
 
     import autowrap.reflection: Symbol;
     import autowrap.python.pyd.class_wrap: MemberFunction;
-    import pyd.pyd: wrap_class, Member, Init, StaticDef, Repr;
+    import pyd.pyd: wrap_class, Member, Init, StaticDef, Repr, Property;
     import std.meta: staticMap, Filter, AliasSeq, templateNot;
     import std.traits: Parameters, FieldNameTuple, hasMember;
     import std.typecons: Tuple;
+    import std.algorithm: startsWith;
 
     alias AggMember(string memberName) = Symbol!(T, memberName);
     alias members = staticMap!(AggMember, __traits(allMembers, T));
@@ -149,6 +150,15 @@ auto wrapAggregate(T)() if(isUserAggregate!T) {
     alias nonStaticMemberFunctions = Filter!(templateNot!isStatic, memberFunctions);
     enum isToString(alias F) = __traits(identifier, F) == "toString";
     alias toStrings = Filter!(isToString, memberFunctions);
+    enum isOperator(alias F) = __traits(identifier, F).startsWith("op");
+
+    template isProperty(alias F) {
+        import std.traits: functionAttributes, FunctionAttribute;
+        enum isProperty = functionAttributes!F & FunctionAttribute.property;
+    }
+
+    alias regularMemberFunctions = Filter!(templateNot!isOperator, Filter!(templateNot!isProperty, nonStaticMemberFunctions));
+    alias properties = Filter!(isProperty, nonStaticMemberFunctions);
 
     // FIXME - See #54
     static if(is(T == class))
@@ -159,10 +169,11 @@ auto wrapAggregate(T)() if(isUserAggregate!T) {
     wrap_class!(
         T,
         staticMap!(Member, realPublicFields),
-        staticMap!(MemberFunction, nonStaticMemberFunctions),
+        staticMap!(MemberFunction, regularMemberFunctions),
         staticMap!(StaticDef, staticMemberFunctions),
         staticMap!(InitTuple, constructorParamTuples),
         staticMap!(Repr, toStrings),
+        staticMap!(Property, properties),
    );
 }
 
@@ -178,7 +189,6 @@ private template isMemberFunction(A...) if(A.length == 1) {
         enum isMemberFunction =
             isPublicFunction!T
             && !name.startsWith("__")
-            && !name.startsWith("op")
             && name != "toHash"
             ;
     } else
