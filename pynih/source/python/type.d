@@ -89,12 +89,15 @@ struct PythonType(T) {
         import python.cooked: pyMethodDef;
         import std.meta: AliasSeq, Alias, staticMap, Filter;
         import std.traits: isSomeFunction;
+        import std.algorithm: startsWith;
 
         alias memberNames = AliasSeq!(__traits(allMembers, T));
         enum ispublic(string name) = isPublic!(T, name);
         alias publicMemberNames = Filter!(ispublic, memberNames);
+        enum isRegular(string name) = name != "this" && name != "toHash" && name != "factory" && !name.startsWith("op");
+        alias regularMemberNames = Filter!(isRegular, publicMemberNames);
         alias Member(string name) = Alias!(__traits(getMember, T, name));
-        alias members = staticMap!(Member, publicMemberNames);
+        alias members = staticMap!(Member, regularMemberNames);
         alias memberFunctions = Filter!(isSomeFunction, members);
 
         // +1 due to sentinel
@@ -133,8 +136,9 @@ struct PythonType(T) {
 
         const numArgs = PyTuple_Size(args);
 
-        if(numArgs == 0)
-            return toPython(T());
+        if(numArgs == 0) {
+            return toPython(T.init);
+        }
 
         // TODO: parameters
         static if(hasMember!(T, "__ctor"))
@@ -145,7 +149,13 @@ struct PythonType(T) {
         static if(constructors.length == 0) {
 
             auto dArgs = pythonArgsToDArgs!fieldTypes(args);
-            return toPython(T(dArgs.expand));
+
+            static if(is(T == class))
+                scope dobj = new T(dArgs.expand);
+            else
+                auto dobj = T(dArgs.expand);
+
+            return toPython(dobj);
 
         } else {
             import python.raw: PyErr_SetString, PyExc_TypeError;
@@ -154,7 +164,12 @@ struct PythonType(T) {
             static foreach(constructor; constructors) {
                 if(Parameters!constructor.length == numArgs) {
                     auto dArgs = pythonArgsToDArgs!(Parameters!constructor)(args);
-                    return toPython(T(dArgs.expand));
+                    static if(is(T == class))
+                        scope dobj = new T(dArgs.expand);
+                    else
+                        auto dobj = T(dArgs.expand);
+
+                    return toPython(dobj);
                 }
             }
 
@@ -226,12 +241,11 @@ struct PythonMethod(T, alias F) {
             }
         }
 
-        static if(!is(ReturnType!F == void))
-            return dRet.toPython;
-        else {
+        static if(is(ReturnType!F == void)) {
             pyIncRef(pyNone);
             return pyNone;
-        }
+        } else
+            return dRet.toPython;
     }
 }
 

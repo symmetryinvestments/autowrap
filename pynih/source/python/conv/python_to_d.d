@@ -33,6 +33,10 @@ T to(T)(PyObject* value) if(isUserAggregate!T) {
 
     Unqual!T ret;
 
+    static if(__traits(compiles, ret is null)) {
+        if(ret is null) return ret;
+    }
+
     static foreach(i; 0 .. T.tupleof.length) {
         ret.tupleof[i] = pyclass.getField!i.to!(typeof(T.tupleof[i]));
     }

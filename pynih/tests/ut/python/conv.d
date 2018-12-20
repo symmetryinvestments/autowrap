@@ -13,6 +13,7 @@ struct IntString {
 }
 
 
+// helper function to test that converting to python and back yields the same value
 private void backAndForth(T)
                          (T value, in string file = __FILE__, in size_t line = __LINE__)
 {
@@ -101,4 +102,22 @@ unittest {
     const value = new IntString(42, "quux");
     const back = value.toPython.to!(typeof(value));
     (*back).should == *value;
+}
+
+
+@ShouldFail
+@("udt.class")
+unittest {
+
+    static class Class {
+        int i;
+        this(int i) { this.i = i; }
+        int twice() @safe @nogc pure nothrow const { return i * 2; }
+        override string toString() @safe pure const {
+            import std.conv: text;
+            return text("Class(", i, ")");
+        }
+    }
+
+    backAndForth(new Class(42));
 }
