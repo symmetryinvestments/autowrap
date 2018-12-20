@@ -92,10 +92,7 @@ def test_testdll():
 
     assert str(foo + foo) == 'TestDllFoo(100)'
 
-    # FIXME
-    with pytest.raises(TypeError) as ex:
-        assert [i for i in foo] == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-    assert str(ex.value) == "'pyd.TestDllFoo' object is not iterable"
+    assert [i for i in foo] == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
     spam_foo = testdll_spam(foo)
     assert str(spam_foo) == 'TestDllFoo(60)'

@@ -101,7 +101,7 @@ void wrapAllAggregates(Modules...)() if(allSatisfy!(isModule, Modules)) {
             wrapAggregate!aggregate;
         else {
             pragma(msg, "\nERROR! Autowrap could not wrap aggregate `", fullyQualifiedName!aggregate, "` for Python\n");
-            // wrapAggregate!aggregate; // uncomment to see the error messages from the compiler
+            wrapAggregate!aggregate; // uncomment to see the error messages from the compiler
         }
     }
 }
@@ -113,9 +113,9 @@ auto wrapAggregate(T)() if(isUserAggregate!T) {
 
     import autowrap.reflection: Symbol;
     import autowrap.python.pyd.class_wrap: MemberFunction;
-    import pyd.pyd: wrap_class, Member, Init, StaticDef, Repr, Property, OpBinary;
+    import pyd.pyd: wrap_class, Member, Init, StaticDef, Repr, Property, OpBinary, PyName, Def;
     import std.meta: staticMap, Filter, AliasSeq, templateNot;
-    import std.traits: Parameters, FieldNameTuple, hasMember;
+    import std.traits: Parameters, FieldNameTuple, hasMember, ReturnType;
     import std.typecons: Tuple;
     import std.algorithm: startsWith;
 
@@ -173,6 +173,16 @@ auto wrapAggregate(T)() if(isUserAggregate!T) {
     else
         alias realPublicFields = publicFields;
 
+    static if(hasMember!(T, "opSlice")) {
+        // See testdll for details on this
+        enum hasNoParams(alias F) = Parameters!F.length == 0;
+        alias opSlices = Filter!(hasNoParams, __traits(getOverloads, T, "opSlice"));
+    } else
+        alias opSlices = AliasSeq!();
+
+    alias defOpSlice(alias F) = Def!(F, PyName!"__iter__", ReturnType!F function(Parameters!F));
+    alias defOpSlices = staticMap!(defOpSlice, opSlices);
+
     wrap_class!(
         T,
         staticMap!(Member, realPublicFields),
@@ -182,6 +192,7 @@ auto wrapAggregate(T)() if(isUserAggregate!T) {
         staticMap!(Repr, toStrings),
         staticMap!(Property, properties),
         opBinaries,
+        defOpSlices,
    );
 }
 
