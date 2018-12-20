@@ -106,7 +106,6 @@ void wrapAllAggregates(Modules...)() if(allSatisfy!(isModule, Modules)) {
     }
 }
 
-
 /**
    Wrap aggregate of type T.
  */
@@ -122,7 +121,6 @@ auto wrapAggregate(T)() if(isUserAggregate!T) {
 
     alias AggMember(string memberName) = Symbol!(T, memberName);
     alias members = staticMap!(AggMember, __traits(allMembers, T));
-
     alias memberFunctions = Filter!(isMemberFunction, members);
 
     enum isPublic(string fieldName) = __traits(getProtection, __traits(getMember, T, fieldName)) == "public";
@@ -133,21 +131,7 @@ auto wrapAggregate(T)() if(isUserAggregate!T) {
     enum isToString(alias F) = __traits(identifier, F) == "toString";
     alias toStrings = Filter!(isToString, memberFunctions);
     enum isOperator(alias F) = __traits(identifier, F).startsWith("op");
-
-    template isProperty(alias F) {
-        import std.traits: functionAttributes, FunctionAttribute;
-        enum isProperty = functionAttributes!F & FunctionAttribute.property;
-    }
-
     alias regularMemberFunctions = Filter!(templateNot!isOperator, Filter!(templateNot!isProperty, nonStaticMemberFunctions));
-    alias properties = Filter!(isProperty, nonStaticMemberFunctions);
-    alias operators = Filter!(isOperator, nonStaticMemberFunctions);
-
-    // TODO - other binary operators. How to discover this otherwise?
-    static if(__traits(compiles, T.init + T.init))
-        alias opBinaries = AliasSeq!(OpBinary!("+"));
-    else
-        alias opBinaries = AliasSeq!();
 
     // FIXME - See #54
     static if(is(T == class))
@@ -172,8 +156,8 @@ auto wrapAggregate(T)() if(isUserAggregate!T) {
         staticMap!(StaticDef, staticMemberFunctions),
         staticMap!(InitTuple, ConstructorParamTuples!T),
         staticMap!(Repr, toStrings),
-        staticMap!(Property, properties),
-        opBinaries,
+        staticMap!(Property, Properties!nonStaticMemberFunctions),
+        OpBinaries!T,
         defOpSlices,
    );
 }
@@ -207,6 +191,26 @@ private template ConstructorParamTuples(alias T) {
 private template InitTuple(alias Tuple) {
     import pyd.pyd: Init;
     alias InitTuple = Init!(Tuple.Types);
+}
+
+private template OpBinaries(T) {
+    import pyd.pyd: OpBinary;
+    import std.meta: AliasSeq;
+
+    // TODO - other binary operators. How to discover this otherwise?
+    static if(__traits(compiles, T.init + T.init))
+        alias OpBinaries = AliasSeq!(OpBinary!("+"));
+    else
+        alias OpBinaries = AliasSeq!();
+}
+
+
+private template Properties(functions...) {
+    import std.meta: Filter;
+    import std.traits: functionAttributes, FunctionAttribute;
+
+    enum isProperty(alias F) = functionAttributes!F & FunctionAttribute.property;
+    alias Properties = Filter!(isProperty, functions);
 }
 
 
