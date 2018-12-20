@@ -106,6 +106,7 @@ void wrapAllAggregates(Modules...)() if(allSatisfy!(isModule, Modules)) {
     }
 }
 
+
 /**
    Wrap aggregate of type T.
  */
@@ -123,25 +124,6 @@ auto wrapAggregate(T)() if(isUserAggregate!T) {
     alias members = staticMap!(AggMember, __traits(allMembers, T));
 
     alias memberFunctions = Filter!(isMemberFunction, members);
-
-    static if(hasMember!(T, "__ctor"))
-        alias constructors = AliasSeq!(__traits(getOverloads, T, "__ctor"));
-    else
-        alias constructors = AliasSeq!();
-
-    // If we staticMap with std.traits.Parameters, we end up with a collapsed tuple
-    // i.e. with one constructor that takes int and another that takes int, string,
-    // we'd end up with 3 elements (int, int, string) instead of 2 ((int), (int, string))
-    // so we package them up in a std.typecons.Tuple to avoid flattening
-    // each being an AliasSeq of types for the constructor
-    alias ParametersTuple(alias F) = Tuple!(Parameters!F);
-
-    // A tuple, with as many elements as constructors. Each element is a
-    // std.typecons.Tuple of the constructor parameter types.
-    alias constructorParamTuples = staticMap!(ParametersTuple, constructors);
-
-    // Apply pyd's Init to the unpacked types of the parameter Tuple.
-    alias InitTuple(alias Tuple) = Init!(Tuple.Types);
 
     enum isPublic(string fieldName) = __traits(getProtection, __traits(getMember, T, fieldName)) == "public";
     alias publicFields = Filter!(isPublic, FieldNameTuple!T);
@@ -188,12 +170,43 @@ auto wrapAggregate(T)() if(isUserAggregate!T) {
         staticMap!(Member, realPublicFields),
         staticMap!(MemberFunction, regularMemberFunctions),
         staticMap!(StaticDef, staticMemberFunctions),
-        staticMap!(InitTuple, constructorParamTuples),
+        staticMap!(InitTuple, ConstructorParamTuples!T),
         staticMap!(Repr, toStrings),
         staticMap!(Property, properties),
         opBinaries,
         defOpSlices,
    );
+}
+
+
+// A tuple, with as many elements as constructors. Each element is a
+// std.typecons.Tuple of the constructor parameter types.
+private template ConstructorParamTuples(alias T) {
+    import std.meta: staticMap, AliasSeq;
+    import std.traits: Parameters, hasMember;
+    import std.typecons: Tuple;
+
+    // If we staticMap with std.traits.Parameters, we end up with a collapsed tuple
+    // i.e. with one constructor that takes int and another that takes int, string,
+    // we'd end up with 3 elements (int, int, string) instead of 2 ((int), (int, string))
+    // so we package them up in a std.typecons.Tuple to avoid flattening
+    // each being an AliasSeq of types for the constructor
+    alias ParametersTuple(alias F) = Tuple!(Parameters!F);
+
+    static if(hasMember!(T, "__ctor"))
+        alias constructors = AliasSeq!(__traits(getOverloads, T, "__ctor"));
+    else
+        alias constructors = AliasSeq!();
+
+    // A tuple, with as many elements as constructors. Each element is a
+    // std.typecons.Tuple of the constructor parameter types.
+    alias ConstructorParamTuples = staticMap!(ParametersTuple, constructors);
+}
+
+// Apply pyd's Init to the unpacked types of the parameter Tuple.
+private template InitTuple(alias Tuple) {
+    import pyd.pyd: Init;
+    alias InitTuple = Init!(Tuple.Types);
 }
 
 
