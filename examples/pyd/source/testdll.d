@@ -47,9 +47,9 @@ class TestDllFoo {
     int opIndex(int x, int y) {
         return x + y;
     }
-    Foo opBinary(string op)(Foo f) if(op == "+")
+    TestDllFoo opBinary(string op)(TestDllFoo f) if(op == "+")
     {
-        return new Foo(m_i + f.m_i);
+        return new TestDllFoo(m_i + f.m_i);
     }
 
     struct Range {

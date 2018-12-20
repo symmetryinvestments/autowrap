@@ -113,7 +113,7 @@ auto wrapAggregate(T)() if(isUserAggregate!T) {
 
     import autowrap.reflection: Symbol;
     import autowrap.python.pyd.class_wrap: MemberFunction;
-    import pyd.pyd: wrap_class, Member, Init, StaticDef, Repr, Property;
+    import pyd.pyd: wrap_class, Member, Init, StaticDef, Repr, Property, OpBinary;
     import std.meta: staticMap, Filter, AliasSeq, templateNot;
     import std.traits: Parameters, FieldNameTuple, hasMember;
     import std.typecons: Tuple;
@@ -159,6 +159,13 @@ auto wrapAggregate(T)() if(isUserAggregate!T) {
 
     alias regularMemberFunctions = Filter!(templateNot!isOperator, Filter!(templateNot!isProperty, nonStaticMemberFunctions));
     alias properties = Filter!(isProperty, nonStaticMemberFunctions);
+    alias operators = Filter!(isOperator, nonStaticMemberFunctions);
+
+    // TODO - other binary operators. How to discover this otherwise?
+    static if(__traits(compiles, T.init + T.init))
+        alias opBinaries = AliasSeq!(OpBinary!("+"));
+    else
+        alias opBinaries = AliasSeq!();
 
     // FIXME - See #54
     static if(is(T == class))
@@ -174,6 +181,7 @@ auto wrapAggregate(T)() if(isUserAggregate!T) {
         staticMap!(InitTuple, constructorParamTuples),
         staticMap!(Repr, toStrings),
         staticMap!(Property, properties),
+        opBinaries,
    );
 }
 

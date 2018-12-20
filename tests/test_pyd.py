@@ -90,9 +90,7 @@ def test_testdll():
     foo.i = 50
     assert foo.i == 50
 
-    # FIXME
-    with pytest.raises(TypeError):
-        assert str(foo + foo) == 'TestDllFoo(100)'
+    assert str(foo + foo) == 'TestDllFoo(100)'
 
     # FIXME
     with pytest.raises(TypeError) as ex:
