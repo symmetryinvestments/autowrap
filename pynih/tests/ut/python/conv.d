@@ -20,14 +20,13 @@ private void backAndForth(T)
 }
 
 
-@UnitTest
 @Types!(
     bool,
     byte, ubyte, short, ushort, int, uint, long, ulong,  // integral
     float, double,
     int[], double[],
 )
-void backAndForthTypes(T)()
+void testBackAndForth(T)()
 {
     check!((T d) => d.toPython.to!T == d);
 }
