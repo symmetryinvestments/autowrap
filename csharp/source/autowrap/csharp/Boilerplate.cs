@@ -123,20 +123,24 @@ namespace Autowrap {
         }
 
         internal static string SliceToString(slice str, DStringType type) {
-            unsafe {
-                var bytes = (byte*)str.ptr.ToPointer();
-                if (bytes == null) {
-                    return null;
+            try {
+                unsafe {
+                    var bytes = (byte*)str.ptr.ToPointer();
+                    if (bytes == null) {
+                        return null;
+                    }
+                    if (type == DStringType._string) {
+                        return String.Copy(System.Text.Encoding.UTF8.GetString(bytes, str.length.ToInt32()*(int)type));
+                    } else if (type == DStringType._wstring) {
+                        return String.Copy(System.Text.Encoding.Unicode.GetString(bytes, str.length.ToInt32()*(int)type));
+                    } else if (type == DStringType._dstring) {
+                        return String.Copy(System.Text.Encoding.UTF32.GetString(bytes, str.length.ToInt32()*(int)type));
+                    } else {
+                        throw new UnauthorizedAccessException("Unable to convert D string to C# string: Unrecognized string type.");
+                    }
                 }
-                if (type == DStringType._string) {
-                    return System.Text.Encoding.UTF8.GetString(bytes, str.length.ToInt32()*(int)type);
-                } else if (type == DStringType._wstring) {
-                    return System.Text.Encoding.Unicode.GetString(bytes, str.length.ToInt32()*(int)type);
-                } else if (type == DStringType._dstring) {
-                    return System.Text.Encoding.UTF32.GetString(bytes, str.length.ToInt32()*(int)type);
-                } else {
-                    throw new UnauthorizedAccessException("Unable to convert D string to C# string: Unrecognized string type.");
-                }
+            } finally {
+                SharedFunctions.ReleaseMemory(str.ptr);
             }
         }
 
