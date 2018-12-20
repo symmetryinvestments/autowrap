@@ -21,3 +21,36 @@ def test_array():
     t.bar()
     assert str(t) == '{10}'
     assert repr(t) == '{10}'
+
+
+def test_inherit():
+    from pyd import (Base, Derived,
+                     call_poly, return_poly_base, return_poly_derived)
+    import pytest
+
+    b = Base(1)
+    assert b.foo() == 'Base.foo'
+    assert b.bar() == 'Base.bar'
+
+    d = Derived(2)
+    assert d.foo() == 'Derived.foo'
+    assert d.bar() == 'Base.bar'
+
+    assert issubclass(Derived, Base)
+
+    assert call_poly(b) == 'Base.foo_call_poly'
+    assert call_poly(d) == 'Derived.foo_call_poly'
+
+    class PyClass(Derived):
+        def foo(self):
+            return 'PyClass.foo'
+
+    p = PyClass(3)
+    # FIXME - #61
+    with pytest.raises(AssertionError):
+        assert call_poly(p) == 'PyClass.foo_call_poly'
+
+    assert return_poly_base().foo() == 'Base.foo'
+    # FIXME - #62
+    with pytest.raises(AssertionError):
+        assert return_poly_derived().foo() == 'Derived.foo'
