@@ -26,16 +26,16 @@ T to(T)(PyObject* value) @trusted if(isFloatingPoint!T) {
 }
 
 
-T to(T)(PyObject* value) if(isUserAggregate!T) {
+T to(T)(PyObject* value) @trusted if(isUserAggregate!T) {
     import python.type: PythonClass;
 
     auto pyclass = cast(PythonClass!T*) value;
 
-    Unqual!T ret;
-
-    static if(__traits(compiles, ret is null)) {
-        if(ret is null) return ret;
-    }
+    static if(is(T == class)) {
+        auto buffer = new void[__traits(classInstanceSize, T)];
+        auto ret = cast(Unqual!T) buffer.ptr;
+    } else
+        Unqual!T ret;
 
     static foreach(i; 0 .. T.tupleof.length) {
         ret.tupleof[i] = pyclass.getField!i.to!(typeof(T.tupleof[i]));

@@ -105,7 +105,6 @@ unittest {
 }
 
 
-@ShouldFail
 @("udt.class")
 unittest {
 
