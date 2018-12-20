@@ -6,6 +6,8 @@ mixin(
         LibraryName("pyd"),
         Modules(
             Module("arraytest", Yes.alwaysExport),
+            Module("inherit", Yes.alwaysExport),
+            Module("testdll", Yes.alwaysExport),
         ),
     )
 );
