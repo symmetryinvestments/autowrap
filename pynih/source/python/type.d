@@ -140,36 +140,22 @@ struct PythonType(T) {
             return toPython(T.init);
         }
 
-        // TODO: parameters
+        // TODO: kwargs
+
         static if(hasMember!(T, "__ctor"))
             alias constructors = AliasSeq!(__traits(getOverloads, T, "__ctor"));
         else
             alias constructors = AliasSeq!();
 
         static if(constructors.length == 0) {
-
-            auto dArgs = pythonArgsToDArgs!fieldTypes(args);
-
-            static if(is(T == class))
-                scope dobj = new T(dArgs.expand);
-            else
-                auto dobj = T(dArgs.expand);
-
-            return toPython(dobj);
-
+            return pythonConstructor!(T, fieldTypes)(args);
         } else {
             import python.raw: PyErr_SetString, PyExc_TypeError;
             import std.traits: Parameters;
 
             static foreach(constructor; constructors) {
                 if(Parameters!constructor.length == numArgs) {
-                    auto dArgs = pythonArgsToDArgs!(Parameters!constructor)(args);
-                    static if(is(T == class))
-                        scope dobj = new T(dArgs.expand);
-                    else
-                        auto dobj = T(dArgs.expand);
-
-                    return toPython(dobj);
+                    return pythonConstructor!(T, Parameters!constructor)(args);
                 }
             }
 
@@ -177,6 +163,23 @@ struct PythonType(T) {
             return null;
         }
     }
+}
+
+
+// Creates a python object from the given arguments by converting them to D
+// types, calling the D constructor and converting the result to a Python
+// object.
+private auto pythonConstructor(T, A...)(PyObject* args) {
+    import python.conv: toPython;
+
+    auto dArgs = pythonArgsToDArgs!A(args);
+
+    static if(is(T == class))
+        scope dobj = new T(dArgs.expand);
+    else
+        auto dobj = T(dArgs.expand);
+
+    return toPython(dobj);
 }
 
 private auto pythonArgsToDArgs(A...)(PyObject* args) {
