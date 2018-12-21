@@ -106,6 +106,11 @@ void wrapAllAggregates(Modules...)() if(allSatisfy!(isModule, Modules)) {
     }
 }
 
+private template isProperty(alias F) {
+    import std.traits: functionAttributes, FunctionAttribute;
+    enum isProperty = functionAttributes!F & FunctionAttribute.property;
+}
+
 /**
    Wrap aggregate of type T.
  */
@@ -113,20 +118,73 @@ auto wrapAggregate(T)() if(isUserAggregate!T) {
 
     import autowrap.reflection: Symbol;
     import autowrap.python.pyd.class_wrap: MemberFunction;
-    import pyd.pyd: wrap_class, Member, Init, StaticDef, Repr;
-    import std.meta: staticMap, Filter, AliasSeq, templateNot;
-    import std.traits: Parameters, FieldNameTuple, hasMember;
-    import std.typecons: Tuple;
+    import pyd.pyd: wrap_class, Member, Init, StaticDef, Repr, Property;
+    import std.meta: staticMap, Filter, templateNot;
+    import std.algorithm: startsWith;
 
     alias AggMember(string memberName) = Symbol!(T, memberName);
     alias members = staticMap!(AggMember, __traits(allMembers, T));
-
     alias memberFunctions = Filter!(isMemberFunction, members);
+    alias staticMemberFunctions = Filter!(isStatic, memberFunctions);
+    alias nonStaticMemberFunctions = Filter!(templateNot!isStatic, memberFunctions);
+    enum isOperator(alias F) = __traits(identifier, F).startsWith("op");
+    alias regularMemberFunctions = Filter!(templateNot!isOperator, Filter!(templateNot!isProperty, nonStaticMemberFunctions));
 
-    static if(hasMember!(T, "__ctor"))
-        alias constructors = AliasSeq!(__traits(getOverloads, T, "__ctor"));
+    enum isToString(alias F) = __traits(identifier, F) == "toString";
+
+    wrap_class!(
+        T,
+        staticMap!(Member, PublicFields!T),
+        staticMap!(MemberFunction, regularMemberFunctions),
+        staticMap!(StaticDef, staticMemberFunctions),
+        staticMap!(InitTuple, ConstructorParamTuples!T),
+        staticMap!(Repr, Filter!(isToString, memberFunctions)),
+        staticMap!(Property, Properties!nonStaticMemberFunctions),
+        OpBinaries!T,
+        staticMap!(DefOpSlice, OpSlices!T),
+   );
+}
+
+private template PublicFields(T) {
+    import std.meta: Filter, AliasSeq;
+    import std.traits: FieldNameTuple;
+
+    enum isPublic(string fieldName) = __traits(getProtection, __traits(getMember, T, fieldName)) == "public";
+    alias publicFields = Filter!(isPublic, FieldNameTuple!T);
+
+    // FIXME - See #54
+    static if(is(T == class))
+        alias PublicFields = AliasSeq!();
     else
-        alias constructors = AliasSeq!();
+        alias PublicFields = publicFields;
+
+}
+
+private template DefOpSlice(alias F) {
+    import pyd.pyd: Def, PyName;
+    import std.traits: ReturnType, Parameters;
+    alias DefOpSlice = Def!(F, PyName!"__iter__", ReturnType!F function(Parameters!F));
+}
+
+private template OpSlices(T) {
+    import std.traits: hasMember, Parameters;
+    import std.meta: AliasSeq, Filter;
+
+    static if(hasMember!(T, "opSlice")) {
+        // See testdll for details on this
+        enum hasNoParams(alias F) = Parameters!F.length == 0;
+        alias OpSlices = Filter!(hasNoParams, __traits(getOverloads, T, "opSlice"));
+    } else
+        alias OpSlices = AliasSeq!();
+}
+
+
+// A tuple, with as many elements as constructors. Each element is a
+// std.typecons.Tuple of the constructor parameter types.
+private template ConstructorParamTuples(alias T) {
+    import std.meta: staticMap, AliasSeq;
+    import std.traits: Parameters, hasMember;
+    import std.typecons: Tuple;
 
     // If we staticMap with std.traits.Parameters, we end up with a collapsed tuple
     // i.e. with one constructor that takes int and another that takes int, string,
@@ -135,35 +193,38 @@ auto wrapAggregate(T)() if(isUserAggregate!T) {
     // each being an AliasSeq of types for the constructor
     alias ParametersTuple(alias F) = Tuple!(Parameters!F);
 
+    static if(hasMember!(T, "__ctor"))
+        alias constructors = AliasSeq!(__traits(getOverloads, T, "__ctor"));
+    else
+        alias constructors = AliasSeq!();
+
     // A tuple, with as many elements as constructors. Each element is a
     // std.typecons.Tuple of the constructor parameter types.
-    alias constructorParamTuples = staticMap!(ParametersTuple, constructors);
+    alias ConstructorParamTuples = staticMap!(ParametersTuple, constructors);
+}
 
-    // Apply pyd's Init to the unpacked types of the parameter Tuple.
-    alias InitTuple(alias Tuple) = Init!(Tuple.Types);
+// Apply pyd's Init to the unpacked types of the parameter Tuple.
+private template InitTuple(alias Tuple) {
+    import pyd.pyd: Init;
+    alias InitTuple = Init!(Tuple.Types);
+}
 
-    enum isPublic(string fieldName) = __traits(getProtection, __traits(getMember, T, fieldName)) == "public";
-    alias publicFields = Filter!(isPublic, FieldNameTuple!T);
+private template OpBinaries(T) {
+    import pyd.pyd: OpBinary;
+    import std.meta: AliasSeq;
 
-    alias staticMemberFunctions = Filter!(isStatic, memberFunctions);
-    alias nonStaticMemberFunctions = Filter!(templateNot!isStatic, memberFunctions);
-    enum isToString(alias F) = __traits(identifier, F) == "toString";
-    alias toStrings = Filter!(isToString, memberFunctions);
-
-    // FIXME - See #54
-    static if(is(T == class))
-        alias realPublicFields = AliasSeq!();
+    // TODO - other binary operators. How to discover this otherwise?
+    static if(__traits(compiles, T.init + T.init))
+        alias OpBinaries = AliasSeq!(OpBinary!("+"));
     else
-        alias realPublicFields = publicFields;
+        alias OpBinaries = AliasSeq!();
+}
 
-    wrap_class!(
-        T,
-        staticMap!(Member, realPublicFields),
-        staticMap!(MemberFunction, nonStaticMemberFunctions),
-        staticMap!(StaticDef, staticMemberFunctions),
-        staticMap!(InitTuple, constructorParamTuples),
-        staticMap!(Repr, toStrings),
-   );
+
+private template Properties(functions...) {
+    import std.meta: Filter;
+    import std.traits: functionAttributes, FunctionAttribute;
+    alias Properties = Filter!(isProperty, functions);
 }
 
 
@@ -178,7 +239,6 @@ private template isMemberFunction(A...) if(A.length == 1) {
         enum isMemberFunction =
             isPublicFunction!T
             && !name.startsWith("__")
-            && !name.startsWith("op")
             && name != "toHash"
             ;
     } else

@@ -13,6 +13,7 @@ struct IntString {
 }
 
 
+// helper function to test that converting to python and back yields the same value
 private void backAndForth(T)
                          (T value, in string file = __FILE__, in size_t line = __LINE__)
 {
@@ -20,14 +21,13 @@ private void backAndForth(T)
 }
 
 
-@UnitTest
 @Types!(
     bool,
     byte, ubyte, short, ushort, int, uint, long, ulong,  // integral
     float, double,
     int[], double[],
 )
-void backAndForthTypes(T)()
+void testBackAndForth(T)()
 {
     check!((T d) => d.toPython.to!T == d);
 }
@@ -89,4 +89,34 @@ unittest {
 @("tuple.int.string")
 unittest {
     backAndForth(tuple(42, "foo"));
+}
+
+
+@("udt.intstring.val")
+unittest {
+    backAndForth(IntString(42, "quux"));
+}
+
+@("udt.intstring.ptr")
+unittest {
+    const value = new IntString(42, "quux");
+    const back = value.toPython.to!(typeof(value));
+    (*back).should == *value;
+}
+
+
+@("udt.class")
+unittest {
+
+    static class Class {
+        int i;
+        this(int i) { this.i = i; }
+        int twice() @safe @nogc pure nothrow const { return i * 2; }
+        override string toString() @safe pure const {
+            import std.conv: text;
+            return text("Class(", i, ")");
+        }
+    }
+
+    backAndForth(new Class(42));
 }
