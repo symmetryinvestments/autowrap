@@ -112,3 +112,31 @@ def test_testdll():
     s.s = 'hello'
     assert s.i == 42
     assert s.s == 'hello'
+
+
+def test_def():
+    from pyd import def_a, def_a2, def_a3, def_a4, def_t1_int, def_t2_int
+    import pytest
+
+    with pytest.raises(RuntimeError) as ex:
+        assert def_a(1.0) == 20
+    assert "Couldn't convert Python type 'float' to D type 'int'" in \
+        str(ex.value)
+
+    assert def_a(42) == 10
+    assert def_a(24) == 10
+
+    assert def_a2(4, 2.1) == 214
+    assert def_a2(4) == 454
+    assert def_a2(i=4) == 454
+
+    # def_a3 accepts a variadic number of ints
+    assert def_a3(4) == 46
+    assert def_a3(i=4) == 46
+    assert def_a3(4, 3) == 49
+    assert def_a3(i=[4, 3]) == 49
+
+    assert def_a4('hi', 2, s3='zi') == "<'hi', 2, 'friedman', 4, 'zi'>"
+
+    assert def_t1_int(42) == 1
+    assert def_t2_int(42) == 1

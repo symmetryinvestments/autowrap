@@ -8,6 +8,7 @@ mixin(
             Module("arraytest", Yes.alwaysExport),
             Module("inherit", Yes.alwaysExport),
             Module("testdll", Yes.alwaysExport),
+            Module("def", Yes.alwaysExport),
         ),
     )
 );
