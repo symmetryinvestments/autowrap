@@ -10,6 +10,7 @@ mixin(
             Module("testdll", Yes.alwaysExport),
             Module("def", Yes.alwaysExport),
             Module("struct_wrap", Yes.alwaysExport),
+            Module("const_", Yes.alwaysExport),
         ),
     )
 );

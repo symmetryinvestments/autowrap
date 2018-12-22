@@ -160,3 +160,22 @@ def test_struct_wrap():
 
     foo6 = Foo6(DateTime(2018, 7, 3))
     assert foo6.dateTime.year == 2018
+
+
+def test_const():
+    from pyd import const_T1 as T1
+    import pytest
+
+    boozy = T1()
+
+    with pytest.raises(RuntimeError) as ex:
+        boozy.a()
+    assert 'constness mismatch required:' in str(ex.value)
+
+    assert boozy.b() == 'def'
+
+    with pytest.raises(RuntimeError) as ex:
+        boozy.p1i
+    assert 'constness mismatch required:' in str(ex.value)
+
+    assert boozy.p1c == 300
