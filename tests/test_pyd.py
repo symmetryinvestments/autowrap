@@ -140,3 +140,23 @@ def test_def():
 
     assert def_t1_int(42) == 1
     assert def_t2_int(42) == 1
+
+
+def test_struct_wrap():
+    from pyd import (sw_Foo1 as Foo1, sw_Foo3 as Foo3, sw_Foo5 as Foo5,
+                     sw_Foo6 as Foo6)
+    from datetime import datetime as DateTime
+
+    foo1 = Foo1(2, 3, 4)
+    assert foo1.i == 2
+
+    foo3 = Foo3()
+    foo3.i = 1
+    foo3.foo.j = 2
+    assert foo3.foo.j == 2
+
+    foo5 = Foo5()
+    foo5.foo.j = 2
+
+    foo6 = Foo6(DateTime(2018, 7, 3))
+    assert foo6.dateTime.year == 2018
