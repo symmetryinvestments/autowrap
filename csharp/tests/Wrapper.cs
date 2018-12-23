@@ -357,6 +357,37 @@ namespace Autowrap {
 
     [GeneratedCodeAttribute("Autowrap", "1.0.0.0")]
     [StructLayout(LayoutKind.Sequential)]
+    internal struct datetime {
+        public datetime(long ticks, long offset) {
+            this._ticks = ticks;
+            this._offset = offset;
+        }
+        public static implicit operator datetime(DateTime ret) { return new datetime(ret.Ticks, 0L); }
+        public static implicit operator datetime(DateTimeOffset ret) { return new datetime(ret.Ticks, ret.Offset.Ticks); }
+        public static implicit operator datetime(TimeSpan ret) { return new datetime(ret.Ticks, 0L); }
+        public static implicit operator DateTime(datetime ret) { return new DateTime(ret._ticks, DateTimeKind.Unspecified); }
+        public static implicit operator DateTimeOffset(datetime ret) { return new DateTimeOffset(ret._ticks, new TimeSpan(ret._offset)); }
+        public static implicit operator TimeSpan(datetime ret) { return new TimeSpan(ret._ticks); }
+        private long _ticks;
+        private long _offset;
+    }
+
+    [GeneratedCodeAttribute("Autowrap", "1.0.0.0")]
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct return_datetime_error {
+        private void EnsureValid() {
+            var errStr = SharedFunctions.SliceToString(_error, DStringType._wstring);
+            if (!string.IsNullOrEmpty(errStr)) throw new DLangException(errStr);
+        }
+        public static implicit operator DateTime(return_datetime_error ret) { ret.EnsureValid(); return ret._value; }
+        public static implicit operator DateTimeOffset(return_datetime_error ret) { ret.EnsureValid(); return ret._value; }
+        public static implicit operator TimeSpan(return_datetime_error ret) { ret.EnsureValid(); return ret._value; }
+        private datetime _value;
+        private slice _error;
+    }
+
+    [GeneratedCodeAttribute("Autowrap", "1.0.0.0")]
+    [StructLayout(LayoutKind.Sequential)]
     internal struct return_byte_error {
         private void EnsureValid() {
             var errStr = SharedFunctions.SliceToString(_error, DStringType._wstring);
@@ -773,6 +804,42 @@ namespace Autowrap {
         internal static extern return_void_error Double_Set(slice dslice, IntPtr index, double value);
         [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_DoubleAppendValue", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_slice_error Double_AppendValue(slice dslice, double value);
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Std_Datetime_Date_DateTimeCreate", CallingConvention = CallingConvention.Cdecl)]
+        internal static extern return_slice_error Std_datetime_date_DateTime_Create(IntPtr capacity);
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Std_Datetime_Date_DateTimeSlice", CallingConvention = CallingConvention.Cdecl)]
+        internal static extern return_slice_error Std_datetime_date_DateTime_Slice(slice dslice, IntPtr begin, IntPtr end);
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Std_Datetime_Date_DateTimeAppendSlice", CallingConvention = CallingConvention.Cdecl)]
+        internal static extern return_slice_error Std_datetime_date_DateTime_AppendSlice(slice dslice, slice array);
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Std_Datetime_Date_DateTimeGet", CallingConvention = CallingConvention.Cdecl)]
+        internal static extern return_datetime_error Std_datetime_date_DateTime_Get(slice dslice, IntPtr index);
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Std_Datetime_Date_DateTimeSet", CallingConvention = CallingConvention.Cdecl)]
+        internal static extern return_void_error Std_datetime_date_DateTime_Set(slice dslice, IntPtr index, datetime value);
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Std_Datetime_Date_DateTimeAppendValue", CallingConvention = CallingConvention.Cdecl)]
+        internal static extern return_slice_error Std_datetime_date_DateTime_AppendValue(slice dslice, datetime value);
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Std_Datetime_Systime_SysTimeCreate", CallingConvention = CallingConvention.Cdecl)]
+        internal static extern return_slice_error Std_datetime_systime_SysTime_Create(IntPtr capacity);
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Std_Datetime_Systime_SysTimeSlice", CallingConvention = CallingConvention.Cdecl)]
+        internal static extern return_slice_error Std_datetime_systime_SysTime_Slice(slice dslice, IntPtr begin, IntPtr end);
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Std_Datetime_Systime_SysTimeAppendSlice", CallingConvention = CallingConvention.Cdecl)]
+        internal static extern return_slice_error Std_datetime_systime_SysTime_AppendSlice(slice dslice, slice array);
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Std_Datetime_Systime_SysTimeGet", CallingConvention = CallingConvention.Cdecl)]
+        internal static extern return_datetime_error Std_datetime_systime_SysTime_Get(slice dslice, IntPtr index);
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Std_Datetime_Systime_SysTimeSet", CallingConvention = CallingConvention.Cdecl)]
+        internal static extern return_void_error Std_datetime_systime_SysTime_Set(slice dslice, IntPtr index, datetime value);
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Std_Datetime_Systime_SysTimeAppendValue", CallingConvention = CallingConvention.Cdecl)]
+        internal static extern return_slice_error Std_datetime_systime_SysTime_AppendValue(slice dslice, datetime value);
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Core_Time_DurationCreate", CallingConvention = CallingConvention.Cdecl)]
+        internal static extern return_slice_error Core_time_Duration_Create(IntPtr capacity);
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Core_Time_DurationSlice", CallingConvention = CallingConvention.Cdecl)]
+        internal static extern return_slice_error Core_time_Duration_Slice(slice dslice, IntPtr begin, IntPtr end);
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Core_Time_DurationAppendSlice", CallingConvention = CallingConvention.Cdecl)]
+        internal static extern return_slice_error Core_time_Duration_AppendSlice(slice dslice, slice array);
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Core_Time_DurationGet", CallingConvention = CallingConvention.Cdecl)]
+        internal static extern return_datetime_error Core_time_Duration_Get(slice dslice, IntPtr index);
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Core_Time_DurationSet", CallingConvention = CallingConvention.Cdecl)]
+        internal static extern return_void_error Core_time_Duration_Set(slice dslice, IntPtr index, datetime value);
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Core_Time_DurationAppendValue", CallingConvention = CallingConvention.Cdecl)]
+        internal static extern return_slice_error Core_time_Duration_AppendValue(slice dslice, datetime value);
         [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Test_S1Create", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_slice_error Test_s1_Create(IntPtr capacity);
         [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Test_S1Slice", CallingConvention = CallingConvention.Cdecl)]
@@ -883,6 +950,9 @@ namespace Autowrap {
             else if (typeof(T) == typeof(ulong)) this._slice = RangeFunctions.Ulong_Create(new IntPtr(capacity));
             else if (typeof(T) == typeof(float)) this._slice = RangeFunctions.Float_Create(new IntPtr(capacity));
             else if (typeof(T) == typeof(double)) this._slice = RangeFunctions.Double_Create(new IntPtr(capacity));
+            else if (typeof(T) == typeof(DateTime)) this._slice = RangeFunctions.Std_datetime_date_DateTime_Create(new IntPtr(capacity));
+            else if (typeof(T) == typeof(DateTimeOffset)) this._slice = RangeFunctions.Std_datetime_systime_SysTime_Create(new IntPtr(capacity));
+            else if (typeof(T) == typeof(TimeSpan)) this._slice = RangeFunctions.Core_time_Duration_Create(new IntPtr(capacity));
             else if (typeof(T) == typeof(Test.S1)) this._slice = RangeFunctions.Test_s1_Create(new IntPtr(capacity));
             else if (typeof(T) == typeof(Test.S2)) this._slice = RangeFunctions.Test_s2_Create(new IntPtr(capacity));
             else if (typeof(T) == typeof(Test.C1)) this._slice = RangeFunctions.Test_c1_Create(new IntPtr(capacity));
@@ -910,6 +980,9 @@ namespace Autowrap {
                 else if (typeof(T) == typeof(ulong)) return (T)(object)(ulong)RangeFunctions.Ulong_Get(_slice, new IntPtr(i));
                 else if (typeof(T) == typeof(float)) return (T)(object)(float)RangeFunctions.Float_Get(_slice, new IntPtr(i));
                 else if (typeof(T) == typeof(double)) return (T)(object)(double)RangeFunctions.Double_Get(_slice, new IntPtr(i));
+                else if (typeof(T) == typeof(DateTime)) return (T)(object)(DateTime)RangeFunctions.Std_datetime_date_DateTime_Get(_slice, new IntPtr(i));
+                else if (typeof(T) == typeof(DateTimeOffset)) return (T)(object)(DateTimeOffset)RangeFunctions.Std_datetime_systime_SysTime_Get(_slice, new IntPtr(i));
+                else if (typeof(T) == typeof(TimeSpan)) return (T)(object)(TimeSpan)RangeFunctions.Core_time_Duration_Get(_slice, new IntPtr(i));
                 else if (typeof(T) == typeof(Test.S1)) return (T)(object)(Test.S1)RangeFunctions.Test_s1_Get(_slice, new IntPtr(i));
                 else if (typeof(T) == typeof(Test.S2)) return (T)(object)(Test.S2)RangeFunctions.Test_s2_Get(_slice, new IntPtr(i));
                 else if (typeof(T) == typeof(Test.C1)) return (T)(object)new Test.C1(RangeFunctions.Test_c1_Get(_slice, new IntPtr(i)));
@@ -932,6 +1005,9 @@ namespace Autowrap {
                 else if (typeof(T) == typeof(ulong)) RangeFunctions.Ulong_Set(_slice, new IntPtr(i), (ulong)(object)value);
                 else if (typeof(T) == typeof(float)) RangeFunctions.Float_Set(_slice, new IntPtr(i), (float)(object)value);
                 else if (typeof(T) == typeof(double)) RangeFunctions.Double_Set(_slice, new IntPtr(i), (double)(object)value);
+                else if (typeof(T) == typeof(DateTime)) RangeFunctions.Std_datetime_date_DateTime_Set(_slice, new IntPtr(i), (DateTime)(object)value);
+                else if (typeof(T) == typeof(DateTimeOffset)) RangeFunctions.Std_datetime_systime_SysTime_Set(_slice, new IntPtr(i), (DateTimeOffset)(object)value);
+                else if (typeof(T) == typeof(TimeSpan)) RangeFunctions.Core_time_Duration_Set(_slice, new IntPtr(i), (TimeSpan)(object)value);
                 else if (typeof(T) == typeof(Test.S1)) RangeFunctions.Test_s1_Set(_slice, new IntPtr(i), (Test.S1)(object)value);
                 else if (typeof(T) == typeof(Test.S2)) RangeFunctions.Test_s2_Set(_slice, new IntPtr(i), (Test.S2)(object)value);
                 else if (typeof(T) == typeof(Test.C1)) RangeFunctions.Test_c1_Set(_slice, new IntPtr(i), (Test.C1)(object)value);
@@ -954,6 +1030,9 @@ namespace Autowrap {
             else if (typeof(T) == typeof(ulong)) return new Range<T>(RangeFunctions.Ulong_Slice(_slice, new IntPtr(begin), _slice.length), DStringType.None);
             else if (typeof(T) == typeof(float)) return new Range<T>(RangeFunctions.Float_Slice(_slice, new IntPtr(begin), _slice.length), DStringType.None);
             else if (typeof(T) == typeof(double)) return new Range<T>(RangeFunctions.Double_Slice(_slice, new IntPtr(begin), _slice.length), DStringType.None);
+            else if (typeof(T) == typeof(DateTime)) return new Range<T>(RangeFunctions.Std_datetime_date_DateTime_Slice(_slice, new IntPtr(begin), _slice.length), DStringType.None);
+            else if (typeof(T) == typeof(DateTimeOffset)) return new Range<T>(RangeFunctions.Std_datetime_systime_SysTime_Slice(_slice, new IntPtr(begin), _slice.length), DStringType.None);
+            else if (typeof(T) == typeof(TimeSpan)) return new Range<T>(RangeFunctions.Core_time_Duration_Slice(_slice, new IntPtr(begin), _slice.length), DStringType.None);
             else if (typeof(T) == typeof(Test.S1)) return new Range<T>(RangeFunctions.Test_s1_Slice(_slice, new IntPtr(begin), _slice.length), DStringType.None);
             else if (typeof(T) == typeof(Test.S2)) return new Range<T>(RangeFunctions.Test_s2_Slice(_slice, new IntPtr(begin), _slice.length), DStringType.None);
             else if (typeof(T) == typeof(Test.C1)) return new Range<T>(RangeFunctions.Test_c1_Slice(_slice, new IntPtr(begin), _slice.length), DStringType.None);
@@ -979,6 +1058,9 @@ namespace Autowrap {
             else if (typeof(T) == typeof(ulong)) return new Range<T>(RangeFunctions.Ulong_Slice(_slice, new IntPtr(begin), new IntPtr(end)), DStringType.None);
             else if (typeof(T) == typeof(float)) return new Range<T>(RangeFunctions.Float_Slice(_slice, new IntPtr(begin), new IntPtr(end)), DStringType.None);
             else if (typeof(T) == typeof(double)) return new Range<T>(RangeFunctions.Double_Slice(_slice, new IntPtr(begin), new IntPtr(end)), DStringType.None);
+            else if (typeof(T) == typeof(DateTime)) return new Range<T>(RangeFunctions.Std_datetime_date_DateTime_Slice(_slice, new IntPtr(begin), new IntPtr(end)), DStringType.None);
+            else if (typeof(T) == typeof(DateTimeOffset)) return new Range<T>(RangeFunctions.Std_datetime_systime_SysTime_Slice(_slice, new IntPtr(begin), new IntPtr(end)), DStringType.None);
+            else if (typeof(T) == typeof(TimeSpan)) return new Range<T>(RangeFunctions.Core_time_Duration_Slice(_slice, new IntPtr(begin), new IntPtr(end)), DStringType.None);
             else if (typeof(T) == typeof(Test.S1)) return new Range<T>(RangeFunctions.Test_s1_Slice(_slice, new IntPtr(begin), new IntPtr(end)), DStringType.None);
             else if (typeof(T) == typeof(Test.S2)) return new Range<T>(RangeFunctions.Test_s2_Slice(_slice, new IntPtr(begin), new IntPtr(end)), DStringType.None);
             else if (typeof(T) == typeof(Test.C1)) return new Range<T>(RangeFunctions.Test_c1_Slice(_slice, new IntPtr(begin), new IntPtr(end)), DStringType.None);
@@ -1001,6 +1083,9 @@ namespace Autowrap {
             else if (typeof(T) == typeof(ulong)) { this._slice = RangeFunctions.Ulong_AppendValue(this._slice, (ulong)(object)value); }
             else if (typeof(T) == typeof(float)) { this._slice = RangeFunctions.Float_AppendValue(this._slice, (float)(object)value); }
             else if (typeof(T) == typeof(double)) { this._slice = RangeFunctions.Double_AppendValue(this._slice, (double)(object)value); }
+            else if (typeof(T) == typeof(DateTime)) { this._slice = RangeFunctions.Std_datetime_date_DateTime_AppendValue(this._slice, (DateTime)(object)value); }
+            else if (typeof(T) == typeof(DateTimeOffset)) { this._slice = RangeFunctions.Std_datetime_systime_SysTime_AppendValue(this._slice, (DateTimeOffset)(object)value); }
+            else if (typeof(T) == typeof(TimeSpan)) { this._slice = RangeFunctions.Core_time_Duration_AppendValue(this._slice, (TimeSpan)(object)value); }
             else if (typeof(T) == typeof(Test.S1)) { this._slice = RangeFunctions.Test_s1_AppendValue(this._slice, (Test.S1)(object)value); }
             else if (typeof(T) == typeof(Test.S2)) { this._slice = RangeFunctions.Test_s2_AppendValue(this._slice, (Test.S2)(object)value); }
             else if (typeof(T) == typeof(Test.C1)) { this._slice = RangeFunctions.Test_c1_AppendValue(this._slice, (Test.C1)(object)value); }
@@ -1027,6 +1112,9 @@ namespace Autowrap {
             else if (typeof(T) == typeof(ulong)) { range._slice = RangeFunctions.Ulong_AppendSlice(range._slice, source._slice); return range; }
             else if (typeof(T) == typeof(float)) { range._slice = RangeFunctions.Float_AppendSlice(range._slice, source._slice); return range; }
             else if (typeof(T) == typeof(double)) { range._slice = RangeFunctions.Double_AppendSlice(range._slice, source._slice); return range; }
+            else if (typeof(T) == typeof(DateTime)) { range._slice = RangeFunctions.Std_datetime_date_DateTime_AppendSlice(range._slice, source._slice); return range; }
+            else if (typeof(T) == typeof(DateTimeOffset)) { range._slice = RangeFunctions.Std_datetime_systime_SysTime_AppendSlice(range._slice, source._slice); return range; }
+            else if (typeof(T) == typeof(TimeSpan)) { range._slice = RangeFunctions.Core_time_Duration_AppendSlice(range._slice, source._slice); return range; }
             else if (typeof(T) == typeof(Test.S1)) { range._slice = RangeFunctions.Test_s1_AppendSlice(range._slice, source._slice); return range; }
             else if (typeof(T) == typeof(Test.S2)) { range._slice = RangeFunctions.Test_s2_AppendSlice(range._slice, source._slice); return range; }
             else if (typeof(T) == typeof(Test.C1)) { range._slice = RangeFunctions.Test_c1_AppendSlice(range._slice, source._slice); return range; }
@@ -1050,6 +1138,9 @@ namespace Autowrap {
                 else if (typeof(T) == typeof(ulong)) yield return (T)(object)(ulong)RangeFunctions.Ulong_Get(_slice, new IntPtr(i));
                 else if (typeof(T) == typeof(float)) yield return (T)(object)(float)RangeFunctions.Float_Get(_slice, new IntPtr(i));
                 else if (typeof(T) == typeof(double)) yield return (T)(object)(double)RangeFunctions.Double_Get(_slice, new IntPtr(i));
+                else if (typeof(T) == typeof(DateTime)) yield return (T)(object)(DateTime)RangeFunctions.Std_datetime_date_DateTime_Get(_slice, new IntPtr(i));
+                else if (typeof(T) == typeof(DateTimeOffset)) yield return (T)(object)(DateTimeOffset)RangeFunctions.Std_datetime_systime_SysTime_Get(_slice, new IntPtr(i));
+                else if (typeof(T) == typeof(TimeSpan)) yield return (T)(object)(TimeSpan)RangeFunctions.Core_time_Duration_Get(_slice, new IntPtr(i));
                 else if (typeof(T) == typeof(Test.S1)) yield return (T)(object)(Test.S1)RangeFunctions.Test_s1_Get(_slice, new IntPtr(i));
                 else if (typeof(T) == typeof(Test.S2)) yield return (T)(object)(Test.S2)RangeFunctions.Test_s2_Get(_slice, new IntPtr(i));
                 else if (typeof(T) == typeof(Test.C1)) yield return (T)(object)new Test.C1(RangeFunctions.Test_c1_Get(_slice, new IntPtr(i)));

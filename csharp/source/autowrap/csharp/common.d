@@ -8,12 +8,23 @@ public struct RootNamespace {
     string value;
 }
 
+public string generateSharedTypes() {
+    return q{
+        extern(C) export struct datetime {
+            long ticks;
+            long offset;
+        }
+    };
+}
+
 package string getInterfaceTypeString(T)() {
-    import std.datetime : DateTime, SysTime;
+    import std.datetime : DateTime, SysTime, Date, TimeOfDay, Duration;
     import std.traits : fullyQualifiedName;
 
-    if (is(T == DateTime) || is(T == SysTime)) {
-        return "wstring";
+    if (is(T == DateTime) || is(T == SysTime) || is(T == Date) || is(T == TimeOfDay)) {
+        return "datetime";
+    } else if (is(T == Duration)) {
+        return "long";
     }
 
     return fullyQualifiedName!T;

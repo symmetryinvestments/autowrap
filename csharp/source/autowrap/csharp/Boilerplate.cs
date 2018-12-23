@@ -86,26 +86,34 @@ namespace Autowrap {
     }
 
     [GeneratedCodeAttribute("Autowrap", "1.0.0.0")]
-    internal static class DateTimeExtensions {
-        public static DateTime DateTimeFromSlice(slice wstring) {
-            var iso = SharedFunctions.SliceToString(slice, DStringType._wstring);
-            return DateTime.Parse(iso);
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct datetime {
+        public datetime(long ticks, long offset) {
+            this._ticks = ticks;
+            this._offset = offset;
         }
+        public static implicit operator datetime(DateTime ret) { return new datetime(ret.Ticks, 0L); }
+        public static implicit operator datetime(DateTimeOffset ret) { return new datetime(ret.Ticks, ret.Offset.Ticks); }
+        public static implicit operator datetime(TimeSpan ret) { return new datetime(ret.Ticks, 0L); }
+        public static implicit operator DateTime(datetime ret) { return new DateTime(ret._ticks, DateTimeKind.Unspecified); }
+        public static implicit operator DateTimeOffset(datetime ret) { return new DateTimeOffset(ret._ticks, new TimeSpan(ret._offset)); }
+        public static implicit operator TimeSpan(datetime ret) { return new TimeSpan(ret._ticks); }
+        private long _ticks;
+        private long _offset;
+    }
 
-        public static DateTimeOffset DateTimeOffsetFromSlice(slice wstring) {
-            var iso = SharedFunctions.SliceToString(slice, DStringType._wstring);
-            return DateTimeOffset.Parse(iso);
+    [GeneratedCodeAttribute("Autowrap", "1.0.0.0")]
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct return_datetime_error {
+        private void EnsureValid() {
+            var errStr = SharedFunctions.SliceToString(_error, DStringType._wstring);
+            if (!string.IsNullOrEmpty(errStr)) throw new DLangException(errStr);
         }
-
-        public static slice ToSlice(this DateTime dateTime) {
-            var iso = dateTime.ToString("o");
-            return SharedFunctions.CreateWstring(iso);
-        }
-
-        public static slice ToSlice(this DateTimeOffset dateTime) {
-            var iso = dateTime.ToString("o");
-            return SharedFunctions.CreateWstring(iso);
-        }
+        public static implicit operator DateTime(return_datetime_error ret) { ret.EnsureValid(); return ret._value; }
+        public static implicit operator DateTimeOffset(return_datetime_error ret) { ret.EnsureValid(); return ret._value; }
+        public static implicit operator TimeSpan(return_datetime_error ret) { ret.EnsureValid(); return ret._value; }
+        private datetime _value;
+        private slice _error;
     }
 
 %3$s    [GeneratedCodeAttribute("Autowrap", "1.0.0.0")]

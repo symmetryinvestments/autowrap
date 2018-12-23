@@ -18,8 +18,11 @@ enum string stringTypeString = "string";
 enum string wstringTypeString = "wstring";
 enum string dstringTypeString = "dstring";
 enum string boolTypeString = "bool";
-enum string dateTimeTypeString = "DateTime";
-enum string sysTimeTypeString = "SysTime";
+enum string dateTimeTypeString = "std.datetime.date.DateTime";
+enum string sysTimeTypeString = "std.datetime.systime.SysTime";
+enum string dateTypeString = "std.datetime.date.Date";
+enum string timeOfDayTypeString = "std.datetime.date.TimeOfDay";
+enum string durationTypeString = "core.time.Duration";
 enum string uuidTypeString = "UUID";
 enum string charTypeString = "char";
 enum string wcharTypeString = "wchar";
@@ -383,11 +386,11 @@ private void generateProperties(T)(string libraryName, CSharpAggregate csagg) if
                         } else if (is(propertyType == dstring)) {
                             prop ~= mixin(interp!"get => SharedFunctions.SliceToString(dlang_${methodInterfaceName}(${is(T == class) ? string.init : \"ref \"}this), DStringType._dstring);");
                         } else if (is(propertyType == string[])) {
-                            prop ~= mixin(interp!"get => new Range<${getCSharpInterfaceType(fullyQualifiedName!propertyType)}>(dlang_${methodInterfaceName}(${is(T == class) ? string.init : \"ref \"}this), DStringType._string); ");
+                            prop ~= mixin(interp!"get => new Range<string>(dlang_${methodInterfaceName}(${is(T == class) ? string.init : \"ref \"}this), DStringType._string); ");
                         } else if (is(propertyType == wstring[])) {
-                            prop ~= mixin(interp!"get => new Range<${getCSharpInterfaceType(fullyQualifiedName!propertyType)}>(dlang_${methodInterfaceName}(${is(T == class) ? string.init : \"ref \"}this), DStringType._wstring); ");
+                            prop ~= mixin(interp!"get => new Range<string>(dlang_${methodInterfaceName}(${is(T == class) ? string.init : \"ref \"}this), DStringType._wstring); ");
                         } else if (is(propertyType == dstring[])) {
-                            prop ~= mixin(interp!"get => new Range<${getCSharpInterfaceType(fullyQualifiedName!propertyType)}>(dlang_${methodInterfaceName}(${is(T == class) ? string.init : \"ref \"}this), DStringType._dstring); ");
+                            prop ~= mixin(interp!"get => new Range<string>(dlang_${methodInterfaceName}(${is(T == class) ? string.init : \"ref \"}this), DStringType._dstring); ");
                         } else if (isArray!(propertyType)) {
                             prop ~= mixin(interp!"get => new Range<${getCSharpInterfaceType(fullyQualifiedName!propertyType)}>(dlang_${methodInterfaceName}(${is(T == class) ? string.init : \"ref \"}this), DStringType.None); ");
                         } else if (is(propertyType == class)) {
@@ -448,17 +451,17 @@ private void generateFields(T)(string libraryName, CSharpAggregate csagg) if (is
                 }
 
                 if (is(fieldTypes[fc] == string)) {
-                    csagg.properties ~= mixin(interp!"        public ${getCSharpInterfaceType(fullyQualifiedName!(fieldTypes[fc]))} ${getCSharpName(fieldNames[fc])} { get => SharedFunctions.SliceToString(dlang_${fieldNames[fc]}_get(this), DStringType._string); set => dlang_${fieldNames[fc]}_set(this, SharedFunctions.CreateString(value)); }${newline}");
+                    csagg.properties ~= mixin(interp!"        public string ${getCSharpName(fieldNames[fc])} { get => SharedFunctions.SliceToString(dlang_${fieldNames[fc]}_get(this), DStringType._string); set => dlang_${fieldNames[fc]}_set(this, SharedFunctions.CreateString(value)); }${newline}");
                 } else if (is(fieldTypes[fc] == wstring)) {
-                    csagg.properties ~= mixin(interp!"        public ${getCSharpInterfaceType(fullyQualifiedName!(fieldTypes[fc]))} ${getCSharpName(fieldNames[fc])} { get => SharedFunctions.SliceToString(dlang_${fieldNames[fc]}_get(this), DStringType._wstring); set => dlang_${fieldNames[fc]}_set(this, SharedFunctions.CreateWstring(value)); }${newline}");
+                    csagg.properties ~= mixin(interp!"        public string ${getCSharpName(fieldNames[fc])} { get => SharedFunctions.SliceToString(dlang_${fieldNames[fc]}_get(this), DStringType._wstring); set => dlang_${fieldNames[fc]}_set(this, SharedFunctions.CreateWstring(value)); }${newline}");
                 } else if (is(fieldTypes[fc] == dstring)) {
-                    csagg.properties ~= mixin(interp!"        public ${getCSharpInterfaceType(fullyQualifiedName!(fieldTypes[fc]))} ${getCSharpName(fieldNames[fc])} { get => SharedFunctions.SliceToString(dlang_${fieldNames[fc]}_get(this), DStringType._dstring); set => dlang_${fieldNames[fc]}_set(this, SharedFunctions.CreateDstring(value)); }${newline}");
+                    csagg.properties ~= mixin(interp!"        public string ${getCSharpName(fieldNames[fc])} { get => SharedFunctions.SliceToString(dlang_${fieldNames[fc]}_get(this), DStringType._dstring); set => dlang_${fieldNames[fc]}_set(this, SharedFunctions.CreateDstring(value)); }${newline}");
                 } else if (is(fieldTypes[fc] == string[])) {
-                    csagg.properties ~= mixin(interp!"        public Range<${getCSharpInterfaceType(fullyQualifiedName!(fieldTypes[fc]))}> ${getCSharpName(fieldNames[fc])} { get => new Range<${getCSharpInterfaceType(fullyQualifiedName!(fieldTypes[fc]))}>(dlang_${fieldNames[fc]}_get(this), DStringType._string); set => dlang_${fieldNames[fc]}_set(this, value.ToSlice(DStringType._string)); }${newline}");
+                    csagg.properties ~= mixin(interp!"        public Range<string> ${getCSharpName(fieldNames[fc])} { get => new Range<string>(dlang_${fieldNames[fc]}_get(this), DStringType._string); set => dlang_${fieldNames[fc]}_set(this, value.ToSlice(DStringType._string)); }${newline}");
                 } else if (is(fieldTypes[fc] == wstring[])) {
-                    csagg.properties ~= mixin(interp!"        public Range<${getCSharpInterfaceType(fullyQualifiedName!(fieldTypes[fc]))}> ${getCSharpName(fieldNames[fc])} { get => new Range<${getCSharpInterfaceType(fullyQualifiedName!(fieldTypes[fc]))}>(dlang_${fieldNames[fc]}_get(this), DStringType._wstring); set => dlang_${fieldNames[fc]}_set(this, value.ToSlice(DStringType._wstring)); }${newline}");
+                    csagg.properties ~= mixin(interp!"        public Range<string> ${getCSharpName(fieldNames[fc])} { get => new Range<string>(dlang_${fieldNames[fc]}_get(this), DStringType._wstring); set => dlang_${fieldNames[fc]}_set(this, value.ToSlice(DStringType._wstring)); }${newline}");
                 } else if (is(fieldTypes[fc] == dstring[])) {
-                    csagg.properties ~= mixin(interp!"        public Range<${getCSharpInterfaceType(fullyQualifiedName!(fieldTypes[fc]))}> ${getCSharpName(fieldNames[fc])} { get => new Range<${getCSharpInterfaceType(fullyQualifiedName!(fieldTypes[fc]))}>(dlang_${fieldNames[fc]}_get(this), DStringType._dstring); set => dlang_${fieldNames[fc]}_set(this, value.ToSlice(DStringType._dstring)); }${newline}");
+                    csagg.properties ~= mixin(interp!"        public Range<string> ${getCSharpName(fieldNames[fc])} { get => new Range<string>(dlang_${fieldNames[fc]}_get(this), DStringType._dstring); set => dlang_${fieldNames[fc]}_set(this, value.ToSlice(DStringType._dstring)); }${newline}");
                 } else if (isArray!(fieldTypes[fc])) {
                     csagg.properties ~= mixin(interp!"        public Range<${getCSharpInterfaceType(fullyQualifiedName!(fieldTypes[fc]))}> ${getCSharpName(fieldNames[fc])} { get => new Range<${getCSharpInterfaceType(fullyQualifiedName!(fieldTypes[fc]))}>(dlang_${fieldNames[fc]}_get(this), DStringType.None); set => dlang_${fieldNames[fc]}_set(this, value.ToSlice()); }${newline}");
                 } else if (is(fieldTypes[fc] == class)) {
@@ -471,14 +474,22 @@ private void generateFields(T)(string libraryName, CSharpAggregate csagg) if (is
     } else if(is(T == struct)) {
         static foreach(fc; 0..fieldTypes.length) {
             static if (is(typeof(__traits(getMember, T, fieldNames[fc])))) {
-                if (is(fieldTypes[fc] == string) || is(fieldTypes[fc] == wstring) || is(fieldTypes[fc] == dstring)) {
+                if (isArray!(fieldTypes[fc])) {
                     csagg.properties ~= mixin(interp!"        private slice _${getCSharpName(fieldNames[fc])};${newline}");
                     if (is(fieldTypes[fc] == string)) {
-                        csagg.properties ~= mixin(interp!"        public string ${getCSharpName(fieldNames[fc])} { get => SharedFunctions.SliceToString(_${getCSharpName(fieldNames[fc])}, DStringType._${fullyQualifiedName!(fieldTypes[fc])}); set => _${getCSharpName(fieldNames[fc])} = SharedFunctions.CreateString(value); }${newline}");
+                        csagg.properties ~= mixin(interp!"        public string ${getCSharpName(fieldNames[fc])} { get => SharedFunctions.SliceToString(_${getCSharpName(fieldNames[fc])}, DStringType._string); set => _${getCSharpName(fieldNames[fc])} = SharedFunctions.CreateString(value); }${newline}");
                     } else if (is(fieldTypes[fc] == wstring)) {
-                        csagg.properties ~= mixin(interp!"        public string ${getCSharpName(fieldNames[fc])} { get => SharedFunctions.SliceToString(_${getCSharpName(fieldNames[fc])}, DStringType._${fullyQualifiedName!(fieldTypes[fc])}); set => _${getCSharpName(fieldNames[fc])} = SharedFunctions.CreateWstring(value); }${newline}");
+                        csagg.properties ~= mixin(interp!"        public string ${getCSharpName(fieldNames[fc])} { get => SharedFunctions.SliceToString(_${getCSharpName(fieldNames[fc])}, DStringType._wstring); set => _${getCSharpName(fieldNames[fc])} = SharedFunctions.CreateWstring(value); }${newline}");
                     } else if (is(fieldTypes[fc] == dstring)) {
-                        csagg.properties ~= mixin(interp!"        public string ${getCSharpName(fieldNames[fc])} { get => SharedFunctions.SliceToString(_${getCSharpName(fieldNames[fc])}, DStringType._${fullyQualifiedName!(fieldTypes[fc])}); set => _${getCSharpName(fieldNames[fc])} = SharedFunctions.CreateDstring(value); }${newline}");
+                        csagg.properties ~= mixin(interp!"        public string ${getCSharpName(fieldNames[fc])} { get => SharedFunctions.SliceToString(_${getCSharpName(fieldNames[fc])}, DStringType._dstring); set => _${getCSharpName(fieldNames[fc])} = SharedFunctions.CreateDstring(value); }${newline}");
+                    } else if (is(fieldTypes[fc] == string[])) {
+                        csagg.properties ~= mixin(interp!"        public Range<string> ${getCSharpName(fieldNames[fc])} { get => new Range<string>(_${fieldNames[fc]}, DStringType._string); set => _${fieldNames[fc]} = value.ToSlice(DStringType._string); }${newline}");
+                    } else if (is(fieldTypes[fc] == wstring[])) {
+                        csagg.properties ~= mixin(interp!"        public Range<string> ${getCSharpName(fieldNames[fc])} { get => new Range<string>(_${fieldNames[fc]}, DStringType._wstring); set => _${fieldNames[fc]} = value.ToSlice(DStringType._wstring); }${newline}");
+                    } else if (is(fieldTypes[fc] == dstring[])) {
+                        csagg.properties ~= mixin(interp!"        public Range<string> ${getCSharpName(fieldNames[fc])} { get => new Range<string>(_${fieldNames[fc]}, DStringType._dstring); set => _${fieldNames[fc]} = value.ToSlice(DStringType._dstring); }${newline}");
+                    } else {
+                        csagg.properties ~= mixin(interp!"        public Range<${getCSharpInterfaceType(fullyQualifiedName!(fieldTypes[fc]))}> ${getCSharpName(fieldNames[fc])} { get => new Range<${getCSharpInterfaceType(fullyQualifiedName!(fieldTypes[fc]))}>(_${fieldNames[fc]}, DStringType.None); set => _${fieldNames[fc]} = value.ToSlice(); }${newline}");
                     }
                 } else if (is(fieldTypes[fc] == bool)) {
                     csagg.properties ~= mixin(interp!"        [MarshalAs(UnmanagedType.U1)] public ${getDLangInterfaceType(fullyQualifiedName!(fieldTypes[fc]))} ${getCSharpName(fieldNames[fc])};${newline}");
@@ -567,11 +578,11 @@ private void generateFunctions(Modules...)(string libraryName) if(allSatisfy!(is
             } else if (is(returnType == dstring)) {
                 funcStr ~= "            return SharedFunctions.SliceToString(dlang_ret, DStringType._dstring);" ~ newline;
             } else if (is(returnType == string[])) {
-                funcStr ~= mixin(interp!"            return new Range<${getCSharpInterfaceType(returnTypeStr)}>(dlang_ret, DStringType._string);${newline}");
+                funcStr ~= mixin(interp!"            return new Range<string>(dlang_ret, DStringType._string);${newline}");
             } else if (is(returnType == wstring[])) {
-                funcStr ~= mixin(interp!"            return new Range<${getCSharpInterfaceType(returnTypeStr)}>(dlang_ret, DStringType._wstring);${newline}");
+                funcStr ~= mixin(interp!"            return new Range<string>(dlang_ret, DStringType._wstring);${newline}");
             } else if (is(returnType == dstring[])) {
-                funcStr ~= mixin(interp!"            return new Range<${getCSharpInterfaceType(returnTypeStr)}>(dlang_ret, DStringType._dstring);${newline}");
+                funcStr ~= mixin(interp!"            return new Range<string>(dlang_ret, DStringType._dstring);${newline}");
             } else if (isArray!(returnType)) {
                 funcStr ~= mixin(interp!"            return new Range<${getCSharpInterfaceType(returnTypeStr)}>(dlang_ret, DStringType.None);${newline}");
             } else {
@@ -592,8 +603,11 @@ private string getDLangInterfaceType(string type) {
         case stringTypeString: return "slice";
         case wstringTypeString: return "slice";
         case dstringTypeString: return "slice";
-        case dateTimeTypeString: return "slice";
-        case sysTimeTypeString: return "slice";
+        case sysTimeTypeString: return "datetime";
+        case dateTimeTypeString: return "datetime";
+        case timeOfDayTypeString: return "datetime";
+        case dateTypeString: return "datetime";
+        case durationTypeString: return "datetime";
         case boolTypeString: return "bool";
 
         //Types that can be marshalled by default
@@ -623,8 +637,11 @@ private string getCSharpInterfaceType(string type) {
         case stringTypeString: return "string";
         case wstringTypeString: return "string";
         case dstringTypeString: return "string";
-        case dateTimeTypeString: return "DateTime";
         case sysTimeTypeString: return "DateTimeOffset";
+        case dateTimeTypeString: return "DateTime";
+        case timeOfDayTypeString: return "DateTime";
+        case dateTypeString: return "DateTime";
+        case durationTypeString: return "TimeSpan";
         case boolTypeString: return "bool";
 
         //Types that can be marshalled by default
@@ -650,7 +667,8 @@ private string getDLangReturnType(string type, bool isClass) {
 
     string rtname = getReturnErrorTypeName(getDLangInterfaceType(type));
     //These types have predefined C# types.
-    if(type == voidTypeString || type == boolTypeString || type == stringTypeString || type == wstringTypeString || type == dstringTypeString || rtname == "return_slice_error") {
+    if (type == dateTypeString || type == dateTimeTypeString || type == sysTimeTypeString || type == timeOfDayTypeString || type == durationTypeString ||
+        type == voidTypeString || type == boolTypeString || type == stringTypeString || type == wstringTypeString || type == dstringTypeString || rtname == "return_slice_error") {
         return rtname;
     }
 
@@ -747,15 +765,17 @@ private void generateRangeDef(T)(string libraryName) {
         rangeDef.functions ~= dllImportString.format(libraryName, getDLangSliceInterfaceName(fqn, "Get"));
         rangeDef.functions ~= externFuncString.format(getDLangReturnType(fqn, false), getCSharpMethodInterfaceName(fqn, "Get"), "slice dslice, IntPtr index");
         rangeDef.functions ~= dllImportString.format(libraryName, getDLangSliceInterfaceName(fqn, "Set"));
-        rangeDef.functions ~= externFuncString.format("return_void_error", getCSharpMethodInterfaceName(fqn, "Set"), mixin(interp!"slice dslice, IntPtr index, ${getCSharpInterfaceType(fqn)} value"));
+        rangeDef.functions ~= externFuncString.format("return_void_error", getCSharpMethodInterfaceName(fqn, "Set"), mixin(interp!"slice dslice, IntPtr index, ${getDLangInterfaceType(fqn)} value"));
         rangeDef.functions ~= dllImportString.format(libraryName, getDLangSliceInterfaceName(fqn, "AppendValue"));
-        rangeDef.functions ~= externFuncString.format("return_slice_error", getCSharpMethodInterfaceName(fqn, "AppendValue"), mixin(interp!"slice dslice, ${getCSharpInterfaceType(fqn)} value"));
+        rangeDef.functions ~= externFuncString.format("return_slice_error", getCSharpMethodInterfaceName(fqn, "AppendValue"), mixin(interp!"slice dslice, ${getDLangInterfaceType(fqn)} value"));
         rangeDef.getters ~= mixin(interp!"                else if (typeof(T) == typeof(${getCSharpInterfaceType(fqn)})) return (T)(object)(${getCSharpInterfaceType(fqn)})RangeFunctions.${getCSharpMethodInterfaceName(fqn, \"Get\")}(_slice, new IntPtr(i));${newline}");
         rangeDef.enumerators ~= mixin(interp!"                else if (typeof(T) == typeof(${getCSharpInterfaceType(fqn)})) yield return (T)(object)(${getCSharpInterfaceType(fqn)})RangeFunctions.${getCSharpMethodInterfaceName(fqn, \"Get\")}(_slice, new IntPtr(i));${newline}");
     }
 }
 
 private void generateSliceBoilerplate(string libraryName) {
+    import std.datetime: Date, DateTime, TimeOfDay, SysTime, Duration;
+
     void generateStringBoilerplate(string dlangType, string csharpType) {
         rangeDef.enumerators ~= mixin(interp!"                else if (typeof(T) == typeof(string) && _strings == null && _type == DStringType._${dlangType}) yield return (T)(object)SharedFunctions.SliceToString(RangeFunctions.${csharpType}_Get(_slice, new IntPtr(i)), DStringType._${dlangType});${newline}");
         rangeDef.getters ~= mixin(interp!"                else if (typeof(T) == typeof(string) && _strings == null && _type == DStringType._${dlangType}) return (T)(object)SharedFunctions.SliceToString(RangeFunctions.${csharpType}_Get(_slice, new IntPtr(i)), DStringType._${dlangType});${newline}");
@@ -824,6 +844,10 @@ private void generateSliceBoilerplate(string libraryName) {
     generateRangeDef!ulong(libraryName);
     generateRangeDef!float(libraryName);
     generateRangeDef!double(libraryName);
+
+    generateRangeDef!DateTime(libraryName);
+    generateRangeDef!SysTime(libraryName);
+    generateRangeDef!Duration(libraryName);
 }
 
 private string writeCSharpBoilerplate(string libraryName, string rootNamespace) {

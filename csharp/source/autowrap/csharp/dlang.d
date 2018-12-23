@@ -2,6 +2,7 @@ module autowrap.csharp.dlang;
 
 import scriptlike : interp, _interp_text;
 
+import autowrap.csharp.common : generateSharedTypes;
 import autowrap.reflection : isModule;
 import std.ascii : newline;
 import std.meta : allSatisfy;
@@ -11,10 +12,25 @@ enum string methodSetup = "        thread_attachThis();
         scope(exit) rt_moduleTlsDtor();
         scope(exit) thread_detachThis();";
 
+mixin(generateSharedTypes());
+
+private string getDLangInterfaceType(T)() {
+    import std.datetime : Date, DateTime, SysTime, TimeOfDay, Duration;
+    import std.traits : fullyQualifiedName;
+    if (is(T == Date) || is(T == DateTime) || is(T == SysTime) || is(T == TimeOfDay) || is(T == Duration)) {
+        return "datetime";
+    } else if (is(T == Date[]) || is(T == DateTime[]) || is(T == SysTime[]) || is(T == TimeOfDay[]) || is(T == Duration[])) {
+        return "datetime[]";
+    } else {
+        return fullyQualifiedName!T;
+    }
+}
+
 // Wrap global functions from multiple modules
 public string wrapDLang(Modules...)() if(allSatisfy!(isModule, Modules)) {
     import autowrap.csharp.common : getDLangInterfaceName;
     import autowrap.reflection : AllAggregates;
+    import std.datetime : Date, DateTime, SysTime, TimeOfDay, Duration;
     import std.traits : fullyQualifiedName, moduleName;
     import std.meta : AliasSeq;
 
@@ -27,7 +43,7 @@ public string wrapDLang(Modules...)() if(allSatisfy!(isModule, Modules)) {
     }
     ret ~= newline;
 
-    static foreach(t; AliasSeq!(string, wstring, dstring, bool, byte, ubyte, short, ushort, int, uint, long, ulong, float, double)) {
+    static foreach(t; AliasSeq!(string, wstring, dstring, bool, byte, ubyte, short, ushort, int, uint, long, ulong, float, double, datetime)) {
         ret ~= generateSliceMethods!t();
     }
 
@@ -55,7 +71,7 @@ private string generateConstructors(T)() {
     import std.meta : AliasSeq;
 
     string ret = string.init;
-    alias fqn = fullyQualifiedName!T;
+    alias fqn = getDLangInterfaceType!T;
     static if(hasMember!(T, "__ctor")) {
         alias constructors = AliasSeq!(__traits(getOverloads, T, "__ctor"));
     } else {
@@ -119,7 +135,7 @@ private string generateMethods(T)() {
     import std.conv : to;
 
     string ret = string.init;
-    alias fqn = fullyQualifiedName!T;
+    alias fqn = getDLangInterfaceType!T;
     foreach(m; __traits(allMembers, T)) {
         if (m == "__ctor" || m == "toHash" || m == "opEquals" || m == "opCmp" || m == "factory") {
             continue;
@@ -134,7 +150,7 @@ private string generateMethods(T)() {
                     const string interfaceName = getDLangInterfaceName(fqn, m);
 
                     alias returnType = ReturnType!mo;
-                    alias returnTypeStr = fullyQualifiedName!returnType;
+                    alias returnTypeStr = getDLangInterfaceType!returnType;
                     alias paramTypes = Parameters!mo;
                     alias paramNames = ParameterIdentifierTuple!mo;
 
@@ -196,16 +212,16 @@ private string generateFields(T)() {
     import std.traits : fullyQualifiedName, Fields, FieldNameTuple;
 
     string ret = string.init;
-    alias fqn = fullyQualifiedName!T;
+    alias fqn = getDLangInterfaceType!T;
     if (is(T == class) || is(T == interface)) {
         alias fieldTypes = Fields!T;
         alias fieldNames = FieldNameTuple!T;
         static foreach(fc; 0..fieldTypes.length) {
             static if (is(typeof(__traits(getMember, T, fieldNames[fc])))) {
-                ret ~= mixin(interp!"extern(C) export returnValue!(${fullyQualifiedName!(fieldTypes[fc])}) ${getDLangInterfaceName(fqn, fieldNames[fc] ~ \"_get\")}(${fqn} __obj__) nothrow {${newline}");
-                ret ~= generateMethodErrorHandling(mixin(interp!"        return returnValue!(${fullyQualifiedName!(fieldTypes[fc])})(__obj__.${fieldNames[fc]});"), mixin(interp!"returnValue!(${fullyQualifiedName!(fieldTypes[fc])})"));
+                ret ~= mixin(interp!"extern(C) export returnValue!(${getDLangInterfaceType!(fieldTypes[fc])}) ${getDLangInterfaceName(fqn, fieldNames[fc] ~ \"_get\")}(${fqn} __obj__) nothrow {${newline}");
+                ret ~= generateMethodErrorHandling(mixin(interp!"        return returnValue!(${getDLangInterfaceType!(fieldTypes[fc])})(__obj__.${fieldNames[fc]});"), mixin(interp!"returnValue!(${getDLangInterfaceType!(fieldTypes[fc])})"));
                 ret ~= "}" ~ newline;
-                ret ~= mixin(interp!"extern(C) export returnVoid ${getDLangInterfaceName(fqn, fieldNames[fc] ~ \"_set\")}(${fqn} __obj__, ${fullyQualifiedName!(fieldTypes[fc])} value) nothrow {${newline}");
+                ret ~= mixin(interp!"extern(C) export returnVoid ${getDLangInterfaceName(fqn, fieldNames[fc] ~ \"_set\")}(${fqn} __obj__, ${getDLangInterfaceType!(fieldTypes[fc])} value) nothrow {${newline}");
                 ret ~= generateMethodErrorHandling(mixin(interp!"        __obj__.${fieldNames[fc]} = value;${newline}        return returnVoid();"), "returnVoid");
                 ret ~= "}" ~ newline;
             }
@@ -225,7 +241,7 @@ private string generateFunctions(Modules...)() if(allSatisfy!(isModule, Modules)
         alias funcName = func.name;
 
         alias returnType = ReturnType!(__traits(getMember, func.module_, func.name));
-        alias returnTypeStr = fullyQualifiedName!(ReturnType!(__traits(getMember, func.module_, func.name)));
+        alias returnTypeStr = getDLangInterfaceType!(ReturnType!(__traits(getMember, func.module_, func.name)));
         alias paramTypes = Parameters!(__traits(getMember, func.module_, func.name));
         alias paramNames = ParameterIdentifierTuple!(__traits(getMember, func.module_, func.name));
         const string interfaceName = getDLangInterfaceName(modName, null, funcName);
@@ -240,7 +256,7 @@ private string generateFunctions(Modules...)() if(allSatisfy!(isModule, Modules)
 
         funcStr ~= mixin(interp!"${retType} ${interfaceName}(");
         static foreach(pc; 0..paramNames.length) {
-            funcStr ~= mixin(interp!"${fullyQualifiedName!(paramTypes[pc])} ${paramNames[pc]}, ");
+            funcStr ~= mixin(interp!"${getDLangInterfaceType!(paramTypes[pc])} ${paramNames[pc]}, ");
         }
         if(paramNames.length > 0) {
             funcStr = funcStr[0..$-2];
