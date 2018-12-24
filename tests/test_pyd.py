@@ -112,3 +112,70 @@ def test_testdll():
     s.s = 'hello'
     assert s.i == 42
     assert s.s == 'hello'
+
+
+def test_def():
+    from pyd import def_a, def_a2, def_a3, def_a4, def_t1_int, def_t2_int
+    import pytest
+
+    with pytest.raises(RuntimeError) as ex:
+        assert def_a(1.0) == 20
+    assert "Couldn't convert Python type 'float' to D type 'int'" in \
+        str(ex.value)
+
+    assert def_a(42) == 10
+    assert def_a(24) == 10
+
+    assert def_a2(4, 2.1) == 214
+    assert def_a2(4) == 454
+    assert def_a2(i=4) == 454
+
+    # def_a3 accepts a variadic number of ints
+    assert def_a3(4) == 46
+    assert def_a3(i=4) == 46
+    assert def_a3(4, 3) == 49
+    assert def_a3(i=[4, 3]) == 49
+
+    assert def_a4('hi', 2, s3='zi') == "<'hi', 2, 'friedman', 4, 'zi'>"
+
+    assert def_t1_int(42) == 1
+    assert def_t2_int(42) == 1
+
+
+def test_struct_wrap():
+    from pyd import (sw_Foo1 as Foo1, sw_Foo3 as Foo3, sw_Foo5 as Foo5,
+                     sw_Foo6 as Foo6)
+    from datetime import datetime as DateTime
+
+    foo1 = Foo1(2, 3, 4)
+    assert foo1.i == 2
+
+    foo3 = Foo3()
+    foo3.i = 1
+    foo3.foo.j = 2
+    assert foo3.foo.j == 2
+
+    foo5 = Foo5()
+    foo5.foo.j = 2
+
+    foo6 = Foo6(DateTime(2018, 7, 3))
+    assert foo6.dateTime.year == 2018
+
+
+def test_const():
+    from pyd import const_T1 as T1
+    import pytest
+
+    boozy = T1()
+
+    with pytest.raises(RuntimeError) as ex:
+        boozy.a()
+    assert 'constness mismatch required:' in str(ex.value)
+
+    assert boozy.b() == 'def'
+
+    with pytest.raises(RuntimeError) as ex:
+        boozy.p1i
+    assert 'constness mismatch required:' in str(ex.value)
+
+    assert boozy.p1c == 300
