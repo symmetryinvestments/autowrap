@@ -174,7 +174,14 @@ private template FunctionTypesInModule(Module module_) {
 
     alias Member(string memberName) = Symbol!(dmodule, memberName);
     alias members = staticMap!(Member, __traits(allMembers, dmodule));
-    enum isWantedExportFunction(alias F) = isExportFunction!(F, module_.alwaysExport);
+    template isWantedExportFunction(T...) if(T.length == 1) {
+        import std.traits: isSomeFunction;
+        alias F = T[0];
+        static if(isSomeFunction!F)
+            enum isWantedExportFunction = isExportFunction!(F, module_.alwaysExport);
+        else
+            enum isWantedExportFunction = false;
+    }
     alias functions = Filter!(isWantedExportFunction, members);
 
     // all return types of all functions
@@ -238,8 +245,14 @@ private mixin template RecursiveAggregateImpl(T, alias Other) {
 }
 
 
+// must be a global template for staticMap
 private template Type(T...) if(T.length == 1) {
-    static if(is(T[0]))
+    import std.traits: isSomeFunction;
+    import std.meta: AliasSeq;
+
+    static if(isSomeFunction!(T[0]))
+        alias Type = AliasSeq!();
+    else static if(is(T[0]))
         alias Type = T[0];
     else
         alias Type = typeof(T[0]);

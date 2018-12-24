@@ -11,6 +11,7 @@ mixin(
             Module("def", Yes.alwaysExport),
             Module("struct_wrap", Yes.alwaysExport),
             Module("const_", Yes.alwaysExport),
+            Module("class_wrap", Yes.alwaysExport),
         ),
     )
 );

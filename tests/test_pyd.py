@@ -179,3 +179,17 @@ def test_const():
     assert 'constness mismatch required:' in str(ex.value)
 
     assert boozy.p1c == 300
+
+
+def test_class_wrap():
+    from pyd import Bizzy
+    import pytest
+
+    bizzy = Bizzy(i=4)
+    assert bizzy.a(1) == 12
+    assert Bizzy.b(1) == 14
+    assert str(bizzy) == 'bye'
+    assert repr(bizzy) == 'bye'
+    # FIXME
+    with pytest.raises(TypeError):
+        assert bizzy + 1 == 2
