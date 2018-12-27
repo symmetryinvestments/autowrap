@@ -150,6 +150,7 @@ auto wrapAggregate(T)() if(isUserAggregate!T) {
         OpSliceRanges!T,
         OpOpAssigns!T,
         OpIndexAssigns!T,
+        OpSliceAssigns!T,
    );
 }
 
@@ -333,6 +334,18 @@ private template OpIndexAssigns(T) {
         alias OpIndexAssigns = OpIndexAssign!();
     else
         alias OpIndexAssigns = AliasSeq!();
+}
+
+
+private template OpSliceAssigns(T) {
+    import pyd.pyd: OpSliceAssign;
+    import std.meta: AliasSeq;
+    import std.traits: hasMember;
+
+    static if(hasMember!(T, "opSliceAssign"))
+        alias OpSliceAssigns = OpSliceAssign!();
+    else
+        alias OpSliceAssigns = AliasSeq!();
 }
 
 
