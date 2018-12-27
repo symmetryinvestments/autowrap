@@ -190,6 +190,11 @@ def test_class_wrap():
     assert Bizzy.b(1) == 14
     assert str(bizzy) == 'bye'
     assert repr(bizzy) == 'bye'
+
     assert bizzy + 1 == 2
     assert bizzy * 1 == 3
     assert bizzy ** 1 == 4
+
+    assert 1 + bizzy == 5
+    assert 19 in bizzy
+    assert 0 not in bizzy

@@ -141,6 +141,7 @@ auto wrapAggregate(T)() if(isUserAggregate!T) {
         staticMap!(Repr, Filter!(isToString, memberFunctions)),
         staticMap!(Property, Properties!nonStaticMemberFunctions),
         OpBinaries!T,
+        OpBinaryRights!T,
         staticMap!(DefOpSlice, OpSlices!T),
    );
 }
@@ -219,12 +220,30 @@ private template OpBinaries(T) {
 
     static if(hasMember!(T, "opBinary")) {
         alias pythonableOperators = AliasSeq!(
-            "+", "-", "*", "/", "%", "^^", "<<", ">>", "&", "^", "|"
+            "+", "-", "*", "/", "%", "^^", "<<", ">>", "&", "^", "|", "in",
         );
         alias dOperatorNames = Filter!(hasOperator, pythonableOperators);
         alias OpBinaries = staticMap!(toPyd, dOperatorNames);
     } else
         alias OpBinaries = AliasSeq!();
+}
+
+private template OpBinaryRights(T) {
+    import pyd.pyd: OpBinaryRight;
+    import std.meta: AliasSeq, staticMap, Filter;
+    import std.traits: hasMember;
+
+    enum hasOperator(string op) = is(typeof(probeOpBinaryRight!(T, op)));
+    alias toPyd(string op) = OpBinaryRight!op;
+
+    static if(hasMember!(T, "opBinaryRight")) {
+        alias pythonableOperators = AliasSeq!(
+            "+", "-", "*", "/", "%", "^^", "<<", ">>", "&", "^", "|", "in",
+        );
+        alias dOperatorNames = Filter!(hasOperator, pythonableOperators);
+        alias OpBinaryRights = staticMap!(toPyd, dOperatorNames);
+    } else
+        alias OpBinaryRights = AliasSeq!();
 }
 
 private auto probeOpBinary(T, string op)() {
@@ -233,6 +252,14 @@ private auto probeOpBinary(T, string op)() {
     alias func = T.opBinary;
     auto obj = T.init;
     ReturnType!(func!op) ret = obj.opBinary!op(Parameters!(func!op).init);
+}
+
+private auto probeOpBinaryRight(T, string op)() {
+    import std.traits: ReturnType, Parameters;
+    import std.meta: Alias;
+    alias func = T.opBinaryRight;
+    auto obj = T.init;
+    ReturnType!(func!op) ret = obj.opBinaryRight!op(Parameters!(func!op).init);
 }
 
 
