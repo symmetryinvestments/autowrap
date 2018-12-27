@@ -101,7 +101,7 @@ void wrapAllAggregates(Modules...)() if(allSatisfy!(isModule, Modules)) {
             wrapAggregate!aggregate;
         else {
             pragma(msg, "\nERROR! Autowrap could not wrap aggregate `", fullyQualifiedName!aggregate, "` for Python\n");
-            wrapAggregate!aggregate; // uncomment to see the error messages from the compiler
+            // wrapAggregate!aggregate; // uncomment to see the error messages from the compiler
         }
     }
 }
@@ -145,6 +145,7 @@ auto wrapAggregate(T)() if(isUserAggregate!T) {
         OpBinaryRights!T,
         OpCmps!T,
         Lengths!T,
+        OpIndices!T,
         staticMap!(DefOpSlice, OpSlices!T),
    );
 }
@@ -285,6 +286,16 @@ private template Lengths(T) {
         alias Lengths = Len!(T.length);
     else
         alias Lengths = AliasSeq!();
+}
+
+private template OpIndices(T) {
+    import pyd.pyd: OpIndex;
+    import std.meta: AliasSeq;
+
+    static if(is(typeof(T.init.opIndex(0))))
+        alias OpIndices = OpIndex!();
+    else
+        alias OpIndices = AliasSeq!();
 }
 
 private template Properties(functions...) {

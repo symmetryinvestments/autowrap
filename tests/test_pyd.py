@@ -204,3 +204,6 @@ def test_class_wrap():
 
     assert bizzy > 1
     assert len(bizzy) == 401
+
+    assert bizzy[0] == 0.0
+    assert bizzy[1] == 4.4
