@@ -74,7 +74,7 @@ class Bizzy {
         _m = cast(int)(d*1000) + cast(int)(a*10 + b);
     }
 
-    Py_ssize_t pylen(){
+    Py_ssize_t length(){
         return 401;
     }
 
