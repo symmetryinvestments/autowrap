@@ -191,3 +191,5 @@ def test_class_wrap():
     assert str(bizzy) == 'bye'
     assert repr(bizzy) == 'bye'
     assert bizzy + 1 == 2
+    assert bizzy * 1 == 3
+    assert bizzy ** 1 == 4

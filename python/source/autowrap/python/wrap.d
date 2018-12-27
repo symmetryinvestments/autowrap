@@ -215,11 +215,13 @@ private template OpBinaries(T) {
     import std.traits: hasMember;
 
     enum hasOperator(string op) = is(typeof(probeOpBinary!(T, op)));
-    alias toPyd(string op) = OpBinary!("+");
+    alias toPyd(string op) = OpBinary!op;
 
     static if(hasMember!(T, "opBinary")) {
-        alias pythonOperators = AliasSeq!("+");
-        alias dOperatorNames = Filter!(hasOperator, pythonOperators);
+        alias pythonableOperators = AliasSeq!(
+            "+", "-", "*", "/", "%", "^^", "<<", ">>", "&", "^", "|"
+        );
+        alias dOperatorNames = Filter!(hasOperator, pythonableOperators);
         alias OpBinaries = staticMap!(toPyd, dOperatorNames);
     } else
         alias OpBinaries = AliasSeq!();
