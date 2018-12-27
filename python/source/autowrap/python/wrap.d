@@ -215,7 +215,7 @@ private template OpBinaries(T) {
     import std.meta: AliasSeq, staticMap, Filter;
     import std.traits: hasMember;
 
-    enum hasOperator(string op) = is(typeof(probeOpBinary!(T, op)));
+    enum hasOperator(string op) = is(typeof(probeTemplate!(T, "opBinary", op)));
     alias toPyd(string op) = OpBinary!op;
 
     static if(hasMember!(T, "opBinary")) {
@@ -233,7 +233,7 @@ private template OpBinaryRights(T) {
     import std.meta: AliasSeq, staticMap, Filter;
     import std.traits: hasMember;
 
-    enum hasOperator(string op) = is(typeof(probeOpBinaryRight!(T, op)));
+    enum hasOperator(string op) = is(typeof(probeTemplate!(T, "opBinaryRight", op)));
     alias toPyd(string op) = OpBinaryRight!op;
 
     static if(hasMember!(T, "opBinaryRight")) {
@@ -246,20 +246,15 @@ private template OpBinaryRights(T) {
         alias OpBinaryRights = AliasSeq!();
 }
 
-private auto probeOpBinary(T, string op)() {
-    import std.traits: ReturnType, Parameters;
-    import std.meta: Alias;
-    alias func = T.opBinary;
-    auto obj = T.init;
-    ReturnType!(func!op) ret = obj.opBinary!op(Parameters!(func!op).init);
-}
 
-private auto probeOpBinaryRight(T, string op)() {
+private auto probeTemplate(T, string templateName, string op)() {
     import std.traits: ReturnType, Parameters;
     import std.meta: Alias;
-    alias func = T.opBinaryRight;
+    mixin(`alias func = T.` ~ templateName ~ `;`);
+    alias R = ReturnType!(func!op);
+    alias P = Parameters!(func!op);
     auto obj = T.init;
-    ReturnType!(func!op) ret = obj.opBinaryRight!op(Parameters!(func!op).init);
+    mixin(`R ret = obj.` ~ templateName ~ `!op(P.init);`);
 }
 
 
