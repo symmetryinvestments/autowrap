@@ -140,6 +140,7 @@ auto wrapAggregate(T)() if(isUserAggregate!T) {
         staticMap!(InitTuple, ConstructorParamTuples!T),
         staticMap!(Repr, Filter!(isToString, memberFunctions)),
         staticMap!(Property, Properties!nonStaticMemberFunctions),
+        OpUnaries!T,
         OpBinaries!T,
         OpBinaryRights!T,
         staticMap!(DefOpSlice, OpSlices!T),
@@ -218,10 +219,11 @@ private template PythonableBinaryOperators() {
     );
 }
 
-private alias OpBinaries(T)     = OpBinaryImpl!(T, "opBinary");
-private alias OpBinaryRights(T) = OpBinaryImpl!(T, "opBinaryRight");
+private alias OpBinaries(T)     = Operators!(T, "opBinary");
+private alias OpBinaryRights(T) = Operators!(T, "opBinaryRight");
+private alias OpUnaries(T)      = Operators!(T, "opUnary");
 
-private template OpBinaryImpl(T, string name) {
+private template Operators(T, string name) {
     import std.uni: toUpper;
     import std.conv: text;
 
@@ -233,11 +235,15 @@ private template OpBinaryImpl(T, string name) {
     private enum hasOperator(string op) = is(typeof(probeTemplate!(T, name, op)));
     mixin(`alias toPyd(string op) = ` ~ pydName ~ `!op;`);
 
+    alias pythonableOperators = AliasSeq!(
+        "+", "-", "*", "/", "%", "^^", "<<", ">>", "&", "^", "|", "in", "~",
+    );
+
     static if(hasMember!(T, name)) {
-        private alias dOperatorNames = Filter!(hasOperator, PythonableBinaryOperators!());
-        alias OpBinaryImpl = staticMap!(toPyd, dOperatorNames);
+        private alias dOperatorNames = Filter!(hasOperator, pythonableOperators);
+        alias Operators = staticMap!(toPyd, dOperatorNames);
     } else
-        alias OpBinaryImpl = AliasSeq!();
+        alias Operators = AliasSeq!();
 }
 
 
