@@ -151,6 +151,7 @@ auto wrapAggregate(T)() if(isUserAggregate!T) {
         OpOpAssigns!T,
         OpIndexAssigns!T,
         OpSliceAssigns!T,
+        OpCalls!T,
    );
 }
 
@@ -348,6 +349,19 @@ private template OpSliceAssigns(T) {
         alias OpSliceAssigns = AliasSeq!();
 }
 
+
+private template OpCalls(T) {
+    import pyd.pyd: OpCall;
+    import std.meta: AliasSeq, staticMap;
+    import std.traits: hasMember, Parameters;
+
+    static if(hasMember!(T, "opCall")) {
+        alias overloads = AliasSeq!(__traits(getOverloads, T, "opCall"));
+        alias opCall(alias F) = OpCall!(Parameters!F);
+        alias OpCalls = staticMap!(opCall, overloads);
+    } else
+        alias OpCalls = AliasSeq!();
+}
 
 private template Properties(functions...) {
     import std.meta: Filter;
