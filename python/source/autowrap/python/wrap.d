@@ -211,13 +211,26 @@ private template InitTuple(alias Tuple) {
 
 private template OpBinaries(T) {
     import pyd.pyd: OpBinary;
-    import std.meta: AliasSeq;
+    import std.meta: AliasSeq, staticMap, Filter;
+    import std.traits: hasMember;
 
-    // TODO - other binary operators. How to discover this otherwise?
-    static if(__traits(compiles, T.init + T.init))
-        alias OpBinaries = AliasSeq!(OpBinary!("+"));
-    else
+    enum hasOperator(string op) = is(typeof(probeOpBinary!(T, op)));
+    alias toPyd(string op) = OpBinary!("+");
+
+    static if(hasMember!(T, "opBinary")) {
+        alias pythonOperators = AliasSeq!("+");
+        alias dOperatorNames = Filter!(hasOperator, pythonOperators);
+        alias OpBinaries = staticMap!(toPyd, dOperatorNames);
+    } else
         alias OpBinaries = AliasSeq!();
+}
+
+private auto probeOpBinary(T, string op)() {
+    import std.traits: ReturnType, Parameters;
+    import std.meta: Alias;
+    alias func = T.opBinary;
+    auto obj = T.init;
+    ReturnType!(func!op) ret = obj.opBinary!op(Parameters!(func!op).init);
 }
 
 

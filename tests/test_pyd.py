@@ -190,6 +190,4 @@ def test_class_wrap():
     assert Bizzy.b(1) == 14
     assert str(bizzy) == 'bye'
     assert repr(bizzy) == 'bye'
-    # FIXME
-    with pytest.raises(TypeError):
-        assert bizzy + 1 == 2
+    assert bizzy + 1 == 2
