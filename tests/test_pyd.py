@@ -181,9 +181,8 @@ def test_const():
     assert boozy.p1c == 300
 
 
-def test_class_wrap():
+def test_class_wrap_bizzy():
     from pyd import Bizzy
-    import pytest
 
     bizzy = Bizzy(i=4)
     assert bizzy.a(1) == 12
@@ -222,3 +221,87 @@ def test_class_wrap():
     assert bizzy.m() == 4523
 
     assert bizzy(40.5) == 45023
+
+
+
+def test_class_wrap_bizzy2():
+    from pyd import Bizzy2
+    import pytest
+
+    bizzy = Bizzy2(4)
+    assert bizzy.jj() == [4]
+
+    bizzy = Bizzy2(4, 5)
+    assert bizzy.jj() == [4, 5]
+
+    bizzy = Bizzy2(i=4)
+    assert bizzy.jj() == [4]
+
+    bizzy = Bizzy2(i=[4,5])
+    assert bizzy.jj() == [4, 5]
+
+    assert Bizzy2.a(7, 32.1) == 6427
+    assert Bizzy2.a(i=7, d=32.1) == 6427
+    assert Bizzy2.a(d=32.1, i=7) == 6427
+
+    assert Bizzy2.b(7, 32.1) == 32173
+    assert Bizzy2.b(d=32.1, i=7) == 32173
+    assert Bizzy2.b(i=7, d=32.1) == 32173
+    assert Bizzy2.b(7) == 3273
+    assert Bizzy2.b(i=7) == 3273
+
+    assert Bizzy2.c(7) == 7
+    assert Bizzy2.c(i=7) == 7
+    assert Bizzy2.c(i=[7]) == 7
+    assert Bizzy2.c(7, 5, 6) == 657
+    assert Bizzy2.c(i=[7, 5, 6]) == 657
+
+    assert Bizzy2.d(i=7, k='foobiz') == "<7, 101, 'foobiz'>"
+    with pytest.raises(RuntimeError) as ex:
+        Bizzy2.d(i=7, s='foobiz')
+    assert "Bizzy2.d() got an unexpected keyword argument 's'" in str(ex.value)
+
+
+def test_class_wrap_bizzy3():
+    from pyd import Bizzy3
+
+    bizzy = Bizzy3(1,2)
+    assert bizzy.a(7, 32.1) == 3224
+    assert bizzy.a(i=7, d=32.1) == 3224
+    assert bizzy.a(d=32.1,i=7) == 3224
+
+    assert bizzy.b(7, 32.1) == 32244
+    assert bizzy.b(d=32.1,i=7) == 32244
+    assert bizzy.b(i=7, d=32.1) == 32244
+    assert bizzy.b(7) == 3344
+    assert bizzy.b(i=7) == 3344
+
+    assert bizzy.c(7) == 7
+    assert bizzy.c(i=7) == 7
+    assert bizzy.c(i=[7]) == 7
+    assert bizzy.c(7,5,6) == 756
+    assert bizzy.c(i=[7,5,6]) == 756
+
+    assert bizzy.d(i=7, k='foobiz') == "<7, 102, 'foobiz'>"
+
+
+def test_class_wrap_bizzy4():
+    from pyd import Bizzy4
+
+    bizzy = Bizzy4()
+    assert bizzy.i == 4
+    bizzy.i = 10
+    assert bizzy.i == 10
+    assert len(bizzy) == 5
+    assert repr(bizzy) == "cowabunga"
+
+
+def test_class_wrap_bizzy5():
+    from pyd import Bizzy5
+
+    boozy = Bizzy5(1)
+    assert boozy.a() == "<1, 1, 'hi'>"
+    boozy = Bizzy5(1, d=2.0)
+    assert boozy.a() == "<1, 2, 'hi'>"
+    boozy = Bizzy5(1, s='ten')
+    assert boozy.a() == "<1, 1, 'ten'>"
