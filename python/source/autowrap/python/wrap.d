@@ -143,6 +143,7 @@ auto wrapAggregate(T)() if(isUserAggregate!T) {
         OpUnaries!T,
         OpBinaries!T,
         OpBinaryRights!T,
+        OpCmps!T,
         staticMap!(DefOpSlice, OpSlices!T),
    );
 }
@@ -263,6 +264,17 @@ private auto probeTemplate(T, string templateName, string op)() {
         mixin(`R ret = obj.` ~ templateName ~ `!op(P.init);`);
 }
 
+
+private template OpCmps(T) {
+    import pyd.pyd: OpCompare;
+    import std.traits: hasMember;
+    import std.meta: AliasSeq;
+
+    static if(hasMember!(T, "opCmp"))
+        alias OpCmps = AliasSeq!(OpCompare!());
+    else
+        alias OpCmps = AliasSeq!();
+}
 
 private template Properties(functions...) {
     import std.meta: Filter;

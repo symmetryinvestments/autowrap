@@ -201,3 +201,5 @@ def test_class_wrap():
 
     assert +bizzy == 55
     assert ~bizzy == 44
+
+    assert bizzy > 1
