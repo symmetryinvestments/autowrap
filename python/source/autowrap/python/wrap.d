@@ -146,7 +146,8 @@ auto wrapAggregate(T)() if(isUserAggregate!T) {
         OpCmps!T,
         Lengths!T,
         OpIndices!T,
-        staticMap!(DefOpSlice, OpSlices!T),
+        DefOpSlices!T,
+        OpSliceRanges!T,
    );
 }
 
@@ -165,23 +166,46 @@ private template PublicFields(T) {
 
 }
 
+
+private template DefOpSlices(T) {
+    import std.traits: hasMember, Parameters;
+    import std.meta: AliasSeq, Filter, staticMap;
+
+    static if(hasMember!(T, "opSlice")) {
+        // See testdll for details on this
+        enum hasNoParams(alias F) = Parameters!F.length == 0;
+        alias iters = Filter!(hasNoParams, __traits(getOverloads, T, "opSlice"));
+        alias defIters = staticMap!(DefOpSlice, iters);
+
+        alias DefOpSlices = AliasSeq!(defIters);
+    } else
+        alias DefOpSlices = AliasSeq!();
+}
+
 private template DefOpSlice(alias F) {
     import pyd.pyd: Def, PyName;
     import std.traits: ReturnType, Parameters;
     alias DefOpSlice = Def!(F, PyName!"__iter__", ReturnType!F function(Parameters!F));
 }
 
-private template OpSlices(T) {
-    import std.traits: hasMember, Parameters;
-    import std.meta: AliasSeq, Filter;
+private template OpSliceRanges(T) {
+    import pyd.pyd: OpSlice;
+    import std.traits: hasMember, Parameters, isIntegral;
+    import std.meta: AliasSeq, Filter, allSatisfy, staticMap;
 
     static if(hasMember!(T, "opSlice")) {
-        // See testdll for details on this
-        enum hasNoParams(alias F) = Parameters!F.length == 0;
-        alias OpSlices = Filter!(hasNoParams, __traits(getOverloads, T, "opSlice"));
+        enum hasTwoIntParams(alias F) =
+            allSatisfy!(isIntegral, Parameters!F) && Parameters!F.length == 2;
+        alias twoInts = Filter!(hasTwoIntParams, __traits(getOverloads, T, "opSlice"));
+
+        static if(twoInts.length > 0)
+            alias OpSliceRanges =  OpSlice!();
+        else
+            alias OpSliceRanges = AliasSeq!();
     } else
-        alias OpSlices = AliasSeq!();
+        alias OpSliceRanges = AliasSeq!();
 }
+
 
 
 // A tuple, with as many elements as constructors. Each element is a
@@ -297,6 +321,7 @@ private template OpIndices(T) {
     else
         alias OpIndices = AliasSeq!();
 }
+
 
 private template Properties(functions...) {
     import std.meta: Filter;

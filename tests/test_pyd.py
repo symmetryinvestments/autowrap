@@ -207,3 +207,4 @@ def test_class_wrap():
 
     assert bizzy[0] == 0.0
     assert bizzy[1] == 4.4
+    assert bizzy[1:2] == [1, 2, 3]

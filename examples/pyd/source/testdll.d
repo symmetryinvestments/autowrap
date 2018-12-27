@@ -41,7 +41,7 @@ class TestDllFoo {
         return format("Foo.foo(): i = %s", m_i);
     }
     int length() { return 10; }
-    int opSlice(size_t i1, size_t i2) {
+    int opSlice(long i1, long i2) {
         return 12;
     }
     int opIndex(int x, int y) {
