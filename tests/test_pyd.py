@@ -215,3 +215,6 @@ def test_class_wrap():
     assert bizzy.m() == 36
     bizzy **= 4
     assert bizzy.m() == 48
+
+    bizzy[2] = 3.5
+    assert bizzy.m() == 3502
