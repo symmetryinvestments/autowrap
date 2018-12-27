@@ -208,3 +208,10 @@ def test_class_wrap():
     assert bizzy[0] == 0.0
     assert bizzy[1] == 4.4
     assert bizzy[1:2] == [1, 2, 3]
+
+    bizzy += 2
+    assert bizzy.m() == 24
+    bizzy %= 3
+    assert bizzy.m() == 36
+    bizzy **= 4
+    assert bizzy.m() == 48

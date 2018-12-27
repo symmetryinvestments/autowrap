@@ -148,6 +148,7 @@ auto wrapAggregate(T)() if(isUserAggregate!T) {
         OpIndices!T,
         DefOpSlices!T,
         OpSliceRanges!T,
+        OpOpAssigns!T,
    );
 }
 
@@ -239,22 +240,21 @@ private template InitTuple(alias Tuple) {
 }
 
 
-private template PythonableBinaryOperators() {
-    import std.meta: AliasSeq;
-    alias PythonableBinaryOperators = AliasSeq!(
-        "+", "-", "*", "/", "%", "^^", "<<", ">>", "&", "^", "|", "in",
-    );
-}
-
 private alias OpBinaries(T)     = Operators!(T, "opBinary");
 private alias OpBinaryRights(T) = Operators!(T, "opBinaryRight");
 private alias OpUnaries(T)      = Operators!(T, "opUnary");
+private alias OpOpAssigns(T)    = Operators!(T, "opOpAssign");
 
 private template Operators(T, string name) {
     import std.uni: toUpper;
     import std.conv: text;
 
-    private enum pydName = name[0].toUpper.text ~ name[1..$];
+    private enum pascalName = name[0].toUpper.text ~ name[1..$];
+    static if(pascalName == "OpOpAssign")
+        private enum pydName = "OpAssign";
+    else
+        private enum pydName = pascalName;
+
     mixin(`import pyd.pyd: ` ~ pydName ~ `;`);
     import std.meta: AliasSeq, staticMap, Filter;
     import std.traits: hasMember;
