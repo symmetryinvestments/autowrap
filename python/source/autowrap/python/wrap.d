@@ -210,51 +210,51 @@ private template InitTuple(alias Tuple) {
     alias InitTuple = Init!(Tuple.Types);
 }
 
-private template OpBinaries(T) {
-    import pyd.pyd: OpBinary;
-    import std.meta: AliasSeq, staticMap, Filter;
-    import std.traits: hasMember;
 
-    enum hasOperator(string op) = is(typeof(probeTemplate!(T, "opBinary", op)));
-    alias toPyd(string op) = OpBinary!op;
-
-    static if(hasMember!(T, "opBinary")) {
-        alias pythonableOperators = AliasSeq!(
-            "+", "-", "*", "/", "%", "^^", "<<", ">>", "&", "^", "|", "in",
-        );
-        alias dOperatorNames = Filter!(hasOperator, pythonableOperators);
-        alias OpBinaries = staticMap!(toPyd, dOperatorNames);
-    } else
-        alias OpBinaries = AliasSeq!();
+private template PythonableBinaryOperators() {
+    import std.meta: AliasSeq;
+    alias PythonableBinaryOperators = AliasSeq!(
+        "+", "-", "*", "/", "%", "^^", "<<", ">>", "&", "^", "|", "in",
+    );
 }
 
-private template OpBinaryRights(T) {
-    import pyd.pyd: OpBinaryRight;
+private alias OpBinaries(T)     = OpBinaryImpl!(T, "opBinary");
+private alias OpBinaryRights(T) = OpBinaryImpl!(T, "opBinaryRight");
+
+private template OpBinaryImpl(T, string name) {
+    import std.uni: toUpper;
+    import std.conv: text;
+
+    private enum pydName = name[0].toUpper.text ~ name[1..$];
+    mixin(`import pyd.pyd: ` ~ pydName ~ `;`);
     import std.meta: AliasSeq, staticMap, Filter;
     import std.traits: hasMember;
 
-    enum hasOperator(string op) = is(typeof(probeTemplate!(T, "opBinaryRight", op)));
-    alias toPyd(string op) = OpBinaryRight!op;
+    private enum hasOperator(string op) = is(typeof(probeTemplate!(T, name, op)));
+    mixin(`alias toPyd(string op) = ` ~ pydName ~ `!op;`);
 
-    static if(hasMember!(T, "opBinaryRight")) {
-        alias pythonableOperators = AliasSeq!(
-            "+", "-", "*", "/", "%", "^^", "<<", ">>", "&", "^", "|", "in",
-        );
-        alias dOperatorNames = Filter!(hasOperator, pythonableOperators);
-        alias OpBinaryRights = staticMap!(toPyd, dOperatorNames);
+    static if(hasMember!(T, name)) {
+        private alias dOperatorNames = Filter!(hasOperator, PythonableBinaryOperators!());
+        alias OpBinaryImpl = staticMap!(toPyd, dOperatorNames);
     } else
-        alias OpBinaryRights = AliasSeq!();
+        alias OpBinaryImpl = AliasSeq!();
 }
 
 
 private auto probeTemplate(T, string templateName, string op)() {
     import std.traits: ReturnType, Parameters;
     import std.meta: Alias;
+
     mixin(`alias func = T.` ~ templateName ~ `;`);
     alias R = ReturnType!(func!op);
     alias P = Parameters!(func!op);
+
     auto obj = T.init;
-    mixin(`R ret = obj.` ~ templateName ~ `!op(P.init);`);
+
+    static if(is(R == void))
+        mixin(`obj.` ~ templateName ~ `!op(P.init);`);
+    else
+        mixin(`R ret = obj.` ~ templateName ~ `!op(P.init);`);
 }
 
 
