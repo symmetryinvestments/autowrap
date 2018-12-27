@@ -183,6 +183,7 @@ def test_const():
 
 def test_class_wrap_bizzy():
     from pyd import Bizzy
+    import pytest
 
     bizzy = Bizzy(i=4)
     assert bizzy.a(1) == 12

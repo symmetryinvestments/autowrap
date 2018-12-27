@@ -202,9 +202,13 @@ private template OpSliceRanges(T) {
             allSatisfy!(isIntegral, Parameters!F) && Parameters!F.length == 2;
         alias twoInts = Filter!(hasTwoIntParams, __traits(getOverloads, T, "opSlice"));
 
-        static if(twoInts.length > 0)
-            alias OpSliceRanges =  OpSlice!();
-        else
+        static if(twoInts.length > 0) {
+            // pyd is very specific about this for some reason
+            static if(__traits(compiles, OpSlice!().Inner!T))
+                alias OpSliceRanges =  OpSlice!();
+            else
+                alias OpSliceRanges = AliasSeq!();
+        } else
             alias OpSliceRanges = AliasSeq!();
     } else
         alias OpSliceRanges = AliasSeq!();
@@ -299,9 +303,12 @@ private template OpCmps(T) {
     import std.traits: hasMember;
     import std.meta: AliasSeq;
 
-    static if(hasMember!(T, "opCmp"))
-        alias OpCmps = AliasSeq!(OpCompare!());
-    else
+    static if(hasMember!(T, "opCmp")) {
+        static if(__traits(compiles, OpCompare!().Inner!T))
+            alias OpCmps = AliasSeq!(OpCompare!());
+        else
+            alias OpCmps = AliasSeq!();
+    } else
         alias OpCmps = AliasSeq!();
 }
 
@@ -331,9 +338,12 @@ private template OpIndexAssigns(T) {
     import std.meta: AliasSeq;
     import std.traits: hasMember;
 
-    static if(hasMember!(T, "opIndexAssign"))
-        alias OpIndexAssigns = OpIndexAssign!();
-    else
+    static if(hasMember!(T, "opIndexAssign")) {
+        static if(__traits(compiles, OpIndexAssign!().Inner!T))
+            alias OpIndexAssigns = OpIndexAssign!();
+        else
+            alias OpIndexAssigns = AliasSeq!();
+    } else
         alias OpIndexAssigns = AliasSeq!();
 }
 
@@ -343,9 +353,12 @@ private template OpSliceAssigns(T) {
     import std.meta: AliasSeq;
     import std.traits: hasMember;
 
-    static if(hasMember!(T, "opSliceAssign"))
-        alias OpSliceAssigns = OpSliceAssign!();
-    else
+    static if(hasMember!(T, "opSliceAssign")) {
+        static if(__traits(compiles, OpSliceAssign!().Inner!T))
+            alias OpSliceAssigns = OpSliceAssign!();
+        else
+            alias OpSliceAssigns = AliasSeq!();
+    } else
         alias OpSliceAssigns = AliasSeq!();
 }
 
