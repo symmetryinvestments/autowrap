@@ -6,6 +6,7 @@ mixin(
         LibraryName("numpytests"),
         Modules(
             Module("ints", Yes.alwaysExport),
+            Module("floats", Yes.alwaysExport),
         ),
     )
 );

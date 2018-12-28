@@ -68,3 +68,19 @@ def test_uint64():
 
     assert add1(uint64(2), uint64(3)) == 6
     assert add1(uint64(1), uint64(1)) == 3
+
+
+def test_float32():
+    from numpytests import twice
+    from numpy import float32
+    import pytest
+
+    assert twice(float32(33.3)) == pytest.approx(66.6)
+
+
+def test_float64():
+    from numpytests import twice
+    from numpy import float64
+    import pytest
+
+    assert twice(float64(33.3)) == pytest.approx(66.6)
