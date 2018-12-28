@@ -1,0 +1,11 @@
+import autowrap.python;
+import std.typecons: Yes;
+
+mixin(
+    wrapAll(
+        LibraryName("numpytests"),
+        Modules(
+            Module("ints", Yes.alwaysExport),
+        ),
+    )
+);
