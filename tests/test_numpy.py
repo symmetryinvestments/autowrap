@@ -116,3 +116,13 @@ def test_datetime64():
 
     incm3 = inc_year(datetime64(datetime(2018, 1, 2, 3, 4, 5)), -3)
     assert incm3 == datetime(2015, 1, 2, 3, 4, 5)
+
+
+def test_append42():
+    from numpytests import append42
+    from numpy import array
+    import pytest
+
+    # FIXME
+    with pytest.raises(AssertionError):
+        assert append42(array([1, 2, 3])) == [1, 2, 3, 42]

@@ -9,6 +9,7 @@ mixin(
             Module("floats", Yes.alwaysExport),
             Module("complex", Yes.alwaysExport),
             Module("dates", Yes.alwaysExport),
+            Module("arrays", Yes.alwaysExport),
         ),
     )
 );
