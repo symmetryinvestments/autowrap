@@ -118,7 +118,7 @@ def test_datetime64():
     assert incm3 == datetime(2015, 1, 2, 3, 4, 5)
 
 
-def test_append42():
+def test_array():
     from numpytests import append42
     from numpy import array
     import pytest
@@ -126,3 +126,13 @@ def test_append42():
     # FIXME
     with pytest.raises(AssertionError):
         assert append42(array([1, 2, 3])) == [1, 2, 3, 42]
+
+
+def test_arange():
+    from numpytests import append42
+    from numpy import arange
+    import pytest
+
+    # FIXME
+    with pytest.raises(AssertionError):
+        assert append42(arange(3)) == [0, 1, 2, 42]
