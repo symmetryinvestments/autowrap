@@ -84,3 +84,23 @@ def test_float64():
     import pytest
 
     assert twice(float64(33.3)) == pytest.approx(66.6)
+
+
+def test_complex64():
+    from numpytests import switch_coord
+    from numpy import complex64
+    import pytest
+
+    switched = switch_coord(complex64(33.3))
+    assert switched.real == pytest.approx(0.0)
+    assert switched.imag == pytest.approx(33.3)
+
+
+def test_complex128():
+    from numpytests import switch_coord
+    from numpy import complex128
+    import pytest
+
+    switched = switch_coord(complex128(33.3))
+    assert switched.real == pytest.approx(0.0)
+    assert switched.imag == pytest.approx(33.3)

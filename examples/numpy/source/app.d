@@ -7,6 +7,7 @@ mixin(
         Modules(
             Module("ints", Yes.alwaysExport),
             Module("floats", Yes.alwaysExport),
+            Module("complex", Yes.alwaysExport),
         ),
     )
 );
