@@ -104,3 +104,15 @@ def test_complex128():
     switched = switch_coord(complex128(33.3))
     assert switched.real == pytest.approx(0.0)
     assert switched.imag == pytest.approx(33.3)
+
+
+def test_datetime64():
+    from numpytests import inc_year
+    from numpy import datetime64
+    from datetime import datetime
+
+    inc2 = inc_year(datetime64(datetime(2018, 1, 2, 3, 4, 5)), 2)
+    assert inc2 == datetime(2020, 1, 2, 3, 4, 5)
+
+    incm3 = inc_year(datetime64(datetime(2018, 1, 2, 3, 4, 5)), -3)
+    assert incm3 == datetime(2015, 1, 2, 3, 4, 5)
