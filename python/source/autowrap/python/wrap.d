@@ -140,8 +140,18 @@ auto wrapAggregate(T)() if(isUserAggregate!T) {
         staticMap!(InitTuple, ConstructorParamTuples!T),
         staticMap!(Repr, Filter!(isToString, memberFunctions)),
         staticMap!(Property, Properties!nonStaticMemberFunctions),
+        OpUnaries!T,
         OpBinaries!T,
-        staticMap!(DefOpSlice, OpSlices!T),
+        OpBinaryRights!T,
+        OpCmps!T,
+        Lengths!T,
+        OpIndices!T,
+        DefOpSlices!T,
+        OpSliceRanges!T,
+        OpOpAssigns!T,
+        OpIndexAssigns!T,
+        OpSliceAssigns!T,
+        OpCalls!T,
    );
 }
 
@@ -160,23 +170,50 @@ private template PublicFields(T) {
 
 }
 
+
+private template DefOpSlices(T) {
+    import std.traits: hasMember, Parameters;
+    import std.meta: AliasSeq, Filter, staticMap;
+
+    static if(hasMember!(T, "opSlice")) {
+        // See testdll for details on this
+        enum hasNoParams(alias F) = Parameters!F.length == 0;
+        alias iters = Filter!(hasNoParams, __traits(getOverloads, T, "opSlice"));
+        alias defIters = staticMap!(DefOpSlice, iters);
+
+        alias DefOpSlices = AliasSeq!(defIters);
+    } else
+        alias DefOpSlices = AliasSeq!();
+}
+
 private template DefOpSlice(alias F) {
     import pyd.pyd: Def, PyName;
     import std.traits: ReturnType, Parameters;
     alias DefOpSlice = Def!(F, PyName!"__iter__", ReturnType!F function(Parameters!F));
 }
 
-private template OpSlices(T) {
-    import std.traits: hasMember, Parameters;
-    import std.meta: AliasSeq, Filter;
+private template OpSliceRanges(T) {
+    import pyd.pyd: OpSlice;
+    import std.traits: hasMember, Parameters, isIntegral;
+    import std.meta: AliasSeq, Filter, allSatisfy, staticMap;
 
     static if(hasMember!(T, "opSlice")) {
-        // See testdll for details on this
-        enum hasNoParams(alias F) = Parameters!F.length == 0;
-        alias OpSlices = Filter!(hasNoParams, __traits(getOverloads, T, "opSlice"));
+        enum hasTwoIntParams(alias F) =
+            allSatisfy!(isIntegral, Parameters!F) && Parameters!F.length == 2;
+        alias twoInts = Filter!(hasTwoIntParams, __traits(getOverloads, T, "opSlice"));
+
+        static if(twoInts.length > 0) {
+            // pyd is very specific about this for some reason
+            static if(__traits(compiles, OpSlice!().Inner!T))
+                alias OpSliceRanges =  OpSlice!();
+            else
+                alias OpSliceRanges = AliasSeq!();
+        } else
+            alias OpSliceRanges = AliasSeq!();
     } else
-        alias OpSlices = AliasSeq!();
+        alias OpSliceRanges = AliasSeq!();
 }
+
 
 
 // A tuple, with as many elements as constructors. Each element is a
@@ -209,17 +246,135 @@ private template InitTuple(alias Tuple) {
     alias InitTuple = Init!(Tuple.Types);
 }
 
-private template OpBinaries(T) {
-    import pyd.pyd: OpBinary;
-    import std.meta: AliasSeq;
 
-    // TODO - other binary operators. How to discover this otherwise?
-    static if(__traits(compiles, T.init + T.init))
-        alias OpBinaries = AliasSeq!(OpBinary!("+"));
+private alias OpBinaries(T)     = Operators!(T, "opBinary");
+private alias OpBinaryRights(T) = Operators!(T, "opBinaryRight");
+private alias OpUnaries(T)      = Operators!(T, "opUnary");
+private alias OpOpAssigns(T)    = Operators!(T, "opOpAssign");
+
+private template Operators(T, string name) {
+    import std.uni: toUpper;
+    import std.conv: text;
+
+    private enum pascalName = name[0].toUpper.text ~ name[1..$];
+    static if(pascalName == "OpOpAssign")
+        private enum pydName = "OpAssign";
     else
-        alias OpBinaries = AliasSeq!();
+        private enum pydName = pascalName;
+
+    mixin(`import pyd.pyd: ` ~ pydName ~ `;`);
+    import std.meta: AliasSeq, staticMap, Filter;
+    import std.traits: hasMember;
+
+    private enum hasOperator(string op) = is(typeof(probeTemplate!(T, name, op)));
+    mixin(`alias toPyd(string op) = ` ~ pydName ~ `!op;`);
+
+    alias pythonableOperators = AliasSeq!(
+        "+", "-", "*", "/", "%", "^^", "<<", ">>", "&", "^", "|", "in", "~",
+    );
+
+    static if(hasMember!(T, name)) {
+        private alias dOperatorNames = Filter!(hasOperator, pythonableOperators);
+        alias Operators = staticMap!(toPyd, dOperatorNames);
+    } else
+        alias Operators = AliasSeq!();
 }
 
+
+private auto probeTemplate(T, string templateName, string op)() {
+    import std.traits: ReturnType, Parameters;
+    import std.meta: Alias;
+
+    mixin(`alias func = T.` ~ templateName ~ `;`);
+    alias R = ReturnType!(func!op);
+    alias P = Parameters!(func!op);
+
+    auto obj = T.init;
+
+    static if(is(R == void))
+        mixin(`obj.` ~ templateName ~ `!op(P.init);`);
+    else
+        mixin(`R ret = obj.` ~ templateName ~ `!op(P.init);`);
+}
+
+
+private template OpCmps(T) {
+    import pyd.pyd: OpCompare;
+    import std.traits: hasMember;
+    import std.meta: AliasSeq;
+
+    static if(hasMember!(T, "opCmp")) {
+        static if(__traits(compiles, OpCompare!().Inner!T))
+            alias OpCmps = AliasSeq!(OpCompare!());
+        else
+            alias OpCmps = AliasSeq!();
+    } else
+        alias OpCmps = AliasSeq!();
+}
+
+private template Lengths(T) {
+    import pyd.pyd: Len;
+    import std.meta: AliasSeq;
+
+    static if(is(typeof(T.init.length)))
+        alias Lengths = Len!(T.length);
+    else
+        alias Lengths = AliasSeq!();
+}
+
+private template OpIndices(T) {
+    import pyd.pyd: OpIndex;
+    import std.meta: AliasSeq;
+
+    static if(is(typeof(T.init.opIndex(0))))
+        alias OpIndices = OpIndex!();
+    else
+        alias OpIndices = AliasSeq!();
+}
+
+
+private template OpIndexAssigns(T) {
+    import pyd.pyd: OpIndexAssign;
+    import std.meta: AliasSeq;
+    import std.traits: hasMember;
+
+    static if(hasMember!(T, "opIndexAssign")) {
+        static if(__traits(compiles, OpIndexAssign!().Inner!T))
+            alias OpIndexAssigns = OpIndexAssign!();
+        else
+            alias OpIndexAssigns = AliasSeq!();
+    } else
+        alias OpIndexAssigns = AliasSeq!();
+}
+
+
+private template OpSliceAssigns(T) {
+    import pyd.pyd: OpSliceAssign;
+    import std.meta: AliasSeq;
+    import std.traits: hasMember;
+
+    static if(hasMember!(T, "opSliceAssign")) {
+        static if(__traits(compiles, OpSliceAssign!().Inner!T))
+            alias OpSliceAssigns = OpSliceAssign!();
+        else
+            alias OpSliceAssigns = AliasSeq!();
+    } else
+        alias OpSliceAssigns = AliasSeq!();
+}
+
+
+private template OpCalls(T) {
+    import pyd.pyd: OpCall;
+    import std.meta: AliasSeq, staticMap;
+    import std.traits: hasMember, Parameters;
+
+    static if(hasMember!(T, "opCall")) {
+        alias overloads = AliasSeq!(__traits(getOverloads, T, "opCall"));
+        alias opCall(alias F) = OpCall!(Parameters!F);
+        alias OpCalls = staticMap!(opCall, overloads);
+    } else
+        alias OpCalls = AliasSeq!();
+}
 
 private template Properties(functions...) {
     import std.meta: Filter;
