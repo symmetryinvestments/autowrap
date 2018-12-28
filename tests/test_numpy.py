@@ -136,3 +136,20 @@ def test_arange():
     # FIXME
     with pytest.raises(AssertionError):
         assert append42(arange(3)) == [0, 1, 2, 42]
+
+def test_ndarray():
+    from numpytests import matrix_inc1
+    from numpy import ndarray
+    from pytest import approx
+
+    nd = ndarray(shape=(2,2), dtype=float, order='F')
+    nd[0, 0] = 1.1
+    nd[0, 1] = 2.2
+    nd[1, 0] = 3.3
+    nd[1, 1] = 4.4
+
+    lst = matrix_inc1(nd)
+    assert lst[0][0] == approx(2.1)
+    assert lst[0][1] == approx(3.2)
+    assert lst[1][0] == approx(4.3)
+    assert lst[1][1] == approx(5.4)
