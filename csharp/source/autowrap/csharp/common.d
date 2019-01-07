@@ -13,6 +13,32 @@ public string generateSharedTypes() {
         extern(C) export struct datetime {
             long ticks;
             long offset;
+
+            public this(Duration value) {
+                this.ticks = value.total!"hnsecs";
+                this.offset = 0;
+            }
+
+            public this(DateTime value) {
+                this.ticks = SysTime(value).stdTime;
+                this.offset = 0;
+            }
+
+            public this(Date value) {
+                this.ticks = SysTime(value).stdTime;
+                this.offset = 0;
+            }
+
+            public this(TimeOfDay value) {
+                Duration t = dur!"hours"(value.hour) + dur!"minutes"(value.minute) + dur!"seconds"(value.second);
+                this.ticks = value.total!"hnsecs";
+                this.offset = 0;
+            }
+
+            public this(SysTime value) {
+                this.ticks = value.stdTime;
+                this.offset = value.utcOffset.total!"hnsecs";
+            }
         }
     };
 }
@@ -21,10 +47,8 @@ package string getInterfaceTypeString(T)() {
     import std.datetime : DateTime, SysTime, Date, TimeOfDay, Duration;
     import std.traits : fullyQualifiedName;
 
-    if (is(T == DateTime) || is(T == SysTime) || is(T == Date) || is(T == TimeOfDay)) {
+    if (is(T == DateTime) || is(T == SysTime) || is(T == Date) || is(T == TimeOfDay) || is(T == Duration)) {
         return "datetime";
-    } else if (is(T == Duration)) {
-        return "long";
     }
 
     return fullyQualifiedName!T;

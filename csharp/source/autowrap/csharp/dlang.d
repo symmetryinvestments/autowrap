@@ -2,6 +2,8 @@ module autowrap.csharp.dlang;
 
 import scriptlike : interp, _interp_text;
 
+import core.time : Duration;
+import std.datetime : Date, DateTime, SysTime, TimeOfDay;
 import autowrap.csharp.common : generateSharedTypes;
 import autowrap.reflection : isModule;
 import std.ascii : newline;
@@ -15,7 +17,6 @@ enum string methodSetup = "        thread_attachThis();
 mixin(generateSharedTypes());
 
 private string getDLangInterfaceType(T)() {
-    import std.datetime : Date, DateTime, SysTime, TimeOfDay, Duration;
     import std.traits : fullyQualifiedName;
     if (is(T == Date) || is(T == DateTime) || is(T == SysTime) || is(T == TimeOfDay) || is(T == Duration)) {
         return "datetime";
@@ -30,7 +31,6 @@ private string getDLangInterfaceType(T)() {
 public string wrapDLang(Modules...)() if(allSatisfy!(isModule, Modules)) {
     import autowrap.csharp.common : getDLangInterfaceName;
     import autowrap.reflection : AllAggregates;
-    import std.datetime : Date, DateTime, SysTime, TimeOfDay, Duration;
     import std.traits : fullyQualifiedName, moduleName;
     import std.meta : AliasSeq;
 
@@ -73,7 +73,11 @@ private string generateConstructors(T)() {
     string ret = string.init;
     alias fqn = getDLangInterfaceType!T;
     static if(hasMember!(T, "__ctor")) {
-        alias constructors = AliasSeq!(__traits(getOverloads, T, "__ctor"));
+        static if (__traits(getProtection, __traits(getMember, T, "__ctor")) == "export" || __traits(getProtection, __traits(getMember, T, "__ctor")) == "public") {
+            alias constructors = AliasSeq!(__traits(getOverloads, T, "__ctor"));
+        } else {
+            alias constructors = AliasSeq!();
+        }
     } else {
         alias constructors = AliasSeq!();
     }

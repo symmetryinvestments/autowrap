@@ -1,5 +1,8 @@
 module test;
 
+import core.time : Duration;
+import std.datetime : Date, DateTime, SysTime, TimeOfDay;
+
 export string parameterlessFunction() {
     return "Parameterless Function";
 }
@@ -93,6 +96,16 @@ class c1 {
     public c1 refMember;
     public c1[] refArray;
     public s1[] structArray;
+    public Duration durationMember;
+    public Date dateMember;
+    public DateTime dateTimeMember;
+    public SysTime sysTimeMember;
+    public TimeOfDay timeOfDayMember;
+    public Duration[] durationArray;
+    public Date[] dateArray;
+    public DateTime[] dateTimeArray;
+    public SysTime[] sysTimeArray;
+    public TimeOfDay[] timeOfDayArray;    
 
     //Property test cases
     private s2 _structProperty;
@@ -165,6 +178,22 @@ class c1 {
     }
     public @property c1[] refSliceProperty(c1[] value) {
         return _refSliceProperty = value;
+    }
+
+    private SysTime _sysTimeProperty;
+    public @property SysTime sysTimeProperty() {
+        return _sysTimeProperty;
+    }
+    public @property SysTime sysTimeProperty(SysTime value) {
+        return _sysTimeProperty = value;
+    }
+
+    private SysTime[] _sysTimeSliceProperty;
+    public @property SysTime[] sysTimeSliceProperty() {
+        return _sysTimeSliceProperty;
+    }
+    public @property SysTime[] sysTimeSliceProperty(SysTime[] value) {
+        return _sysTimeSliceProperty = value;
     }
 
     public string testMemberFunction(string test, s1 value){
