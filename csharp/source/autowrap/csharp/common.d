@@ -30,8 +30,9 @@ public string generateSharedTypes() {
             }
 
             public this(TimeOfDay value) {
-                Duration t = dur!"hours"(value.hour) + dur!"minutes"(value.minute) + dur!"seconds"(value.second);
-                this.ticks = value.total!"hnsecs";
+                import core.time : Duration, hours, minutes, seconds;
+                Duration t = hours(value.hour) + minutes(value.minute) + seconds(value.second);
+                this.ticks = t.total!"hnsecs";
                 this.offset = 0;
             }
 
@@ -41,6 +42,18 @@ public string generateSharedTypes() {
             }
         }
     };
+}
+
+package string getDLangInterfaceType(T)() {
+    import std.traits : fullyQualifiedName;
+    import std.datetime : DateTime, SysTime, Date, TimeOfDay, Duration;
+    if (is(T == Date) || is(T == DateTime) || is(T == SysTime) || is(T == TimeOfDay) || is(T == Duration)) {
+        return "datetime";
+    } else if (is(T == Date[]) || is(T == DateTime[]) || is(T == SysTime[]) || is(T == TimeOfDay[]) || is(T == Duration[])) {
+        return "datetime[]";
+    } else {
+        return fullyQualifiedName!T;
+    }
 }
 
 package string getInterfaceTypeString(T)() {
@@ -83,7 +96,12 @@ package string getDLangSliceInterfaceName(string fqn, string funcName) {
     import std.algorithm : map;
     import std.string : split;
     import std.array : join;
+
     string name = "autowrap_csharp_slice_";
+
+    if (fqn == "core.time.Duration" || fqn == "std.datetime.systime.SysTime" || fqn == "std.datetime.date.DateTime" || fqn == "autowrap.csharp.dlang.datetime") {
+        fqn = "datetime";
+    }
 
     name ~= fqn.split(".").map!camelToPascalCase.join("_");
     name ~= camelToPascalCase(funcName);

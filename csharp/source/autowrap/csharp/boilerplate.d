@@ -58,8 +58,8 @@ public string wrapCSharp(in Modules modules, OutputFileName outputFile, LibraryN
  */
 private string commonBoilerplate() @safe pure {
     return q{
-        import std.datetime : DateTime, SysTime, Date, TimeOfDay;
-        import core.time : Duration;
+        import std.datetime : DateTime, SysTime, Date, TimeOfDay, SimpleTimeZone, LocalTime;
+        import core.time;
         import core.memory;
         import std.conv;
         import std.string;
@@ -116,12 +116,12 @@ private string commonBoilerplate() @safe pure {
             return datetime(value);
         }
 
-        public datetime[] toDatetimeArray(T)(T[] value)
-        if (is(T == SysTime) || is(T == DateTime) || is(T == Date) || is(T == TimeOfDay) || is(T == Duration)) {
+        public datetime[] toDatetimeArray(T)(T value)
+        if (is(T == SysTime[]) || is(T == DateTime[]) || is(T == Date[]) || is(T == TimeOfDay[]) || is(T == Duration[])) {
             datetime[] array = datetime[].init;
             array.reserve(value.length);
             foreach(t; value) {
-                array ~= datetime(value));
+                array ~= datetime(t);
             }
             return array;
         }
@@ -129,56 +129,36 @@ private string commonBoilerplate() @safe pure {
         public T fromDatetime(T)(datetime value)
         if (is(T == SysTime) || is(T == DateTime) || is(T == Date) || is(T == TimeOfDay) || is(T == Duration)) {
             static if (is(T == SysTime)) {
-                return SysTime(value.ticks, new SimpleTimeZone(hnsecs(value.offset)));
+                return SysTime(value.ticks, cast(immutable)new SimpleTimeZone(hnsecs(value.offset)));
             } else static if (is(T == DateTime)) {
-                return cast(DateTime)SysTime(value.ticks, new SimpleTimeZone(hnsecs(value.offset)));
+                return cast(DateTime)SysTime(value.ticks, LocalTime());
             } else static if (is(T == Date)) {
-                return cast(Date)SysTime(value.ticks, new SimpleTimeZone(hnsecs(value.offset)));
+                return cast(Date)SysTime(value.ticks, cast(immutable)new SimpleTimeZone(hnsecs(0)));
             } else static if (is(T == TimeOfDay)) {
-                return cast(TimeOfDay)SysTime(value.ticks, new SimpleTimeZone(hnsecs(value.offset)));
+                return cast(TimeOfDay)SysTime(value.ticks, cast(immutable)new SimpleTimeZone(hnsecs(0)));
             } else static if (is(T == Duration)) {
-                return Duration(value.ticks);
+                return hnsecs(value.ticks);
             }
         }
 
-        public T[] fromDatetimeArray(T)(datetime[] value)
-        if (is(T == SysTime) || is(T == DateTime) || is(T == Date) || is(T == TimeOfDay) || is(T == Duration)) {
-            static if (is(T == SysTime)) {
-                SysTime[] array = SysTime[].init;
-                array.reserve(value.length);
-                foreach(t; value) {
-                    array ~= SysTime(value.ticks, new SimpleTimeZone(hnsecs(value.offset)));
+        public T fromDatetimeArray(T)(datetime[] value)
+        if (is(T == SysTime[]) || is(T == DateTime[]) || is(T == Date[]) || is(T == TimeOfDay[]) || is(T == Duration[])) {
+            T array = T.init;
+            array.reserve(value.length);
+            foreach(t; value) {
+                static if (is(T == SysTime[])) {
+                    array ~= SysTime(t.ticks, cast(immutable)new SimpleTimeZone(hnsecs(t.offset)));
+                } else static if (is(T == DateTime[])) {
+                    array ~= cast(DateTime)SysTime(t.ticks, LocalTime());
+                } else static if (is(T == Date[])) {
+                    array ~= cast(Date)SysTime(t.ticks, cast(immutable)new SimpleTimeZone(hnsecs(0)));
+                } else static if (is(T == TimeOfDay[])) {
+                    array ~= cast(TimeOfDay)SysTime(t.ticks, cast(immutable)new SimpleTimeZone(hnsecs(0)));
+                } else static if (is(T == Duration[])) {
+                    array ~= hnsecs(t.ticks);
                 }
-                return array;
-            } else static if (is(T == DateTime)) {
-                DateTime[] array = DateTime[].init;
-                array.reserve(value.length);
-                foreach(t; value) {
-                    array ~= cast(DateTime)SysTime(value.ticks, new SimpleTimeZone(hnsecs(value.offset)));
-                }
-                return array;
-            } else static if (is(T == Date)) {
-                Date[] array = Date[].init;
-                array.reserve(value.length);
-                foreach(t; value) {
-                    array ~= cast(Date)SysTime(value.ticks, new SimpleTimeZone(hnsecs(value.offset)));
-                }
-                return array;
-            } else static if (is(T == TimeOfDay)) {
-                TimeOfDay[] array = TimeOfDay[].init;
-                array.reserve(value.length);
-                foreach(t; value) {
-                    array ~= cast(TimeOfDay)SysTime(value.ticks, new SimpleTimeZone(hnsecs(value.offset)));
-                }
-                return array;
-            } else static if (is(T == Duration)) {
-                Duration[] array = Duration[].init;
-                array.reserve(value.length);
-                foreach(t; value) {
-                    array ~= Duration(value.ticks);
-                }
-                return array;
             }
+            return array;
         }
 
         extern(C) export void autowrap_csharp_release(void* ptr) nothrow {

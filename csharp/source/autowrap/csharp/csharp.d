@@ -2,7 +2,7 @@ module autowrap.csharp.csharp;
 
 import scriptlike : interp, _interp_text;
 
-import autowrap.csharp.common : LibraryName, RootNamespace;
+import autowrap.csharp.common : LibraryName, RootNamespace, getDLangInterfaceType;
 import autowrap.reflection : isModule;
 
 import std.ascii : newline;
@@ -139,24 +139,22 @@ public struct csharpRange {
 }
 
 public string generateCSharp(Modules...)(LibraryName libraryName, RootNamespace rootNamespace) if(allSatisfy!(isModule, Modules)) {
+    import core.time : Duration;
+    import std.datetime : Date, DateTime, SysTime, TimeOfDay, TimeZone;
     import autowrap.reflection : AllAggregates;
     import std.traits : moduleName;
+
     generateSliceBoilerplate(libraryName.value);
 
-    foreach(agg; AllAggregates!Modules) {
-        alias modName = moduleName!agg;
-        const string aggName = __traits(identifier, agg);
-        CSharpAggregate csagg = getAggregate(getCSharpName(modName), getCSharpName(aggName), !is(agg == class));
-
-        generateRangeDef!agg(libraryName.value);
-
-        generateConstructors!agg(libraryName.value, csagg);
-
-        generateMethods!agg(libraryName.value, csagg);
-
-        generateProperties!agg(libraryName.value, csagg);
-
-        generateFields!agg(libraryName.value, csagg);
+    alias aggregates = AllAggregates!Modules;
+    static foreach(agg; aggregates) {
+        static if (!(is(agg == Date) || is(agg == DateTime) || is(agg == SysTime) || is(agg == TimeOfDay) || is(agg == Duration) || is(agg == TimeZone))) {
+            generateRangeDef!agg(libraryName.value);
+            generateConstructors!agg(libraryName.value, getAggregate(getCSharpName(moduleName!agg), getCSharpName(__traits(identifier, agg)), !is(agg == class)));
+            generateMethods!agg(libraryName.value, getAggregate(getCSharpName(moduleName!agg), getCSharpName(__traits(identifier, agg)), !is(agg == class)));
+            generateProperties!agg(libraryName.value, getAggregate(getCSharpName(moduleName!agg), getCSharpName(__traits(identifier, agg)), !is(agg == class)));
+            generateFields!agg(libraryName.value, getAggregate(getCSharpName(moduleName!agg), getCSharpName(__traits(identifier, agg)), !is(agg == class)));
+        }
     }
 
     generateFunctions!Modules(libraryName.value);
@@ -181,7 +179,11 @@ private void generateConstructors(T)(string libraryName, CSharpAggregate csagg) 
     alias fqn = fullyQualifiedName!T;
 
     static if(hasMember!(T, "__ctor")) {
-        alias constructors = AliasSeq!(__traits(getOverloads, T, "__ctor"));
+        static if (__traits(getProtection, __traits(getMember, T, "__ctor")) == "export" || __traits(getProtection, __traits(getMember, T, "__ctor")) == "public") {
+            alias constructors = AliasSeq!(__traits(getOverloads, T, "__ctor"));
+        } else {
+            alias constructors = AliasSeq!();
+        }
     } else {
         alias constructors = AliasSeq!();
     }
@@ -701,6 +703,10 @@ private string getCSharpMethodInterfaceName(string aggName, string funcName) {
     import autowrap.csharp.common : camelToPascalCase;
     import std.string : split;
     import std.string : replace;
+
+    if (aggName == "DateTime" || aggName == "DateTimeOffset" || aggName == "TimeSpan") {
+        aggName = "Datetime";
+    }
 
     string name = string.init;
     if (aggName !is null && aggName != string.init) {

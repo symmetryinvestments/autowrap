@@ -3,8 +3,8 @@ module autowrap.csharp.dlang;
 import scriptlike : interp, _interp_text;
 
 import core.time : Duration;
-import std.datetime : Date, DateTime, SysTime, TimeOfDay;
-import autowrap.csharp.common : generateSharedTypes;
+import std.datetime : Date, DateTime, SysTime, TimeOfDay, TimeZone;
+import autowrap.csharp.common : generateSharedTypes, getDLangInterfaceType;
 import autowrap.reflection : isModule;
 import std.ascii : newline;
 import std.meta : allSatisfy;
@@ -15,17 +15,6 @@ enum string methodSetup = "        thread_attachThis();
         scope(exit) thread_detachThis();";
 
 mixin(generateSharedTypes());
-
-private string getDLangInterfaceType(T)() {
-    import std.traits : fullyQualifiedName;
-    if (is(T == Date) || is(T == DateTime) || is(T == SysTime) || is(T == TimeOfDay) || is(T == Duration)) {
-        return "datetime";
-    } else if (is(T == Date[]) || is(T == DateTime[]) || is(T == SysTime[]) || is(T == TimeOfDay[]) || is(T == Duration[])) {
-        return "datetime[]";
-    } else {
-        return fullyQualifiedName!T;
-    }
-}
 
 // Wrap global functions from multiple modules
 public string wrapDLang(Modules...)() if(allSatisfy!(isModule, Modules)) {
@@ -47,17 +36,14 @@ public string wrapDLang(Modules...)() if(allSatisfy!(isModule, Modules)) {
         ret ~= generateSliceMethods!t();
     }
 
-    foreach(agg; AllAggregates!Modules) {
-        alias modName = moduleName!agg;
-        alias fqn = fullyQualifiedName!agg;
-
-        ret ~= generateSliceMethods!agg();
-
-        ret ~= generateConstructors!agg();
-
-        ret ~= generateMethods!agg();
-
-        ret ~= generateFields!agg();
+    alias aggregates = AllAggregates!Modules;
+    static foreach(agg; aggregates) {
+        static if (!(is(agg == Date) || is(agg == DateTime) || is(agg == SysTime) || is(agg == TimeOfDay) || is(agg == Duration) || is(agg == TimeZone))) {
+            ret ~= generateSliceMethods!agg();
+            ret ~= generateConstructors!agg();
+            ret ~= generateMethods!agg();
+            ret ~= generateFields!agg();
+        }
     }
 
     ret ~= generateFunctions!Modules();
@@ -89,11 +75,10 @@ private string generateConstructors(T)() {
         string exp = "extern(C) export ";
         const string interfaceName = getDLangInterfaceName(fqn, "__ctor");
 
-        exp ~= mixin(interp!"returnValue!(${fqn})");
-        exp ~= mixin(interp!" ${interfaceName}(");
+        exp ~= mixin(interp!"returnValue!(${fqn}) ${interfaceName}(");
 
         static foreach(pc; 0..paramNames.length) {
-            exp ~= mixin(interp!"${fullyQualifiedName!(paramTypes[pc])} ${paramNames[pc]}, ");
+            exp ~= mixin(interp!"${getDLangInterfaceType!(paramTypes[pc])} ${paramNames[pc]}, ");
         }
         if (paramTypes.length > 0) {
             exp = exp[0..$-2];
@@ -149,7 +134,7 @@ private string generateMethods(T)() {
             foreach(oc, mo; __traits(getOverloads, T, m)) {
                 const bool isMethod = isFunction!mo;
 
-                static if(isMethod) {
+                static if(isMethod && (__traits(getProtection, mo) == "export" || __traits(getProtection, mo) == "public")) {
                     string exp = string.init;
                     const string interfaceName = getDLangInterfaceName(fqn, m);
 
@@ -159,7 +144,7 @@ private string generateMethods(T)() {
                     alias paramNames = ParameterIdentifierTuple!mo;
 
                     exp ~= "extern(C) export ";
-                    if (!is(returnType == void)) {
+                    static if (!is(returnType == void)) {
                         exp ~= mixin(interp!"returnValue!(${returnTypeStr})");
                     } else {
                         exp ~= "returnVoid";
@@ -171,7 +156,7 @@ private string generateMethods(T)() {
                         exp ~= mixin(interp!"${fqn} __obj__, ");
                     }
                     static foreach(pc; 0..paramNames.length) {
-                        exp ~= mixin(interp!"${fullyQualifiedName!(paramTypes[pc])} ${paramNames[pc]}, ");
+                        exp ~= mixin(interp!"${getDLangInterfaceType!(paramTypes[pc])} ${paramNames[pc]}, ");
                     }
                     exp = exp[0..$-2];
                     exp ~= ") nothrow {" ~ newline;
@@ -183,13 +168,17 @@ private string generateMethods(T)() {
                     }
                     exp ~= mixin(interp!"__obj__.${m}(");
                     static foreach(pc; 0..paramNames.length) {
-                        exp ~= mixin(interp!"${paramNames[pc]}, ");
+                        exp ~= mixin(interp!"${generateParameter!(paramTypes[pc])(paramNames[pc])}, ");
                     }
                     if (paramNames.length > 0) {
                         exp = exp[0..$-2];
                     }
                     exp ~= ");" ~ newline;
-                    if (!is(returnType == void)) {
+                    static if (is(returnType == Date) || is(returnType == DateTime) || is(returnType == TimeOfDay) || is(returnType == SysTime) || is(returnType == Duration)) {
+                        exp ~= mixin(interp!"        return returnValue!(${returnTypeStr})(toDatetime!(${fullyQualifiedName!returnType})(__result__));${newline}");
+                    } else static if (is(returnType == Date[]) || is(returnType == DateTime[]) || is(returnType == TimeOfDay[]) || is(returnType == SysTime[]) || is(returnType == Duration[])) {
+                        exp ~= mixin(interp!"        return returnValue!(${returnTypeStr})(toDatetimeArray!(${fullyQualifiedName!returnType})(__result__));${newline}");
+                    } else static if (!is(returnType == void)) {
                         exp ~= mixin(interp!"        return returnValue!(${returnTypeStr})(__result__);${newline}");
                     } else {
                         exp ~= "        return returnVoid();" ~ newline;
@@ -223,10 +212,10 @@ private string generateFields(T)() {
         static foreach(fc; 0..fieldTypes.length) {
             static if (is(typeof(__traits(getMember, T, fieldNames[fc])))) {
                 ret ~= mixin(interp!"extern(C) export returnValue!(${getDLangInterfaceType!(fieldTypes[fc])}) ${getDLangInterfaceName(fqn, fieldNames[fc] ~ \"_get\")}(${fqn} __obj__) nothrow {${newline}");
-                ret ~= generateMethodErrorHandling(mixin(interp!"        return returnValue!(${getDLangInterfaceType!(fieldTypes[fc])})(__obj__.${fieldNames[fc]});"), mixin(interp!"returnValue!(${getDLangInterfaceType!(fieldTypes[fc])})"));
+                ret ~= generateMethodErrorHandling(mixin(interp!"        auto __value__ = __obj__.${fieldNames[fc]};${newline}        return returnValue!(${getDLangInterfaceType!(fieldTypes[fc])})(${generateReturn!(fieldTypes[fc])(\"__value__\")});"), mixin(interp!"returnValue!(${getDLangInterfaceType!(fieldTypes[fc])})"));
                 ret ~= "}" ~ newline;
                 ret ~= mixin(interp!"extern(C) export returnVoid ${getDLangInterfaceName(fqn, fieldNames[fc] ~ \"_set\")}(${fqn} __obj__, ${getDLangInterfaceType!(fieldTypes[fc])} value) nothrow {${newline}");
-                ret ~= generateMethodErrorHandling(mixin(interp!"        __obj__.${fieldNames[fc]} = value;${newline}        return returnVoid();"), "returnVoid");
+                ret ~= generateMethodErrorHandling(mixin(interp!"        __obj__.${fieldNames[fc]} = ${generateParameter!(fieldTypes[fc])(\"value\")};${newline}        return returnVoid();"), "returnVoid");
                 ret ~= "}" ~ newline;
             }
         }
@@ -252,7 +241,7 @@ private string generateFunctions(Modules...)() if(allSatisfy!(isModule, Modules)
         string retType = string.init;
         string funcStr = "extern(C) export ";
 
-        if (!is(returnType == void)) {
+        static if (!is(returnType == void)) {
             retType ~= mixin(interp!"returnValue!(${returnTypeStr})");
         } else {
             retType ~= "returnVoid";
@@ -268,25 +257,23 @@ private string generateFunctions(Modules...)() if(allSatisfy!(isModule, Modules)
         funcStr ~= ") nothrow {" ~ newline;
         funcStr ~= "    try {" ~ newline;
         funcStr ~= methodSetup ~ newline;
+        funcStr ~= "        ";
         if (!is(returnType == void)) {
-            funcStr ~= mixin(interp!"        return ${retType}(${func.name}(");
-            foreach(pName; paramNames) {
-                funcStr ~= mixin(interp!"${pName}, ");
-            }
-            if(paramNames.length > 0) {
-                funcStr = funcStr[0..$-2];
-            }
-            funcStr ~= "));" ~ newline;
+            funcStr ~= mixin(interp!"auto __return__ = ${func.name}(");
         } else {
             funcStr ~= mixin(interp!"${func.name}(");
-            static foreach(pc; 0..paramNames.length) {
-                funcStr ~= mixin(interp!"${paramNames[pc]}, ");
-            }
-            if(paramNames.length > 0) {
-                funcStr = funcStr[0..$-2];
-            }
-            funcStr ~= ");" ~ newline;
-            funcStr ~= "        return returnVoid();" ~ newline;
+        }
+        static foreach(pc; 0..paramNames.length) {
+            funcStr ~= mixin(interp!"${generateParameter!(paramTypes[pc])(paramNames[pc])}, ");
+        }
+        if(paramNames.length > 0) {
+            funcStr = funcStr[0..$-2];
+        }
+        funcStr ~= ");" ~ newline;
+        if (!is(returnType == void)) {
+            funcStr ~= mixin(interp!"        return ${retType}(${generateReturn!(returnType)(\"__return__\")});${newline}");
+        } else {
+            funcStr ~= mixin(interp!"        return ${retType}();${newline}");
         }
         funcStr ~= "    } catch (Exception __ex__) {" ~ newline;
         funcStr ~= mixin(interp!"        return ${retType}(__ex__);${newline}");
@@ -303,7 +290,7 @@ private string generateSliceMethods(T)() {
     import autowrap.csharp.common : getDLangSliceInterfaceName;
     import std.traits : fullyQualifiedName;
     string ret = string.init;
-    alias fqn = fullyQualifiedName!T;
+    alias fqn = getDLangInterfaceType!T;
 
     //Generate slice creation method
     ret ~= mixin(interp!"extern(C) export returnValue!(${fqn}[]) ${getDLangSliceInterfaceName(fqn, \"Create\")}(size_t capacity) nothrow {${newline}");
@@ -347,4 +334,32 @@ private string generateMethodErrorHandling(string insideCode, string returnType)
     ret ~= mixin(interp!"        return ${returnType}(__ex__);${newline}");
     ret ~= "    }" ~ newline;
     return ret;
+}
+
+private string generateParameter(T)(string name) {
+    import std.datetime : DateTime, Date, TimeOfDay, SysTime, Duration;
+    import std.traits : fullyQualifiedName;
+
+    alias fqn = fullyQualifiedName!T;
+    static if (is(T == DateTime) || is(T == Date) || is(T == TimeOfDay) || is(T == SysTime) || is(T == Duration)) {
+        return mixin(interp!"fromDatetime!(${fqn})(${name})");
+    } else static if (is(T == DateTime[]) || is(T == Date[]) || is(T == TimeOfDay[]) || is(T == SysTime[]) || is(T == Duration[])) {
+        return mixin(interp!"fromDatetimeArray!(${fqn})(${name})");
+    } else {
+        return name;
+    }
+}
+
+private string generateReturn(T)(string name) {
+    import std.datetime : DateTime, Date, TimeOfDay, SysTime, Duration;
+    import std.traits : fullyQualifiedName;
+
+    alias fqn = fullyQualifiedName!T;
+    static if (is(T == DateTime) || is(T == Date) || is(T == TimeOfDay) || is(T == SysTime) || is(T == Duration)) {
+        return mixin(interp!"toDatetime!(${fqn})(${name})");
+    } else static if (is(T == DateTime[]) || is(T == Date[]) || is(T == TimeOfDay[]) || is(T == SysTime[]) || is(T == Duration[])) {
+        return mixin(interp!"toDatetimeArray!(${fqn})(${name})");
+    } else {
+        return name;
+    }
 }

@@ -95,7 +95,7 @@ namespace Autowrap {
         public static implicit operator datetime(DateTime ret) { return new datetime(ret.Ticks, 0L); }
         public static implicit operator datetime(DateTimeOffset ret) { return new datetime(ret.Ticks, ret.Offset.Ticks); }
         public static implicit operator datetime(TimeSpan ret) { return new datetime(ret.Ticks, 0L); }
-        public static implicit operator DateTime(datetime ret) { return new DateTime(ret._ticks, DateTimeKind.Unspecified); }
+        public static implicit operator DateTime(datetime ret) { return new DateTime(ret._ticks, DateTimeKind.Local); }
         public static implicit operator DateTimeOffset(datetime ret) { return new DateTimeOffset(ret._ticks, new TimeSpan(ret._offset)); }
         public static implicit operator TimeSpan(datetime ret) { return new TimeSpan(ret._ticks); }
         private long _ticks;
@@ -121,7 +121,6 @@ namespace Autowrap {
         static SharedFunctions() {
             Stream stream = null;
             var outputName = Path.Combine(Environment.CurrentDirectory, RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? "libcsharp-tests.dylib" : RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? "libcsharp-tests.so" : "csharp-tests.dll");
-            Console.WriteLine($"Library Path: {outputName}");
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
                 stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("%2$s.lib%1$s.dylib");

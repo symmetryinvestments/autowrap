@@ -39,6 +39,18 @@ export string[] testStringRanges(dstring[] arr) {
     return temp;
 }
 
+export SysTime[] systimeArrayTest(SysTime[] array) {
+    return array.dup;
+}
+
+export Duration durationTest(Duration value) {
+    return value;
+}
+
+export DateTime dateTimeTest(DateTime value) {
+    return value;
+}
+
 struct s1 {
     public float value;
     public s2 nestedStruct;
@@ -105,7 +117,7 @@ class c1 {
     public Date[] dateArray;
     public DateTime[] dateTimeArray;
     public SysTime[] sysTimeArray;
-    public TimeOfDay[] timeOfDayArray;    
+    public TimeOfDay[] timeOfDayArray;
 
     //Property test cases
     private s2 _structProperty;

@@ -57,6 +57,27 @@ namespace Test {
             var dlang_ret = dlang_TestStringRanges(arr.ToSlice());
             return new Range<string>(dlang_ret, DStringType._string);
         }
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_TestSystimeArrayTest", CallingConvention = CallingConvention.Cdecl)]
+
+        private static extern return_slice_error dlang_SystimeArrayTest(slice array);
+        public static Range<DateTimeOffset> SystimeArrayTest(Range<DateTimeOffset> array) {
+            var dlang_ret = dlang_SystimeArrayTest(array.ToSlice());
+            return new Range<DateTimeOffset>(dlang_ret, DStringType.None);
+        }
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_TestDurationTest", CallingConvention = CallingConvention.Cdecl)]
+
+        private static extern return_datetime_error dlang_DurationTest(datetime value);
+        public static TimeSpan DurationTest(TimeSpan value) {
+            var dlang_ret = dlang_DurationTest(value);
+            return dlang_ret;
+        }
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_TestDateTimeTest", CallingConvention = CallingConvention.Cdecl)]
+
+        private static extern return_datetime_error dlang_DateTimeTest(datetime value);
+        public static DateTime DateTimeTest(DateTime value) {
+            var dlang_ret = dlang_DateTimeTest(value);
+            return dlang_ret;
+        }
 
     }
 
@@ -146,6 +167,14 @@ namespace Test {
         private static extern return_slice_error dlang_C1_RefSliceProperty(IntPtr __obj__);
         [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1RefSliceProperty1", CallingConvention = CallingConvention.Cdecl)]
         private static extern return_slice_error dlang_C1_RefSliceProperty(IntPtr __obj__, slice value);
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1SysTimeProperty0", CallingConvention = CallingConvention.Cdecl)]
+        private static extern return_datetime_error dlang_C1_SysTimeProperty(IntPtr __obj__);
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1SysTimeProperty1", CallingConvention = CallingConvention.Cdecl)]
+        private static extern return_datetime_error dlang_C1_SysTimeProperty(IntPtr __obj__, datetime value);
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1SysTimeSliceProperty0", CallingConvention = CallingConvention.Cdecl)]
+        private static extern return_slice_error dlang_C1_SysTimeSliceProperty(IntPtr __obj__);
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1SysTimeSliceProperty1", CallingConvention = CallingConvention.Cdecl)]
+        private static extern return_slice_error dlang_C1_SysTimeSliceProperty(IntPtr __obj__, slice value);
         [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1TestMemberFunction0", CallingConvention = CallingConvention.Cdecl)]
         private static extern return_slice_error dlang_C1_TestMemberFunction(IntPtr __obj__, slice test, Test.S1 value);
         public string TestMemberFunction(string test, Test.S1 value) {
@@ -169,6 +198,8 @@ namespace Test {
         public Range<string> DstringSliceProperty { get => new Range<string>(dlang_C1_DstringSliceProperty(this), DStringType._dstring); set => dlang_C1_DstringSliceProperty(this, value.ToSlice(DStringType._dstring)); }
         public Range<Test.S1> StructSliceProperty { get => new Range<Test.S1>(dlang_C1_StructSliceProperty(this), DStringType.None); set => dlang_C1_StructSliceProperty(this, value.ToSlice()); }
         public Range<Test.C1> RefSliceProperty { get => new Range<Test.C1>(dlang_C1_RefSliceProperty(this), DStringType.None); set => dlang_C1_RefSliceProperty(this, value.ToSlice()); }
+        public DateTimeOffset SysTimeProperty { get => dlang_C1_SysTimeProperty(this); set => dlang_C1_SysTimeProperty(this, value); }
+        public Range<DateTimeOffset> SysTimeSliceProperty { get => new Range<DateTimeOffset>(dlang_C1_SysTimeSliceProperty(this), DStringType.None); set => dlang_C1_SysTimeSliceProperty(this, value.ToSlice()); }
         [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1IntValue_get", CallingConvention = CallingConvention.Cdecl)]
         private static extern return_int_error dlang_intValue_get(IntPtr ptr);
         [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1IntValue_set", CallingConvention = CallingConvention.Cdecl)]
@@ -264,6 +295,56 @@ namespace Test {
         [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1StructArray_set", CallingConvention = CallingConvention.Cdecl)]
         private static extern void dlang_structArray_set(IntPtr ptr, slice value);
         public Range<Test.S1> StructArray { get => new Range<Test.S1>(dlang_structArray_get(this), DStringType.None); set => dlang_structArray_set(this, value.ToSlice()); }
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1DurationMember_get", CallingConvention = CallingConvention.Cdecl)]
+        private static extern return_datetime_error dlang_durationMember_get(IntPtr ptr);
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1DurationMember_set", CallingConvention = CallingConvention.Cdecl)]
+        private static extern void dlang_durationMember_set(IntPtr ptr, datetime value);
+        public TimeSpan DurationMember { get => dlang_durationMember_get(this); set => dlang_durationMember_set(this, value); }
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1DateMember_get", CallingConvention = CallingConvention.Cdecl)]
+        private static extern return_datetime_error dlang_dateMember_get(IntPtr ptr);
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1DateMember_set", CallingConvention = CallingConvention.Cdecl)]
+        private static extern void dlang_dateMember_set(IntPtr ptr, datetime value);
+        public DateTime DateMember { get => dlang_dateMember_get(this); set => dlang_dateMember_set(this, value); }
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1DateTimeMember_get", CallingConvention = CallingConvention.Cdecl)]
+        private static extern return_datetime_error dlang_dateTimeMember_get(IntPtr ptr);
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1DateTimeMember_set", CallingConvention = CallingConvention.Cdecl)]
+        private static extern void dlang_dateTimeMember_set(IntPtr ptr, datetime value);
+        public DateTime DateTimeMember { get => dlang_dateTimeMember_get(this); set => dlang_dateTimeMember_set(this, value); }
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1SysTimeMember_get", CallingConvention = CallingConvention.Cdecl)]
+        private static extern return_datetime_error dlang_sysTimeMember_get(IntPtr ptr);
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1SysTimeMember_set", CallingConvention = CallingConvention.Cdecl)]
+        private static extern void dlang_sysTimeMember_set(IntPtr ptr, datetime value);
+        public DateTimeOffset SysTimeMember { get => dlang_sysTimeMember_get(this); set => dlang_sysTimeMember_set(this, value); }
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1TimeOfDayMember_get", CallingConvention = CallingConvention.Cdecl)]
+        private static extern return_datetime_error dlang_timeOfDayMember_get(IntPtr ptr);
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1TimeOfDayMember_set", CallingConvention = CallingConvention.Cdecl)]
+        private static extern void dlang_timeOfDayMember_set(IntPtr ptr, datetime value);
+        public DateTime TimeOfDayMember { get => dlang_timeOfDayMember_get(this); set => dlang_timeOfDayMember_set(this, value); }
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1DurationArray_get", CallingConvention = CallingConvention.Cdecl)]
+        private static extern return_slice_error dlang_durationArray_get(IntPtr ptr);
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1DurationArray_set", CallingConvention = CallingConvention.Cdecl)]
+        private static extern void dlang_durationArray_set(IntPtr ptr, slice value);
+        public Range<TimeSpan> DurationArray { get => new Range<TimeSpan>(dlang_durationArray_get(this), DStringType.None); set => dlang_durationArray_set(this, value.ToSlice()); }
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1DateArray_get", CallingConvention = CallingConvention.Cdecl)]
+        private static extern return_slice_error dlang_dateArray_get(IntPtr ptr);
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1DateArray_set", CallingConvention = CallingConvention.Cdecl)]
+        private static extern void dlang_dateArray_set(IntPtr ptr, slice value);
+        public Range<DateTime> DateArray { get => new Range<DateTime>(dlang_dateArray_get(this), DStringType.None); set => dlang_dateArray_set(this, value.ToSlice()); }
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1DateTimeArray_get", CallingConvention = CallingConvention.Cdecl)]
+        private static extern return_slice_error dlang_dateTimeArray_get(IntPtr ptr);
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1DateTimeArray_set", CallingConvention = CallingConvention.Cdecl)]
+        private static extern void dlang_dateTimeArray_set(IntPtr ptr, slice value);
+        public Range<DateTime> DateTimeArray { get => new Range<DateTime>(dlang_dateTimeArray_get(this), DStringType.None); set => dlang_dateTimeArray_set(this, value.ToSlice()); }
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1SysTimeArray_get", CallingConvention = CallingConvention.Cdecl)]
+        private static extern return_slice_error dlang_sysTimeArray_get(IntPtr ptr);
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1SysTimeArray_set", CallingConvention = CallingConvention.Cdecl)]
+        private static extern void dlang_sysTimeArray_set(IntPtr ptr, slice value);
+        public Range<DateTimeOffset> SysTimeArray { get => new Range<DateTimeOffset>(dlang_sysTimeArray_get(this), DStringType.None); set => dlang_sysTimeArray_set(this, value.ToSlice()); }
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1TimeOfDayArray_get", CallingConvention = CallingConvention.Cdecl)]
+        private static extern return_slice_error dlang_timeOfDayArray_get(IntPtr ptr);
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_Test_C1TimeOfDayArray_set", CallingConvention = CallingConvention.Cdecl)]
+        private static extern void dlang_timeOfDayArray_set(IntPtr ptr, slice value);
+        public Range<DateTime> TimeOfDayArray { get => new Range<DateTime>(dlang_timeOfDayArray_get(this), DStringType.None); set => dlang_timeOfDayArray_set(this, value.ToSlice()); }
     }
 
 }
@@ -365,7 +446,7 @@ namespace Autowrap {
         public static implicit operator datetime(DateTime ret) { return new datetime(ret.Ticks, 0L); }
         public static implicit operator datetime(DateTimeOffset ret) { return new datetime(ret.Ticks, ret.Offset.Ticks); }
         public static implicit operator datetime(TimeSpan ret) { return new datetime(ret.Ticks, 0L); }
-        public static implicit operator DateTime(datetime ret) { return new DateTime(ret._ticks, DateTimeKind.Unspecified); }
+        public static implicit operator DateTime(datetime ret) { return new DateTime(ret._ticks, DateTimeKind.Local); }
         public static implicit operator DateTimeOffset(datetime ret) { return new DateTimeOffset(ret._ticks, new TimeSpan(ret._offset)); }
         public static implicit operator TimeSpan(datetime ret) { return new TimeSpan(ret._ticks); }
         private long _ticks;
@@ -559,7 +640,6 @@ namespace Autowrap {
         static SharedFunctions() {
             Stream stream = null;
             var outputName = Path.Combine(Environment.CurrentDirectory, RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? "libcsharp-tests.dylib" : RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? "libcsharp-tests.so" : "csharp-tests.dll");
-            Console.WriteLine($"Library Path: {outputName}");
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
                 stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("Autowrap.CSharp.Tests.libcsharp-tests.dylib");
@@ -804,41 +884,41 @@ namespace Autowrap {
         internal static extern return_void_error Double_Set(slice dslice, IntPtr index, double value);
         [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_DoubleAppendValue", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_slice_error Double_AppendValue(slice dslice, double value);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Std_Datetime_Date_DateTimeCreate", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_DatetimeCreate", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_slice_error Std_datetime_date_DateTime_Create(IntPtr capacity);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Std_Datetime_Date_DateTimeSlice", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_DatetimeSlice", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_slice_error Std_datetime_date_DateTime_Slice(slice dslice, IntPtr begin, IntPtr end);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Std_Datetime_Date_DateTimeAppendSlice", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_DatetimeAppendSlice", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_slice_error Std_datetime_date_DateTime_AppendSlice(slice dslice, slice array);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Std_Datetime_Date_DateTimeGet", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_DatetimeGet", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_datetime_error Std_datetime_date_DateTime_Get(slice dslice, IntPtr index);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Std_Datetime_Date_DateTimeSet", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_DatetimeSet", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_void_error Std_datetime_date_DateTime_Set(slice dslice, IntPtr index, datetime value);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Std_Datetime_Date_DateTimeAppendValue", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_DatetimeAppendValue", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_slice_error Std_datetime_date_DateTime_AppendValue(slice dslice, datetime value);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Std_Datetime_Systime_SysTimeCreate", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_DatetimeCreate", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_slice_error Std_datetime_systime_SysTime_Create(IntPtr capacity);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Std_Datetime_Systime_SysTimeSlice", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_DatetimeSlice", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_slice_error Std_datetime_systime_SysTime_Slice(slice dslice, IntPtr begin, IntPtr end);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Std_Datetime_Systime_SysTimeAppendSlice", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_DatetimeAppendSlice", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_slice_error Std_datetime_systime_SysTime_AppendSlice(slice dslice, slice array);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Std_Datetime_Systime_SysTimeGet", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_DatetimeGet", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_datetime_error Std_datetime_systime_SysTime_Get(slice dslice, IntPtr index);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Std_Datetime_Systime_SysTimeSet", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_DatetimeSet", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_void_error Std_datetime_systime_SysTime_Set(slice dslice, IntPtr index, datetime value);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Std_Datetime_Systime_SysTimeAppendValue", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_DatetimeAppendValue", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_slice_error Std_datetime_systime_SysTime_AppendValue(slice dslice, datetime value);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Core_Time_DurationCreate", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_DatetimeCreate", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_slice_error Core_time_Duration_Create(IntPtr capacity);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Core_Time_DurationSlice", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_DatetimeSlice", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_slice_error Core_time_Duration_Slice(slice dslice, IntPtr begin, IntPtr end);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Core_Time_DurationAppendSlice", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_DatetimeAppendSlice", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_slice_error Core_time_Duration_AppendSlice(slice dslice, slice array);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Core_Time_DurationGet", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_DatetimeGet", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_datetime_error Core_time_Duration_Get(slice dslice, IntPtr index);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Core_Time_DurationSet", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_DatetimeSet", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_void_error Core_time_Duration_Set(slice dslice, IntPtr index, datetime value);
-        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Core_Time_DurationAppendValue", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_DatetimeAppendValue", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_slice_error Core_time_Duration_AppendValue(slice dslice, datetime value);
         [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_slice_Test_S1Create", CallingConvention = CallingConvention.Cdecl)]
         internal static extern return_slice_error Test_s1_Create(IntPtr capacity);
