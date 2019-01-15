@@ -112,53 +112,35 @@ private string commonBoilerplate() @safe pure {
         }
 
         public datetime toDatetime(T)(T value)
-        if (is(T == SysTime) || is(T == DateTime) || is(T == Date) || is(T == TimeOfDay) || is(T == Duration)) {
+        if (isDateTimeType!T) {
             return datetime(value);
         }
 
-        public datetime[] toDatetimeArray(T)(T value)
-        if (is(T == SysTime[]) || is(T == DateTime[]) || is(T == Date[]) || is(T == TimeOfDay[]) || is(T == Duration[])) {
-            datetime[] array = datetime[].init;
-            array.reserve(value.length);
-            foreach(t; value) {
-                array ~= datetime(t);
-            }
-            return array;
+        public datetime[] toDatetime1DArray(T)(T[] value)
+        if (isDateTimeType!T) {
+            import std.algorithm : map;
+            import std.array : array;
+            return value.map!datetime.array;
         }
 
         public T fromDatetime(T)(datetime value)
-        if (is(T == SysTime) || is(T == DateTime) || is(T == Date) || is(T == TimeOfDay) || is(T == Duration)) {
+        if (isDateTimeType!T) {
             static if (is(T == SysTime)) {
                 return SysTime(value.ticks, cast(immutable)new SimpleTimeZone(hnsecs(value.offset)));
             } else static if (is(T == DateTime)) {
-                return cast(DateTime)SysTime(value.ticks, LocalTime());
-            } else static if (is(T == Date)) {
-                return cast(Date)SysTime(value.ticks, cast(immutable)new SimpleTimeZone(hnsecs(0)));
-            } else static if (is(T == TimeOfDay)) {
-                return cast(TimeOfDay)SysTime(value.ticks, cast(immutable)new SimpleTimeZone(hnsecs(0)));
+                return cast(T)SysTime(value.ticks, LocalTime());
+            } else static if (is(T == Date) || is(T == TimeOfDay)) {
+                return cast(T)SysTime(value.ticks, cast(immutable)new SimpleTimeZone(hnsecs(0)));
             } else static if (is(T == Duration)) {
                 return hnsecs(value.ticks);
             }
         }
 
-        public T fromDatetimeArray(T)(datetime[] value)
-        if (is(T == SysTime[]) || is(T == DateTime[]) || is(T == Date[]) || is(T == TimeOfDay[]) || is(T == Duration[])) {
-            T array = T.init;
-            array.reserve(value.length);
-            foreach(t; value) {
-                static if (is(T == SysTime[])) {
-                    array ~= SysTime(t.ticks, cast(immutable)new SimpleTimeZone(hnsecs(t.offset)));
-                } else static if (is(T == DateTime[])) {
-                    array ~= cast(DateTime)SysTime(t.ticks, LocalTime());
-                } else static if (is(T == Date[])) {
-                    array ~= cast(Date)SysTime(t.ticks, cast(immutable)new SimpleTimeZone(hnsecs(0)));
-                } else static if (is(T == TimeOfDay[])) {
-                    array ~= cast(TimeOfDay)SysTime(t.ticks, cast(immutable)new SimpleTimeZone(hnsecs(0)));
-                } else static if (is(T == Duration[])) {
-                    array ~= hnsecs(t.ticks);
-                }
-            }
-            return array;
+        public T[] fromDatetime1DArray(T)(datetime[] value)
+        if (isDateTimeType!T) {
+            import std.algorithm : map;
+            import std.array : array;
+            return value.map!(fromDatetime!T).array;
         }
 
         extern(C) export void autowrap_csharp_release(void* ptr) nothrow {

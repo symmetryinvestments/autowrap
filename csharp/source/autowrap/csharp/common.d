@@ -1,5 +1,7 @@
 module autowrap.csharp.common;
 
+import std.datetime : DateTime, SysTime, Date, TimeOfDay, Duration;
+
 public struct LibraryName {
     string value;
 }
@@ -10,6 +12,9 @@ public struct RootNamespace {
 
 public string generateSharedTypes() {
     return q{
+        enum isDateTimeType(T) = is(T == Date) || is(T == DateTime) || is(T == SysTime) || is(T == TimeOfDay) || is(T == Duration);
+        enum isDateTimeArrayType(T) = is(T == Date[]) || is(T == DateTime[]) || is(T == SysTime[]) || is(T == TimeOfDay[]) || is(T == Duration[]);
+
         extern(C) export struct datetime {
             long ticks;
             long offset;
@@ -54,17 +59,6 @@ package string getDLangInterfaceType(T)() {
     } else {
         return fullyQualifiedName!T;
     }
-}
-
-package string getInterfaceTypeString(T)() {
-    import std.datetime : DateTime, SysTime, Date, TimeOfDay, Duration;
-    import std.traits : fullyQualifiedName;
-
-    if (is(T == DateTime) || is(T == SysTime) || is(T == Date) || is(T == TimeOfDay) || is(T == Duration)) {
-        return "datetime";
-    }
-
-    return fullyQualifiedName!T;
 }
 
 package string getDLangInterfaceName(string moduleName, string aggName, string funcName) {

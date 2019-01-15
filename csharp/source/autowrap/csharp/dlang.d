@@ -5,7 +5,7 @@ import scriptlike : interp, _interp_text;
 import core.time : Duration;
 import std.datetime : Date, DateTime, SysTime, TimeOfDay, TimeZone;
 import autowrap.csharp.common : generateSharedTypes, getDLangInterfaceType;
-import autowrap.reflection : isModule;
+import autowrap.reflection : isModule, PrimordialType;
 import std.ascii : newline;
 import std.meta : allSatisfy;
 
@@ -22,6 +22,7 @@ public string wrapDLang(Modules...)() if(allSatisfy!(isModule, Modules)) {
     import autowrap.reflection : AllAggregates;
     import std.traits : fullyQualifiedName, moduleName;
     import std.meta : AliasSeq;
+    import std.traits : ForeachType;
 
     string ret = string.init;
     ret ~= "import core.thread : thread_attachThis, thread_detachThis;" ~ newline;
@@ -38,7 +39,7 @@ public string wrapDLang(Modules...)() if(allSatisfy!(isModule, Modules)) {
 
     alias aggregates = AllAggregates!Modules;
     static foreach(agg; aggregates) {
-        static if (!(is(agg == Date) || is(agg == DateTime) || is(agg == SysTime) || is(agg == TimeOfDay) || is(agg == Duration) || is(agg == TimeZone))) {
+        static if (!isDateTimeType!agg) {
             ret ~= generateSliceMethods!agg();
             ret ~= generateConstructors!agg();
             ret ~= generateMethods!agg();
@@ -55,15 +56,12 @@ private string generateConstructors(T)() {
     import autowrap.csharp.common : getDLangInterfaceName;
     import std.traits : fullyQualifiedName, hasMember, Parameters, ParameterIdentifierTuple;
     import std.meta : AliasSeq;
+    import std.algorithm : among;
 
     string ret = string.init;
     alias fqn = getDLangInterfaceType!T;
-    static if(hasMember!(T, "__ctor")) {
-        static if (__traits(getProtection, __traits(getMember, T, "__ctor")) == "export" || __traits(getProtection, __traits(getMember, T, "__ctor")) == "public") {
-            alias constructors = AliasSeq!(__traits(getOverloads, T, "__ctor"));
-        } else {
-            alias constructors = AliasSeq!();
-        }
+    static if(hasMember!(T, "__ctor") && __traits(getProtection, __traits(getMember, T, "__ctor")).among("export", "public")) {
+        alias constructors = AliasSeq!(__traits(getOverloads, T, "__ctor"));
     } else {
         alias constructors = AliasSeq!();
     }
@@ -122,6 +120,8 @@ private string generateMethods(T)() {
     import autowrap.csharp.common : getDLangInterfaceName;
     import std.traits : isFunction, fullyQualifiedName, ReturnType, Parameters, ParameterIdentifierTuple;
     import std.conv : to;
+    import std.algorithm : among;
+    import std.traits : ForeachType;
 
     string ret = string.init;
     alias fqn = getDLangInterfaceType!T;
@@ -134,7 +134,7 @@ private string generateMethods(T)() {
             foreach(oc, mo; __traits(getOverloads, T, m)) {
                 const bool isMethod = isFunction!mo;
 
-                static if(isMethod && (__traits(getProtection, mo) == "export" || __traits(getProtection, mo) == "public")) {
+                static if(isMethod && __traits(getProtection, mo).among("export", "public")) {
                     string exp = string.init;
                     const string interfaceName = getDLangInterfaceName(fqn, m);
 
@@ -174,10 +174,8 @@ private string generateMethods(T)() {
                         exp = exp[0..$-2];
                     }
                     exp ~= ");" ~ newline;
-                    static if (is(returnType == Date) || is(returnType == DateTime) || is(returnType == TimeOfDay) || is(returnType == SysTime) || is(returnType == Duration)) {
-                        exp ~= mixin(interp!"        return returnValue!(${returnTypeStr})(toDatetime!(${fullyQualifiedName!returnType})(__result__));${newline}");
-                    } else static if (is(returnType == Date[]) || is(returnType == DateTime[]) || is(returnType == TimeOfDay[]) || is(returnType == SysTime[]) || is(returnType == Duration[])) {
-                        exp ~= mixin(interp!"        return returnValue!(${returnTypeStr})(toDatetimeArray!(${fullyQualifiedName!returnType})(__result__));${newline}");
+                    static if (isDateTimeType!returnType || isDateTimeArrayType!returnType) {
+                        exp ~= mixin(interp!"        return returnValue!(${returnTypeStr})(${generateReturn!returnType(\"__result__\")});${newline}");
                     } else static if (!is(returnType == void)) {
                         exp ~= mixin(interp!"        return returnValue!(${returnTypeStr})(__result__);${newline}");
                     } else {
@@ -339,12 +337,13 @@ private string generateMethodErrorHandling(string insideCode, string returnType)
 private string generateParameter(T)(string name) {
     import std.datetime : DateTime, Date, TimeOfDay, SysTime, Duration;
     import std.traits : fullyQualifiedName;
+    import std.traits : ForeachType;
 
-    alias fqn = fullyQualifiedName!T;
-    static if (is(T == DateTime) || is(T == Date) || is(T == TimeOfDay) || is(T == SysTime) || is(T == Duration)) {
+    alias fqn = fullyQualifiedName!(PrimordialType!T);
+    static if (isDateTimeType!T) {
         return mixin(interp!"fromDatetime!(${fqn})(${name})");
-    } else static if (is(T == DateTime[]) || is(T == Date[]) || is(T == TimeOfDay[]) || is(T == SysTime[]) || is(T == Duration[])) {
-        return mixin(interp!"fromDatetimeArray!(${fqn})(${name})");
+    } else static if (isDateTimeArrayType!T) {
+        return mixin(interp!"fromDatetime1DArray!(${fqn})(${name})");
     } else {
         return name;
     }
@@ -353,12 +352,13 @@ private string generateParameter(T)(string name) {
 private string generateReturn(T)(string name) {
     import std.datetime : DateTime, Date, TimeOfDay, SysTime, Duration;
     import std.traits : fullyQualifiedName;
+    import std.traits : ForeachType;
 
-    alias fqn = fullyQualifiedName!T;
-    static if (is(T == DateTime) || is(T == Date) || is(T == TimeOfDay) || is(T == SysTime) || is(T == Duration)) {
+    alias fqn = fullyQualifiedName!(PrimordialType!T);
+    static if (isDateTimeType!T) {
         return mixin(interp!"toDatetime!(${fqn})(${name})");
-    } else static if (is(T == DateTime[]) || is(T == Date[]) || is(T == TimeOfDay[]) || is(T == SysTime[]) || is(T == Duration[])) {
-        return mixin(interp!"toDatetimeArray!(${fqn})(${name})");
+    } else static if (isDateTimeArrayType!T) {
+        return mixin(interp!"toDatetime1DArray!(${fqn})(${name})");
     } else {
         return name;
     }

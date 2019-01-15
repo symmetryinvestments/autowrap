@@ -174,16 +174,13 @@ private void generateConstructors(T)(string libraryName, CSharpAggregate csagg) 
     import autowrap.csharp.common : getDLangInterfaceName;
     import std.traits : fullyQualifiedName, hasMember, Parameters, ParameterIdentifierTuple;
     import std.meta: AliasSeq;
+    import std.algorithm : among;
 
     const string aggName = __traits(identifier, T);
     alias fqn = fullyQualifiedName!T;
 
-    static if(hasMember!(T, "__ctor")) {
-        static if (__traits(getProtection, __traits(getMember, T, "__ctor")) == "export" || __traits(getProtection, __traits(getMember, T, "__ctor")) == "public") {
-            alias constructors = AliasSeq!(__traits(getOverloads, T, "__ctor"));
-        } else {
-            alias constructors = AliasSeq!();
-        }
+    static if(hasMember!(T, "__ctor") && __traits(getProtection, __traits(getMember, T, "__ctor")).among("export", "public")) {
+        alias constructors = AliasSeq!(__traits(getOverloads, T, "__ctor"));
     } else {
         alias constructors = AliasSeq!();
     }

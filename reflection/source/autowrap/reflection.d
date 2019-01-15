@@ -281,7 +281,7 @@ package template Symbol(alias parent, string memberName) {
 
 
 // T -> T, T[] -> T, T[][] -> T, T* -> T
-private template PrimordialType(T) if(isArray!T) {
+template PrimordialType(T) if(isArray!T) {
 
     import std.range.primitives: ElementType;
 
@@ -293,7 +293,7 @@ private template PrimordialType(T) if(isArray!T) {
 
 
 // T -> T, T[] -> T, T[][] -> T, T* -> T
-private template PrimordialType(T) if(!isArray!T) {
+template PrimordialType(T) if(!isArray!T) {
 
     import std.traits: isPointer, PointerTarget;
 
