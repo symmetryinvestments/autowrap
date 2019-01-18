@@ -2,6 +2,11 @@ module autowrap.csharp.common;
 
 import std.datetime : DateTime, SysTime, Date, TimeOfDay, Duration;
 
+public enum isDateTimeType(T) = is(T == Date) || is(T == DateTime) || is(T == SysTime) || is(T == TimeOfDay) || is(T == Duration);
+public enum isDateTimeArrayType(T) = is(T == Date[]) || is(T == DateTime[]) || is(T == SysTime[]) || is(T == TimeOfDay[]) || is(T == Duration[]);
+
+enum string[] excludedMethods = ["toHash", "opEquals", "opCmp", "factory", "__ctor"];
+
 public struct LibraryName {
     string value;
 }
@@ -12,9 +17,6 @@ public struct RootNamespace {
 
 public string generateSharedTypes() {
     return q{
-        enum isDateTimeType(T) = is(T == Date) || is(T == DateTime) || is(T == SysTime) || is(T == TimeOfDay) || is(T == Duration);
-        enum isDateTimeArrayType(T) = is(T == Date[]) || is(T == DateTime[]) || is(T == SysTime[]) || is(T == TimeOfDay[]) || is(T == Duration[]);
-
         extern(C) export struct datetime {
             long ticks;
             long offset;
@@ -65,6 +67,7 @@ package string getDLangInterfaceName(string moduleName, string aggName, string f
     import std.algorithm : map;
     import std.string : split;
     import std.array : join;
+
     string name = "autowrap_csharp_";
     name ~= moduleName.split(".").map!camelToPascalCase.join("_");
 
@@ -87,13 +90,13 @@ package string getDLangInterfaceName(string fqn, string funcName) {
 }
 
 package string getDLangSliceInterfaceName(string fqn, string funcName) {
-    import std.algorithm : map;
+    import std.algorithm : map, among;
     import std.string : split;
     import std.array : join;
 
     string name = "autowrap_csharp_slice_";
 
-    if (fqn == "core.time.Duration" || fqn == "std.datetime.systime.SysTime" || fqn == "std.datetime.date.DateTime" || fqn == "autowrap.csharp.dlang.datetime") {
+    if (fqn.among("core.time.Duration", "std.datetime.systime.SysTime", "std.datetime.date.DateTime", "autowrap.csharp.dlang.datetime")) {
         fqn = "datetime";
     }
 

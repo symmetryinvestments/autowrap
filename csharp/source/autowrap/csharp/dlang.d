@@ -18,11 +18,10 @@ mixin(generateSharedTypes());
 
 // Wrap global functions from multiple modules
 public string wrapDLang(Modules...)() if(allSatisfy!(isModule, Modules)) {
-    import autowrap.csharp.common : getDLangInterfaceName;
+    import autowrap.csharp.common : isDateTimeType;
     import autowrap.reflection : AllAggregates;
     import std.traits : fullyQualifiedName, moduleName;
     import std.meta : AliasSeq;
-    import std.traits : ForeachType;
 
     string ret = string.init;
     ret ~= "import core.thread : thread_attachThis, thread_detachThis;" ~ newline;
@@ -117,16 +116,15 @@ private string generateConstructors(T)() {
 }
 
 private string generateMethods(T)() {
-    import autowrap.csharp.common : getDLangInterfaceName;
+    import autowrap.csharp.common : isDateTimeType, isDateTimeArrayType, getDLangInterfaceName;
     import std.traits : isFunction, fullyQualifiedName, ReturnType, Parameters, ParameterIdentifierTuple;
     import std.conv : to;
     import std.algorithm : among;
-    import std.traits : ForeachType;
 
     string ret = string.init;
     alias fqn = getDLangInterfaceType!T;
     foreach(m; __traits(allMembers, T)) {
-        if (m == "__ctor" || m == "toHash" || m == "opEquals" || m == "opCmp" || m == "factory") {
+        if (m.among("__ctor", "toHash", "opEquals", "opCmp", "factory")) {
             continue;
         }
 
@@ -335,9 +333,9 @@ private string generateMethodErrorHandling(string insideCode, string returnType)
 }
 
 private string generateParameter(T)(string name) {
+    import autowrap.csharp.common : isDateTimeType, isDateTimeArrayType;
     import std.datetime : DateTime, Date, TimeOfDay, SysTime, Duration;
     import std.traits : fullyQualifiedName;
-    import std.traits : ForeachType;
 
     alias fqn = fullyQualifiedName!(PrimordialType!T);
     static if (isDateTimeType!T) {
@@ -350,9 +348,9 @@ private string generateParameter(T)(string name) {
 }
 
 private string generateReturn(T)(string name) {
+    import autowrap.csharp.common : isDateTimeType, isDateTimeArrayType;
     import std.datetime : DateTime, Date, TimeOfDay, SysTime, Duration;
     import std.traits : fullyQualifiedName;
-    import std.traits : ForeachType;
 
     alias fqn = fullyQualifiedName!(PrimordialType!T);
     static if (isDateTimeType!T) {
