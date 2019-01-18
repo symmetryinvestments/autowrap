@@ -61,8 +61,7 @@ private string generateConstructors(T)() {
     alias fqn = getDLangInterfaceType!T;
 
     //Generate constructor methods
-    if (is(typeof(__traits(getMember, T, "__ctor")))) {
-    //static if(hasMember!(T, "__ctor") && __traits(getProtection, __traits(getMember, T, "__ctor")).among("export", "public")) {
+    static if(hasMember!(T, "__ctor") && __traits(getProtection, __traits(getMember, T, "__ctor")).among("export", "public")) {
         foreach(c; __traits(getOverloads, T, "__ctor")) {
             if (__traits(getProtection, c).among("export", "public")) {
                 alias paramNames = ParameterIdentifierTuple!c;
