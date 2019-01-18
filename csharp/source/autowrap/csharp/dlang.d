@@ -59,57 +59,56 @@ private string generateConstructors(T)() {
 
     string ret = string.init;
     alias fqn = getDLangInterfaceType!T;
-    static if(hasMember!(T, "__ctor") && __traits(getProtection, __traits(getMember, T, "__ctor")).among("export", "public")) {
-        alias constructors = AliasSeq!(__traits(getOverloads, T, "__ctor"));
-    } else {
-        alias constructors = AliasSeq!();
-    }
 
     //Generate constructor methods
-    foreach(c; constructors) {
-        alias paramNames = ParameterIdentifierTuple!c;
-        alias paramTypes = Parameters!c;
-        string exp = "extern(C) export ";
-        const string interfaceName = getDLangInterfaceName(fqn, "__ctor");
+    if (is(typeof(__traits(getMember, T, "__ctor")))) {
+    //static if(hasMember!(T, "__ctor") && __traits(getProtection, __traits(getMember, T, "__ctor")).among("export", "public")) {
+        foreach(c; __traits(getOverloads, T, "__ctor")) {
+            if (__traits(getProtection, c).among("export", "public")) {
+                alias paramNames = ParameterIdentifierTuple!c;
+                alias paramTypes = Parameters!c;
+                string exp = "extern(C) export ";
+                const string interfaceName = getDLangInterfaceName(fqn, "__ctor");
 
-        exp ~= mixin(interp!"returnValue!(${fqn}) ${interfaceName}(");
+                exp ~= mixin(interp!"returnValue!(${fqn}) ${interfaceName}(");
 
-        static foreach(pc; 0..paramNames.length) {
-            exp ~= mixin(interp!"${getDLangInterfaceType!(paramTypes[pc])} ${paramNames[pc]}, ");
+                static foreach(pc; 0..paramNames.length) {
+                    exp ~= mixin(interp!"${getDLangInterfaceType!(paramTypes[pc])} ${paramNames[pc]}, ");
+                }
+                if (paramTypes.length > 0) {
+                    exp = exp[0..$-2];
+                }
+                exp ~= ") nothrow {" ~ newline;
+                exp ~= "    try {" ~ newline;
+                exp ~= methodSetup ~ newline;
+                if (is(T == class)) {
+                    exp ~= mixin(interp!"        ${fqn} __temp__ = new ${fqn}(");
+                    static foreach(pc; 0..paramNames.length) {
+                        exp ~= mixin(interp!"${paramNames[pc]}, ");
+                    }
+                    if (paramTypes.length > 0) {
+                        exp = exp[0..$-2];
+                    }
+                    exp ~= ");" ~ newline;
+                    exp ~= "        pinPointer(cast(void*)__temp__);" ~ newline;
+                    exp ~= mixin(interp!"        return returnValue!(${fqn})(__temp__);${newline}");
+                } else if (is(T == struct)) {
+                    exp ~= mixin(interp!"        return ${fqn}(");
+                    foreach(pn; paramNames) {
+                        exp ~= mixin(interp!"${pn}, ");
+                    }
+                    if (paramTypes.length > 0) {
+                        exp = exp[0..$-2];
+                    }
+                    exp ~= ");" ~ newline;
+                }
+                exp ~= "    } catch (Exception __ex__) {" ~ newline;
+                exp ~= mixin(interp!"        return returnValue!(${fqn})(__ex__);${newline}");
+                exp ~= "    }" ~ newline;
+                exp ~= "}" ~ newline;
+                ret ~= exp;
+            }
         }
-        if (paramTypes.length > 0) {
-            exp = exp[0..$-2];
-        }
-        exp ~= ") nothrow {" ~ newline;
-        exp ~= "    try {" ~ newline;
-        exp ~= methodSetup ~ newline;
-        if (is(T == class)) {
-            exp ~= "        import std.stdio : writeln;" ~ newline;
-            exp ~= mixin(interp!"        ${fqn} __temp__ = new ${fqn}(");
-            static foreach(pc; 0..paramNames.length) {
-                exp ~= mixin(interp!"${paramNames[pc]}, ");
-            }
-            if (paramTypes.length > 0) {
-                exp = exp[0..$-2];
-            }
-            exp ~= ");" ~ newline;
-            exp ~= "        pinPointer(cast(void*)__temp__);" ~ newline;
-            exp ~= mixin(interp!"        return returnValue!(${fqn})(__temp__);${newline}");
-        } else if (is(T == struct)) {
-            exp ~= mixin(interp!"        return ${fqn}(");
-            foreach(pn; paramNames) {
-                exp ~= mixin(interp!"${pn}, ");
-            }
-            if (paramTypes.length > 0) {
-                exp = exp[0..$-2];
-            }
-            exp ~= ");" ~ newline;
-        }
-        exp ~= "    } catch (Exception __ex__) {" ~ newline;
-        exp ~= mixin(interp!"        return returnValue!(${fqn})(__ex__);${newline}");
-        exp ~= "    }" ~ newline;
-        exp ~= "}" ~ newline;
-        ret ~= exp;
     }
 
     return ret;
