@@ -662,12 +662,12 @@ private string getCSharpInterfaceType(string type) {
 }
 
 private string getDLangReturnType(string type, bool isClass) {
-    import std.stdio;
+    import std.algorithm : among;
 
     string rtname = getReturnErrorTypeName(getDLangInterfaceType(type));
     //These types have predefined C# types.
-    if (type == dateTypeString || type == dateTimeTypeString || type == sysTimeTypeString || type == timeOfDayTypeString || type == durationTypeString ||
-        type == voidTypeString || type == boolTypeString || type == stringTypeString || type == wstringTypeString || type == dstringTypeString || rtname == "return_slice_error") {
+    if (type.among(dateTypeString, dateTimeTypeString, sysTimeTypeString, timeOfDayTypeString, durationTypeString,
+        voidTypeString, boolTypeString, stringTypeString, wstringTypeString, dstringTypeString) || rtname == "return_slice_error") {
         return rtname;
     }
 
