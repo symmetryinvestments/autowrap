@@ -142,7 +142,6 @@ public string generateCSharp(Modules...)(LibraryName libraryName, RootNamespace 
     import core.time : Duration;
     import std.datetime : Date, DateTime, SysTime, TimeOfDay, TimeZone;
     import autowrap.reflection : AllAggregates;
-    import std.traits : moduleName;
 
     generateSliceBoilerplate(libraryName.value);
 
@@ -150,10 +149,10 @@ public string generateCSharp(Modules...)(LibraryName libraryName, RootNamespace 
     static foreach(agg; aggregates) {
         static if (!(is(agg == Date) || is(agg == DateTime) || is(agg == SysTime) || is(agg == TimeOfDay) || is(agg == Duration) || is(agg == TimeZone))) {
             generateRangeDef!agg(libraryName.value);
-            generateConstructors!agg(libraryName.value, getAggregate(getCSharpName(moduleName!agg), getCSharpName(__traits(identifier, agg)), !is(agg == class)));
-            generateMethods!agg(libraryName.value, getAggregate(getCSharpName(moduleName!agg), getCSharpName(__traits(identifier, agg)), !is(agg == class)));
-            generateProperties!agg(libraryName.value, getAggregate(getCSharpName(moduleName!agg), getCSharpName(__traits(identifier, agg)), !is(agg == class)));
-            generateFields!agg(libraryName.value, getAggregate(getCSharpName(moduleName!agg), getCSharpName(__traits(identifier, agg)), !is(agg == class)));
+            generateConstructors!agg(libraryName.value);
+            generateMethods!agg(libraryName.value);
+            generateProperties!agg(libraryName.value);
+            generateFields!agg(libraryName.value);
         }
     }
 
@@ -170,14 +169,15 @@ public string generateCSharp(Modules...)(LibraryName libraryName, RootNamespace 
     return cast(immutable)ret;
 }
 
-private void generateConstructors(T)(string libraryName, CSharpAggregate csagg) if (is(T == class) || is(T == struct)) {
+private void generateConstructors(T)(string libraryName) if (is(T == class) || is(T == struct)) {
     import autowrap.csharp.common : getDLangInterfaceName;
-    import std.traits : fullyQualifiedName, hasMember, Parameters, ParameterIdentifierTuple;
+    import std.traits : moduleName, fullyQualifiedName, hasMember, Parameters, ParameterIdentifierTuple;
     import std.meta: AliasSeq;
     import std.algorithm : among;
 
-    const string aggName = __traits(identifier, T);
     alias fqn = fullyQualifiedName!T;
+    const string aggName = __traits(identifier, T);
+    CSharpAggregate csagg = getAggregate(getCSharpName(moduleName!T), getCSharpName(aggName), !is(T == class));
 
     static if(hasMember!(T, "__ctor") && __traits(getProtection, __traits(getMember, T, "__ctor")).among("export", "public")) {
         alias constructors = AliasSeq!(__traits(getOverloads, T, "__ctor"));
@@ -237,13 +237,14 @@ private void generateConstructors(T)(string libraryName, CSharpAggregate csagg) 
     }
 }
 
-private void generateMethods(T)(string libraryName, CSharpAggregate csagg) if (is(T == class) || is(T == interface) || is(T == struct)) {
+private void generateMethods(T)(string libraryName) if (is(T == class) || is(T == interface) || is(T == struct)) {
     import autowrap.csharp.common : camelToPascalCase, getDLangInterfaceName;
-    import std.traits : isArray, fullyQualifiedName, isFunction, functionAttributes, FunctionAttribute, ReturnType, Parameters, ParameterIdentifierTuple;
+    import std.traits : moduleName, isArray, fullyQualifiedName, isFunction, functionAttributes, FunctionAttribute, ReturnType, Parameters, ParameterIdentifierTuple;
     import std.conv : to;
 
-    const string aggName = __traits(identifier, T);
     alias fqn = fullyQualifiedName!T;
+    const string aggName = __traits(identifier, T);
+    CSharpAggregate csagg = getAggregate(getCSharpName(moduleName!T), getCSharpName(aggName), !is(T == class));
 
     foreach(m; __traits(allMembers, T)) {
         if (m == "__ctor" || m == "toHash" || m == "opEquals" || m == "opCmp" || m == "factory") {
@@ -334,12 +335,13 @@ private void generateMethods(T)(string libraryName, CSharpAggregate csagg) if (i
     }
 }
 
-private void generateProperties(T)(string libraryName, CSharpAggregate csagg) if (is(T == class) || is(T == interface) || is(T == struct)) {
+private void generateProperties(T)(string libraryName) if (is(T == class) || is(T == interface) || is(T == struct)) {
     import autowrap.csharp.common : camelToPascalCase;
-    import std.traits : isArray, fullyQualifiedName, functionAttributes, FunctionAttribute, ReturnType, Parameters;
+    import std.traits : moduleName, isArray, fullyQualifiedName, functionAttributes, FunctionAttribute, ReturnType, Parameters;
 
-    const string aggName = __traits(identifier, T);
     alias fqn = fullyQualifiedName!T;
+    const string aggName = __traits(identifier, T);
+    CSharpAggregate csagg = getAggregate(getCSharpName(moduleName!T), getCSharpName(aggName), !is(T == class));
 
     foreach(m; __traits(allMembers, T)) {
         if (m == "__ctor" || m == "toHash" || m == "opEquals" || m == "opCmp" || m == "factory") {
@@ -425,14 +427,17 @@ private void generateProperties(T)(string libraryName, CSharpAggregate csagg) if
     }
 }
 
-private void generateFields(T)(string libraryName, CSharpAggregate csagg) if (is(T == class) || is(T == interface) || is(T == struct)) {
+private void generateFields(T)(string libraryName) if (is(T == class) || is(T == interface) || is(T == struct)) {
     import autowrap.csharp.common : getDLangInterfaceName;
-    import std.traits : isArray, fullyQualifiedName, Fields, FieldNameTuple;
+    import std.traits : moduleName, isArray, fullyQualifiedName, Fields, FieldNameTuple;
 
-    const string aggName = __traits(identifier, T);
     alias fqn = fullyQualifiedName!T;
+    const string aggName = __traits(identifier, T);
+    CSharpAggregate csagg = getAggregate(getCSharpName(moduleName!T), getCSharpName(aggName), !is(T == class));
+
     alias fieldTypes = Fields!T;
     alias fieldNames = FieldNameTuple!T;
+
     if (is(T == class) || is(T == interface)) {
         static foreach(fc; 0..fieldTypes.length) {
             static if (is(typeof(__traits(getMember, T, fieldNames[fc])))) {
