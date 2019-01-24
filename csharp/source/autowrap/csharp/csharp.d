@@ -140,14 +140,14 @@ public struct csharpRange {
 
 public string generateCSharp(Modules...)(LibraryName libraryName, RootNamespace rootNamespace) if(allSatisfy!(isModule, Modules)) {
     import core.time : Duration;
-    import std.datetime : Date, DateTime, SysTime, TimeOfDay, TimeZone;
+    import autowrap.csharp.common : isDateTimeType;
     import autowrap.reflection : AllAggregates;
 
     generateSliceBoilerplate(libraryName.value);
 
     alias aggregates = AllAggregates!Modules;
     static foreach(agg; aggregates) {
-        static if (!(is(agg == Date) || is(agg == DateTime) || is(agg == SysTime) || is(agg == TimeOfDay) || is(agg == Duration) || is(agg == TimeZone))) {
+        static if (!(isDateTimeType!agg)) {
             generateRangeDef!agg(libraryName.value);
             generateConstructors!agg(libraryName.value);
             generateMethods!agg(libraryName.value);
@@ -782,7 +782,7 @@ private void generateRangeDef(T)(string libraryName) {
 }
 
 private void generateSliceBoilerplate(string libraryName) {
-    import std.datetime: Date, DateTime, TimeOfDay, SysTime, Duration;
+    import std.datetime: DateTime, SysTime, Duration;
 
     void generateStringBoilerplate(string dlangType, string csharpType) {
         rangeDef.enumerators ~= mixin(interp!"                else if (typeof(T) == typeof(string) && _strings == null && _type == DStringType._${dlangType}) yield return (T)(object)SharedFunctions.SliceToString(RangeFunctions.${csharpType}_Get(_slice, new IntPtr(i)), DStringType._${dlangType});${newline}");

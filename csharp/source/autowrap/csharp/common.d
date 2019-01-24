@@ -1,9 +1,10 @@
 module autowrap.csharp.common;
 
-import std.datetime : DateTime, SysTime, Date, TimeOfDay, Duration;
+public import std.datetime : DateTime, SysTime, Date, TimeOfDay, Duration, TimeZone;
+public import std.traits : Unqual;
 
-public enum isDateTimeType(T) = is(T == Date) || is(T == DateTime) || is(T == SysTime) || is(T == TimeOfDay) || is(T == Duration);
-public enum isDateTimeArrayType(T) = is(T == Date[]) || is(T == DateTime[]) || is(T == SysTime[]) || is(T == TimeOfDay[]) || is(T == Duration[]);
+public enum isDateTimeType(T) = is(T == Unqual!Date) || is(T == Unqual!DateTime) || is(T == Unqual!SysTime) || is(T == Unqual!TimeOfDay) || is(T == Unqual!Duration) || is(T == Unqual!TimeZone);
+public enum isDateTimeArrayType(T) = is(T == Unqual!(Date[])) || is(T == Unqual!(DateTime[])) || is(T == Unqual!(SysTime[])) || is(T == Unqual!(TimeOfDay[])) || is(T == Unqual!(Duration[])) || is(T == Unqual!(TimeZone[]));
 
 enum string[] excludedMethods = ["toHash", "opEquals", "opCmp", "factory", "__ctor"];
 
