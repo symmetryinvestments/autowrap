@@ -16,48 +16,16 @@ public struct RootNamespace {
     string value;
 }
 
-public string generateSharedTypes() {
-    return q{
-        extern(C) export struct datetime {
-            long ticks;
-            long offset;
-
-            public this(Duration value) {
-                this.ticks = value.total!"hnsecs";
-                this.offset = 0;
-            }
-
-            public this(DateTime value) {
-                this.ticks = SysTime(value).stdTime;
-                this.offset = 0;
-            }
-
-            public this(Date value) {
-                this.ticks = SysTime(value).stdTime;
-                this.offset = 0;
-            }
-
-            public this(TimeOfDay value) {
-                import core.time : Duration, hours, minutes, seconds;
-                Duration t = hours(value.hour) + minutes(value.minute) + seconds(value.second);
-                this.ticks = t.total!"hnsecs";
-                this.offset = 0;
-            }
-
-            public this(SysTime value) {
-                this.ticks = value.stdTime;
-                this.offset = value.utcOffset.total!"hnsecs";
-            }
-        }
-    };
+public struct OutputFileName {
+    string value;
 }
 
 package string getDLangInterfaceType(T)() {
     import std.traits : fullyQualifiedName;
     import std.datetime : DateTime, SysTime, Date, TimeOfDay, Duration;
-    if (is(T == Date) || is(T == DateTime) || is(T == SysTime) || is(T == TimeOfDay) || is(T == Duration)) {
+    if (isDateTimeType!T) {
         return "datetime";
-    } else if (is(T == Date[]) || is(T == DateTime[]) || is(T == SysTime[]) || is(T == TimeOfDay[]) || is(T == Duration[])) {
+    } else if (isDateTimeArrayType!T) {
         return "datetime[]";
     } else {
         return fullyQualifiedName!T;

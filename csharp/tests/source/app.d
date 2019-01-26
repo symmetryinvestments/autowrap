@@ -13,3 +13,5 @@ mixin(
         RootNamespace("Autowrap.CSharp.Tests")
     )
 );
+
+pragma(msg, wrapCSharp(modules, OutputFileName("Wrapper.cs"), LibraryName("csharp-tests"), RootNamespace("Autowrap.CSharp.Tests")));

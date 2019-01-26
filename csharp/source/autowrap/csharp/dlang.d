@@ -4,17 +4,18 @@ import scriptlike : interp, _interp_text;
 
 import core.time : Duration;
 import std.datetime : Date, DateTime, SysTime, TimeOfDay, TimeZone;
-import autowrap.csharp.common : generateSharedTypes, getDLangInterfaceType;
-import autowrap.reflection : isModule, PrimordialType;
 import std.ascii : newline;
 import std.meta : allSatisfy;
+
+import autowrap.csharp.boilerplate;
+import autowrap.csharp.common : getDLangInterfaceType;
+import autowrap.reflection : isModule, PrimordialType;
 
 enum string methodSetup = "        thread_attachThis();
         rt_moduleTlsCtor();
         scope(exit) rt_moduleTlsDtor();
         scope(exit) thread_detachThis();";
 
-mixin(generateSharedTypes());
 
 // Wrap global functions from multiple modules
 public string wrapDLang(Modules...)() if(allSatisfy!(isModule, Modules)) {
