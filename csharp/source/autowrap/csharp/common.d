@@ -66,7 +66,7 @@ package string getDLangSliceInterfaceName(string fqn, string funcName) {
     string name = "autowrap_csharp_slice_";
 
     if (fqn.among("core.time.Duration", "std.datetime.systime.SysTime", "std.datetime.date.DateTime", "autowrap.csharp.dlang.datetime")) {
-        fqn = "datetime";
+        fqn = "Autowrap_Csharp_Boilerplate_Datetime";
     }
 
     name ~= fqn.split(".").map!camelToPascalCase.join("_");
