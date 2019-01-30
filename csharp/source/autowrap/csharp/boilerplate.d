@@ -16,8 +16,9 @@ import autowrap.csharp;
 
 import core.time;
 import core.memory;
-import std.datetime : DateTime, SysTime, Date, TimeOfDay, SimpleTimeZone, LocalTime;
 import std.conv;
+import std.datetime : DateTime, SysTime, Date, TimeOfDay, SimpleTimeZone, LocalTime;
+import std.meta : Unqual;
 import std.string;
 import std.traits;
 import std.utf;
@@ -109,17 +110,20 @@ if (isDateTimeType!T) {
     return value.map!datetime.array;
 }
 
-public T fromDatetime(T)(datetime value)
-if (isDateTimeType!T) {
-    static if (is(T == SysTime)) {
-        return SysTime(value.ticks, cast(immutable)new SimpleTimeZone(hnsecs(value.offset)));
-    } else static if (is(T == DateTime)) {
-        return cast(T)SysTime(value.ticks, LocalTime());
-    } else static if (is(T == Date) || is(T == TimeOfDay)) {
-        return cast(T)SysTime(value.ticks, cast(immutable)new SimpleTimeZone(hnsecs(0)));
-    } else static if (is(T == Duration)) {
-        return hnsecs(value.ticks);
-    }
+public T fromDatetime(T)(datetime value) if (is(Unqual!T == SysTime)) {
+    return SysTime(value.ticks, cast(immutable)new SimpleTimeZone(hnsecs(value.offset)));
+}
+
+public T fromDatetime(T)(datetime value) if (is(Unqual!T == DateTime)) {
+    return cast(T)SysTime(value.ticks, LocalTime());
+}
+
+public T fromDatetime(T)(datetime value) if (is(Unqual!T == Date) || is(Unqual!T == TimeOfDay)) {
+    return cast(T)SysTime(value.ticks, cast(immutable)new SimpleTimeZone(hnsecs(0)));
+}
+
+public T fromDatetime(T)(datetime value) if (is(Unqual!T == Duration)) {
+    return hnsecs(value.ticks);
 }
 
 public T[] fromDatetime1DArray(T)(datetime[] value)
