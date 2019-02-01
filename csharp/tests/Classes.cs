@@ -2,6 +2,7 @@ namespace Autowrap.CSharp.Tests
 {
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Test;
 
@@ -62,6 +63,65 @@ namespace Autowrap.CSharp.Tests
             Assert.AreEqual(2.0f, t.ValueMember.Value, "Incorrect Value for t.ValueMember");
             t.RefMember = new C1("Hello World!", 1);
             Assert.AreEqual(1, t.RefMember.IntValue, "Incorrect Value for t.RefMember.IntValue");
+        }
+
+        [TestMethod]
+        public void ClassSysDateTime() {
+            var t = new C1("Hello World!", 1);
+            var dt1 = new DateTime(2000, 1, 1, 0,0,0, DateTimeKind.Utc);
+            var dt2 = new DateTime(2000, 1, 1, 0,0,0, DateTimeKind.Utc);
+            var dt3 = new DateTime(2000, 1, 1, 0,0,0, DateTimeKind.Utc);
+            var dta = new DateTime[] {dt1, dt2, dt3};
+            var dto1 = new DateTimeOffset(dt1, new TimeSpan(0));
+            var dto2 = new DateTimeOffset(dt2, new TimeSpan(0));
+            var dto3 = new DateTimeOffset(dt3, new TimeSpan(0));
+            var dtoa = new DateTimeOffset[] {dto1, dto2, dto3};
+            var ts1 = new TimeSpan(1,0,0);
+            var ts2 = new TimeSpan(2,0,0);
+            var ts3 = new TimeSpan(3,0,0);
+            var ts4 = new TimeSpan(4,0,0);
+            var tsa = new TimeSpan[] {ts1, ts2, ts3, ts4};
+
+            t.DateMember = dt1;
+            Assert.AreEqual(dt1.Date, t.DateMember.Date, "Incorrect Value for t.DateMember");
+            t.DateArray = dta;
+            Assert.AreEqual(dta.Length, t.DateArray.Length, "Incorrect Length for t.DateArray");
+            Assert.AreEqual(dt1.Date, t.DateArray[0].Date, "Incorrect Value for t.DateArray[0]");
+            Assert.AreEqual(dt2.Date, t.DateArray[1].Date, "Incorrect Value for t.DateArray[1]");
+            Assert.AreEqual(dt3.Date, t.DateArray[2].Date, "Incorrect Value for t.DateArray[2]");
+
+            t.DateTimeMember = dt1;
+            Assert.AreEqual(dt1, t.DateTimeMember, "Incorrect Value for t.DateTimeMember");
+            t.DateTimeArray = dta;
+            Assert.AreEqual(dta.Length, t.DateTimeArray.Length, "Incorrect Length for t.DateTimeArray");
+            Assert.AreEqual(dt1, t.DateTimeArray[0], "Incorrect Value for t.DateTimeArray[0]");
+            Assert.AreEqual(dt2, t.DateTimeArray[1], "Incorrect Value for t.DateTimeArray[1]");
+            Assert.AreEqual(dt3, t.DateTimeArray[2], "Incorrect Value for t.DateTimeArray[2]");
+
+            t.TimeOfDayMember = dt1;
+            Assert.AreEqual(dt1.TimeOfDay, t.TimeOfDayMember.TimeOfDay, "Incorrect Value for t.TimeOfDayMember");
+            t.TimeOfDayArray = dta;
+            Assert.AreEqual(dta.Length, t.TimeOfDayArray.Length, "Incorrect Length for t.TimeOfDayArray");
+            Assert.AreEqual(dt1.TimeOfDay, t.TimeOfDayArray[0].TimeOfDay, "Incorrect Value for t.TimeOfDayArray[0]");
+            Assert.AreEqual(dt2.TimeOfDay, t.TimeOfDayArray[1].TimeOfDay, "Incorrect Value for t.TimeOfDayArray[1]");
+            Assert.AreEqual(dt3.TimeOfDay, t.TimeOfDayArray[2].TimeOfDay, "Incorrect Value for t.TimeOfDayArray[2]");
+
+            t.SysTimeMember = dto1;
+            Assert.AreEqual(dto1, t.SysTimeMember, "Incorrect Value for t.SysTimeMember");
+            t.SysTimeArray = dtoa;
+            Assert.AreEqual(dtoa.Length, t.SysTimeArray.Length, "Incorrect Length for t.SysTimeArray");
+            Assert.AreEqual(dto1, t.SysTimeArray[0], "Incorrect Value for t.SysTimeArray[0]");
+            Assert.AreEqual(dto2, t.SysTimeArray[1], "Incorrect Value for t.SysTimeArray[1]");
+            Assert.AreEqual(dto3, t.SysTimeArray[2], "Incorrect Value for t.SysTimeArray[2]");
+
+            t.DurationMember = ts1;
+            Assert.AreEqual(ts1, t.DurationMember, "Incorrect Value for t.DurationMember");
+            t.DurationArray = tsa;
+            Assert.AreEqual(tsa.Length, t.DurationArray.Length, "Incorrect Length for t.DurationArray");
+            Assert.AreEqual(ts1, t.DurationArray[0], "Incorrect Value for t.DurationArray[0]");
+            Assert.AreEqual(ts2, t.DurationArray[1], "Incorrect Value for t.DurationArray[1]");
+            Assert.AreEqual(ts3, t.DurationArray[2], "Incorrect Value for t.DurationArray[2]");
+            Assert.AreEqual(ts4, t.DurationArray[3], "Incorrect Value for t.DurationArray[3]");
         }
 
         [TestMethod]
