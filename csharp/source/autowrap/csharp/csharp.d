@@ -1,7 +1,9 @@
 module autowrap.csharp.csharp;
 
-import autowrap.csharp.common : LibraryName, RootNamespace;
-import autowrap.reflection : isModule;
+import scriptlike : interp, _interp_text;
+
+import autowrap.csharp.common : LibraryName, RootNamespace, getDLangInterfaceType, OutputFileName;
+import autowrap.reflection : isModule, Modules;
 
 import std.ascii : newline;
 import std.meta: allSatisfy;
@@ -16,8 +18,11 @@ enum string stringTypeString = "string";
 enum string wstringTypeString = "wstring";
 enum string dstringTypeString = "dstring";
 enum string boolTypeString = "bool";
-enum string dateTimeTypeString = "DateTime";
-enum string sysTimeTypeString = "SysTime";
+enum string dateTimeTypeString = "std.datetime.date.DateTime";
+enum string sysTimeTypeString = "std.datetime.systime.SysTime";
+enum string dateTypeString = "std.datetime.date.Date";
+enum string timeOfDayTypeString = "std.datetime.date.TimeOfDay";
+enum string durationTypeString = "core.time.Duration";
 enum string uuidTypeString = "UUID";
 enum string charTypeString = "char";
 enum string wcharTypeString = "wchar";
@@ -101,11 +106,11 @@ private final class CSharpAggregate {
         ret ~= "    [GeneratedCodeAttribute(\"Autowrap\", \"1.0.0.0\")]" ~ newline;
         if (isStruct) {
             ret ~= "    [StructLayout(LayoutKind.Sequential)]" ~ newline;
-            ret ~= "    public struct " ~ camelToPascalCase(this.name) ~ " {" ~ newline;
+            ret ~= mixin(interp!"    public struct ${camelToPascalCase(this.name)} {${newline}");
         } else {
-            ret ~= "    public class " ~ camelToPascalCase(this.name) ~ " : DLangObject {" ~ newline;
-            ret ~= "        public static implicit operator IntPtr(" ~ camelToPascalCase(this.name) ~ " ret) { return ret.DLangPointer; }" ~ newline;
-            ret ~= "        public static implicit operator " ~ camelToPascalCase(this.name) ~ "(IntPtr ret) { return new " ~ camelToPascalCase(this.name) ~ "(ret); }" ~ newline;
+            ret ~= mixin(interp!"    public class ${camelToPascalCase(this.name)} : DLangObject {${newline}");
+            ret ~= mixin(interp!"        public static implicit operator IntPtr(${camelToPascalCase(this.name)} ret) { return ret.DLangPointer; }${newline}");
+            ret ~= mixin(interp!"        public static implicit operator ${camelToPascalCase(this.name)}(IntPtr ret) { return new ${camelToPascalCase(this.name)}(ret); }${newline}");
         }
         if (functions != string.init) ret ~= functions ~ newline;
         if (constructors != string.init) ret ~= constructors ~ newline;
@@ -134,24 +139,21 @@ public struct csharpRange {
 }
 
 public string generateCSharp(Modules...)(LibraryName libraryName, RootNamespace rootNamespace) if(allSatisfy!(isModule, Modules)) {
+    import core.time : Duration;
+    import autowrap.csharp.common : isDateTimeType;
     import autowrap.reflection : AllAggregates;
-    import std.traits : moduleName;
+
     generateSliceBoilerplate(libraryName.value);
 
-    foreach(agg; AllAggregates!Modules) {
-        alias modName = moduleName!agg;
-        const string aggName = __traits(identifier, agg);
-        CSharpAggregate csagg = getAggregate(getCSharpName(modName), getCSharpName(aggName), !is(agg == class));
-
-        generateRangeDef!agg(libraryName.value);
-
-        generateConstructors!agg(libraryName.value, csagg);
-
-        generateMethods!agg(libraryName.value, csagg);
-
-        generateProperties!agg(libraryName.value, csagg);
-
-        generateFields!agg(libraryName.value, csagg);
+    alias aggregates = AllAggregates!Modules;
+    static foreach(agg; aggregates) {
+        static if (!(isDateTimeType!agg)) {
+            generateRangeDef!agg(libraryName.value);
+            generateConstructors!agg(libraryName.value);
+            generateMethods!agg(libraryName.value);
+            generateProperties!agg(libraryName.value);
+            generateFields!agg(libraryName.value);
+        }
     }
 
     generateFunctions!Modules(libraryName.value);
@@ -167,15 +169,17 @@ public string generateCSharp(Modules...)(LibraryName libraryName, RootNamespace 
     return cast(immutable)ret;
 }
 
-private void generateConstructors(T)(string libraryName, CSharpAggregate csagg) if (is(T == class) || is(T == struct)) {
+private void generateConstructors(T)(string libraryName) if (is(T == class) || is(T == struct)) {
     import autowrap.csharp.common : getDLangInterfaceName;
-    import std.traits : fullyQualifiedName, hasMember, Parameters, ParameterIdentifierTuple;
+    import std.traits : moduleName, fullyQualifiedName, hasMember, Parameters, ParameterIdentifierTuple;
     import std.meta: AliasSeq;
+    import std.algorithm : among;
 
-    const string aggName = __traits(identifier, T);
     alias fqn = fullyQualifiedName!T;
+    const string aggName = __traits(identifier, T);
+    CSharpAggregate csagg = getAggregate(getCSharpName(moduleName!T), getCSharpName(aggName), !is(T == class));
 
-    static if(hasMember!(T, "__ctor")) {
+    static if(hasMember!(T, "__ctor") && __traits(getProtection, __traits(getMember, T, "__ctor")).among("export", "public")) {
         alias constructors = AliasSeq!(__traits(getOverloads, T, "__ctor"));
     } else {
         alias constructors = AliasSeq!();
@@ -188,41 +192,36 @@ private void generateConstructors(T)(string libraryName, CSharpAggregate csagg) 
         const string interfaceName = getDLangInterfaceName(fqn, "__ctor");
         const string methodName = getCSharpMethodInterfaceName(aggName, "__ctor");
         string ctor = dllImportString.format(libraryName, interfaceName);
-        if (is(T == class)) {
-            ctor ~= "        private static extern %s dlang_%s(".format(getDLangReturnType(aggName, true), methodName);
-        } else if (is(T == struct)) {
-            ctor ~= "        private static extern %s dlang_%s(".format(methodName);
-        }
+        ctor ~= mixin(interp!"        private static extern ${getDLangReturnType(aggName, is(T == class))} dlang_${methodName}(");
         static foreach(pc; 0..paramNames.length) {
             if (is(paramTypes[pc] == class)) {
-                ctor ~= "IntPtr " ~ paramNames[pc] ~ ", ";
+                ctor ~= mixin(interp!"IntPtr ${paramNames[pc]}, ");
             } else {
-                if (is(paramTypes[pc] == bool)) ctor ~= "[MarshalAs(UnmanagedType.Bool)]";
-                ctor ~= getDLangInterfaceType(fullyQualifiedName!(paramTypes[pc])) ~ " " ~ paramNames[pc] ~ ", ";
+                ctor ~= mixin(interp!"${is(paramTypes[pc] == bool) ? \"[MarshalAs(UnmanagedType.Bool)]\" : string.init}${getDLangInterfaceType(fullyQualifiedName!(paramTypes[pc]))} ${paramNames[pc]}, ");
             }
         }
         if (paramNames.length > 0) {
             ctor = ctor[0..$-2];
         }
         ctor ~= ");" ~ newline;
-        ctor ~= "        public " ~ getCSharpName(aggName) ~ "(";
+        ctor ~= mixin(interp!"        public ${getCSharpName(aggName)}(");
         static foreach(pc; 0..paramNames.length) {
-            ctor ~= getCSharpInterfaceType(fullyQualifiedName!(paramTypes[pc])) ~ " " ~ paramNames[pc] ~ ", ";
+            ctor ~= mixin(interp!"${getCSharpInterfaceType(fullyQualifiedName!(paramTypes[pc]))} ${paramNames[pc]}, ");
         }
         if (paramNames.length > 0) {
             ctor = ctor[0..$-2];
         }
         if (is(T == class)) {
-            ctor ~= ") : base(dlang_%s(".format(methodName);
+            ctor ~= mixin(interp!") : base(dlang_${methodName}(");
             static foreach(pc; 0..paramNames.length) {
                 static if (is(paramTypes[pc] == string)) {
-                    ctor ~= "SharedFunctions.CreateString(" ~ paramNames[pc] ~ "), ";
+                    ctor ~= mixin(interp!"SharedFunctions.CreateString(${paramNames[pc]}), ");
                 } else static if (is(paramTypes[pc] == wstring)) {
-                    ctor ~= "SharedFunctions.CreateWString(" ~ paramNames[pc] ~ "), ";
+                    ctor ~= mixin(interp!"SharedFunctions.CreateWString(${paramNames[pc]}), ");
                 } else static if (is(paramTypes[pc] == dstring)) {
-                    ctor ~= "SharedFunctions.CreateDString(" ~ paramNames[pc] ~ "), ";
+                    ctor ~= mixin(interp!"SharedFunctions.CreateDString(${paramNames[pc]}), ");
                 } else {
-                    ctor ~= paramNames[pc] ~ ", ";
+                    ctor ~= mixin(interp!"${paramNames[pc]}, ");
                 }
             }
             if (paramNames.length > 0) {
@@ -234,17 +233,18 @@ private void generateConstructors(T)(string libraryName, CSharpAggregate csagg) 
         csagg.constructors ~= ctor;
     }
     if (is(T == class)) {
-        csagg.constructors ~= "        internal %s(IntPtr ptr) : base(ptr) { }".format(getCSharpName(aggName)) ~ newline;
+        csagg.constructors ~= mixin(interp!"        internal ${getCSharpName(aggName)}(IntPtr ptr) : base(ptr) { }${newline}");
     }
 }
 
-private void generateMethods(T)(string libraryName, CSharpAggregate csagg) if (is(T == class) || is(T == interface) || is(T == struct)) {
+private void generateMethods(T)(string libraryName) if (is(T == class) || is(T == interface) || is(T == struct)) {
     import autowrap.csharp.common : camelToPascalCase, getDLangInterfaceName;
-    import std.traits : isArray, fullyQualifiedName, isFunction, functionAttributes, FunctionAttribute, ReturnType, Parameters, ParameterIdentifierTuple;
+    import std.traits : moduleName, isArray, fullyQualifiedName, isFunction, functionAttributes, FunctionAttribute, ReturnType, Parameters, ParameterIdentifierTuple;
     import std.conv : to;
 
-    const string aggName = __traits(identifier, T);
     alias fqn = fullyQualifiedName!T;
+    const string aggName = __traits(identifier, T);
+    CSharpAggregate csagg = getAggregate(getCSharpName(moduleName!T), getCSharpName(aggName), !is(T == class));
 
     foreach(m; __traits(allMembers, T)) {
         if (m == "__ctor" || m == "toHash" || m == "opEquals" || m == "opCmp" || m == "factory") {
@@ -267,52 +267,48 @@ private void generateMethods(T)(string libraryName, CSharpAggregate csagg) if (i
                     exp ~= dllImportString.format(libraryName, interfaceName);
                     exp ~= "        private static extern ";
                     if (!is(returnType == void)) {
-                        static if (is(returnType == class)) {
-                            exp ~= getDLangReturnType(returnTypeStr, true);
-                        } else {
-                            exp ~= getDLangReturnType(returnTypeStr, false);
-                        }
+                        exp ~= getDLangReturnType(returnTypeStr, is(returnType == class));
                     } else {
                         exp ~= "return_void_error";
                     }
-                    exp ~= " dlang_" ~ methodInterfaceName ~ "(";
+                    exp ~= mixin(interp!" dlang_${methodInterfaceName}(");
                     if (is(T == struct)) {
-                        exp ~= "ref " ~ getDLangInterfaceType(fqn) ~ " __obj__, ";
+                        exp ~= mixin(interp!"ref ${getDLangInterfaceType(fqn)} __obj__, ");
                     } else if (is(T == class) || is(T == interface)) {
                         exp ~= "IntPtr __obj__, ";
                     }
                     static foreach(pc; 0..paramNames.length) {
                         if (is(paramTypes[pc] == class)) {
-                            exp ~= "IntPtr " ~ paramNames[pc] ~ ", ";
+                            exp ~= mixin(interp!"IntPtr ${paramNames[pc]}, ");
                         } else {
-                            exp ~= getDLangInterfaceType(fullyQualifiedName!(paramTypes[pc])) ~ " " ~ paramNames[pc] ~ ", ";
+                            exp ~= mixin(interp!"${getDLangInterfaceType(fullyQualifiedName!(paramTypes[pc]))} ${paramNames[pc]}, ");
                         }
                     }
                     exp = exp[0..$-2];
                     exp ~= ");" ~ newline;
                     if (!isProperty) {
-                        exp ~= "        public %s%s %s(".format(methodName == "ToString" ? "override " : string.init, getCSharpInterfaceType(returnTypeStr), methodName);
+                        exp ~= mixin(interp!"        public ${methodName == \"ToString\" ? \"override \" : string.init}${getCSharpInterfaceType(returnTypeStr)} ${methodName}(");
                         static foreach(pc; 0..paramNames.length) {
                             if (is(paramTypes[pc] == string) || is(paramTypes[pc] == wstring) || is(paramTypes[pc] == dstring)) {
-                                exp ~= getCSharpInterfaceType(fullyQualifiedName!(paramTypes[pc])) ~ " " ~ paramNames[pc] ~ ", ";
+                                exp ~= mixin(interp!"${getCSharpInterfaceType(fullyQualifiedName!(paramTypes[pc]))} ${paramNames[pc]}, ");
                             } else if (isArray!(paramTypes[pc])) {
-                                exp ~= "Range<" ~ getCSharpInterfaceType(fullyQualifiedName!(paramTypes[pc])) ~ "> " ~ paramNames[pc] ~ ", ";
+                                exp ~= mixin(interp!"Range<${getCSharpInterfaceType(fullyQualifiedName!(paramTypes[pc]))}> ${paramNames[pc]}, ");
                             } else {
-                                exp ~= getCSharpInterfaceType(fullyQualifiedName!(paramTypes[pc])) ~ " " ~ paramNames[pc] ~ ", ";
+                                exp ~= mixin(interp!"${getCSharpInterfaceType(fullyQualifiedName!(paramTypes[pc]))} ${paramNames[pc]}, ");
                             }
                         }
                         if (paramNames.length > 0) {
                             exp = exp[0..$-2];
                         }
                         exp ~= ") {" ~ newline;
-                        exp ~= "            var dlang_ret = dlang_%1$s(%2$sthis, ".format(methodInterfaceName, is(T == struct) ? "ref " : string.init);
+                        exp ~= mixin(interp!"            var dlang_ret = dlang_${methodInterfaceName}(${is(T == struct) ? \"ref \" : string.init}this, ");
                         static foreach(pc; 0..paramNames.length) {
                             static if (is(paramTypes[pc] == string)) {
-                                exp ~= "SharedFunctions.CreateString(" ~ paramNames[pc] ~ "), ";
+                                exp ~= mixin(interp!"SharedFunctions.CreateString(${paramNames[pc]}), ");
                             } else static if (is(paramTypes[pc] == wstring)) {
-                                exp ~= "SharedFunctions.CreateWstring(" ~ paramNames[pc] ~ "), ";
+                                exp ~= mixin(interp!"SharedFunctions.CreateWstring(${paramNames[pc]}), ");
                             } else static if (is(paramTypes[pc] == dstring)) {
-                                exp ~= "SharedFunctions.CreateDstring(" ~ paramNames[pc] ~ "), ";
+                                exp ~= mixin(interp!"SharedFunctions.CreateDstring(${paramNames[pc]}), ");
                             } else {
                                 exp ~= paramNames[pc] ~ ", ";
                             }
@@ -339,12 +335,13 @@ private void generateMethods(T)(string libraryName, CSharpAggregate csagg) if (i
     }
 }
 
-private void generateProperties(T)(string libraryName, CSharpAggregate csagg) if (is(T == class) || is(T == interface) || is(T == struct)) {
+private void generateProperties(T)(string libraryName) if (is(T == class) || is(T == interface) || is(T == struct)) {
     import autowrap.csharp.common : camelToPascalCase;
-    import std.traits : isArray, fullyQualifiedName, functionAttributes, FunctionAttribute, ReturnType, Parameters;
+    import std.traits : moduleName, isArray, fullyQualifiedName, functionAttributes, FunctionAttribute, ReturnType, Parameters;
 
-    const string aggName = __traits(identifier, T);
     alias fqn = fullyQualifiedName!T;
+    const string aggName = __traits(identifier, T);
+    CSharpAggregate csagg = getAggregate(getCSharpName(moduleName!T), getCSharpName(aggName), !is(T == class));
 
     foreach(m; __traits(allMembers, T)) {
         if (m == "__ctor" || m == "toHash" || m == "opEquals" || m == "opCmp" || m == "factory") {
@@ -376,50 +373,50 @@ private void generateProperties(T)(string libraryName, CSharpAggregate csagg) if
                     string prop = string.init;
                     alias propertyType = ReturnType!(__traits(getOverloads, T, m)[0]);
                     if (is(propertyType == string) || is(propertyType == wstring) || is(propertyType == dstring)) {
-                        prop = "        public string " ~ methodName ~ " { ";
+                        prop = mixin(interp!"        public string ${methodName} { ");
                     } else if (isArray!(propertyType)) {
-                        prop = "        public Range<" ~ getCSharpInterfaceType(fullyQualifiedName!propertyType) ~ "> " ~ methodName ~ " { ";
+                        prop = mixin(interp!"        public Range<${getCSharpInterfaceType(fullyQualifiedName!propertyType)}> ${methodName} { ");
                     } else {
-                        prop = "        public " ~ getCSharpInterfaceType(fullyQualifiedName!propertyType) ~ " " ~ methodName ~ " { ";
+                        prop = mixin(interp!"        public ${getCSharpInterfaceType(fullyQualifiedName!propertyType)} ${methodName} { ");
                     }
                     if (propertyGet) {
                         if (is(propertyType == string)) {
-                            prop ~= "get => SharedFunctions.SliceToString(dlang_%1$s(%2$sthis), DStringType._string);".format(methodInterfaceName, is(T == class) ? string.init : "ref ");
+                            prop ~= mixin(interp!"get => SharedFunctions.SliceToString(dlang_${methodInterfaceName}(${is(T == class) ? string.init : \"ref \"}this), DStringType._string);");
                         } else if (is(propertyType == wstring)) {
-                            prop ~= "get => SharedFunctions.SliceToString(dlang_%1$s(%2$sthis), DStringType._wstring);".format(methodInterfaceName, is(T == class) ? string.init : "ref ");
+                            prop ~= mixin(interp!"get => SharedFunctions.SliceToString(dlang_${methodInterfaceName}(${is(T == class) ? string.init : \"ref \"}this), DStringType._wstring);");
                         } else if (is(propertyType == dstring)) {
-                            prop ~= "get => SharedFunctions.SliceToString(dlang_%1$s(%2$sthis), DStringType._dstring);".format(methodInterfaceName, is(T == class) ? string.init : "ref ");
+                            prop ~= mixin(interp!"get => SharedFunctions.SliceToString(dlang_${methodInterfaceName}(${is(T == class) ? string.init : \"ref \"}this), DStringType._dstring);");
                         } else if (is(propertyType == string[])) {
-                            prop ~= "get => new Range<%3$s>(dlang_%1$s(%2$sthis), DStringType._string); ".format(methodInterfaceName, is(T == class) ? string.init: "ref ", getCSharpInterfaceType(fullyQualifiedName!propertyType));
+                            prop ~= mixin(interp!"get => new Range<string>(dlang_${methodInterfaceName}(${is(T == class) ? string.init : \"ref \"}this), DStringType._string); ");
                         } else if (is(propertyType == wstring[])) {
-                            prop ~= "get => new Range<%3$s>(dlang_%1$s(%2$sthis), DStringType._wstring); ".format(methodInterfaceName, is(T == class) ? string.init: "ref ", getCSharpInterfaceType(fullyQualifiedName!propertyType));
+                            prop ~= mixin(interp!"get => new Range<string>(dlang_${methodInterfaceName}(${is(T == class) ? string.init : \"ref \"}this), DStringType._wstring); ");
                         } else if (is(propertyType == dstring[])) {
-                            prop ~= "get => new Range<%3$s>(dlang_%1$s(%2$sthis), DStringType._dstring); ".format(methodInterfaceName, is(T == class) ? string.init: "ref ", getCSharpInterfaceType(fullyQualifiedName!propertyType));
+                            prop ~= mixin(interp!"get => new Range<string>(dlang_${methodInterfaceName}(${is(T == class) ? string.init : \"ref \"}this), DStringType._dstring); ");
                         } else if (isArray!(propertyType)) {
-                            prop ~= "get => new Range<%3$s>(dlang_%1$s(%2$sthis), DStringType.None); ".format(methodInterfaceName, is(T == class) ? string.init: "ref ", getCSharpInterfaceType(fullyQualifiedName!propertyType));
+                            prop ~= mixin(interp!"get => new Range<${getCSharpInterfaceType(fullyQualifiedName!propertyType)}>(dlang_${methodInterfaceName}(${is(T == class) ? string.init : \"ref \"}this), DStringType.None); ");
                         } else if (is(propertyType == class)) {
-                            prop ~= "get => new %3$s(dlang_%1$s(%2$sthis)); ".format(methodInterfaceName, is(T == class) ? string.init : "ref ", getCSharpInterfaceType(fullyQualifiedName!propertyType));
+                            prop ~= mixin(interp!"get => new ${getCSharpInterfaceType(fullyQualifiedName!propertyType)}(dlang_${methodInterfaceName}(${is(T == class) ? string.init : \"ref \"}this)); ");
                         } else {
-                            prop ~= "get => dlang_%1$s(%2$sthis); ".format(methodInterfaceName, is(T == class) ? string.init : "ref ");
+                            prop ~= mixin(interp!"get => dlang_${methodInterfaceName}(${is(T == class) ? string.init : \"ref \"}this); ");
                         }
                     }
                     if (propertySet) {
                         if (is(propertyType == string)) {
-                            prop ~= "set => dlang_%1$s(this, SharedFunctions.CreateString(value));".format(methodInterfaceName, is(T == class) ? string.init : "ref ");
+                            prop ~= mixin(interp!"set => dlang_${methodInterfaceName}(this, SharedFunctions.CreateString(value));");
                         } else if (is(propertyType == wstring)) {
-                            prop ~= "set => dlang_%1$s(this, SharedFunctions.CreateWstring(value));".format(methodInterfaceName, is(T == class) ? string.init : "ref ");
+                            prop ~= mixin(interp!"set => dlang_${methodInterfaceName}(this, SharedFunctions.CreateWstring(value));");
                         } else if (is(propertyType == dstring)) {
-                            prop ~= "set => dlang_%1$s(this, SharedFunctions.CreateDstring(value));".format(methodInterfaceName, is(T == class) ? string.init : "ref ");
+                            prop ~= mixin(interp!"set => dlang_${methodInterfaceName}(this, SharedFunctions.CreateDstring(value));");
                         } else if (is(propertyType == string[])) {
-                            prop ~= "set => dlang_%1$s(%2$sthis, value.ToSlice(DStringType._string)); ".format(methodInterfaceName, is(T == class) ? string.init : "ref ");
+                            prop ~= mixin(interp!"set => dlang_${methodInterfaceName}(${is(T == class) ? string.init : \"ref \"}this, value.ToSlice(DStringType._string)); ");
                         } else if (is(propertyType == wstring[])) {
-                            prop ~= "set => dlang_%1$s(%2$sthis, value.ToSlice(DStringType._wstring)); ".format(methodInterfaceName, is(T == class) ? string.init : "ref ");
+                            prop ~= mixin(interp!"set => dlang_${methodInterfaceName}(${is(T == class) ? string.init : \"ref \"}this, value.ToSlice(DStringType._wstring)); ");
                         } else if (is(propertyType == dstring[])) {
-                            prop ~= "set => dlang_%1$s(%2$sthis, value.ToSlice(DStringType._dstring)); ".format(methodInterfaceName, is(T == class) ? string.init : "ref ");
+                            prop ~= mixin(interp!"set => dlang_${methodInterfaceName}(${is(T == class) ? string.init : \"ref \"}this, value.ToSlice(DStringType._dstring)); ");
                         } else if (isArray!(propertyType)) {
-                            prop ~= "set => dlang_%1$s(%2$sthis, value.ToSlice()); ".format(methodInterfaceName, is(T == class) ? string.init : "ref ");
+                            prop ~= mixin(interp!"set => dlang_${methodInterfaceName}(${is(T == class) ? string.init : \"ref \"}this, value.ToSlice()); ");
                         } else {
-                            prop ~= "set => dlang_%1$s(%2$sthis, value); ".format(methodInterfaceName, is(T == class) ? string.init : "ref ");
+                            prop ~= mixin(interp!"set => dlang_${methodInterfaceName}(${is(T == class) ? string.init : \"ref \"}this, value); ");
                         }
                     }
                     prop ~= "}" ~ newline;
@@ -430,70 +427,81 @@ private void generateProperties(T)(string libraryName, CSharpAggregate csagg) if
     }
 }
 
-private void generateFields(T)(string libraryName, CSharpAggregate csagg) if (is(T == class) || is(T == interface) || is(T == struct)) {
+private void generateFields(T)(string libraryName) if (is(T == class) || is(T == interface) || is(T == struct)) {
     import autowrap.csharp.common : getDLangInterfaceName;
-    import std.traits : isArray, fullyQualifiedName, Fields, FieldNameTuple;
+    import std.traits : moduleName, isArray, fullyQualifiedName, Fields, FieldNameTuple;
 
-    const string aggName = __traits(identifier, T);
     alias fqn = fullyQualifiedName!T;
+    const string aggName = __traits(identifier, T);
+    CSharpAggregate csagg = getAggregate(getCSharpName(moduleName!T), getCSharpName(aggName), !is(T == class));
+
     alias fieldTypes = Fields!T;
     alias fieldNames = FieldNameTuple!T;
+
     if (is(T == class) || is(T == interface)) {
         static foreach(fc; 0..fieldTypes.length) {
             static if (is(typeof(__traits(getMember, T, fieldNames[fc])))) {
                 csagg.properties ~= dllImportString.format(libraryName, getDLangInterfaceName(fqn, fieldNames[fc] ~ "_get"));
-                csagg.properties ~= "        private static extern %1$s dlang_%2$s_get(IntPtr ptr);".format(getDLangReturnType(fullyQualifiedName!(fieldTypes[fc]), true), fieldNames[fc]) ~ newline;
+                csagg.properties ~= mixin(interp!"        private static extern ${getDLangReturnType(fullyQualifiedName!(fieldTypes[fc]), true)} dlang_${fieldNames[fc]}_get(IntPtr ptr);${newline}");
                 if (is(fieldTypes[fc] == bool)) {
                     csagg.properties ~= dllImportString.format(libraryName, getDLangInterfaceName(fqn, fieldNames[fc] ~ "_set"));
-                    csagg.properties ~= "        private static extern void dlang_%1$s_set(IntPtr ptr, [MarshalAs(UnmanagedType.Bool)] %2$s value);".format(fieldNames[fc], getDLangInterfaceType(fullyQualifiedName!(fieldTypes[fc]))) ~ newline;
+                    csagg.properties ~= mixin(interp!"        private static extern void dlang_${fieldNames[fc]}_set(IntPtr ptr, [MarshalAs(UnmanagedType.Bool)] ${getDLangInterfaceType(fullyQualifiedName!(fieldTypes[fc]))} value);${newline}");
                 } else if (is(fieldTypes[fc] == class)) {
                     csagg.properties ~= dllImportString.format(libraryName, getDLangInterfaceName(fqn, fieldNames[fc] ~ "_set"));
-                    csagg.properties ~= "        private static extern void dlang_%1$s_set(IntPtr ptr, IntPtr value);".format(fieldNames[fc]) ~ newline;
+                    csagg.properties ~= mixin(interp!"        private static extern void dlang_${fieldNames[fc]}_set(IntPtr ptr, IntPtr value);${newline}");
                 } else {
                     csagg.properties ~= dllImportString.format(libraryName, getDLangInterfaceName(fqn, fieldNames[fc] ~ "_set"));
-                    csagg.properties ~= "        private static extern void dlang_%1$s_set(IntPtr ptr, %2$s value);".format(fieldNames[fc], getDLangInterfaceType(fullyQualifiedName!(fieldTypes[fc]))) ~ newline;
+                    csagg.properties ~= mixin(interp!"        private static extern void dlang_${fieldNames[fc]}_set(IntPtr ptr, ${getDLangInterfaceType(fullyQualifiedName!(fieldTypes[fc]))} value);${newline}");
                 }
 
                 if (is(fieldTypes[fc] == string)) {
-                    csagg.properties ~= "        public %2$s %3$s { get => SharedFunctions.SliceToString(dlang_%1$s_get(this), DStringType._string); set => dlang_%1$s_set(this, SharedFunctions.CreateString(value)); }".format(fieldNames[fc], getCSharpInterfaceType(fullyQualifiedName!(fieldTypes[fc])), getCSharpName(fieldNames[fc])) ~ newline;
+                    csagg.properties ~= mixin(interp!"        public string ${getCSharpName(fieldNames[fc])} { get => SharedFunctions.SliceToString(dlang_${fieldNames[fc]}_get(this), DStringType._string); set => dlang_${fieldNames[fc]}_set(this, SharedFunctions.CreateString(value)); }${newline}");
                 } else if (is(fieldTypes[fc] == wstring)) {
-                    csagg.properties ~= "        public %2$s %3$s { get => SharedFunctions.SliceToString(dlang_%1$s_get(this), DStringType._wstring); set => dlang_%1$s_set(this, SharedFunctions.CreateWstring(value)); }".format(fieldNames[fc], getCSharpInterfaceType(fullyQualifiedName!(fieldTypes[fc])), getCSharpName(fieldNames[fc])) ~ newline;
+                    csagg.properties ~= mixin(interp!"        public string ${getCSharpName(fieldNames[fc])} { get => SharedFunctions.SliceToString(dlang_${fieldNames[fc]}_get(this), DStringType._wstring); set => dlang_${fieldNames[fc]}_set(this, SharedFunctions.CreateWstring(value)); }${newline}");
                 } else if (is(fieldTypes[fc] == dstring)) {
-                    csagg.properties ~= "        public %2$s %3$s { get => SharedFunctions.SliceToString(dlang_%1$s_get(this), DStringType._dstring); set => dlang_%1$s_set(this, SharedFunctions.CreateDstring(value)); }".format(fieldNames[fc], getCSharpInterfaceType(fullyQualifiedName!(fieldTypes[fc])), getCSharpName(fieldNames[fc])) ~ newline;
+                    csagg.properties ~= mixin(interp!"        public string ${getCSharpName(fieldNames[fc])} { get => SharedFunctions.SliceToString(dlang_${fieldNames[fc]}_get(this), DStringType._dstring); set => dlang_${fieldNames[fc]}_set(this, SharedFunctions.CreateDstring(value)); }${newline}");
                 } else if (is(fieldTypes[fc] == string[])) {
-                    csagg.properties ~= "        public Range<%2$s> %3$s { get => new Range<%2$s>(dlang_%1$s_get(this), DStringType._string); set => dlang_%1$s_set(this, value.ToSlice(DStringType._string)); }".format(fieldNames[fc], getCSharpInterfaceType(fullyQualifiedName!(fieldTypes[fc])), getCSharpName(fieldNames[fc])) ~ newline;
+                    csagg.properties ~= mixin(interp!"        public Range<string> ${getCSharpName(fieldNames[fc])} { get => new Range<string>(dlang_${fieldNames[fc]}_get(this), DStringType._string); set => dlang_${fieldNames[fc]}_set(this, value.ToSlice(DStringType._string)); }${newline}");
                 } else if (is(fieldTypes[fc] == wstring[])) {
-                    csagg.properties ~= "        public Range<%2$s> %3$s { get => new Range<%2$s>(dlang_%1$s_get(this), DStringType._wstring); set => dlang_%1$s_set(this, value.ToSlice(DStringType._wstring)); }".format(fieldNames[fc], getCSharpInterfaceType(fullyQualifiedName!(fieldTypes[fc])), getCSharpName(fieldNames[fc])) ~ newline;
+                    csagg.properties ~= mixin(interp!"        public Range<string> ${getCSharpName(fieldNames[fc])} { get => new Range<string>(dlang_${fieldNames[fc]}_get(this), DStringType._wstring); set => dlang_${fieldNames[fc]}_set(this, value.ToSlice(DStringType._wstring)); }${newline}");
                 } else if (is(fieldTypes[fc] == dstring[])) {
-                    csagg.properties ~= "        public Range<%2$s> %3$s { get => new Range<%2$s>(dlang_%1$s_get(this), DStringType._dstring); set => dlang_%1$s_set(this, value.ToSlice(DStringType._dstring)); }".format(fieldNames[fc], getCSharpInterfaceType(fullyQualifiedName!(fieldTypes[fc])), getCSharpName(fieldNames[fc])) ~ newline;
+                    csagg.properties ~= mixin(interp!"        public Range<string> ${getCSharpName(fieldNames[fc])} { get => new Range<string>(dlang_${fieldNames[fc]}_get(this), DStringType._dstring); set => dlang_${fieldNames[fc]}_set(this, value.ToSlice(DStringType._dstring)); }${newline}");
                 } else if (isArray!(fieldTypes[fc])) {
-                    csagg.properties ~= "        public Range<%2$s> %3$s { get => new Range<%2$s>(dlang_%1$s_get(this), DStringType.None); set => dlang_%1$s_set(this, value.ToSlice()); }".format(fieldNames[fc], getCSharpInterfaceType(fullyQualifiedName!(fieldTypes[fc])), getCSharpName(fieldNames[fc])) ~ newline;
+                    csagg.properties ~= mixin(interp!"        public Range<${getCSharpInterfaceType(fullyQualifiedName!(fieldTypes[fc]))}> ${getCSharpName(fieldNames[fc])} { get => new Range<${getCSharpInterfaceType(fullyQualifiedName!(fieldTypes[fc]))}>(dlang_${fieldNames[fc]}_get(this), DStringType.None); set => dlang_${fieldNames[fc]}_set(this, value.ToSlice()); }${newline}");
                 } else if (is(fieldTypes[fc] == class)) {
-                    csagg.properties ~= "        public %2$s %3$s { get => new %2$s(dlang_%1$s_get(this)); set => dlang_%1$s_set(this, value); }".format(fieldNames[fc], getCSharpInterfaceType(fullyQualifiedName!(fieldTypes[fc])), getCSharpName(fieldNames[fc])) ~ newline;
+                    csagg.properties ~= mixin(interp!"        public ${getCSharpInterfaceType(fullyQualifiedName!(fieldTypes[fc]))} ${getCSharpName(fieldNames[fc])} { get => new ${getCSharpInterfaceType(fullyQualifiedName!(fieldTypes[fc]))}(dlang_${fieldNames[fc]}_get(this)); set => dlang_${fieldNames[fc]}_set(this, value); }${newline}");
                 } else {
-                    csagg.properties ~= "        public %2$s %3$s { get => dlang_%1$s_get(this); set => dlang_%1$s_set(this, value); }".format(fieldNames[fc], getCSharpInterfaceType(fullyQualifiedName!(fieldTypes[fc])), getCSharpName(fieldNames[fc])) ~ newline;
+                    csagg.properties ~= mixin(interp!"        public ${getCSharpInterfaceType(fullyQualifiedName!(fieldTypes[fc]))} ${getCSharpName(fieldNames[fc])} { get => dlang_${fieldNames[fc]}_get(this); set => dlang_${fieldNames[fc]}_set(this, value); }${newline}");
                 }
             }
         }
     } else if(is(T == struct)) {
         static foreach(fc; 0..fieldTypes.length) {
             static if (is(typeof(__traits(getMember, T, fieldNames[fc])))) {
-                if (is(fieldTypes[fc] == string) || is(fieldTypes[fc] == wstring) || is(fieldTypes[fc] == dstring)) {
-                    csagg.properties ~= "        private slice _" ~ getCSharpName(fieldNames[fc]) ~ ";" ~ newline;
+                if (isArray!(fieldTypes[fc])) {
+                    csagg.properties ~= mixin(interp!"        private slice _${getCSharpName(fieldNames[fc])};${newline}");
                     if (is(fieldTypes[fc] == string)) {
-                        csagg.properties ~= "        public string %1$s { get => SharedFunctions.SliceToString(_%1$s, DStringType._%2$s); set => _%1$s = SharedFunctions.CreateString(value); }".format(getCSharpName(fieldNames[fc]), fullyQualifiedName!(fieldTypes[fc])) ~ newline;
+                        csagg.properties ~= mixin(interp!"        public string ${getCSharpName(fieldNames[fc])} { get => SharedFunctions.SliceToString(_${getCSharpName(fieldNames[fc])}, DStringType._string); set => _${getCSharpName(fieldNames[fc])} = SharedFunctions.CreateString(value); }${newline}");
                     } else if (is(fieldTypes[fc] == wstring)) {
-                        csagg.properties ~= "        public string %1$s { get => SharedFunctions.SliceToString(_%1$s, DStringType._%2$s); set => _%1$s = SharedFunctions.CreateWstring(value); }".format(getCSharpName(fieldNames[fc]), fullyQualifiedName!(fieldTypes[fc])) ~ newline;
+                        csagg.properties ~= mixin(interp!"        public string ${getCSharpName(fieldNames[fc])} { get => SharedFunctions.SliceToString(_${getCSharpName(fieldNames[fc])}, DStringType._wstring); set => _${getCSharpName(fieldNames[fc])} = SharedFunctions.CreateWstring(value); }${newline}");
                     } else if (is(fieldTypes[fc] == dstring)) {
-                        csagg.properties ~= "        public string %1$s { get => SharedFunctions.SliceToString(_%1$s, DStringType._%2$s); set => _%1$s = SharedFunctions.CreateDstring(value); }".format(getCSharpName(fieldNames[fc]), fullyQualifiedName!(fieldTypes[fc])) ~ newline;
+                        csagg.properties ~= mixin(interp!"        public string ${getCSharpName(fieldNames[fc])} { get => SharedFunctions.SliceToString(_${getCSharpName(fieldNames[fc])}, DStringType._dstring); set => _${getCSharpName(fieldNames[fc])} = SharedFunctions.CreateDstring(value); }${newline}");
+                    } else if (is(fieldTypes[fc] == string[])) {
+                        csagg.properties ~= mixin(interp!"        public Range<string> ${getCSharpName(fieldNames[fc])} { get => new Range<string>(_${fieldNames[fc]}, DStringType._string); set => _${fieldNames[fc]} = value.ToSlice(DStringType._string); }${newline}");
+                    } else if (is(fieldTypes[fc] == wstring[])) {
+                        csagg.properties ~= mixin(interp!"        public Range<string> ${getCSharpName(fieldNames[fc])} { get => new Range<string>(_${fieldNames[fc]}, DStringType._wstring); set => _${fieldNames[fc]} = value.ToSlice(DStringType._wstring); }${newline}");
+                    } else if (is(fieldTypes[fc] == dstring[])) {
+                        csagg.properties ~= mixin(interp!"        public Range<string> ${getCSharpName(fieldNames[fc])} { get => new Range<string>(_${fieldNames[fc]}, DStringType._dstring); set => _${fieldNames[fc]} = value.ToSlice(DStringType._dstring); }${newline}");
+                    } else {
+                        csagg.properties ~= mixin(interp!"        public Range<${getCSharpInterfaceType(fullyQualifiedName!(fieldTypes[fc]))}> ${getCSharpName(fieldNames[fc])} { get => new Range<${getCSharpInterfaceType(fullyQualifiedName!(fieldTypes[fc]))}>(_${fieldNames[fc]}, DStringType.None); set => _${fieldNames[fc]} = value.ToSlice(); }${newline}");
                     }
                 } else if (is(fieldTypes[fc] == bool)) {
-                    csagg.properties ~= "        [MarshalAs(UnmanagedType.U1)] public " ~ getDLangInterfaceType(fullyQualifiedName!(fieldTypes[fc])) ~ " " ~ getCSharpName(fieldNames[fc]) ~ ";" ~ newline;
+                    csagg.properties ~= mixin(interp!"        [MarshalAs(UnmanagedType.U1)] public ${getDLangInterfaceType(fullyQualifiedName!(fieldTypes[fc]))} ${getCSharpName(fieldNames[fc])};${newline}");
                 } else if (is(fieldTypes[fc] == class)) {
-                    csagg.properties ~= "        private IntPtr _" ~ getCSharpName(fieldNames[fc]) ~ ";" ~ newline;
-                    csagg.properties ~= "        public %2$s %3$s { get => new %2$s(_%1$s); set => _%1$s = value); }".format(fieldNames[fc], getCSharpInterfaceType(fullyQualifiedName!(fieldTypes[fc])), getCSharpName(fieldNames[fc])) ~ newline;
+                    csagg.properties ~= mixin(interp!"        private IntPtr _${getCSharpName(fieldNames[fc])};${newline}");
+                    csagg.properties ~= mixin(interp!"        public ${getCSharpInterfaceType(fullyQualifiedName!(fieldTypes[fc]))} ${getCSharpName(fieldNames[fc])} { get => new ${getCSharpInterfaceType(fullyQualifiedName!(fieldTypes[fc]))}(_${fieldNames[fc]}); set => _${fieldNames[fc]} = value); }${newline}");
                 } else {
-                    csagg.properties ~= "        public " ~ getDLangInterfaceType(fullyQualifiedName!(fieldTypes[fc])) ~ " " ~ getCSharpName(fieldNames[fc]) ~ ";" ~ newline;
+                    csagg.properties ~= mixin(interp!"        public ${getDLangInterfaceType(fullyQualifiedName!(fieldTypes[fc]))} ${getCSharpName(fieldNames[fc])};${newline}");
                 }
             }
         }
@@ -516,53 +524,48 @@ private void generateFunctions(Modules...)(string libraryName) if(allSatisfy!(is
         alias paramNames = ParameterIdentifierTuple!(__traits(getMember, func.module_, func.name));
         const string interfaceName = getDLangInterfaceName(modName, null, funcName);
         const string methodName = getCSharpMethodInterfaceName(null, funcName);
-        static if (is(returnType == class)) {
-            string retType = getDLangReturnType(returnTypeStr, true);
-        } else {
-            string retType = getDLangReturnType(returnTypeStr, false);
-        }
+        string retType = getDLangReturnType(returnTypeStr, is(returnType == class));
         string funcStr = dllImportString.format(libraryName, interfaceName) ~ newline;
-        funcStr ~= "        private static extern %s dlang_%s(".format(retType, methodName);
+        funcStr ~= mixin(interp!"        private static extern ${retType} dlang_${methodName}(");
         static foreach(pc; 0..paramNames.length) {
-            if (is(paramTypes[pc] == bool)) funcStr ~= "[MarshalAs(UnmanagedType.Bool)]";
-            funcStr ~= getDLangInterfaceType(fullyQualifiedName!(paramTypes[pc])) ~ " " ~ paramNames[pc] ~ ", ";
+            funcStr ~= mixin(interp!"${is(paramTypes[pc] == bool) ? \"[MarshalAs(UnmanagedType.Bool)]\" : string.init}${getDLangInterfaceType(fullyQualifiedName!(paramTypes[pc]))} ${paramNames[pc]}, ");
         }
         if (paramNames.length > 0) {
             funcStr = funcStr[0..$-2];
         }
         funcStr ~= ");" ~ newline;
         if (is(returnType == string) || is(returnType == wstring) || is(returnType == dstring)) {
-            funcStr ~= "        public static string %s(".format(methodName);
+            funcStr ~= mixin(interp!"        public static string ${methodName}(");
         } else if (isArray!(returnType)) {
-            funcStr ~= "        public static Range<%s> %s(".format(getCSharpInterfaceType(returnTypeStr), methodName);
+            funcStr ~= mixin(interp!"        public static Range<${getCSharpInterfaceType(returnTypeStr)}> ${methodName}(");
         } else {
-            funcStr ~= "        public static %s %s(".format(getCSharpInterfaceType(returnTypeStr), methodName);
+            funcStr ~= mixin(interp!"        public static ${getCSharpInterfaceType(returnTypeStr)} ${methodName}(");
         }
         static foreach(pc; 0..paramNames.length) {
             if (is(paramTypes[pc] == string) || is(paramTypes[pc] == wstring) || is(paramTypes[pc] == dstring)) {
-                funcStr ~= getCSharpInterfaceType(fullyQualifiedName!(paramTypes[pc])) ~ " " ~ paramNames[pc] ~ ", ";
+                funcStr ~= mixin(interp!"${getCSharpInterfaceType(fullyQualifiedName!(paramTypes[pc]))} ${paramNames[pc]}, ");
             } else if (isArray!(paramTypes[pc])) {
-                funcStr ~= "Range<" ~ getCSharpInterfaceType(fullyQualifiedName!(paramTypes[pc])) ~ "> " ~ paramNames[pc] ~ ", ";
+                funcStr ~= mixin(interp!"Range<${getCSharpInterfaceType(fullyQualifiedName!(paramTypes[pc]))}> ${paramNames[pc]}, ");
             } else {
-                funcStr ~= getCSharpInterfaceType(fullyQualifiedName!(paramTypes[pc])) ~ " " ~ paramNames[pc] ~ ", ";
+                funcStr ~= mixin(interp!"${getCSharpInterfaceType(fullyQualifiedName!(paramTypes[pc]))} ${paramNames[pc]}, ");
             }
         }
         if (paramNames.length > 0) {
             funcStr = funcStr[0..$-2];
         }
         funcStr ~= ") {" ~ newline;
-        funcStr ~= "            var dlang_ret = dlang_%s(".format(methodName);
+        funcStr ~= mixin(interp!"            var dlang_ret = dlang_${methodName}(");
         static foreach(pc; 0..paramNames.length) {
             if (is(paramTypes[pc] == string)) {
-                funcStr ~= "SharedFunctions.CreateString(" ~ paramNames[pc] ~ "), ";
+                funcStr ~= mixin(interp!"SharedFunctions.CreateString(${paramNames[pc]}), ");
             } else if (is(paramTypes[pc] == wstring)) {
-                funcStr ~= "SharedFunctions.CreateWString(" ~ paramNames[pc] ~ "), ";
+                funcStr ~= mixin(interp!"SharedFunctions.CreateWString(${paramNames[pc]}), ");
             } else if (is(paramTypes[pc] == dstring)) {
-                funcStr ~= "SharedFunctions.CreateDString(" ~ paramNames[pc] ~ "), ";
+                funcStr ~= mixin(interp!"SharedFunctions.CreateDString(${paramNames[pc]}), ");
             } else if (isArray!(paramTypes[pc])) {
-                funcStr ~= paramNames[pc] ~ ".ToSlice(), ";
+                funcStr ~= mixin(interp!"${paramNames[pc]}.ToSlice(), ");
             } else {
-                funcStr ~= paramNames[pc] ~ ", ";
+                funcStr ~= mixin(interp!"${paramNames[pc]}, ");
             }
         }
         if (paramNames.length > 0) {
@@ -579,13 +582,13 @@ private void generateFunctions(Modules...)(string libraryName) if(allSatisfy!(is
             } else if (is(returnType == dstring)) {
                 funcStr ~= "            return SharedFunctions.SliceToString(dlang_ret, DStringType._dstring);" ~ newline;
             } else if (is(returnType == string[])) {
-                funcStr ~= "            return new Range<%s>(dlang_ret, DStringType._string);".format(getCSharpInterfaceType(returnTypeStr)) ~ newline;
+                funcStr ~= mixin(interp!"            return new Range<string>(dlang_ret, DStringType._string);${newline}");
             } else if (is(returnType == wstring[])) {
-                funcStr ~= "            return new Range<%s>(dlang_ret, DStringType._wstring);".format(getCSharpInterfaceType(returnTypeStr)) ~ newline;
+                funcStr ~= mixin(interp!"            return new Range<string>(dlang_ret, DStringType._wstring);${newline}");
             } else if (is(returnType == dstring[])) {
-                funcStr ~= "            return new Range<%s>(dlang_ret, DStringType._dstring);".format(getCSharpInterfaceType(returnTypeStr)) ~ newline;
+                funcStr ~= mixin(interp!"            return new Range<string>(dlang_ret, DStringType._dstring);${newline}");
             } else if (isArray!(returnType)) {
-                funcStr ~= "            return new Range<%s>(dlang_ret, DStringType.None);".format(getCSharpInterfaceType(returnTypeStr)) ~ newline;
+                funcStr ~= mixin(interp!"            return new Range<${getCSharpInterfaceType(returnTypeStr)}>(dlang_ret, DStringType.None);${newline}");
             } else {
                 funcStr ~= "            return dlang_ret;" ~ newline;
             }
@@ -604,6 +607,11 @@ private string getDLangInterfaceType(string type) {
         case stringTypeString: return "slice";
         case wstringTypeString: return "slice";
         case dstringTypeString: return "slice";
+        case sysTimeTypeString: return "datetime";
+        case dateTimeTypeString: return "datetime";
+        case timeOfDayTypeString: return "datetime";
+        case dateTypeString: return "datetime";
+        case durationTypeString: return "datetime";
         case boolTypeString: return "bool";
 
         //Types that can be marshalled by default
@@ -633,6 +641,11 @@ private string getCSharpInterfaceType(string type) {
         case stringTypeString: return "string";
         case wstringTypeString: return "string";
         case dstringTypeString: return "string";
+        case sysTimeTypeString: return "DateTimeOffset";
+        case dateTimeTypeString: return "DateTime";
+        case timeOfDayTypeString: return "DateTime";
+        case dateTypeString: return "DateTime";
+        case durationTypeString: return "TimeSpan";
         case boolTypeString: return "bool";
 
         //Types that can be marshalled by default
@@ -654,10 +667,12 @@ private string getCSharpInterfaceType(string type) {
 }
 
 private string getDLangReturnType(string type, bool isClass) {
-    import std.stdio;
+    import std.algorithm : among;
+
     string rtname = getReturnErrorTypeName(getDLangInterfaceType(type));
     //These types have predefined C# types.
-    if(type == voidTypeString || type == boolTypeString || type == stringTypeString || type == wstringTypeString || type == dstringTypeString || rtname == "return_slice_error") {
+    if (type.among(dateTypeString, dateTimeTypeString, sysTimeTypeString, timeOfDayTypeString, durationTypeString,
+        voidTypeString, boolTypeString, stringTypeString, wstringTypeString, dstringTypeString) || rtname == "return_slice_error") {
         return rtname;
     }
 
@@ -671,11 +686,11 @@ private string getDLangReturnType(string type, bool isClass) {
 ";
 
     if (isClass) {
-        typeStr ~= "        public static implicit operator IntPtr(%s ret) { ret.EnsureValid(); return ret._value; }".format(rtname) ~ newline;
+        typeStr ~= mixin(interp!"        public static implicit operator IntPtr(${rtname} ret) { ret.EnsureValid(); return ret._value; }${newline}");
         typeStr ~= "        private IntPtr _value;" ~ newline;
     } else {
-        typeStr ~= "        public static implicit operator %s(%s ret) { ret.EnsureValid(); return ret._value; }".format(getCSharpInterfaceType(type), rtname) ~ newline;
-        typeStr ~= "        private %s _value;".format(getCSharpInterfaceType(type)) ~ newline;
+        typeStr ~= mixin(interp!"        public static implicit operator ${getCSharpInterfaceType(type)}(${rtname} ret) { ret.EnsureValid(); return ret._value; }${newline}");
+        typeStr ~= mixin(interp!"        private ${getCSharpInterfaceType(type)} _value;${newline}");
     }
     typeStr ~= "        private slice _error;" ~ newline;
     typeStr ~= "    }" ~ newline ~ newline;
@@ -691,6 +706,10 @@ private string getCSharpMethodInterfaceName(string aggName, string funcName) {
     import std.string : split;
     import std.string : replace;
 
+    if (aggName == "DateTime" || aggName == "DateTimeOffset" || aggName == "TimeSpan") {
+        aggName = "Datetime";
+    }
+
     string name = string.init;
     if (aggName !is null && aggName != string.init) {
         name ~= camelToPascalCase(aggName) ~ "_";
@@ -702,7 +721,7 @@ private string getCSharpMethodInterfaceName(string aggName, string funcName) {
 private string getReturnErrorTypeName(string aggName) {
     import std.string : split;
     import std.array : join;
-    return "return_" ~ aggName.split(".").join("_") ~ "_error";
+    return mixin(interp!"return_${aggName.split(\".\").join(\"_\")}_error");
 }
 
 private string getCSharpName(string dlangName) {
@@ -735,12 +754,12 @@ private void generateRangeDef(T)(string libraryName) {
     rangeDef.functions ~= externFuncString.format("return_slice_error", getCSharpMethodInterfaceName(fqn, "Slice"), "slice dslice, IntPtr begin, IntPtr end");
     rangeDef.functions ~= dllImportString.format(libraryName, getDLangSliceInterfaceName(fqn, "AppendSlice"));
     rangeDef.functions ~= externFuncString.format("return_slice_error", getCSharpMethodInterfaceName(fqn, "AppendSlice"), "slice dslice, slice array");
-    rangeDef.constructors ~= "            else if (typeof(T) == typeof(%2$s)) this._slice = RangeFunctions.%1$s(new IntPtr(capacity));".format(getCSharpMethodInterfaceName(fqn, "Create"), getCSharpInterfaceType(fqn)) ~ newline;
-    rangeDef.sliceEnd ~= "            else if (typeof(T) == typeof(%2$s)) return new Range<T>(RangeFunctions.%1$s(_slice, new IntPtr(begin), _slice.length), DStringType.None);".format(getCSharpMethodInterfaceName(fqn, "Slice"), getCSharpInterfaceType(fqn)) ~ newline;
-    rangeDef.sliceRange ~= "            else if (typeof(T) == typeof(%2$s)) return new Range<T>(RangeFunctions.%1$s(_slice, new IntPtr(begin), new IntPtr(end)), DStringType.None);".format(getCSharpMethodInterfaceName(fqn, "Slice"), getCSharpInterfaceType(fqn)) ~ newline;
-    rangeDef.setters ~= "                else if (typeof(T) == typeof(%2$s)) RangeFunctions.%1$s(_slice, new IntPtr(i), (%2$s)(object)value);".format(getCSharpMethodInterfaceName(fqn, "Set"), getCSharpInterfaceType(fqn)) ~ newline;
-    rangeDef.appendValues ~= "            else if (typeof(T) == typeof(%2$s)) { this._slice = RangeFunctions.%1$s(this._slice, (%2$s)(object)value); }".format(getCSharpMethodInterfaceName(fqn, "AppendValue"), getCSharpInterfaceType(fqn)) ~ newline;
-    rangeDef.appendArrays ~= "            else if (typeof(T) == typeof(%2$s)) { range._slice = RangeFunctions.%1$s(range._slice, source._slice); return range; }".format(getCSharpMethodInterfaceName(fqn, "AppendSlice"), getCSharpInterfaceType(fqn)) ~ newline;
+    rangeDef.constructors ~= mixin(interp!"            else if (typeof(T) == typeof(${getCSharpInterfaceType(fqn)})) this._slice = RangeFunctions.${getCSharpMethodInterfaceName(fqn, \"Create\")}(new IntPtr(capacity));${newline}");
+    rangeDef.sliceEnd ~= mixin(interp!"            else if (typeof(T) == typeof(${getCSharpInterfaceType(fqn)})) return new Range<T>(RangeFunctions.${getCSharpMethodInterfaceName(fqn, \"Slice\")}(_slice, new IntPtr(begin), _slice.length), DStringType.None);${newline}");
+    rangeDef.sliceRange ~= mixin(interp!"            else if (typeof(T) == typeof(${getCSharpInterfaceType(fqn)})) return new Range<T>(RangeFunctions.${getCSharpMethodInterfaceName(fqn, \"Slice\")}(_slice, new IntPtr(begin), new IntPtr(end)), DStringType.None);${newline}");
+    rangeDef.setters ~= mixin(interp!"                else if (typeof(T) == typeof(${getCSharpInterfaceType(fqn)})) RangeFunctions.${getCSharpMethodInterfaceName(fqn, \"Set\")}(_slice, new IntPtr(i), (${getCSharpInterfaceType(fqn)})(object)value);${newline}");
+    rangeDef.appendValues ~= mixin(interp!"            else if (typeof(T) == typeof(${getCSharpInterfaceType(fqn)})) { this._slice = RangeFunctions.${getCSharpMethodInterfaceName(fqn, \"AppendValue\")}(this._slice, (${getCSharpInterfaceType(fqn)})(object)value); }${newline}");
+    rangeDef.appendArrays ~= mixin(interp!"            else if (typeof(T) == typeof(${getCSharpInterfaceType(fqn)})) { range._slice = RangeFunctions.${getCSharpMethodInterfaceName(fqn, \"AppendSlice\")}(range._slice, source._slice); return range; }${newline}");
     if (is(T == class) || is(T == interface)) {
         rangeDef.functions ~= dllImportString.format(libraryName, getDLangSliceInterfaceName(fqn, "Get"));
         rangeDef.functions ~= externFuncString.format(getDLangReturnType(fqn, true), getCSharpMethodInterfaceName(fqn, "Get"), "slice dslice, IntPtr index");
@@ -748,41 +767,43 @@ private void generateRangeDef(T)(string libraryName) {
         rangeDef.functions ~= externFuncString.format("return_void_error", getCSharpMethodInterfaceName(fqn, "Set"), "slice dslice, IntPtr index, IntPtr value");
         rangeDef.functions ~= dllImportString.format(libraryName, getDLangSliceInterfaceName(fqn, "AppendValue"));
         rangeDef.functions ~= externFuncString.format("return_slice_error", getCSharpMethodInterfaceName(fqn, "AppendValue"), "slice dslice, IntPtr value");
-        rangeDef.getters ~= "                else if (typeof(T) == typeof(%2$s)) return (T)(object)new %2$s(RangeFunctions.%1$s(_slice, new IntPtr(i)));".format(getCSharpMethodInterfaceName(fqn, "Get"), getCSharpInterfaceType(fqn)) ~ newline;
-        rangeDef.enumerators ~= "                else if (typeof(T) == typeof(%2$s)) yield return (T)(object)new %2$s(RangeFunctions.%1$s(_slice, new IntPtr(i)));".format(getCSharpMethodInterfaceName(fqn, "Get"), getCSharpInterfaceType(fqn)) ~ newline;
+        rangeDef.getters ~= mixin(interp!"                else if (typeof(T) == typeof(${getCSharpInterfaceType(fqn)})) return (T)(object)new ${getCSharpInterfaceType(fqn)}(RangeFunctions.${getCSharpMethodInterfaceName(fqn, \"Get\")}(_slice, new IntPtr(i)));${newline}");
+        rangeDef.enumerators ~= mixin(interp!"                else if (typeof(T) == typeof(${getCSharpInterfaceType(fqn)})) yield return (T)(object)new ${getCSharpInterfaceType(fqn)}(RangeFunctions.${getCSharpMethodInterfaceName(fqn, \"Get\")}(_slice, new IntPtr(i)));${newline}");
     } else {
         rangeDef.functions ~= dllImportString.format(libraryName, getDLangSliceInterfaceName(fqn, "Get"));
         rangeDef.functions ~= externFuncString.format(getDLangReturnType(fqn, false), getCSharpMethodInterfaceName(fqn, "Get"), "slice dslice, IntPtr index");
         rangeDef.functions ~= dllImportString.format(libraryName, getDLangSliceInterfaceName(fqn, "Set"));
-        rangeDef.functions ~= externFuncString.format("return_void_error", getCSharpMethodInterfaceName(fqn, "Set"), "slice dslice, IntPtr index, %1$s value".format(getCSharpInterfaceType(fqn)));
+        rangeDef.functions ~= externFuncString.format("return_void_error", getCSharpMethodInterfaceName(fqn, "Set"), mixin(interp!"slice dslice, IntPtr index, ${getDLangInterfaceType(fqn)} value"));
         rangeDef.functions ~= dllImportString.format(libraryName, getDLangSliceInterfaceName(fqn, "AppendValue"));
-        rangeDef.functions ~= externFuncString.format("return_slice_error", getCSharpMethodInterfaceName(fqn, "AppendValue"), "slice dslice, %1$s value".format(getCSharpInterfaceType(fqn)));
-        rangeDef.getters ~= "                else if (typeof(T) == typeof(%2$s)) return (T)(object)(%2$s)RangeFunctions.%1$s(_slice, new IntPtr(i));".format(getCSharpMethodInterfaceName(fqn, "Get"), getCSharpInterfaceType(fqn)) ~ newline;
-        rangeDef.enumerators ~= "                else if (typeof(T) == typeof(%2$s)) yield return (T)(object)(%2$s)RangeFunctions.%1$s(_slice, new IntPtr(i));".format(getCSharpMethodInterfaceName(fqn, "Get"), getCSharpInterfaceType(fqn)) ~ newline;
+        rangeDef.functions ~= externFuncString.format("return_slice_error", getCSharpMethodInterfaceName(fqn, "AppendValue"), mixin(interp!"slice dslice, ${getDLangInterfaceType(fqn)} value"));
+        rangeDef.getters ~= mixin(interp!"                else if (typeof(T) == typeof(${getCSharpInterfaceType(fqn)})) return (T)(object)(${getCSharpInterfaceType(fqn)})RangeFunctions.${getCSharpMethodInterfaceName(fqn, \"Get\")}(_slice, new IntPtr(i));${newline}");
+        rangeDef.enumerators ~= mixin(interp!"                else if (typeof(T) == typeof(${getCSharpInterfaceType(fqn)})) yield return (T)(object)(${getCSharpInterfaceType(fqn)})RangeFunctions.${getCSharpMethodInterfaceName(fqn, \"Get\")}(_slice, new IntPtr(i));${newline}");
     }
 }
 
 private void generateSliceBoilerplate(string libraryName) {
-    void generateStringBoilerplate(string dlangType, string csharpType) {
-        rangeDef.enumerators ~= "                else if (typeof(T) == typeof(string) && _strings == null && _type == DStringType._" ~ dlangType ~ ") yield return (T)(object)SharedFunctions.SliceToString(RangeFunctions." ~ csharpType ~ "_Get(_slice, new IntPtr(i)), DStringType._" ~ dlangType ~ ");" ~ newline;
-        rangeDef.getters ~= "                else if (typeof(T) == typeof(string) && _strings == null && _type == DStringType._" ~ dlangType ~ ") return (T)(object)SharedFunctions.SliceToString(RangeFunctions." ~ csharpType ~ "_Get(_slice, new IntPtr(i)), DStringType._" ~ dlangType ~ ");" ~ newline;
-        rangeDef.setters ~= "                else if (typeof(T) == typeof(string) && _strings == null && _type == DStringType._" ~ dlangType ~ ") RangeFunctions." ~ csharpType ~ "_Set(_slice, new IntPtr(i), SharedFunctions.Create" ~ csharpType ~ "((string)(object)value));" ~ newline;
-        rangeDef.sliceEnd ~= "            else if (typeof(T) == typeof(string) && _strings == null && _type == DStringType._" ~ dlangType ~ ") return new Range<T>(RangeFunctions." ~ csharpType ~ "_Slice(_slice, new IntPtr(begin), _slice.length), _type);" ~ newline;
-        rangeDef.sliceRange ~= "            else if (typeof(T) == typeof(string) && _strings == null && _type == DStringType._" ~ dlangType ~ ") return new Range<T>(RangeFunctions." ~ csharpType ~ "_Slice(_slice, new IntPtr(begin), new IntPtr(end)), _type);" ~ newline;
-        rangeDef.appendValues ~= "            else if (typeof(T) == typeof(string) && _strings == null && _type == DStringType._" ~ dlangType ~ ") { _slice = RangeFunctions." ~ csharpType ~ "_AppendValue(_slice, SharedFunctions.Create" ~ csharpType ~ "((string)(object)value)); }" ~ newline;
-        rangeDef.appendArrays ~= "            else if (typeof(T) == typeof(string) && range._strings == null && range._type == DStringType._" ~ dlangType ~ ") { range._slice = RangeFunctions." ~ csharpType ~ "_AppendSlice(range._slice, source._slice); return range; }" ~ newline;
+    import std.datetime: DateTime, SysTime, Duration;
 
-        rangeDef.functions ~= dllImportString.format(libraryName, "autowrap_csharp_" ~ csharpType ~ "_Create");
+    void generateStringBoilerplate(string dlangType, string csharpType) {
+        rangeDef.enumerators ~= mixin(interp!"                else if (typeof(T) == typeof(string) && _strings == null && _type == DStringType._${dlangType}) yield return (T)(object)SharedFunctions.SliceToString(RangeFunctions.${csharpType}_Get(_slice, new IntPtr(i)), DStringType._${dlangType});${newline}");
+        rangeDef.getters ~= mixin(interp!"                else if (typeof(T) == typeof(string) && _strings == null && _type == DStringType._${dlangType}) return (T)(object)SharedFunctions.SliceToString(RangeFunctions.${csharpType}_Get(_slice, new IntPtr(i)), DStringType._${dlangType});${newline}");
+        rangeDef.setters ~= mixin(interp!"                else if (typeof(T) == typeof(string) && _strings == null && _type == DStringType._${dlangType}) RangeFunctions.${csharpType}_Set(_slice, new IntPtr(i), SharedFunctions.Create${csharpType}((string)(object)value));${newline}");
+        rangeDef.sliceEnd ~= mixin(interp!"            else if (typeof(T) == typeof(string) && _strings == null && _type == DStringType._${dlangType}) return new Range<T>(RangeFunctions.${csharpType}_Slice(_slice, new IntPtr(begin), _slice.length), _type);${newline}");
+        rangeDef.sliceRange ~= mixin(interp!"            else if (typeof(T) == typeof(string) && _strings == null && _type == DStringType._${dlangType}) return new Range<T>(RangeFunctions.${csharpType}_Slice(_slice, new IntPtr(begin), new IntPtr(end)), _type);${newline}");
+        rangeDef.appendValues ~= mixin(interp!"            else if (typeof(T) == typeof(string) && _strings == null && _type == DStringType._${dlangType}) { _slice = RangeFunctions.${csharpType}_AppendValue(_slice, SharedFunctions.Create${csharpType}((string)(object)value)); }${newline}");
+        rangeDef.appendArrays ~= mixin(interp!"            else if (typeof(T) == typeof(string) && range._strings == null && range._type == DStringType._${dlangType}) { range._slice = RangeFunctions.${csharpType}_AppendSlice(range._slice, source._slice); return range; }${newline}");
+
+        rangeDef.functions ~= dllImportString.format(libraryName, mixin(interp!"autowrap_csharp_${csharpType}_Create"));
         rangeDef.functions ~= externFuncString.format("return_slice_error", csharpType ~ "_Create", "IntPtr capacity");
-        rangeDef.functions ~= dllImportString.format(libraryName, "autowrap_csharp_" ~ csharpType ~ "_Get");
+        rangeDef.functions ~= dllImportString.format(libraryName, mixin(interp!"autowrap_csharp_${csharpType}_Get"));
         rangeDef.functions ~= externFuncString.format("return_slice_error", csharpType ~ "_Get", "slice dslice, IntPtr index");
-        rangeDef.functions ~= dllImportString.format(libraryName, "autowrap_csharp_" ~ csharpType ~ "_Set");
+        rangeDef.functions ~= dllImportString.format(libraryName, mixin(interp!"autowrap_csharp_${csharpType}_Set"));
         rangeDef.functions ~= externFuncString.format("return_void_error", csharpType ~ "_Set", "slice dslice, IntPtr index, slice value");
-        rangeDef.functions ~= dllImportString.format(libraryName, "autowrap_csharp_" ~ csharpType ~ "_Slice");
+        rangeDef.functions ~= dllImportString.format(libraryName, mixin(interp!"autowrap_csharp_${csharpType}_Slice"));
         rangeDef.functions ~= externFuncString.format("return_slice_error", csharpType ~ "_Slice", "slice dslice, IntPtr begin, IntPtr end");
-        rangeDef.functions ~= dllImportString.format(libraryName, "autowrap_csharp_" ~ csharpType ~ "_AppendValue");
+        rangeDef.functions ~= dllImportString.format(libraryName, mixin(interp!"autowrap_csharp_${csharpType}_AppendValue"));
         rangeDef.functions ~= externFuncString.format("return_slice_error", csharpType ~ "_AppendValue", "slice dslice, slice value");
-        rangeDef.functions ~= dllImportString.format(libraryName, "autowrap_csharp_" ~ csharpType ~ "_AppendSlice");
+        rangeDef.functions ~= dllImportString.format(libraryName, mixin(interp!"autowrap_csharp_${csharpType}_AppendSlice"));
         rangeDef.functions ~= externFuncString.format("return_slice_error", csharpType ~ "_AppendSlice", "slice dslice, slice array");
     }
 
@@ -831,6 +852,10 @@ private void generateSliceBoilerplate(string libraryName) {
     generateRangeDef!ulong(libraryName);
     generateRangeDef!float(libraryName);
     generateRangeDef!double(libraryName);
+
+    generateRangeDef!DateTime(libraryName);
+    generateRangeDef!SysTime(libraryName);
+    generateRangeDef!Duration(libraryName);
 }
 
 private string writeCSharpBoilerplate(string libraryName, string rootNamespace) {

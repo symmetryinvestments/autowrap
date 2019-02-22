@@ -61,5 +61,32 @@ namespace Autowrap.CSharp.Tests
             Assert.AreEqual("No Error Thrown", errorResult, "Unexpected Result from TestErrorMessage.");
             Assert.ThrowsException<DLangException>(() => Test.Functions.TestErrorMessage(true));
         }
+
+        [TestMethod]
+        public void TestSysTimeArray() {
+            var date1 = new DateTimeOffset(1900,1,1,0,0,0,new TimeSpan(0,0,0));
+            var date2 = new DateTimeOffset(2000,1,1,0,0,0,new TimeSpan(-5,0,0));
+            var date3 = new DateTimeOffset(2000,12,31,0,0,0,new TimeSpan(-8,0,0));
+            var arr = new DateTimeOffset[] {date1, date2, date3};
+            var sysTimeArrayResult = Test.Functions.SystimeArrayTest(arr);
+            Assert.AreEqual(arr.Length, sysTimeArrayResult.Length, "Unexpected array length returned from SystimeArrayTest");
+            Assert.AreEqual(date1, sysTimeArrayResult[0], "Incorrect Value for sysTimeArrayResult[0]");
+            Assert.AreEqual(date2, sysTimeArrayResult[1], "Incorrect Value for sysTimeArrayResult[1]");
+            Assert.AreEqual(date3, sysTimeArrayResult[2], "Incorrect Value for sysTimeArrayResult[2]");
+        }
+
+        [TestMethod]
+        public void TestDateTime() {
+            var date = new DateTime(2000,12,31,0,0,0, DateTimeKind.Utc);
+            var datetimeResult = Test.Functions.DateTimeTest(date);
+            Assert.AreEqual(datetimeResult.Ticks, date.Ticks, "Incorrect Value for datetimeResult");
+        }
+
+        [TestMethod]
+        public void TestDuration() {
+            var duration = new TimeSpan(1,0,0,0,0);
+            var durationResult = Test.Functions.DurationTest(duration);
+            Assert.AreEqual(durationResult, duration, "Incorrect Value for durationResult");
+        }
     }
 }

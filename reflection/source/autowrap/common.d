@@ -6,38 +6,42 @@ module autowrap.common;
 public string dllMainMixinStr() @safe pure {
     return q{
 
-        import core.sys.windows.windows: HINSTANCE, BOOL, ULONG, LPVOID;
+        static if (!DllMainDefined) {
+            enum DllMainDefined = true;
 
-        __gshared HINSTANCE g_hInst;
+            import core.sys.windows.windows: HINSTANCE, BOOL, ULONG, LPVOID;
 
-        extern (Windows) BOOL DllMain(HINSTANCE hInstance, ULONG ulReason, LPVOID pvReserved) {
+            __gshared HINSTANCE g_hInst;
 
-            import core.sys.windows.windows;
-            import core.sys.windows.dll;
+            extern (Windows) BOOL DllMain(HINSTANCE hInstance, ULONG ulReason, LPVOID pvReserved) {
 
-            switch (ulReason)  {
+                import core.sys.windows.windows;
+                import core.sys.windows.dll;
 
-                case DLL_PROCESS_ATTACH:
-                    g_hInst = hInstance;
-                    dll_process_attach(hInstance, true);
-                break;
+                switch (ulReason)  {
 
-                case DLL_PROCESS_DETACH:
-                    dll_process_detach(hInstance, true);
+                    case DLL_PROCESS_ATTACH:
+                        g_hInst = hInstance;
+                        dll_process_attach(hInstance, true);
                     break;
 
-                case DLL_THREAD_ATTACH:
-                    dll_thread_attach(true, true);
-                    break;
+                    case DLL_PROCESS_DETACH:
+                        dll_process_detach(hInstance, true);
+                        break;
 
-                case DLL_THREAD_DETACH:
-                    dll_thread_detach(true, true);
-                    break;
+                    case DLL_THREAD_ATTACH:
+                        dll_thread_attach(true, true);
+                        break;
 
-                default:
+                    case DLL_THREAD_DETACH:
+                        dll_thread_detach(true, true);
+                        break;
+
+                    default:
+                }
+
+                return true;
             }
-
-            return true;
         }
     };
 }

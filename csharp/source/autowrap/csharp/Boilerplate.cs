@@ -85,12 +85,42 @@ namespace Autowrap {
         private slice _error;
     }
 
+    [GeneratedCodeAttribute("Autowrap", "1.0.0.0")]
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct datetime {
+        public datetime(long ticks, long offset) {
+            this._ticks = ticks;
+            this._offset = offset;
+        }
+        public static implicit operator datetime(DateTime ret) { return new datetime(ret.Ticks, 0L); }
+        public static implicit operator datetime(DateTimeOffset ret) { return new datetime(ret.Ticks, ret.Offset.Ticks); }
+        public static implicit operator datetime(TimeSpan ret) { return new datetime(ret.Ticks, 0L); }
+        public static implicit operator DateTime(datetime ret) { return new DateTime(ret._ticks, DateTimeKind.Local); }
+        public static implicit operator DateTimeOffset(datetime ret) { return new DateTimeOffset(ret._ticks, new TimeSpan(ret._offset)); }
+        public static implicit operator TimeSpan(datetime ret) { return new TimeSpan(ret._ticks); }
+        private long _ticks;
+        private long _offset;
+    }
+
+    [GeneratedCodeAttribute("Autowrap", "1.0.0.0")]
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct return_datetime_error {
+        private void EnsureValid() {
+            var errStr = SharedFunctions.SliceToString(_error, DStringType._wstring);
+            if (!string.IsNullOrEmpty(errStr)) throw new DLangException(errStr);
+        }
+        public static implicit operator DateTime(return_datetime_error ret) { ret.EnsureValid(); return ret._value; }
+        public static implicit operator DateTimeOffset(return_datetime_error ret) { ret.EnsureValid(); return ret._value; }
+        public static implicit operator TimeSpan(return_datetime_error ret) { ret.EnsureValid(); return ret._value; }
+        private datetime _value;
+        private slice _error;
+    }
+
 %3$s    [GeneratedCodeAttribute("Autowrap", "1.0.0.0")]
     public static class SharedFunctions {
         static SharedFunctions() {
             Stream stream = null;
             var outputName = Path.Combine(Environment.CurrentDirectory, RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? "libcsharp-tests.dylib" : RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? "libcsharp-tests.so" : "csharp-tests.dll");
-            Console.WriteLine($"Library Path: {outputName}");
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
                 stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("%2$s.lib%1$s.dylib");
@@ -123,20 +153,24 @@ namespace Autowrap {
         }
 
         internal static string SliceToString(slice str, DStringType type) {
-            unsafe {
-                var bytes = (byte*)str.ptr.ToPointer();
-                if (bytes == null) {
-                    return null;
+            try {
+                unsafe {
+                    var bytes = (byte*)str.ptr.ToPointer();
+                    if (bytes == null) {
+                        return null;
+                    }
+                    if (type == DStringType._string) {
+                        return String.Copy(System.Text.Encoding.UTF8.GetString(bytes, str.length.ToInt32()*(int)type));
+                    } else if (type == DStringType._wstring) {
+                        return String.Copy(System.Text.Encoding.Unicode.GetString(bytes, str.length.ToInt32()*(int)type));
+                    } else if (type == DStringType._dstring) {
+                        return String.Copy(System.Text.Encoding.UTF32.GetString(bytes, str.length.ToInt32()*(int)type));
+                    } else {
+                        throw new UnauthorizedAccessException("Unable to convert D string to C# string: Unrecognized string type.");
+                    }
                 }
-                if (type == DStringType._string) {
-                    return System.Text.Encoding.UTF8.GetString(bytes, str.length.ToInt32()*(int)type);
-                } else if (type == DStringType._wstring) {
-                    return System.Text.Encoding.Unicode.GetString(bytes, str.length.ToInt32()*(int)type);
-                } else if (type == DStringType._dstring) {
-                    return System.Text.Encoding.UTF32.GetString(bytes, str.length.ToInt32()*(int)type);
-                } else {
-                    throw new UnauthorizedAccessException("Unable to convert D string to C# string: Unrecognized string type.");
-                }
+            } finally {
+                SharedFunctions.ReleaseMemory(str.ptr);
             }
         }
 
