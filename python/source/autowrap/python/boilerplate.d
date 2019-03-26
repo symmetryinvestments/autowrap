@@ -57,6 +57,7 @@ string wrapAll(in LibraryName libraryName,
             extern(C) WorksheetFunction[] getWorksheetFunctions() @safe pure nothrow { return []; }
         };
     } else version(Windows) {
+        import autowrap.common : dllMainMixinStr;
         ret ~= dllMainMixinStr;
     }
 
