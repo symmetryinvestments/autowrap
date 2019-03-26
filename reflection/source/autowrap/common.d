@@ -6,8 +6,8 @@ module autowrap.common;
 public string dllMainMixinStr() @safe pure {
     return q{
 
-        static if (!DllMainDefined) {
-            enum DllMainDefined = true;
+        static if (!is(DllMainDefined)) {
+            enum DllMainDefined;
 
             import core.sys.windows.windows: HINSTANCE, BOOL, ULONG, LPVOID;
 
