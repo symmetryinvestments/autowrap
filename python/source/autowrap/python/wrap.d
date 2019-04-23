@@ -22,8 +22,10 @@ void wrapAllFunctions(Modules...)() if(allSatisfy!(isModule, Modules)) {
     static foreach(function_; AllFunctions!Modules) {
         static if(__traits(compiles, def!(function_.symbol, PyName!(toSnakeCase(function_.name)))()))
             def!(function_.symbol, PyName!(toSnakeCase(function_.name)))();
-        else
+        else {
             pragma(msg, "\nERROR! Autowrap could not wrap function `", function_.name, "` for Python\n");
+            // def!(function_.symbol, PyName!(toSnakeCase(function_.name)))();
+        }
     }
 }
 

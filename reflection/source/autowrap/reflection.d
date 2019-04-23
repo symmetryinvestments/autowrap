@@ -336,11 +336,18 @@ package template isExportFunction(alias F, Flag!"alwaysExport" alwaysExport = No
     import std.traits: isFunction;
 
     version(AutowrapAlwaysExport) {
-        static if(__traits(compiles, __traits(getLinkage, F))) {
+        static if(isFunction!F) {
             enum linkage = __traits(getLinkage, F);
-            enum isExportFunction = isFunction!F && linkage != "C" && linkage != "C++";
+            enum isExportFunction = linkage != "C" && linkage != "C++";
         } else
             enum isExportFunction = false;
+    } else version(AutowrapAlwaysExportC) {
+        static if(isFunction!F) {
+            enum linkage = __traits(getLinkage, F);
+            enum isExportFunction = linkage == "C" || linkage == "C++";
+        } else
+            enum isExportFunction = false;
+
     } else {
         enum isExportFunction = isFunction!F && isExportSymbol!(F, alwaysExport);
     }
