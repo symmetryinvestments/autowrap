@@ -3,9 +3,6 @@
 name "pynih"
 targetType "library"
 
-preBuildCommands "[ -e $PACKAGE_DIR/druntime.o ] || gcc -c -fPIC $PACKAGE_DIR/source/druntime.c -o $PACKAGE_DIR/druntime.o" platform="linux"
-sourceFiles "$PACKAGE_DIR/druntime.o" platform="linux"
-
 configuration "default" {
 
 }
