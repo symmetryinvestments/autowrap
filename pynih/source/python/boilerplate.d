@@ -49,6 +49,8 @@ struct Aggregates(T...) {
 string createModuleMixin(Module module_, alias cfunctions, alias aggregates)()
     if(isPython3)
 {
+    if(!__ctfe) return null;
+
     import std.format: format;
 
     enum ret = q{
@@ -63,6 +65,9 @@ string createModuleMixin(Module module_, alias cfunctions, alias aggregates)()
             import python.raw: pyDateTimeImport;
             import python.cooked: createModule;
             import python.boilerplate: Module, CFunctions, Aggregates;
+            import core.runtime: rt_init;
+
+            rt_init;
 
             pyDateTimeImport;
 
@@ -84,6 +89,8 @@ string createModuleMixin(Module module_, alias cfunctions, alias aggregates)()
 string createModuleMixin(Module module_, alias cfunctions, alias aggregates)()
     if(isPython2)
 {
+    if(!__ctfe) return null;
+
     import std.format: format;
 
     enum ret = q{
@@ -97,6 +104,9 @@ string createModuleMixin(Module module_, alias cfunctions, alias aggregates)()
             import python.raw: pyDateTimeImport;
             import python.cooked: initModule;
             import python.boilerplate: Module, CFunctions, Aggregates;
+            import core.runtime: rt_init;
+
+            rt_init;
 
             pyDateTimeImport;
             initModule!(

@@ -117,6 +117,9 @@ string pydInitMixin(in string libraryName) @safe pure {
                 import pyd.def: pyd_module_name, pyd_modules;
                 import pyd.exception: exception_catcher;
                 import pyd.thread: ensureAttached;
+                import core.runtime: rt_init;
+
+                rt_init;
 
                 return exception_catcher(delegate PyObject*() {
                         ensureAttached();
@@ -128,10 +131,14 @@ string pydInitMixin(in string libraryName) @safe pure {
         }.format(libraryName, libraryName);
     } else {
         return q{
-            import pyd.exception: exception_catcher;
-            import pyd.thread: ensureAttached;
-            import pyd.def: pyd_module_name;
             extern(C) export void init%s() {
+                import pyd.exception: exception_catcher;
+                import pyd.thread: ensureAttached;
+                import pyd.def: pyd_module_name;
+                import core.runtime: rt_init;
+
+                rt_init;
+
                 exception_catcher(delegate void() {
                         ensureAttached();
                         pyd_module_name = "%s";
