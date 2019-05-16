@@ -18,7 +18,7 @@ import core.time;
 import core.memory;
 import std.conv;
 import std.datetime : DateTime, SysTime, Date, TimeOfDay, SimpleTimeZone, LocalTime;
-import std.meta : Unqual;
+import std.traits : Unqual;
 import std.string;
 import std.traits;
 import std.utf;
@@ -145,38 +145,41 @@ public string wrapCSharp(in Modules modules, OutputFileName outputFile, LibraryN
     const modulesList = modules.value.map!(a => a.toString).join(", ");
 
     return q{
-        import core.memory : GC;
-        import std.conv : to;
-        import std.utf : toUTF8, toUTF16, toUTF32;
-        import std.typecons;
-        import std.string : fromStringz;
-        import autowrap.csharp.boilerplate;
-        import autowrap.csharp.dlang : wrapDLang;
-
         extern(C) export void autowrap_csharp_release(void* ptr) nothrow {
+            import core.memory : GC;
             GC.clrAttr(ptr, GC.BlkAttr.NO_MOVE);
             GC.removeRoot(ptr);
         }
 
         extern(C) export string autowrap_csharp_createString(wchar* str) nothrow {
-            string temp = toUTF8(to!wstring(str.fromStringz()));
+            import std.string : fromStringz;
+            import std.utf : toUTF8;
+            import autowrap.csharp.boilerplate : pinPointer;
+            string temp = toUTF8(str.fromStringz());
             pinPointer(cast(void*)temp.ptr);
             return temp;
         }
 
         extern(C) export wstring autowrap_csharp_createWString(wchar* str) nothrow {
-            wstring temp = toUTF16(to!wstring(str.fromStringz()));
+            import std.string : fromStringz;
+            import std.utf : toUTF16;
+            import autowrap.csharp.boilerplate : pinPointer;
+            wstring temp = toUTF16(str.fromStringz());
             pinPointer(cast(void*)temp.ptr);
             return temp;
         }
 
         extern(C) export dstring autowrap_csharp_createDString(wchar* str) nothrow {
-            dstring temp = toUTF32(to!wstring(str.fromStringz()));
+            import std.string : fromStringz;
+            import std.utf : toUTF32;
+            import autowrap.csharp.boilerplate : pinPointer;
+            dstring temp = toUTF32(str.fromStringz());
             pinPointer(cast(void*)temp.ptr);
             return temp;
         }
 
-        mixin(wrapDLang!(%1$s));
+        static import autowrap.csharp.dlang;
+        mixin(autowrap.csharp.dlang.wrapDLang!(%1$s));
 
         //Insert DllMain for Windows only.
         version(Windows) {
@@ -184,7 +187,9 @@ public string wrapCSharp(in Modules modules, OutputFileName outputFile, LibraryN
         }
 
         void main() {
-            import std.stdio;
+            import std.stdio : File;
+            import autowrap.csharp.common : LibraryName, RootNamespace;
+            import autowrap.csharp.csharp : generateCSharp;
             string generated = generateCSharp!(%1$s)(LibraryName("%3$s"), RootNamespace("%4$s"));
             auto f = File("%5$s", "w");
             f.writeln(generated);
