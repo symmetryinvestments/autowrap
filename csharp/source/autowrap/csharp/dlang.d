@@ -99,14 +99,14 @@ private string generateConstructors(T)() {
                     exp ~= "        pinPointer(cast(void*)__temp__);" ~ newline;
                     exp ~= mixin(interp!"        return returnValue!(${fqn})(__temp__);${newline}");
                 } else if (is(T == struct)) {
-                    exp ~= mixin(interp!"        return ${fqn}(");
+                    exp ~= mixin(interp!"        return returnValue!(${fqn})(${fqn}(");
                     foreach(pn; paramNames) {
                         exp ~= mixin(interp!"${pn}, ");
                     }
                     if (paramTypes.length > 0) {
                         exp = exp[0..$-2];
                     }
-                    exp ~= ");" ~ newline;
+                    exp ~= "));" ~ newline;
                 }
                 exp ~= "    } catch (Exception __ex__) {" ~ newline;
                 exp ~= mixin(interp!"        return returnValue!(${fqn})(__ex__);${newline}");
