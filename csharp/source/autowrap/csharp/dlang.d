@@ -6,9 +6,9 @@ import core.time : Duration;
 import std.datetime : Date, DateTime, SysTime, TimeOfDay, TimeZone;
 import std.ascii : newline;
 import std.meta : allSatisfy;
+import std.range.primitives;
 
 import autowrap.csharp.boilerplate;
-import autowrap.csharp.common : getDLangInterfaceType;
 import autowrap.reflection : isModule, PrimordialType;
 
 enum string methodSetup = "        thread_attachThis();
@@ -21,35 +21,41 @@ enum string methodSetup = "        thread_attachThis();
 public string wrapDLang(Modules...)() if(allSatisfy!(isModule, Modules)) {
     import autowrap.csharp.common : isDateTimeType;
     import autowrap.reflection : AllAggregates;
-    import std.traits : fullyQualifiedName, moduleName;
+
+    import std.algorithm.iteration : map;
+    import std.algorithm.sorting : sort;
+    import std.array : array;
+    import std.format : format;
     import std.meta : AliasSeq;
+    import std.traits : fullyQualifiedName;
 
-    string ret = string.init;
-    ret ~= "import core.thread : thread_attachThis, thread_detachThis;" ~ newline;
-    ret ~= "extern(C) void rt_moduleTlsCtor();" ~ newline;
-    ret ~= "extern(C) void rt_moduleTlsDtor();" ~ newline;
-    foreach(mod; Modules) {
-        ret ~= mixin(interp!"import ${mod.name};${newline}");
-    }
-    ret ~= newline;
+    string ret;
+    string[] imports = [Modules].map!(a => a.name)().array();
 
-    static foreach(t; AliasSeq!(string, wstring, dstring, bool, byte, ubyte, short, ushort, int, uint, long, ulong, float, double, datetime)) {
-        ret ~= generateSliceMethods!t();
+    static foreach(T; AliasSeq!(string, wstring, dstring, bool, byte, ubyte, short, ushort, int, uint, long, ulong, float, double, datetime)) {
+        ret ~= generateSliceMethods!T(imports);
     }
 
-    alias aggregates = AllAggregates!Modules;
-    static foreach(agg; aggregates) {
+
+    static foreach(agg; AllAggregates!Modules) {
         static if (!isDateTimeType!agg) {
-            ret ~= generateSliceMethods!agg();
-            ret ~= generateConstructors!agg();
-            ret ~= generateMethods!agg();
-            ret ~= generateFields!agg();
+            ret ~= generateSliceMethods!agg(imports);
+            ret ~= generateConstructors!agg(imports);
+            ret ~= generateMethods!agg(imports);
+            ret ~= generateFields!agg(imports);
         }
     }
 
-    ret ~= generateFunctions!Modules();
+    ret ~= generateFunctions!Modules(imports);
 
-    return ret;
+    string top = "import core.thread : thread_attachThis, thread_detachThis;" ~ newline;
+    top ~= "extern(C) void rt_moduleTlsCtor();" ~ newline;
+    top ~= "extern(C) void rt_moduleTlsDtor();" ~ newline;
+
+    foreach(i; sort(imports))
+        top ~= format("import %s;%s", i, newline);
+
+    return top ~ "\n" ~ ret;
 }
 
 // This is to deal with the cases where the parameter name is the same as a
@@ -58,13 +64,15 @@ public string wrapDLang(Modules...)() if(allSatisfy!(isModule, Modules)) {
 // parameter is named prefix).
 private enum AdjParamName(string paramName) = paramName ~ "_param";
 
-private string generateConstructors(T)() {
-    import autowrap.csharp.common : getDLangInterfaceName;
-    import std.traits : fullyQualifiedName, hasMember, Parameters, ParameterIdentifierTuple;
-    import std.meta : AliasSeq, staticMap;
-    import std.algorithm : among;
+private string generateConstructors(T)(ref string[] imports) {
+    import autowrap.csharp.common : getDLangInterfaceName, getDLangInterfaceType;
 
-    string ret = string.init;
+    import std.algorithm.comparison : among;
+    import std.algorithm.searching : canFind;
+    import std.meta : staticMap;
+    import std.traits : fullyQualifiedName, hasMember, isBuiltinType, moduleName, Parameters, ParameterIdentifierTuple;
+
+    string ret;
     alias fqn = getDLangInterfaceType!T;
 
     //Generate constructor methods
@@ -73,6 +81,17 @@ private string generateConstructors(T)() {
             if (__traits(getProtection, c).among("export", "public")) {
                 alias paramNames = staticMap!(AdjParamName, ParameterIdentifierTuple!c);
                 alias paramTypes = Parameters!c;
+
+                foreach(P; paramTypes)
+                {
+                    static if(!isBuiltinType!P)
+                    {
+                        enum mod = moduleName!P;
+                        if(!mod.empty && !imports.canFind(mod))
+                            imports ~= mod;
+                    }
+                }
+
                 string exp = "extern(C) export ";
                 const string interfaceName = getDLangInterfaceName(fqn, "__ctor");
 
@@ -120,15 +139,17 @@ private string generateConstructors(T)() {
     return ret;
 }
 
-private string generateMethods(T)() {
-    import autowrap.csharp.common : isDateTimeType, isDateTimeArrayType, getDLangInterfaceName;
-    import std.meta : staticMap;
-    import std.traits : isFunction, fullyQualifiedName, ReturnType, Parameters, ParameterIdentifierTuple;
-    import std.conv : to;
-    import std.algorithm : among;
+private string generateMethods(T)(ref string[] imports) {
+    import autowrap.csharp.common : isDateTimeType, isDateTimeArrayType, getDLangInterfaceName, getDLangInterfaceType;
 
-    string ret = string.init;
+    import std.algorithm.comparison : among;
+    import std.algorithm.searching : canFind;
+    import std.meta : AliasSeq, staticMap;
+    import std.traits : isFunction, fullyQualifiedName, isBuiltinType, moduleName, ReturnType, Parameters, ParameterIdentifierTuple;
+
+    string ret;
     alias fqn = getDLangInterfaceType!T;
+
     foreach(m; __traits(allMembers, T)) {
         if (m.among("__ctor", "toHash", "opEquals", "opCmp", "factory")) {
             continue;
@@ -139,13 +160,23 @@ private string generateMethods(T)() {
                 const bool isMethod = isFunction!mo;
 
                 static if(isMethod && __traits(getProtection, mo).among("export", "public")) {
-                    string exp = string.init;
+                    string exp;
                     const string interfaceName = getDLangInterfaceName(fqn, m);
 
                     alias returnType = ReturnType!mo;
                     alias returnTypeStr = getDLangInterfaceType!returnType;
                     alias paramTypes = Parameters!mo;
                     alias paramNames = staticMap!(AdjParamName, ParameterIdentifierTuple!mo);
+
+                    foreach(P; AliasSeq!(returnType, paramTypes))
+                    {
+                        static if(!isBuiltinType!P)
+                        {
+                            enum mod = moduleName!P;
+                            if(!mod.empty && !imports.canFind(mod))
+                                imports ~= mod;
+                        }
+                    }
 
                     exp ~= "extern(C) export ";
                     static if (!is(returnType == void)) {
@@ -202,17 +233,25 @@ private string generateMethods(T)() {
     return ret;
 }
 
-private string generateFields(T)() {
-    import autowrap.csharp.common : getDLangInterfaceName;
-    import std.traits : fullyQualifiedName, Fields, FieldNameTuple;
+private string generateFields(T)(ref string[] imports) {
+    import autowrap.csharp.common : getDLangInterfaceName, getDLangInterfaceType;
 
-    string ret = string.init;
+    import std.algorithm.searching : canFind;
+    import std.traits : fullyQualifiedName, Fields, FieldNameTuple, isBuiltinType, moduleName;
+
+    string ret;
     alias fqn = getDLangInterfaceType!T;
     if (is(T == class) || is(T == interface)) {
         alias fieldTypes = Fields!T;
         alias fieldNames = FieldNameTuple!T;
-        static foreach(fc; 0..fieldTypes.length) {
+        static foreach(fc; 0..fieldTypes.length) {{
             static if (is(typeof(__traits(getMember, T, fieldNames[fc])))) {
+                static if(!isBuiltinType!(fieldTypes[fc]))
+                {
+                    enum mod = moduleName!(fieldTypes[fc]);
+                    if(!mod.empty && !imports.canFind(mod))
+                        imports ~= mod;
+                }
                 ret ~= mixin(interp!"extern(C) export returnValue!(${getDLangInterfaceType!(fieldTypes[fc])}) ${getDLangInterfaceName(fqn, fieldNames[fc] ~ \"_get\")}(${fqn} __obj__) nothrow {${newline}");
                 ret ~= generateMethodErrorHandling(mixin(interp!"        auto __value__ = __obj__.${fieldNames[fc]};${newline}        return returnValue!(${getDLangInterfaceType!(fieldTypes[fc])})(${generateReturn!(fieldTypes[fc])(\"__value__\")});"), mixin(interp!"returnValue!(${getDLangInterfaceType!(fieldTypes[fc])})"));
                 ret ~= "}" ~ newline;
@@ -220,18 +259,22 @@ private string generateFields(T)() {
                 ret ~= generateMethodErrorHandling(mixin(interp!"        __obj__.${fieldNames[fc]} = ${generateParameter!(fieldTypes[fc])(\"value\")};${newline}        return returnVoid();"), "returnVoid");
                 ret ~= "}" ~ newline;
             }
-        }
+        }}
     }
     return ret;
 }
 
-private string generateFunctions(Modules...)() if(allSatisfy!(isModule, Modules)) {
-    import autowrap.csharp.common : getDLangInterfaceName;
+private string generateFunctions(Modules...)(ref string[] imports) if(allSatisfy!(isModule, Modules)) {
+    import autowrap.csharp.common : getDLangInterfaceName, getDLangInterfaceType;
     import autowrap.reflection: AllFunctions;
-    import std.meta : staticMap;
-    import std.traits : fullyQualifiedName, hasMember, functionAttributes, FunctionAttribute, ReturnType, Parameters, ParameterIdentifierTuple;
 
-    string ret = string.init;
+    import std.algorithm.searching : canFind;
+    import std.meta : AliasSeq, staticMap;
+    import std.traits : fullyQualifiedName, hasMember, functionAttributes, FunctionAttribute, isBuiltinType,
+                        moduleName, ReturnType, Parameters, ParameterIdentifierTuple;
+
+    string ret;
+
     foreach(func; AllFunctions!Modules) {
         alias modName = func.moduleName;
         alias funcName = func.name;
@@ -241,7 +284,18 @@ private string generateFunctions(Modules...)() if(allSatisfy!(isModule, Modules)
         alias paramTypes = Parameters!(__traits(getMember, func.module_, func.name));
         alias paramNames = staticMap!(AdjParamName, ParameterIdentifierTuple!(__traits(getMember, func.module_, func.name)));
         const string interfaceName = getDLangInterfaceName(modName, null, funcName);
-        string retType = string.init;
+
+        foreach(P; AliasSeq!(returnType, paramTypes))
+        {
+            static if(!isBuiltinType!P)
+            {
+                enum mod = moduleName!P;
+                if(!mod.empty && !imports.canFind(mod))
+                    imports ~= mod;
+            }
+        }
+
+        string retType;
         string funcStr = "extern(C) export ";
 
         static if (!is(returnType == void)) {
@@ -289,14 +343,23 @@ private string generateFunctions(Modules...)() if(allSatisfy!(isModule, Modules)
     return ret;
 }
 
-private string generateSliceMethods(T)() {
-    import autowrap.csharp.common : getDLangSliceInterfaceName;
-    import std.traits : fullyQualifiedName;
-    string ret = string.init;
+private string generateSliceMethods(T)(ref string[] imports) {
+    import autowrap.csharp.common : getDLangSliceInterfaceName, getDLangInterfaceType;
+
+    import std.algorithm.searching : canFind;
+    import std.traits : fullyQualifiedName, isBuiltinType, moduleName;
+
     alias fqn = getDLangInterfaceType!T;
 
+    static if(!isBuiltinType!T)
+    {
+        enum mod = moduleName!T;
+        if(!mod.empty && !imports.canFind(mod))
+            imports ~= mod;
+    }
+
     //Generate slice creation method
-    ret ~= mixin(interp!"extern(C) export returnValue!(${fqn}[]) ${getDLangSliceInterfaceName(fqn, \"Create\")}(size_t capacity) nothrow {${newline}");
+    string ret = mixin(interp!"extern(C) export returnValue!(${fqn}[]) ${getDLangSliceInterfaceName(fqn, \"Create\")}(size_t capacity) nothrow {${newline}");
     ret ~= generateMethodErrorHandling(mixin(interp!"        ${fqn}[] __temp__;${newline}        __temp__.reserve(capacity);${newline}        pinPointer(cast(void*)__temp__.ptr);${newline}        return returnValue!(${fqn}[])(__temp__);"), mixin(interp!"returnValue!(${fqn}[])"));
     ret ~= "}" ~ newline;
 
@@ -329,8 +392,7 @@ private string generateSliceMethods(T)() {
 }
 
 private string generateMethodErrorHandling(string insideCode, string returnType) {
-    string ret = string.init;
-    ret ~= "    try {" ~ newline;
+    string ret = "    try {" ~ newline;
     ret ~= methodSetup ~ newline;
     ret ~= insideCode ~ newline;
     ret ~= "    } catch (Exception __ex__) {" ~ newline;
