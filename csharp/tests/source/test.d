@@ -23,11 +23,11 @@ export c1[] classRangeFunction(c1[] arr) {
     return arr.dup;
 }
 
-export string testErrorMessage(bool throwError) {
-    if(throwError) 
+export string testErrorMessage(bool throwException) {
+    if(throwException)
         throw new Exception("Test Error Message");
     else
-        return "No Error Thrown";
+        return "No Exception Thrown";
 }
 
 export string[] testStringRanges(dstring[] arr) {
@@ -127,7 +127,7 @@ class c1 {
     public @property s2 structProperty(s2 value) {
         return _structProperty = value;
     }
-    
+
     private c1 _refProperty;
     public @property c1 refProperty() {
         return _refProperty;
@@ -135,7 +135,7 @@ class c1 {
     public @property c1 refProperty(c1 value) {
         return _refProperty = value;
     }
-    
+
     private ulong _valueProperty = 1001;
     public @property ulong valueProperty() {
         return _valueProperty;
@@ -143,7 +143,7 @@ class c1 {
     public @property ulong valueProperty(ulong value) {
         return _valueProperty = value;
     }
-    
+
     private ulong[] _valueSliceProperty;
     public @property ulong[] valueSliceProperty() {
         return valueSliceProperty;
@@ -151,7 +151,7 @@ class c1 {
     public @property ulong[] valueSliceProperty(ulong[] value) {
         return valueSliceProperty = value;
     }
-    
+
     private string[] _stringSliceProperty;
     public @property string[] stringSliceProperty() {
         return _stringSliceProperty;
@@ -159,7 +159,7 @@ class c1 {
     public @property string[] stringSliceProperty(string[] value) {
         return _stringSliceProperty = value;
     }
-    
+
     private wstring[] _wstringSliceProperty;
     public @property wstring[] wstringSliceProperty() {
         return _wstringSliceProperty;
@@ -167,7 +167,7 @@ class c1 {
     public @property wstring[] wstringSliceProperty(wstring[] value) {
         return _wstringSliceProperty = value;
     }
-    
+
     private dstring[] _dstringSliceProperty;
     public @property dstring[] dstringSliceProperty() {
         return _dstringSliceProperty;
@@ -175,7 +175,7 @@ class c1 {
     public @property dstring[] dstringSliceProperty(dstring[] value) {
         return _dstringSliceProperty = value;
     }
-    
+
     private s1[] _structSliceProperty;
     public @property s1[] structSliceProperty() {
         return _structSliceProperty;
@@ -183,7 +183,7 @@ class c1 {
     public @property s1[] structSliceProperty(s1[] value) {
         return _structSliceProperty = value;
     }
-    
+
     private c1[] _refSliceProperty;
     public @property c1[] refSliceProperty() {
         return _refSliceProperty;

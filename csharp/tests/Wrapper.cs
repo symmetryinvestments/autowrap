@@ -45,9 +45,9 @@ namespace Test {
         }
         [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_TestTestErrorMessage", CallingConvention = CallingConvention.Cdecl)]
 
-        private static extern return_slice_error dlang_TestErrorMessage([MarshalAs(UnmanagedType.Bool)]bool throwError);
-        public static string TestErrorMessage(bool throwError) {
-            var dlang_ret = dlang_TestErrorMessage(throwError);
+        private static extern return_slice_error dlang_TestErrorMessage([MarshalAs(UnmanagedType.Bool)]bool throwException);
+        public static string TestErrorMessage(bool throwException) {
+            var dlang_ret = dlang_TestErrorMessage(throwException);
             return SharedFunctions.SliceToString(dlang_ret, DStringType._string);
         }
         [DllImport("csharp-tests", EntryPoint = "autowrap_csharp_TestTestStringRanges", CallingConvention = CallingConvention.Cdecl)]
