@@ -52,10 +52,16 @@ public string wrapDLang(Modules...)() if(allSatisfy!(isModule, Modules)) {
     return ret;
 }
 
+// This is to deal with the cases where the parameter name is the same as a
+// module or pacakage name, which results in errors if the full path name is
+// used inside the function (e.g. in the return type is prefix.Prefix, and the
+// parameter is named prefix).
+private enum AdjParamName(string paramName) = paramName ~ "_param";
+
 private string generateConstructors(T)() {
     import autowrap.csharp.common : getDLangInterfaceName;
     import std.traits : fullyQualifiedName, hasMember, Parameters, ParameterIdentifierTuple;
-    import std.meta : AliasSeq;
+    import std.meta : AliasSeq, staticMap;
     import std.algorithm : among;
 
     string ret = string.init;
@@ -65,7 +71,7 @@ private string generateConstructors(T)() {
     static if(hasMember!(T, "__ctor") && __traits(getProtection, __traits(getMember, T, "__ctor")).among("export", "public")) {
         foreach(c; __traits(getOverloads, T, "__ctor")) {
             if (__traits(getProtection, c).among("export", "public")) {
-                alias paramNames = ParameterIdentifierTuple!c;
+                alias paramNames = staticMap!(AdjParamName, ParameterIdentifierTuple!c);
                 alias paramTypes = Parameters!c;
                 string exp = "extern(C) export ";
                 const string interfaceName = getDLangInterfaceName(fqn, "__ctor");
@@ -116,6 +122,7 @@ private string generateConstructors(T)() {
 
 private string generateMethods(T)() {
     import autowrap.csharp.common : isDateTimeType, isDateTimeArrayType, getDLangInterfaceName;
+    import std.meta : staticMap;
     import std.traits : isFunction, fullyQualifiedName, ReturnType, Parameters, ParameterIdentifierTuple;
     import std.conv : to;
     import std.algorithm : among;
@@ -138,7 +145,7 @@ private string generateMethods(T)() {
                     alias returnType = ReturnType!mo;
                     alias returnTypeStr = getDLangInterfaceType!returnType;
                     alias paramTypes = Parameters!mo;
-                    alias paramNames = ParameterIdentifierTuple!mo;
+                    alias paramNames = staticMap!(AdjParamName, ParameterIdentifierTuple!mo);
 
                     exp ~= "extern(C) export ";
                     static if (!is(returnType == void)) {
@@ -221,6 +228,7 @@ private string generateFields(T)() {
 private string generateFunctions(Modules...)() if(allSatisfy!(isModule, Modules)) {
     import autowrap.csharp.common : getDLangInterfaceName;
     import autowrap.reflection: AllFunctions;
+    import std.meta : staticMap;
     import std.traits : fullyQualifiedName, hasMember, functionAttributes, FunctionAttribute, ReturnType, Parameters, ParameterIdentifierTuple;
 
     string ret = string.init;
@@ -231,7 +239,7 @@ private string generateFunctions(Modules...)() if(allSatisfy!(isModule, Modules)
         alias returnType = ReturnType!(__traits(getMember, func.module_, func.name));
         alias returnTypeStr = getDLangInterfaceType!(ReturnType!(__traits(getMember, func.module_, func.name)));
         alias paramTypes = Parameters!(__traits(getMember, func.module_, func.name));
-        alias paramNames = ParameterIdentifierTuple!(__traits(getMember, func.module_, func.name));
+        alias paramNames = staticMap!(AdjParamName, ParameterIdentifierTuple!(__traits(getMember, func.module_, func.name)));
         const string interfaceName = getDLangInterfaceName(modName, null, funcName);
         string retType = string.init;
         string funcStr = "extern(C) export ";
