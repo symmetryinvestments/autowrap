@@ -22,7 +22,6 @@ public struct OutputFileName {
 
 package string getDLangInterfaceType(T)() {
     import std.traits : fullyQualifiedName;
-    import std.datetime : DateTime, SysTime, Date, TimeOfDay, Duration;
     if (isDateTimeType!T) {
         return "datetime";
     } else if (isDateTimeArrayType!T) {
