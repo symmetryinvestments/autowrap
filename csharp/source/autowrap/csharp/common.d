@@ -1,6 +1,7 @@
 module autowrap.csharp.common;
 
 public import std.datetime : DateTime, SysTime, Date, TimeOfDay, Duration, TimeZone;
+public import std.range.primitives;
 public import std.traits : Unqual;
 
 public enum isDateTimeType(T) = is(T == Unqual!Date) || is(T == Unqual!DateTime) || is(T == Unqual!SysTime) || is(T == Unqual!TimeOfDay) || is(T == Unqual!Duration) || is(T == Unqual!TimeZone);
@@ -76,5 +77,6 @@ package string getDLangSliceInterfaceName(string fqn, string funcName) {
 public string camelToPascalCase(string camel) {
     import std.uni : toUpper;
     import std.conv : to;
-    return to!string(camel[0].toUpper) ~ camel[1..$];
+    import std.range : dropOne;
+    return to!string(camel.front.toUpper()) ~ camel.dropOne();
 }
