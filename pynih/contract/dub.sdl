@@ -1,4 +1,4 @@
 name "contract"
 targetType "dynamicLibrary"
 
-dependency "pynih" path=".."
+dependency "autowrap:pynih" path="../.."
