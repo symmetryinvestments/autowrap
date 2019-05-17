@@ -8,9 +8,6 @@ matrix:
     - d: dmd-2.085.1
     - d: dmd-2.084.1
     - d: dmd-2.083.1
-    - d: ldc-1.15.0
-    - d: ldc-1.14.0
-    - d: ldc-1.13.0
   allow_failures:
     - d: dmd-nightly
 
