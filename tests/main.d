@@ -20,4 +20,5 @@ mixin runTestsMain!(
     "autowrap.python.wrap",
     "pynih.python.conv",
     "pynih.python.util",
+    "issues",
 );
