@@ -21,13 +21,14 @@ configuration "unittest" {
     targetName "ut"
 
     mainSourceFile "tests/main.d"
-    sourcePaths "python/source" "reflection/source" "tests/d_modules"
-    importPaths "python/source" "reflection/source" "tests/d_modules"
+    sourcePaths "python/source" "reflection/source" "tests/d_modules" "tests/ut"
+    importPaths "python/source" "reflection/source" "tests/d_modules" "tests/ut"
     versions "XllDummyGetter"
+    versions "unitUnthreaded"  # GIL
 
     libs "python3.7m"
 
-    dependency "autowrap:pynih" version="*"
+    dependency ":pynih" version="*"
     dependency "unit-threaded" version="*"
 }
 
@@ -40,6 +41,7 @@ configuration "unittest-travis" {
     sourcePaths "python/source" "reflection/source" "tests/d_modules"
     importPaths "python/source" "reflection/source" "tests/d_modules"
     versions "XllDummyGetter"
+    versions "unitUnthreaded"  # GIL
 
     libs "python2.7"
 

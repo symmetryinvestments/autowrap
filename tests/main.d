@@ -18,4 +18,6 @@ shared static ~this() {
 mixin runTestsMain!(
     "autowrap.reflection",
     "autowrap.python.wrap",
+    "pynih.python.conv",
+    "pynih.python.util",
 );
