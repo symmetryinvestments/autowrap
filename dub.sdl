@@ -25,6 +25,9 @@ configuration "unittest" {
     importPaths "python/source" "reflection/source" "tests/d_modules"
     versions "XllDummyGetter"
 
+    libs "python3.7m"
+
+    dependency "autowrap:pynih" version="*"
     dependency "unit-threaded" version="*"
 }
 
@@ -33,9 +36,12 @@ configuration "unittest-travis" {
     targetPath "bin"
     targetName "ut"
 
+    mainSourceFile "tests/main.d"
     sourcePaths "python/source" "reflection/source" "tests/d_modules"
     importPaths "python/source" "reflection/source" "tests/d_modules"
     versions "XllDummyGetter"
+
+    libs "python2.7"
 
     subConfiguration ":python" "python27"
     dependency "unit-threaded" version="*"
