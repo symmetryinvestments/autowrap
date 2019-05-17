@@ -134,11 +134,6 @@ T to(T)(PyObject* value) if(isAssociativeArray!T)
         auto dk = k.to!KeyType;
         auto dv = v.to!ValueType;
 
-        version(unittest) {
-            import unit_threaded.io;
-            writelnUt("dkey: ", dk, "  dvalue: ", dv);
-        }
-
         ret[dk] = dv;
     }
 
