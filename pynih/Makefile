@@ -2,6 +2,7 @@
 
 dpp_version = 0.0.9
 dpp_dir = $(HOME)/.dub/packages/dpp-$(dpp_version)/dpp
+dpp = $(dpp_dir)/bin/d++
 
 ifndef PYTHON_INCLUDE_DIR
 $(error PYTHON_INCLUDE_DIR is not set)
@@ -19,9 +20,12 @@ contract/libcontract.so: contract/dub.sdl contract/dub.selections.json contract/
 	cd contract && dub build -q
 
 
-source/python/raw.d: source/python/raw.dpp $(dpp_dir)
-	dub run -q dpp -- --preprocess-only --include-path $(PYTHON_INCLUDE_DIR) source/python/raw.dpp
+source/python/raw.d: source/python/raw.dpp $(dpp)
+	$(dpp) --preprocess-only --include-path $(PYTHON_INCLUDE_DIR) source/python/raw.dpp
 
+
+$(dpp): $(dpp_dir)
+	cd $(dpp_dir) && dub build -q
 
 $(dpp_dir):
 	dub fetch dpp --version=$(dpp_version)
