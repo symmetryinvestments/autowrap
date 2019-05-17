@@ -2,7 +2,6 @@
 # A from scratch Python solution that doesn't depend on pyd
 name "pynih"
 targetType "library"
-dependency "autowrap:reflection" path="../reflection"
 
 
 configuration "default" {
