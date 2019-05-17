@@ -19,19 +19,24 @@ configuration "unittest" {
     targetType "executable"
     targetPath "bin"
     targetName "ut"
+
+    mainSourceFile "tests/main.d"
     sourcePaths "python/source" "reflection/source" "tests/d_modules"
     importPaths "python/source" "reflection/source" "tests/d_modules"
     versions "XllDummyGetter"
-    dflags "-main"
+
+    dependency "unit-threaded" version="*"
 }
 
 configuration "unittest-travis" {
     targetType "executable"
     targetPath "bin"
     targetName "ut"
+
     sourcePaths "python/source" "reflection/source" "tests/d_modules"
     importPaths "python/source" "reflection/source" "tests/d_modules"
     versions "XllDummyGetter"
-    dflags "-main"
+
     subConfiguration ":python" "python27"
+    dependency "unit-threaded" version="*"
 }
