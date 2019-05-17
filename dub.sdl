@@ -38,13 +38,14 @@ configuration "unittest-travis" {
     targetName "ut"
 
     mainSourceFile "tests/main.d"
-    sourcePaths "python/source" "reflection/source" "tests/d_modules"
-    importPaths "python/source" "reflection/source" "tests/d_modules"
+    sourcePaths "python/source" "reflection/source" "tests/d_modules" "tests/ut"
+    importPaths "python/source" "reflection/source" "tests/d_modules" "tests/ut"
     versions "XllDummyGetter"
     versions "unitUnthreaded"  # GIL
 
     libs "python2.7"
 
     subConfiguration ":python" "python27"
+    dependency ":pynih" version="*"
     dependency "unit-threaded" version="*"
 }
