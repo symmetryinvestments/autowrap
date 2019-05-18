@@ -1,4 +1,4 @@
-module autowrap.python;
+module autowrap.pynih;
 
 
 public import std.typecons: Yes, No;
