@@ -1,5 +1,6 @@
 module csharp.library;
 
+
 export int freeFunction (int value) {
     return value;
 }
@@ -29,17 +30,42 @@ export string testErrorMessage(bool throwError) {
         return "No Error Thrown";
 }
 
-struct s1 {
-    public float value;
+export auto makeS1Float(float value, s2 nestedStruct)
+{
+	return S1(value,nestedStruct);
+}
+
+version(PaperOverBug)
+{
+    alias S1 = s1;
+    struct s1 {
+	    public float value;
+	    public s2 nestedStruct;
+
+	    public auto getValue() {
+		return value;
+	    }
+
+	    public void setNestedStruct(s2 nested) {
+		nestedStruct = nested;
+	    }
+    }
+}
+else
+{
+  alias S1=s1!float;
+  struct s1(T) {
+    public T value;
     public s2 nestedStruct;
 
-    public float getValue() {
+    public auto getValue() {
         return value;
     }
 
     public void setNestedStruct(s2 nested) {
         nestedStruct = nested;
     }
+  }
 }
 
 struct s2 {
@@ -71,10 +97,10 @@ class c1 {
     public string stringMember;
     public wstring wstringMember;
     public dstring dstringMember;
-    public s1 valueMember;
+    public S1 valueMember;
     public c1 refMember;
     public c1[] refArray;
-    public s1[] structArray;
+    public S1[] structArray;
 
     //Property test cases
     private s2 _structProperty;
@@ -133,11 +159,11 @@ class c1 {
         return _dstringSliceProperty = value;
     }
     
-    private s1[] _structSliceProperty;
-    public @property s1[] structSliceProperty() {
+    private S1[] _structSliceProperty;
+    public @property S1[] structSliceProperty() {
         return _structSliceProperty;
     }
-    public @property s1[] structSliceProperty(s1[] value) {
+    public @property S1[] structSliceProperty(S1[] value) {
         return _structSliceProperty = value;
     }
     
@@ -149,7 +175,7 @@ class c1 {
         return _refSliceProperty = value;
     }
 
-    public string testMemberFunc(string test, s1 value){
+    public string testMemberFunc(string test, S1 value){
         return test;
     }
 }
