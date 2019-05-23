@@ -1,7 +1,9 @@
 .PHONY: test
 
-dpp_version = 0.0.9
-dpp_dir = $(HOME)/.dub/packages/dpp-$(dpp_version)/dpp
+dpp_version = 0.2.1
+dpp_pkg_dir = $(HOME)/.dub/packages/dpp-$(dpp_version)
+dpp_lock = $(dpp_pkg_dir)/dpp.lock
+dpp_dir = $(dpp_pkg_dir)/dpp
 dpp = $(dpp_dir)/bin/d++
 
 ifndef PYTHON_INCLUDE_DIR
@@ -24,8 +26,8 @@ source/python/raw.d: source/python/raw.dpp $(dpp)
 	$(dpp) --preprocess-only --include-path $(PYTHON_INCLUDE_DIR) source/python/raw.dpp
 
 
-$(dpp): $(dpp_dir)
+$(dpp): $(dpp_lock)
 	cd $(dpp_dir) && dub build -q
 
-$(dpp_dir):
+$(dpp_lock):
 	dub fetch dpp --version=$(dpp_version)

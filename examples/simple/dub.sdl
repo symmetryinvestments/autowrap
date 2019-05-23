@@ -32,6 +32,6 @@ configuration "env" {
 }
 
 configuration "pynih" {
-    targetPath "lib/pynih   "
+    targetPath "lib/pynih"
     dependency "autowrap:pynih" path="../../"
 }
