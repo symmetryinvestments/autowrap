@@ -34,7 +34,7 @@ struct PostModuleInitCode {
    to create a Python library containing one Python module
    wrapping all relevant D code and data structures.
  */
-string wrapAll(
+string wrapModules(
     LibraryName libraryName,
     Modules modules,
     PreModuleInitCode preModuleInitCode = PreModuleInitCode(),
