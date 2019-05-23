@@ -2,18 +2,18 @@
 
 DUB_CONFIGURATION ?= python37
 
-.PHONY: test test_simple test_issues test_pyd test_numpy examples/simple/libsimple.so examples/issues/libissues.so examples/pyd/libpydtests.so examples/numpy/libnumpy.so
+.PHONY: test test_simple test_issues test_pyd test_numpy examples/simple/lib/pyd/libsimple.so examples/issues/libissues.so examples/pyd/libpydtests.so examples/numpy/libnumpy.so
 
 all: test
 test: test_simple test_issues test_pyd test_numpy
 
-test_simple: tests/test_simple.py examples/simple/simple.so
-	PYTHONPATH=$(PWD)/examples/simple pytest -s -vv tests/test_simple.py
+test_simple: tests/test_simple.py examples/simple/lib/pyd/simple.so
+	PYTHONPATH=$(PWD)/examples/simple/lib/pyd pytest -s -vv tests/test_simple.py
 
-examples/simple/simple.so: examples/simple/libsimple.so
+examples/simple/lib/pyd/simple.so: examples/simple/lib/pyd/libsimple.so
 	@cp $^ $@
 
-examples/simple/libsimple.so: examples/simple/dub.sdl examples/simple/dub.selections.json
+examples/simple/lib/pyd/libsimple.so: examples/simple/dub.sdl examples/simple/dub.selections.json
 	@cd examples/simple && dub build -q -c $(DUB_CONFIGURATION)
 
 example/simple/dub.selections.json:
