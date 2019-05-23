@@ -2,43 +2,8 @@
 # A from scratch Python solution that doesn't depend on pyd
 name "pynih"
 targetType "library"
+dependency "autowrap:reflection" path="../reflection"
 
 configuration "default" {
 
-}
-
-
-configuration "unittest" {
-    targetType "executable"
-    targetPath "bin"
-    targetName "ut"
-
-    sourcePaths "tests"
-    importPaths "tests"
-    mainSourceFile "tests/main.d"
-
-    libs "python3.7m"
-
-    # remember the GIL
-    versions "unitUnthreaded"
-
-    dependency "unit-threaded" version="*"
-}
-
-
-configuration "unittest-travis" {
-    targetType "executable"
-    targetPath "bin"
-    targetName "ut"
-
-    sourcePaths "tests"
-    importPaths "tests"
-    mainSourceFile "tests/main.d"
-
-    libs "python2.7"
-
-    # remember the GIL
-    versions "unitUnthreaded"
-
-    dependency "unit-threaded" version="*"
 }

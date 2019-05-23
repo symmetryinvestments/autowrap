@@ -19,19 +19,38 @@ configuration "unittest" {
     targetType "executable"
     targetPath "bin"
     targetName "ut"
-    sourcePaths "python/source" "reflection/source" "tests/d_modules"
-    importPaths "python/source" "reflection/source" "tests/d_modules"
+
+    mainSourceFile "tests/main.d"
+    excludedSourceFiles "pynih/source/autowrap/python/package.d"
+    sourcePaths "python/source" "tests/ut"
+    importPaths "python/source" "tests/ut"
     versions "XllDummyGetter"
-    dflags "-main"
+    versions "unitUnthreaded"  # GIL
+    versions "TestingAutowrap"
+
+    libs "python3.7m"
+
+    dependency ":reflection" version="*"
+    dependency ":pynih" version="*"
+    dependency "unit-threaded" version="*"
 }
 
 configuration "unittest-travis" {
     targetType "executable"
     targetPath "bin"
     targetName "ut"
-    sourcePaths "python/source" "reflection/source" "tests/d_modules"
-    importPaths "python/source" "reflection/source" "tests/d_modules"
+
+    mainSourceFile "tests/main.d"
+    sourcePaths "python/source" "tests/ut"
+    importPaths "python/source" "tests/ut"
     versions "XllDummyGetter"
-    dflags "-main"
+    versions "unitUnthreaded"  # GIL
+    versions "TestingAutowrap"
+
+    libs "python2.7"
+
     subConfiguration ":python" "python27"
+    dependency ":reflection" version="*"
+    dependency ":pynih" version="*"
+    dependency "unit-threaded" version="*"
 }

@@ -1,4 +1,4 @@
-module ut.python.util;
+module pynih.python.util;
 
 
 import unit_threaded;

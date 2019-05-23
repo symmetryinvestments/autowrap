@@ -271,14 +271,13 @@ package template isUserAggregate(A...) if(A.length == 1) {
         (is(T == struct) || is(T == class));
 }
 
-@("DateTime is not a user aggregate")
-@safe pure unittest {
+
+version(TestingAutowrap) {
     import std.datetime: DateTime;
     static assert(!isUserAggregate!DateTime);
 }
 
-@("Tuple is not a user aggregate")
-@safe pure unittest {
+version(TestingAutowrap) {
     import std.typecons: Tuple;
     static assert(!isUserAggregate!(Tuple!(int, double)));
 }
@@ -320,8 +319,7 @@ template PrimordialType(T) if(!isArray!T) {
 }
 
 
-@("PrimordialType")
-unittest {
+version(TestingAutowrap) {
     static assert(is(PrimordialType!int == int));
     static assert(is(PrimordialType!(int[]) == int));
     static assert(is(PrimordialType!(int[][]) == int));
@@ -365,21 +363,4 @@ private template isExportSymbol(alias S, Flag!"alwaysExport" alwaysExport = No.a
 
 private template isPublicSymbol(alias S) {
     enum isPublicSymbol = __traits(getProtection, S) == "export" || __traits(getProtection, S) == "public";
-}
-
-
-@("24")
-@safe pure unittest {
-    import std.typecons: Yes;
-    import std.traits: fullyQualifiedName;
-    import std.meta: staticMap, AliasSeq;
-
-    alias functions = AllFunctions!(Module("not_public", Yes.alwaysExport));
-    enum FunctionName(alias F) = fullyQualifiedName!(F.symbol);
-    alias functionNames = staticMap!(FunctionName, functions);
-    static assert(functionNames == AliasSeq!("not_public.fun0"));
-
-    alias aggregates = AllAggregates!(Module("not_public", Yes.alwaysExport));
-    alias aggNames = staticMap!(fullyQualifiedName, aggregates);
-    static assert(aggNames == AliasSeq!("not_public.Public"));
 }

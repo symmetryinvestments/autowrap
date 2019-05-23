@@ -15,9 +15,3 @@ fi
 
 cd "$SCRIPT_DIR"
 make
-
-if [[ -z "${TRAVIS}" ]]; then
-    dub test -q
-else
-    dub run -c unittest-travis --build=unittest-cov
-fi
