@@ -1,4 +1,7 @@
-import autowrap.python;
+version(Have_autowrap_pynih)
+    import autowrap.pynih;
+else
+    import autowrap.python;
 
 mixin(
     wrapAll(
