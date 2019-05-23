@@ -54,10 +54,13 @@ string createPythonModuleMixin(
     ()
     @safe pure
 {
+    import autowrap.reflection: AllAggregates;
     import std.format: format;
 
     static assert(isPython3);
     if(!__ctfe) return null;
+
+    alias aggregates = AllAggregates!modules;
 
     return q{
         import python: ModuleInitRet;
@@ -80,21 +83,19 @@ string createPythonModuleMixin(
         }
     }.format(
         libraryName.value,  // PyInit_
-        moduleImports!modules,
+        aggregateModuleImports!aggregates,
         libraryName.value,  // Module
         "", // FIXME CFunctions
-        aggregateNames!modules,
+        aggregateNames!aggregates,
     );
 }
 
 
-private string moduleImports(Modules modules)() @safe pure {
-    import autowrap.reflection: AllAggregates;
+private string aggregateModuleImports(aggregates...)() {
     import std.meta: staticMap, NoDuplicates;
     import std.array: join;
     import std.traits: moduleName;
 
-    alias aggregates = AllAggregates!modules;
     alias aggModules = NoDuplicates!(staticMap!(moduleName, aggregates));
 
     string[] ret;
@@ -105,14 +106,11 @@ private string moduleImports(Modules modules)() @safe pure {
     return `import ` ~ ret.join(", ") ~ `;`;
 }
 
-private string aggregateNames(Modules modules)() {
-    import autowrap.reflection: AllAggregates;
+private string aggregateNames(aggregates...)() {
     import std.meta: staticMap;
     import std.array: join;
     import std.traits: fullyQualifiedName;
-    import std.traits: moduleName;
 
-    alias aggregates = AllAggregates!modules;
     enum Name(T) = fullyQualifiedName!T;
     alias names = staticMap!(Name, aggregates);
 
