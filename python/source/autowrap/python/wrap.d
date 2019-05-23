@@ -94,8 +94,7 @@ string toSnakeCase(in string str) @safe pure {
  */
 void wrapAllAggregates(Modules...)() if(allSatisfy!(isModule, Modules)) {
 
-    import autowrap.reflection: AllAggregates, Module;
-    import std.meta: staticMap;
+    import autowrap.reflection: AllAggregates;
     import std.traits: fullyQualifiedName;
 
     static foreach(aggregate; AllAggregates!Modules) {

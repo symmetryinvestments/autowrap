@@ -3,12 +3,29 @@ version(Have_autowrap_pynih)
 else
     import autowrap.python;
 
-mixin(
-    wrapAll(
+version(Have_autowrap_pynih) {
+    enum str = wrapAll!(
         LibraryName("simple"),
         Modules(
-            "prefix", "adder", "structs", "templates", "api",
+            "prefix",
+            "adder",
+            "structs",
+            "templates",
+            "api",
             Module("wrap_all", Yes.alwaysExport)
         ),
-    )
-);
+    );
+
+    pragma(msg,str);
+    mixin(str);
+}
+else
+    mixin(
+        wrapAll(
+            LibraryName("simple"),
+            Modules(
+                "prefix", "adder", "structs", "templates", "api",
+                Module("wrap_all", Yes.alwaysExport)
+            ),
+        )
+    );
