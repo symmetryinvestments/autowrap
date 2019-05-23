@@ -45,9 +45,17 @@ unittest {
 }
 
 
-// FIXME: failing for unicode
-@Values("foobar", "quux", /*"café"*/)
-@("string")
+@Values("foobar", "quux")
+@("string.ascii")
+unittest {
+    const value = getValue!string;
+    backAndForth(value);
+}
+
+
+@ShouldFail
+@Values("café", "açaí")
+@("string.unicode")
 unittest {
     const value = getValue!string;
     backAndForth(value);

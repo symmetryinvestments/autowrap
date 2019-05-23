@@ -4,6 +4,8 @@ name "pynih"
 targetType "library"
 dependency "autowrap:reflection" path="../reflection"
 
+preBuildCommands "make -C $PACKAGE_DIR source/python/raw.d"
+
 configuration "default" {
 
 }

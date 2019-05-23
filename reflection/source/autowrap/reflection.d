@@ -104,6 +104,15 @@ template FunctionSymbol(string N, alias M, string MN, alias S) {
     alias symbol = S;
 }
 
+template AllAggregates(Modules modules) {
+    import std.algorithm: map;
+    import std.array: join;
+    import std.typecons: Yes, No;  // needed for Module.toString in the mixin
+
+    enum modulesList = modules.value.map!(a => a.toString).join(", ");
+    mixin(`alias AllAggregates = AllAggregates!(`, modulesList, `);`);
+}
+
 template AllAggregates(ModuleNames...) if(allSatisfy!(isString, ModuleNames)) {
     import std.meta: staticMap;
 
