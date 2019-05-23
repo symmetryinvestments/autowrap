@@ -4,7 +4,7 @@ else
     import autowrap.python;
 
 version(Have_autowrap_pynih) {
-    enum str = wrapModules!(
+    enum str = wrapDlang!(
         LibraryName("simple"),
         Modules(
             "prefix",
