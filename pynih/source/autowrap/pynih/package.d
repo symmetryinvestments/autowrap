@@ -34,5 +34,6 @@ string wrapAll(in LibraryName libraryName,
     @safe pure
 {
     if(!__ctfe) return null;
+
     return "";
 }

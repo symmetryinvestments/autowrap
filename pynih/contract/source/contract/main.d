@@ -1,3 +1,6 @@
+/**
+   Entry point for the contract tests
+ */
 module contract.main;
 
 import python;
@@ -5,6 +8,9 @@ import contract.scalars;
 import contract.udt;
 import contract.pyclass;
 
+// Creates a Python module named `contract`
+// that can call the following C functions
+// and wraps the named aggregates.
 mixin(
     createModuleMixin!(
         Module("contract"),
