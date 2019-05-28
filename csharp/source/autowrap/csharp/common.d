@@ -21,17 +21,6 @@ public struct OutputFileName {
     string value;
 }
 
-package string getDLangInterfaceType(T)() {
-    import std.traits : fullyQualifiedName;
-    if (isDateTimeType!T) {
-        return "datetime";
-    } else if (isDateTimeArrayType!T) {
-        return "datetime[]";
-    } else {
-        return fullyQualifiedName!T;
-    }
-}
-
 package string getDLangInterfaceName(string moduleName, string aggName, string funcName) {
     import std.algorithm : map;
     import std.string : split;

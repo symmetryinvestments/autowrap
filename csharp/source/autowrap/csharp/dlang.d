@@ -66,7 +66,7 @@ public string wrapDLang(Modules...)() if(allSatisfy!(isModule, Modules)) {
 private enum AdjParamName(string paramName) = paramName ~ "_param";
 
 private string generateConstructors(T)(ref string[] imports) {
-    import autowrap.csharp.common : getDLangInterfaceName, getDLangInterfaceType, verifySupported;
+    import autowrap.csharp.common : getDLangInterfaceName, verifySupported;
 
     import std.algorithm.comparison : among;
     import std.meta : Filter, staticMap;
@@ -134,8 +134,7 @@ private string generateConstructors(T)(ref string[] imports) {
 }
 
 private string generateMethods(T)(ref string[] imports) {
-    import autowrap.csharp.common : isDateTimeType, isDateTimeArrayType, getDLangInterfaceName, getDLangInterfaceType,
-                                    verifySupported;
+    import autowrap.csharp.common : isDateTimeType, isDateTimeArrayType, getDLangInterfaceName, verifySupported;
 
     import std.algorithm.comparison : among;
     import std.meta : AliasSeq, Filter, staticMap;
@@ -226,7 +225,7 @@ private string generateMethods(T)(ref string[] imports) {
 }
 
 private string generateFields(T)(ref string[] imports) {
-    import autowrap.csharp.common : getDLangInterfaceName, getDLangInterfaceType, verifySupported;
+    import autowrap.csharp.common : getDLangInterfaceName, verifySupported;
 
     import std.traits : fullyQualifiedName, Fields, FieldNameTuple;
 
@@ -260,7 +259,7 @@ private string generateFields(T)(ref string[] imports) {
 }
 
 private string generateFunctions(Modules...)(ref string[] imports) if(allSatisfy!(isModule, Modules)) {
-    import autowrap.csharp.common : getDLangInterfaceName, getDLangInterfaceType, verifySupported;
+    import autowrap.csharp.common : getDLangInterfaceName, verifySupported;
     import autowrap.reflection: AllFunctions;
 
     import std.meta : AliasSeq, Filter, staticMap;
@@ -336,7 +335,7 @@ private string generateFunctions(Modules...)(ref string[] imports) if(allSatisfy
 }
 
 private string generateSliceMethods(T)(ref string[] imports) {
-    import autowrap.csharp.common : getDLangSliceInterfaceName, getDLangInterfaceType;
+    import autowrap.csharp.common : getDLangSliceInterfaceName;
 
     import std.traits : fullyQualifiedName, moduleName,  TemplateOf;
 
@@ -438,5 +437,17 @@ private void addImport(T)(ref string[] imports)
         enum mod = moduleName!T;
         if(!mod.empty && !imports.canFind(mod))
             imports ~= mod;
+    }
+}
+
+private string getDLangInterfaceType(T)() {
+    import autowrap.csharp.common : isDateTimeArrayType, isDateTimeType;
+    import std.traits : fullyQualifiedName;
+    if (isDateTimeType!T) {
+        return "datetime";
+    } else if (isDateTimeArrayType!T) {
+        return "datetime[]";
+    } else {
+        return fullyQualifiedName!T;
     }
 }
