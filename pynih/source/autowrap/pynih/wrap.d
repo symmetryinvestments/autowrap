@@ -134,10 +134,9 @@ private string functionNames(functions...)() {
     import std.traits: fullyQualifiedName, moduleName;
 
     enum FQN(alias functionSymbol) = fullyQualifiedName!(functionSymbol.symbol);
-    enum Name(alias functionSymbol) = __traits(identifier, functionSymbol.symbol);
     enum ImplName(alias functionSymbol) =
         `CFunction!(PythonFunction!(` ~ FQN!functionSymbol ~ `)._py_function_impl, "` ~
-        Name!functionSymbol.toSnakeCase ~
+        functionSymbol.name.toSnakeCase ~
         `")`;
     alias names = staticMap!(ImplName, functions);
 
@@ -148,7 +147,6 @@ private string functionNames(functions...)() {
 
     return ret.join(", ");
 }
-
 
 
 mixin template createPythonModule(python.boilerplate.Module module_, alias cfunctions, alias aggregates)
