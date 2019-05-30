@@ -254,6 +254,36 @@ struct PythonMethod(T, alias F) {
 
 
 /**
+   The C API implementation that calls a D function F.
+ */
+struct PythonFunction(alias F) {
+
+    static extern(C) PyObject* _py_function_impl(PyObject* self, PyObject* args, PyObject* kwargs) {
+        import python.raw: PyTuple_Size, pyNone, pyIncRef;
+        import python.conv: toPython;
+        import std.traits: Parameters;
+        import std.conv: text;
+
+        assert(PyTuple_Size(args) == Parameters!F.length,
+               text("Received ", PyTuple_Size(args), " parameters but ",
+                    __traits(identifier, F), " takes ", Parameters!F.length));
+
+        auto dArgs = pythonArgsToDArgs!(Parameters!F)(args);
+
+        // TODO - side-effects on parameters?
+        static if(is(ReturnType!F == void)) {
+            F(dArgs.expand);
+            pyIncRef(pyNone);
+            return pyNone;
+        } else {
+            auto dret = F(dArgs.expand);
+            return dret.toPython;
+        }
+    }
+}
+
+
+/**
    Creates an instance of a Python class that is equivalent to the D type `T`.
    Return PyObject*.
  */

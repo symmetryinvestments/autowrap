@@ -51,6 +51,16 @@ struct Module {
 }
 
 
+template AllFunctions(Modules modules) {
+    import std.algorithm: map;
+    import std.array: join;
+    import std.typecons: Yes, No;  // needed for Module.toString in the mixin
+
+    enum modulesList = modules.value.map!(a => a.toString).join(", ");
+    mixin(`alias AllFunctions = AllFunctions!(`, modulesList, `);`);
+}
+
+
 template AllFunctions(Modules...) if(allSatisfy!(isString, Modules)) {
     import std.meta: staticMap;
     enum module_(string name) = Module(name);

@@ -57,20 +57,20 @@ private void addModuleTypes(alias aggregates)(PyObject* module_) {
 
 ///  Returns a PyMethodDef for each cfunction.
 private PyMethodDef* cFunctionsToPyMethodDefs(alias cfunctions)()
-        if(is(cfunctions == CFunctions!(A), A...))
+    if(is(cfunctions == CFunctions!(A), A...))
 {
     // +1 due to the sentinel that Python uses to know when to
     // stop incrementing through the pointer.
     static PyMethodDef[cfunctions.length + 1] methods;
 
-    static foreach(i, cfunction; cfunctions.symbols) {
-        // TODO: make it possible to use a different name with a UDA
+    static foreach(i, function_; cfunctions.functions) {{
+        alias cfunction = function_.symbol;
         static assert(is(typeof(&cfunction): PyCFunction) ||
                       is(typeof(&cfunction): PyCFunctionWithKeywords),
                       __traits(identifier, cfunction) ~ " is not a Python C function");
 
-        methods[i] = pyMethodDef!(__traits(identifier, cfunction))(cast(PyCFunction) &cfunction);
-    }
+        methods[i] = pyMethodDef!(function_.identifier)(cast(PyCFunction) &cfunction);
+    }}
 
     return &methods[0];
 }
