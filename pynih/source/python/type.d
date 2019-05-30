@@ -188,9 +188,11 @@ private auto pythonArgsToDArgs(A...)(PyObject* args) {
     import std.typecons: Tuple;
     import std.meta: staticMap;
     import std.traits: Unqual;
+    import std.conv: text;
 
     if(PyTuple_Size(args) != A.length)
-        throw new Exception("Lengths must match");
+        throw new Exception(text(__FUNCTION__, ": lengths must match. # Python Args: ",
+                                 PyTuple_Size(args), " # D Args: ", A.length));
 
     Tuple!(staticMap!(Unqual, A)) dArgs;
 
@@ -261,19 +263,27 @@ struct PythonFunction(alias F) {
     static extern(C) PyObject* _py_function_impl(PyObject* self, PyObject* args, PyObject* kwargs) {
         import python.raw: PyTuple_Size, pyNone, pyIncRef, PyErr_SetString, PyExc_RuntimeError;
         import python.conv: toPython;
-        import std.traits: Parameters;
+        import std.traits: Parameters, ParameterDefaults;
         import std.conv: text;
         import std.string: toStringz;
         import std.exception: enforce;
+        import std.meta: Filter;
+
+        template notVoid(T...) if(T.length == 1) {
+            enum notVoid = !is(T[0] == void);
+        }
+
+        enum numDefaults = Filter!(notVoid, ParameterDefaults!F).length;
+        enum numRequired = Parameters!F.length - numDefaults;
 
         try {
 
-            enforce(PyTuple_Size(args) == Parameters!F.length,
+            enforce(PyTuple_Size(args) >= numRequired
+                    && PyTuple_Size(args) <= Parameters!F.length,
                    text("Received ", PyTuple_Size(args), " parameters but ",
                         __traits(identifier, F), " takes ", Parameters!F.length));
 
             auto dArgs = pythonArgsToDArgs!(Parameters!F)(args);
-
 
             // TODO - side-effects on parameters?
             static if(is(ReturnType!F == void)) {
