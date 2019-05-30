@@ -117,7 +117,7 @@ private template isProperty(alias F) {
  */
 auto wrapAggregate(T)() if(isUserAggregate!T) {
 
-    import autowrap.reflection: Symbol;
+    import autowrap.reflection: Symbol, PublicFieldNames;
     import autowrap.python.pyd.class_wrap: MemberFunction;
     import pyd.pyd: wrap_class, Member, Init, StaticDef, Repr, Property;
     import std.meta: staticMap, Filter, templateNot;
@@ -135,7 +135,7 @@ auto wrapAggregate(T)() if(isUserAggregate!T) {
 
     wrap_class!(
         T,
-        staticMap!(Member, PublicFields!T),
+        staticMap!(Member, PublicFieldNames!T),
         staticMap!(MemberFunction, regularMemberFunctions),
         staticMap!(StaticDef, staticMemberFunctions),
         staticMap!(InitTuple, ConstructorParamTuples!T),
@@ -154,21 +154,6 @@ auto wrapAggregate(T)() if(isUserAggregate!T) {
         OpSliceAssigns!T,
         OpCalls!T,
    );
-}
-
-private template PublicFields(T) {
-    import std.meta: Filter, AliasSeq;
-    import std.traits: FieldNameTuple;
-
-    enum isPublic(string fieldName) = __traits(getProtection, __traits(getMember, T, fieldName)) == "public";
-    alias publicFields = Filter!(isPublic, FieldNameTuple!T);
-
-    // FIXME - See #54
-    static if(is(T == class))
-        alias PublicFields = AliasSeq!();
-    else
-        alias PublicFields = publicFields;
-
 }
 
 

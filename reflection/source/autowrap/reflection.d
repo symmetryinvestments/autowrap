@@ -383,3 +383,27 @@ private template isExportSymbol(alias S, Flag!"alwaysExport" alwaysExport = No.a
 private template isPublicSymbol(alias S) {
     enum isPublicSymbol = __traits(getProtection, S) == "export" || __traits(getProtection, S) == "public";
 }
+
+
+template PublicFieldNames(T) {
+    import std.meta: Filter, AliasSeq;
+    import std.traits: FieldNameTuple;
+
+    enum isPublic(string fieldName) = __traits(getProtection, __traits(getMember, T, fieldName)) == "public";
+    alias publicFields = Filter!(isPublic, FieldNameTuple!T);
+
+    // FIXME - See #54
+    static if(is(T == class))
+        alias PublicFieldNames = AliasSeq!();
+    else
+        alias PublicFieldNames = publicFields;
+}
+
+
+template PublicFieldTypes(T) {
+    import std.meta: staticMap;
+
+    alias fieldType(string name) = typeof(__traits(getMember, T, name));
+
+    alias PublicFieldTypes = staticMap!(fieldType, PublicFieldNames!T);
+}

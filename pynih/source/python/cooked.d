@@ -49,7 +49,6 @@ private void addModuleTypes(alias aggregates)(PyObject* module_) {
         if(PyType_Ready(PythonType!T.pyType) < 0)
             throw new Exception("Could not get type ready for `" ~ __traits(identifier, T) ~ "`");
 
-
         pyIncRef(PythonType!T.pyObject);
         PyModule_AddObject(module_, __traits(identifier, T), PythonType!T.pyObject);
     }
