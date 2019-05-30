@@ -259,25 +259,37 @@ struct PythonMethod(T, alias F) {
 struct PythonFunction(alias F) {
 
     static extern(C) PyObject* _py_function_impl(PyObject* self, PyObject* args, PyObject* kwargs) {
-        import python.raw: PyTuple_Size, pyNone, pyIncRef;
+        import python.raw: PyTuple_Size, pyNone, pyIncRef, PyErr_SetString, PyExc_RuntimeError;
         import python.conv: toPython;
         import std.traits: Parameters;
         import std.conv: text;
+        import std.string: toStringz;
+        import std.exception: enforce;
 
-        assert(PyTuple_Size(args) == Parameters!F.length,
-               text("Received ", PyTuple_Size(args), " parameters but ",
-                    __traits(identifier, F), " takes ", Parameters!F.length));
+        try {
 
-        auto dArgs = pythonArgsToDArgs!(Parameters!F)(args);
+            enforce(PyTuple_Size(args) == Parameters!F.length,
+                   text("Received ", PyTuple_Size(args), " parameters but ",
+                        __traits(identifier, F), " takes ", Parameters!F.length));
 
-        // TODO - side-effects on parameters?
-        static if(is(ReturnType!F == void)) {
-            F(dArgs.expand);
-            pyIncRef(pyNone);
-            return pyNone;
-        } else {
-            auto dret = F(dArgs.expand);
-            return dret.toPython;
+            auto dArgs = pythonArgsToDArgs!(Parameters!F)(args);
+
+
+            // TODO - side-effects on parameters?
+            static if(is(ReturnType!F == void)) {
+                F(dArgs.expand);
+                pyIncRef(pyNone);
+                return pyNone;
+            } else {
+                auto dret = F(dArgs.expand);
+                return dret.toPython;
+            }
+        } catch(Exception e) {
+            PyErr_SetString(PyExc_RuntimeError, e.msg.toStringz);
+            return null;
+        } catch(Error e) {
+            PyErr_SetString(PyExc_RuntimeError, ("FATAL ERROR: " ~ e.msg).toStringz);
+            return null;
         }
     }
 }
