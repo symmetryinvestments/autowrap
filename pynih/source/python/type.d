@@ -257,7 +257,6 @@ private auto pythonArgsToDArgs2(P...)(PyObject* args)
     }
 
     return dArgs;
-
 }
 
 
@@ -341,9 +340,7 @@ struct PythonFunction(alias F) {
                    text("Received ", PyTuple_Size(args), " parameters but ",
                         __traits(identifier, F), " takes ", Parameters!F.length));
 
-            alias parameter(size_t i) = Parameter!(Parameters!F[i], ParameterDefaults!F[i]);
-            alias parameters = staticMap!(parameter, aliasSeqOf!(Parameters!F.length.iota));
-            auto dArgs = pythonArgsToDArgs2!parameters(args);
+            auto dArgs = pythonArgsToDArgs2!(FunctionParameters!F)(args);
 
             // TODO - side-effects on parameters?
             static if(is(ReturnType!F == void)) {
@@ -362,6 +359,17 @@ struct PythonFunction(alias F) {
             return null;
         }
     }
+}
+
+
+// From a function symbol to an AliasSeq of `Parameter` structs
+private template FunctionParameters(alias F) {
+    import std.traits: Parameters, ParameterDefaults;
+    import std.meta: staticMap, aliasSeqOf;
+    import std.range: iota;
+
+    alias parameter(size_t i) = Parameter!(Parameters!F[i], ParameterDefaults!F[i]);
+    alias FunctionParameters = staticMap!(parameter, aliasSeqOf!(Parameters!F.length.iota));
 }
 
 
