@@ -9,6 +9,7 @@ import std.traits: Unqual, isArray, isIntegral, isBoolean, isFloatingPoint, isAg
 import std.datetime: DateTime, Date;
 import std.typecons: Tuple;
 import std.range.primitives: isInputRange;
+import std.meta: allSatisfy;
 
 
 package enum isPhobos(T) = isDateOrDateTime!T || isTuple!T;
@@ -109,7 +110,7 @@ struct PythonType(T) {
 
         static foreach(i, memberFunction; memberFunctions) {
             methods[i] = pyMethodDef!(__traits(identifier, memberFunction))
-                                     (&PythonMethod!(T, memberFunction).impl);
+                                     (&PythonMethod!(T, memberFunction)._py_method_impl);
         }
 
         return &methods[0];
@@ -205,6 +206,60 @@ private auto pythonArgsToDArgs(A...)(PyObject* args) {
     return dArgs;
 }
 
+private template Parameter(T, D...) if(D.length == 1) {
+    alias Type = T;
+    static if(is(D[0] == void))
+        alias Default = void;
+    else
+        enum Default = D[0];
+}
+
+private template isParameter(alias T) {
+    import std.traits: TemplateOf;
+    enum isParameter = __traits(isSame, TemplateOf!T, Parameter);
+}
+
+private auto pythonArgsToDArgs2(P...)(PyObject* args)
+    if(allSatisfy!(isParameter, P))
+{
+    import python.raw: PyTuple_Size, PyTuple_GetItem;
+    import python.conv: to;
+    import std.typecons: Tuple;
+    import std.meta: staticMap;
+    import std.traits: Unqual;
+    import std.conv: text;
+    import std.exception: enforce;
+
+    const argsLength = PyTuple_Size(args);
+
+    alias Type(alias Param) = Param.Type;
+    alias Types = staticMap!(Type, P);
+
+    Tuple!(staticMap!(Unqual, Types)) dArgs;
+
+    pragma(msg, "Parameters: ", P.stringof);
+
+    int pythonArgIndex = 0;
+    static foreach(i; 0 .. P.length) {
+        static if(is(P[i].Default == void)) {
+            // no default value for parameter at index i
+            enforce(i < argsLength,
+                    text(__FUNCTION__, ": not enough Python arguments"));
+            dArgs[i] = PyTuple_GetItem(args, i).to!(P[i].Type);
+        } else {
+            if(i >= argsLength) {
+                // ran out of Python-supplied arguments, must be default value
+                dArgs[i] = P[i].Default;
+            } else {
+                dArgs[i] = PyTuple_GetItem(args, i).to!(P[i].Type);
+            }
+        }
+    }
+
+    return dArgs;
+
+}
+
 
 private alias Type(alias A) = typeof(A);
 
@@ -213,7 +268,7 @@ private alias Type(alias A) = typeof(A);
    The C API implementation of a Python method F of aggregate type T
  */
 struct PythonMethod(T, alias F) {
-    static extern(C) PyObject* impl(PyObject* self_, PyObject* args, PyObject* kwargs) {
+    static extern(C) PyObject* _py_method_impl(PyObject* self_, PyObject* args, PyObject* kwargs) {
         import python.raw: PyTuple_Size, PyTuple_GetItem, pyIncRef, pyNone, pyDecRef;
         import python.conv: toPython, to;
         import std.traits: Parameters, ReturnType, FunctionAttribute, functionAttributes, Unqual;
@@ -269,7 +324,8 @@ struct PythonFunction(alias F) {
         import std.conv: text;
         import std.string: toStringz;
         import std.exception: enforce;
-        import std.meta: Filter;
+        import std.meta: Filter, aliasSeqOf, staticMap;
+        import std.range: iota;
 
         template notVoid(T...) if(T.length == 1) {
             enum notVoid = !is(T[0] == void);
@@ -285,7 +341,9 @@ struct PythonFunction(alias F) {
                    text("Received ", PyTuple_Size(args), " parameters but ",
                         __traits(identifier, F), " takes ", Parameters!F.length));
 
-            auto dArgs = pythonArgsToDArgs!(Parameters!F)(args);
+            alias parameter(size_t i) = Parameter!(Parameters!F[i], ParameterDefaults!F[i]);
+            alias parameters = staticMap!(parameter, aliasSeqOf!(Parameters!F.length.iota));
+            auto dArgs = pythonArgsToDArgs2!parameters(args);
 
             // TODO - side-effects on parameters?
             static if(is(ReturnType!F == void)) {
