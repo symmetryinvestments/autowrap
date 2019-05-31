@@ -3,6 +3,7 @@ module wrap_all;
 import templates2;
 import impl: OtherString;
 
+// should be registered in Python as identity_int
 alias identityInt = identity!int;
 
 int product(int i, int j) {

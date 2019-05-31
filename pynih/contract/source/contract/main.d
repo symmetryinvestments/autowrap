@@ -4,6 +4,7 @@
 module contract.main;
 
 import python;
+import contract.boilerplate;
 import contract.scalars;
 import contract.udt;
 import contract.pyclass;

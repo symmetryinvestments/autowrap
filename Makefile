@@ -5,7 +5,7 @@ DUB_CONFIGURATION ?= python37
 .PHONY: test test_simple_pyd test_simple_pynih test_issues test_pyd test_numpy examples/simple/lib/pyd/libsimple.so examples/simple/lib/pynih/libsimple.so examples/issues/libissues.so examples/pyd/libpydtests.so examples/numpy/libnumpy.so
 
 all: test
-test: test_simple_pyd test_issues test_pyd test_numpy
+test: test_simple_pyd test_issues test_pyd test_numpy test_simple_pynih
 
 test_simple_pyd: tests/test_simple.py examples/simple/lib/pyd/simple.so
 	PYTHONPATH=$(PWD)/examples/simple/lib/pyd pytest -s -vv tests/test_simple.py
