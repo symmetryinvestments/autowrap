@@ -4,8 +4,6 @@
 module autowrap.pynih.wrap;
 
 
-
-
 public import std.typecons: Yes, No;
 public import autowrap.reflection: Modules, Module;
 static import python.boilerplate;
@@ -45,7 +43,6 @@ string wrapDlang(
     PreModuleInitCode preModuleInitCode = PreModuleInitCode(),
     PostModuleInitCode postModuleInitCode = PostModuleInitCode())
     ()
-    @safe pure
 {
     return !__ctfe
         ? null
@@ -55,12 +52,10 @@ string wrapDlang(
 
 string createPythonModuleMixin(LibraryName libraryName, Modules modules)
                               ()
-    @safe pure
 {
     import autowrap.reflection: AllAggregates, AllFunctions;
     import std.format: format;
 
-    static assert(isPython3);
     if(!__ctfe) return null;
 
     alias aggregates = AllAggregates!modules;
@@ -75,8 +70,9 @@ string createPythonModuleMixin(LibraryName libraryName, Modules modules)
         // We declare it here to avoid linker errors.
         export __gshared extern(C) PyDateTime_CAPI* PyDateTimeAPI;
 
-        extern(C) export ModuleInitRet PyInit_%s() {
+        extern(C) export ModuleInitRet %s%s() {
             import python.boilerplate: Module, CFunctions, CFunction, Aggregates;
+            import python.type: PythonFunction;
             import autowrap.pynih.wrap: createPythonModule;
             %s
 
@@ -88,12 +84,22 @@ string createPythonModuleMixin(LibraryName libraryName, Modules modules)
             return _py_init_impl;
         }
     }.format(
-        libraryName.value,  // PyInit_
+        pyInitFuncName,     // init function name
+        libraryName.value,  // after init
         aggregateModuleImports!aggregates,
         libraryName.value,  // Module
         functionNames!functions,
         aggregateNames!aggregates,
     );
+}
+
+private string pyInitFuncName() @safe pure nothrow {
+    static if(isPython2)
+        return "init";
+    else static if(isPython3)
+        return "PyInit_";
+    else
+        static assert(false);
 }
 
 
@@ -165,6 +171,26 @@ mixin template createPythonModule(python.boilerplate.Module module_, alias cfunc
 
         pyDateTimeImport;
         return createModule!(module_, cfunctions, aggregates);
+    }
+}
+
+
+mixin template createPythonModule(python.boilerplate.Module module_, alias cfunctions, alias aggregates)
+    if(isPython2)
+{
+    import python: ModuleInitRet;
+    import std.format: format;
+
+    static extern(C) export void _py_init_impl() {
+        import python.raw: pyDateTimeImport;
+        import python.cooked: initModule;
+        import python.boilerplate: Module, CFunctions, Aggregates;
+        import core.runtime: rt_init;
+
+        rt_init;
+
+        pyDateTimeImport;
+        initModule!(module_, cfunctions, aggregates);
     }
 }
 
