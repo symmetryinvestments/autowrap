@@ -97,7 +97,13 @@ struct PythonType(T) {
         alias memberNames = AliasSeq!(__traits(allMembers, T));
         enum ispublic(string name) = isPublic!(T, name);
         alias publicMemberNames = Filter!(ispublic, memberNames);
-        enum isRegular(string name) = name != "this" && name != "toHash" && name != "factory" && !name.startsWith("op");
+        enum isRegular(string name) =
+            name != "this"
+            && name != "toHash"
+            && name != "factory"
+            && !name.startsWith("op")
+            && name != "__ctor"
+            ;
         alias regularMemberNames = Filter!(isRegular, publicMemberNames);
         alias Member(string name) = Alias!(__traits(getMember, T, name));
         alias members = staticMap!(Member, regularMemberNames);
@@ -246,25 +252,17 @@ private alias Type(alias A) = typeof(A);
    The C API implementation of a Python method F of aggregate type T
  */
 struct PythonMethod(T, alias F) {
-    static extern(C) PyObject* _py_method_impl(PyObject* self_, PyObject* args, PyObject* kwargs) {
-        import python.raw: PyTuple_Size, PyTuple_GetItem, pyIncRef, pyNone, pyDecRef;
+    static extern(C) PyObject* _py_method_impl(PyObject* self, PyObject* args, PyObject* kwargs) {
+        import python.raw: pyDecRef;
         import python.conv: toPython, to;
-        import std.traits: Parameters, ReturnType, FunctionAttribute, functionAttributes, Unqual;
+        import std.traits: Parameters, FunctionAttribute, functionAttributes, Unqual;
 
-        assert(PyTuple_Size(args) == Parameters!F.length);
+        assert(self !is null);
+        auto dAggregate = self.to!(Unqual!T);
 
-        auto dArgs = pythonArgsToDArgs!(FunctionParameters!F)(args);
-
-        assert(self_ !is null);
-        auto dAggregate = self_.to!(Unqual!T);
-
-        static if(is(ReturnType!F == void))
-            enum dret = "";
-        else
-            enum dret = "auto dRet = ";
-
-        // e.g. `auto dRet = dAggregate.myMethod(dArgs[0], dArgs[1]);`
-        mixin(dret, `dAggregate.`, __traits(identifier, F), `(dArgs.expand);`);
+        // Not sure how else to take `dAggregate` and `F` and call the member
+        // function other than a mixin
+        mixin(`auto ret = callDlangFunction!((Parameters!F args) => dAggregate.`, __traits(identifier, F), `(args))(self, args, kwargs);`);
 
         // The member function could have side-effects, we need to copy the changes
         // back to the Python object.
@@ -273,19 +271,15 @@ struct PythonMethod(T, alias F) {
             scope(exit) {
                 pyDecRef(newSelf);
             }
-            auto pyClassSelf = cast(PythonClass!T*) self_;
+            auto pyClassSelf = cast(PythonClass!T*) self;
             auto pyClassNewSelf = cast(PythonClass!T*) newSelf;
 
             static foreach(i; 0 .. PythonClass!T.fieldNames.length) {
-                pyClassSelf.set!i(self_, pyClassNewSelf.get!i(newSelf));
+                pyClassSelf.set!i(self, pyClassNewSelf.get!i(newSelf));
             }
         }
 
-        static if(is(ReturnType!F == void)) {
-            pyIncRef(pyNone);
-            return pyNone;
-        } else
-            return dRet.toPython;
+        return ret;
     }
 }
 
@@ -294,52 +288,61 @@ struct PythonMethod(T, alias F) {
    The C API implementation that calls a D function F.
  */
 struct PythonFunction(alias F) {
-
     static extern(C) PyObject* _py_function_impl(PyObject* self, PyObject* args, PyObject* kwargs) {
-        import python.raw: PyTuple_Size, pyNone, pyIncRef, PyErr_SetString, PyExc_RuntimeError;
-        import python.conv: toPython;
-        import std.traits: Parameters, ParameterDefaults;
-        import std.conv: text;
-        import std.string: toStringz;
-        import std.exception: enforce;
-        import std.meta: Filter, aliasSeqOf, staticMap;
-        import std.range: iota;
-
-        template notVoid(T...) if(T.length == 1) {
-            enum notVoid = !is(T[0] == void);
-        }
-
-        enum numDefaults = Filter!(notVoid, ParameterDefaults!F).length;
-        enum numRequired = Parameters!F.length - numDefaults;
-
-        try {
-
-            enforce(PyTuple_Size(args) >= numRequired
-                    && PyTuple_Size(args) <= Parameters!F.length,
-                   text("Received ", PyTuple_Size(args), " parameters but ",
-                        __traits(identifier, F), " takes ", Parameters!F.length));
-
-            auto dArgs = pythonArgsToDArgs!(FunctionParameters!F)(args);
-
-            // TODO - side-effects on parameters?
-            static if(is(ReturnType!F == void)) {
-                F(dArgs.expand);
-                pyIncRef(pyNone);
-                return pyNone;
-            } else {
-                auto dret = F(dArgs.expand);
-                return dret.toPython;
-            }
-        } catch(Exception e) {
-            PyErr_SetString(PyExc_RuntimeError, e.msg.toStringz);
-            return null;
-        } catch(Error e) {
-            PyErr_SetString(PyExc_RuntimeError, ("FATAL ERROR: " ~ e.msg).toStringz);
-            return null;
-        }
+        return callDlangFunction!F(self, args, kwargs);
     }
 }
 
+private auto callDlangFunction(alias F)(PyObject* self, PyObject* args, PyObject* kwargs) {
+    import python.raw: PyTuple_Size, pyNone, pyIncRef, PyErr_SetString, PyExc_RuntimeError;
+    import python.conv: toPython;
+    import std.traits: Parameters, ParameterDefaults;
+    import std.conv: text;
+    import std.string: toStringz;
+    import std.exception: enforce;
+    import std.meta: Filter, aliasSeqOf, staticMap;
+    import std.range: iota;
+
+    template notVoid(T...) if(T.length == 1) {
+        enum notVoid = !is(T[0] == void);
+    }
+
+    enum numDefaults = Filter!(notVoid, ParameterDefaults!F).length;
+    enum numRequired = Parameters!F.length - numDefaults;
+
+    try {
+
+        enforce(PyTuple_Size(args) >= numRequired
+                && PyTuple_Size(args) <= Parameters!F.length,
+                text("Received ", PyTuple_Size(args), " parameters but ",
+                     __traits(identifier, F), " takes ", Parameters!F.length));
+
+        auto dArgs = pythonArgsToDArgs!(FunctionParameters!F)(args);
+        return callDlangFunction!F(dArgs);
+    } catch(Exception e) {
+        PyErr_SetString(PyExc_RuntimeError, e.msg.toStringz);
+        return null;
+    } catch(Error e) {
+        PyErr_SetString(PyExc_RuntimeError, ("FATAL ERROR: " ~ e.msg).toStringz);
+        return null;
+    }
+}
+
+private auto callDlangFunction(alias F, A)(auto ref A argTuple) {
+    import python.raw: pyIncRef, pyNone;
+    import python.conv: toPython;
+    import std.traits: ReturnType;
+
+    // TODO - side-effects on parameters?
+    static if(is(ReturnType!F == void)) {
+        F(argTuple.expand);
+        pyIncRef(pyNone);
+        return pyNone;
+    } else {
+        auto dret = F(argTuple.expand);
+        return dret.toPython;
+    }
+}
 
 // From a function symbol to an AliasSeq of `Parameter` structs
 private template FunctionParameters(alias F) {
