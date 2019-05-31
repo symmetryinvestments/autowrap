@@ -16,7 +16,7 @@ version(Have_autowrap_pynih) {
         ),
     );
 
-    pragma(msg,str);
+    //pragma(msg,str);
     mixin(str);
 }
 else
