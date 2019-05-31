@@ -151,14 +151,16 @@ struct PythonType(T) {
             alias constructors = AliasSeq!();
 
         static if(constructors.length == 0) {
-            return pythonConstructor!(T, fieldTypes)(args);
+            alias parameter(FieldType) = Parameter!(FieldType, void);
+            alias parameters = staticMap!(parameter, fieldTypes);
+            return pythonConstructor!(T, parameters)(args);
         } else {
             import python.raw: PyErr_SetString, PyExc_TypeError;
             import std.traits: Parameters;
 
             static foreach(constructor; constructors) {
                 if(Parameters!constructor.length == numArgs) {
-                    return pythonConstructor!(T, Parameters!constructor)(args);
+                    return pythonConstructor!(T, FunctionParameters!constructor)(args);
                 }
             }
 
@@ -166,45 +168,24 @@ struct PythonType(T) {
             return null;
         }
     }
-}
 
+    // Creates a python object from the given arguments by converting them to D
+    // types, calling the D constructor and converting the result to a Python
+    // object.
+    private static auto pythonConstructor(T, P...)(PyObject* args) {
+        import python.conv: toPython;
 
-// Creates a python object from the given arguments by converting them to D
-// types, calling the D constructor and converting the result to a Python
-// object.
-private auto pythonConstructor(T, A...)(PyObject* args) {
-    import python.conv: toPython;
+        auto dArgs = pythonArgsToDArgs!P(args);
 
-    auto dArgs = pythonArgsToDArgs!A(args);
+        static if(is(T == class))
+            scope dobj = new T(dArgs.expand);
+        else
+            auto dobj = T(dArgs.expand);
 
-    static if(is(T == class))
-        scope dobj = new T(dArgs.expand);
-    else
-        auto dobj = T(dArgs.expand);
-
-    return toPython(dobj);
-}
-
-private auto pythonArgsToDArgs(A...)(PyObject* args) {
-    import python.raw: PyTuple_Size, PyTuple_GetItem;
-    import python.conv: to;
-    import std.typecons: Tuple;
-    import std.meta: staticMap;
-    import std.traits: Unqual;
-    import std.conv: text;
-
-    if(PyTuple_Size(args) != A.length)
-        throw new Exception(text(__FUNCTION__, ": lengths must match. # Python Args: ",
-                                 PyTuple_Size(args), " # D Args: ", A.length));
-
-    Tuple!(staticMap!(Unqual, A)) dArgs;
-
-    static foreach(i; 0 .. A.length) {
-        dArgs[i] = PyTuple_GetItem(args, i).to!(A[i]);
+        return toPython(dobj);
     }
-
-    return dArgs;
 }
+
 
 private template Parameter(T, D...) if(D.length == 1) {
     alias Type = T;
@@ -219,7 +200,7 @@ private template isParameter(alias T) {
     enum isParameter = __traits(isSame, TemplateOf!T, Parameter);
 }
 
-private auto pythonArgsToDArgs2(P...)(PyObject* args)
+private auto pythonArgsToDArgs(P...)(PyObject* args)
     if(allSatisfy!(isParameter, P))
 {
     import python.raw: PyTuple_Size, PyTuple_GetItem;
@@ -274,7 +255,7 @@ struct PythonMethod(T, alias F) {
 
         assert(PyTuple_Size(args) == Parameters!F.length);
 
-        auto dArgs = pythonArgsToDArgs!(Parameters!F)(args);
+        auto dArgs = pythonArgsToDArgs!(FunctionParameters!F)(args);
 
         assert(self_ !is null);
         auto dAggregate = self_.to!(Unqual!T);
@@ -340,7 +321,7 @@ struct PythonFunction(alias F) {
                    text("Received ", PyTuple_Size(args), " parameters but ",
                         __traits(identifier, F), " takes ", Parameters!F.length));
 
-            auto dArgs = pythonArgsToDArgs2!(FunctionParameters!F)(args);
+            auto dArgs = pythonArgsToDArgs!(FunctionParameters!F)(args);
 
             // TODO - side-effects on parameters?
             static if(is(ReturnType!F == void)) {
