@@ -218,8 +218,6 @@ private auto pythonArgsToDArgs(P...)(PyObject* args)
 
     Tuple!(staticMap!(Unqual, Types)) dArgs;
 
-    pragma(msg, "Parameters: ", P.stringof);
-
     int pythonArgIndex = 0;
     static foreach(i; 0 .. P.length) {
         static if(is(P[i].Default == void)) {
