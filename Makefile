@@ -2,7 +2,7 @@
 
 DUB_CONFIGURATION ?= python37
 
-.PHONY: test test_simple_pyd test_simple_pynih test_issues test_pyd_pyd test_numpy examples/simple/lib/pyd/libsimple.so examples/simple/lib/pynih/libsimple.so examples/issues/libissues.so examples/pyd/libpydtests.so examples/numpy/libnumpy.so
+.PHONY: test test_simple_pyd test_simple_pynih test_issues test_pyd_pyd test_numpy examples/simple/lib/pyd/libsimple.so examples/simple/lib/pynih/libsimple.so examples/issues/libissues.so examples/pyd/libpydtests.so examples/numpy/libnumpy.so examples/pyd/lib/pyd/libpyd.so
 
 all: test
 test: test_simple_pyd test_issues test_pyd_pyd test_numpy test_simple_pynih
@@ -44,17 +44,23 @@ examples/issues/libissues.so: examples/issues/dub.sdl examples/issues/dub.select
 example/issues/dub.selections.json:
 	@cd examples/issues && dub upgrade -q
 
-test_pyd_pyd: tests/test_pyd.py examples/pyd/pyd.so
-	PYTHONPATH=$(PWD)/examples/pyd pytest -s -vv $<
+test_pyd_pyd: tests/test_pyd.py examples/pyd/lib/pyd/pyd.so
+	PYTHONPATH=$(PWD)/examples/pyd/lib/pyd pytest -s -vv $<
 
-examples/pyd/pyd.so: examples/pyd/libpydtests.so
+examples/pyd/lib/pyd/pyd.so: examples/pyd/lib/pyd/libpydtests.so
 	@cp $^ $@
 
-examples/pyd/libpydtests.so: examples/pyd/dub.sdl examples/pyd/dub.selections.json
+examples/pyd/lib/pyd/libpydtests.so: examples/pyd/dub.sdl examples/pyd/dub.selections.json
 	@cd examples/pyd && dub build -q -c $(DUB_CONFIGURATION)
 
-example/pyd/dub.selections.json:
-	@cd examples/pyd && dub upgrade -q
+test_pyd_pynih: tests/test_pyd.py examples/pyd/lib/pynih/pyd.so
+	PYTHONPATH=$(PWD)/examples/pyd/lib/pynih pytest -s -vv $<
+
+examples/pyd/lib/pynih/pyd.so: examples/pyd/lib/pynih/libpydtests.so
+	@cp $^ $@
+
+examples/pyd/lib/pynih/libpydtests.so: examples/pyd/dub.sdl examples/pyd/dub.selections.json
+	@cd examples/pyd && dub build -q -c pynih
 
 test_numpy: tests/test_numpy.py examples/numpy/numpytests.so
 	PYTHONPATH=$(PWD)/examples/numpy pytest -s -vv $<
