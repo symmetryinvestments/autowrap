@@ -2,13 +2,13 @@
 
 DUB_CONFIGURATION ?= python37
 
-.PHONY: test test_simple_pyd test_simple_pynih test_issues test_pyd test_numpy examples/simple/lib/pyd/libsimple.so examples/simple/lib/pynih/libsimple.so examples/issues/libissues.so examples/pyd/libpydtests.so examples/numpy/libnumpy.so
+.PHONY: test test_simple_pyd test_simple_pynih test_issues test_pyd_pyd test_numpy examples/simple/lib/pyd/libsimple.so examples/simple/lib/pynih/libsimple.so examples/issues/libissues.so examples/pyd/libpydtests.so examples/numpy/libnumpy.so
 
 all: test
-test: test_simple_pyd test_issues test_pyd test_numpy test_simple_pynih
+test: test_simple_pyd test_issues test_pyd_pyd test_numpy test_simple_pynih
 
 test_simple_pyd: tests/test_simple.py examples/simple/lib/pyd/simple.so
-	PYTHONPATH=$(PWD)/examples/simple/lib/pyd pytest -s -vv tests/test_simple.py
+	PYTHONPATH=$(PWD)/examples/simple/lib/pyd pytest -s -vv $<
 
 examples/simple/lib/pyd/simple.so: examples/simple/lib/pyd/libsimple.so
 	@cp $^ $@
@@ -20,7 +20,7 @@ example/simple/dub.selections.json:
 	@cd examples/simple && dub upgrade -q
 
 test_simple_pynih: tests/test_simple.py examples/simple/lib/pynih/simple.so
-	PYTHONPATH=$(PWD)/examples/simple/lib/pynih pytest -s -vv tests/test_simple.py
+	PYTHONPATH=$(PWD)/examples/simple/lib/pynih pytest -s -vv $<
 
 examples/simple/lib/pynih/simple.so: examples/simple/lib/pynih/libsimple.so
 	@cp $^ $@
@@ -33,7 +33,7 @@ examples/simple/dub.selections.json:
 
 
 test_issues: tests/test_issues.py examples/issues/issues.so
-	PYTHONPATH=$(PWD)/examples/issues pytest -s -vv tests/test_issues.py
+	PYTHONPATH=$(PWD)/examples/issues pytest -s -vv $<
 
 examples/issues/issues.so: examples/issues/libissues.so
 	@cp $^ $@
@@ -44,8 +44,8 @@ examples/issues/libissues.so: examples/issues/dub.sdl examples/issues/dub.select
 example/issues/dub.selections.json:
 	@cd examples/issues && dub upgrade -q
 
-test_pyd: tests/test_pyd.py examples/pyd/pyd.so
-	PYTHONPATH=$(PWD)/examples/pyd pytest -s -vv tests/test_pyd.py
+test_pyd_pyd: tests/test_pyd.py examples/pyd/pyd.so
+	PYTHONPATH=$(PWD)/examples/pyd pytest -s -vv $<
 
 examples/pyd/pyd.so: examples/pyd/libpydtests.so
 	@cp $^ $@
@@ -57,7 +57,7 @@ example/pyd/dub.selections.json:
 	@cd examples/pyd && dub upgrade -q
 
 test_numpy: tests/test_numpy.py examples/numpy/numpytests.so
-	PYTHONPATH=$(PWD)/examples/numpy pytest -s -vv tests/test_numpy.py
+	PYTHONPATH=$(PWD)/examples/numpy pytest -s -vv $<
 
 examples/numpy/numpytests.so: examples/numpy/libnumpy.so
 	@cp $^ $@
