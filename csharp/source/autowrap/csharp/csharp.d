@@ -190,12 +190,12 @@ private void generateConstructors(T)(string libraryName) if (is(T == class) || i
                 const string interfaceName = getDLangInterfaceName(fqn, "__ctor");
                 const string methodName = getCSharpMethodInterfaceName(aggName, "__ctor");
                 string ctor = dllImportString.format(libraryName, interfaceName);
-                ctor ~= mixin(interp!"        private static extern ${getDLangReturnType(aggName, is(T == class))} dlang_${methodName}(");
+                ctor ~= mixin(interp!"        private static extern ${getDLangReturnType!(T, T)()} dlang_${methodName}(");
                 static foreach(pc; 0..paramNames.length) {
                     if (is(ParamTypes[pc] == class)) {
                         ctor ~= mixin(interp!"IntPtr ${paramNames[pc]}, ");
                     } else {
-                        ctor ~= mixin(interp!"${is(ParamTypes[pc] == bool) ? \"[MarshalAs(UnmanagedType.Bool)]\" : string.init}${getDLangInterfaceType(fullyQualifiedName!(ParamTypes[pc]))} ${paramNames[pc]}, ");
+                        ctor ~= mixin(interp!"${is(ParamTypes[pc] == bool) ? \"[MarshalAs(UnmanagedType.Bool)]\" : string.init}${getDLangInterfaceType!(ParamTypes[pc], T)()} ${paramNames[pc]}, ");
                     }
                 }
                 if (paramNames.length > 0) {
@@ -278,13 +278,13 @@ private void generateMethods(T)(string libraryName) if (is(T == class) || is(T =
                         exp ~= dllImportString.format(libraryName, interfaceName);
                         exp ~= "        private static extern ";
                         if (!is(RT == void)) {
-                            exp ~= getDLangReturnType(returnTypeStr, is(RT == class));
+                            exp ~= getDLangReturnType!(RT, T)();
                         } else {
                             exp ~= "return_void_error";
                         }
                         exp ~= mixin(interp!" dlang_${methodInterfaceName}(");
                         if (is(T == struct)) {
-                            exp ~= mixin(interp!"ref ${getDLangInterfaceType(fqn)} __obj__, ");
+                            exp ~= mixin(interp!"ref ${getDLangInterfaceType!(T, T)()} __obj__, ");
                         } else if (is(T == class) || is(T == interface)) {
                             exp ~= "IntPtr __obj__, ";
                         }
@@ -292,7 +292,7 @@ private void generateMethods(T)(string libraryName) if (is(T == class) || is(T =
                             if (is(ParamTypes[pc] == class)) {
                                 exp ~= mixin(interp!"IntPtr ${paramNames[pc]}, ");
                             } else {
-                                exp ~= mixin(interp!"${getDLangInterfaceType(fullyQualifiedName!(ParamTypes[pc]))} ${paramNames[pc]}, ");
+                                exp ~= mixin(interp!"${getDLangInterfaceType!(ParamTypes[pc], T)()} ${paramNames[pc]}, ");
                             }
                         }
                         exp = exp[0..$-2];
@@ -467,16 +467,16 @@ private void generateFields(T)(string libraryName) if (is(T == class) || is(T ==
                 static if (is(typeof(__traits(getMember, T, fn))))
                 {
                     csagg.properties ~= dllImportString.format(libraryName, getDLangInterfaceName(fqn, fn ~ "_get"));
-                    csagg.properties ~= mixin(interp!"        private static extern ${getDLangReturnType(fullyQualifiedName!(FT), true)} dlang_${fn}_get(IntPtr ptr);${newline}");
+                    csagg.properties ~= mixin(interp!"        private static extern ${getDLangReturnType!(FT, T)} dlang_${fn}_get(IntPtr ptr);${newline}");
                     if (is(FT == bool)) {
                         csagg.properties ~= dllImportString.format(libraryName, getDLangInterfaceName(fqn, fn ~ "_set"));
-                        csagg.properties ~= mixin(interp!"        private static extern void dlang_${fn}_set(IntPtr ptr, [MarshalAs(UnmanagedType.Bool)] ${getDLangInterfaceType(fullyQualifiedName!(FT))} value);${newline}");
+                        csagg.properties ~= mixin(interp!"        private static extern void dlang_${fn}_set(IntPtr ptr, [MarshalAs(UnmanagedType.Bool)] ${getDLangInterfaceType!(FT, T)()} value);${newline}");
                     } else if (is(FT == class)) {
                         csagg.properties ~= dllImportString.format(libraryName, getDLangInterfaceName(fqn, fn ~ "_set"));
                         csagg.properties ~= mixin(interp!"        private static extern void dlang_${fn}_set(IntPtr ptr, IntPtr value);${newline}");
                     } else {
                         csagg.properties ~= dllImportString.format(libraryName, getDLangInterfaceName(fqn, fn ~ "_set"));
-                        csagg.properties ~= mixin(interp!"        private static extern void dlang_${fn}_set(IntPtr ptr, ${getDLangInterfaceType(fullyQualifiedName!(FT))} value);${newline}");
+                        csagg.properties ~= mixin(interp!"        private static extern void dlang_${fn}_set(IntPtr ptr, ${getDLangInterfaceType!(FT, T)()} value);${newline}");
                     }
 
                     if (is(FT == string)) {
@@ -530,12 +530,12 @@ private void generateFields(T)(string libraryName) if (is(T == class) || is(T ==
                             csagg.properties ~= mixin(interp!"        public Range<${getCSharpInterfaceType(fullyQualifiedName!(FT))}> ${getCSharpName(fn)} { get => new Range<${getCSharpInterfaceType(fullyQualifiedName!(FT))}>(_${fn}, DStringType.None); set => _${fn} = value.ToSlice(); }${newline}");
                         }
                     } else if (is(FT == bool)) {
-                        csagg.properties ~= mixin(interp!"        [MarshalAs(UnmanagedType.U1)] public ${getDLangInterfaceType(fullyQualifiedName!(FT))} ${getCSharpName(fn)};${newline}");
+                        csagg.properties ~= mixin(interp!"        [MarshalAs(UnmanagedType.U1)] public ${getDLangInterfaceType!(FT, T)()} ${getCSharpName(fn)};${newline}");
                     } else if (is(FT == class)) {
                         csagg.properties ~= mixin(interp!"        private IntPtr _${getCSharpName(fn)};${newline}");
                         csagg.properties ~= mixin(interp!"        public ${getCSharpInterfaceType(fullyQualifiedName!(FT))} ${getCSharpName(fn)} { get => new ${getCSharpInterfaceType(fullyQualifiedName!(FT))}(_${fn}); set => _${fn} = value); }${newline}");
                     } else {
-                        csagg.properties ~= mixin(interp!"        public ${getDLangInterfaceType(fullyQualifiedName!(FT))} ${getCSharpName(fn)};${newline}");
+                        csagg.properties ~= mixin(interp!"        public ${getDLangInterfaceType!(FT, T)()} ${getCSharpName(fn)};${newline}");
                     }
                 }
             }
@@ -554,7 +554,7 @@ private void generateFunctions(Modules...)(string libraryName) if(allSatisfy!(is
         alias funcName = func.name;
 
         alias RT = ReturnType!(__traits(getMember, func.module_, func.name));
-        alias returnTypeStr = fullyQualifiedName!(ReturnType!(__traits(getMember, func.module_, func.name)));
+        alias returnTypeStr = fullyQualifiedName!RT;
         alias ParamTypes = Parameters!(__traits(getMember, func.module_, func.name));
         alias paramNames = ParameterIdentifierTuple!(__traits(getMember, func.module_, func.name));
         alias Types = AliasSeq!(RT, ParamTypes);
@@ -565,11 +565,11 @@ private void generateFunctions(Modules...)(string libraryName) if(allSatisfy!(is
         {
             const string interfaceName = getDLangInterfaceName(modName, null, funcName);
             const string methodName = getCSharpMethodInterfaceName(null, funcName);
-            string retType = getDLangReturnType(returnTypeStr, is(RT == class));
+            string retType = getDLangReturnType!RT();
             string funcStr = dllImportString.format(libraryName, interfaceName) ~ newline;
             funcStr ~= mixin(interp!"        private static extern ${retType} dlang_${methodName}(");
             static foreach(pc; 0..paramNames.length) {
-                funcStr ~= mixin(interp!"${is(ParamTypes[pc] == bool) ? \"[MarshalAs(UnmanagedType.Bool)]\" : string.init}${getDLangInterfaceType(fullyQualifiedName!(ParamTypes[pc]))} ${paramNames[pc]}, ");
+                funcStr ~= mixin(interp!"${is(ParamTypes[pc] == bool) ? \"[MarshalAs(UnmanagedType.Bool)]\" : string.init}${getDLangInterfaceType!(ParamTypes[pc])()} ${paramNames[pc]}, ");
             }
             if (paramNames.length > 0) {
                 funcStr = funcStr[0..$-2];
@@ -641,10 +641,25 @@ private void generateFunctions(Modules...)(string libraryName) if(allSatisfy!(is
     }
 }
 
-private string getDLangInterfaceType(string type) {
-    if (type[$-2..$] == "[]") return "slice";
+private string getDLangInterfaceType(T, Parent...)()
+    if(Parent.length <= 1)
+{
+    import std.traits : fullyQualifiedName, isBuiltinType;
 
-    switch(type) {
+    static if(!isBuiltinType!T && Parent.length == 1)
+    {
+        static if(is(T == Parent[0]))
+            enum typeName = __traits(identifier, T);
+        else
+            enum typeName = fullyQualifiedName!T;
+    }
+    else
+        enum typeName = fullyQualifiedName!T;
+
+    if (typeName[$-2..$] == "[]") return "slice";
+
+    switch(typeName)
+    {
         //Types that require special marshalling types
         case voidTypeString: return "void";
         case stringTypeString: return "slice";
@@ -671,7 +686,7 @@ private string getDLangInterfaceType(string type) {
         case longTypeString: return "long";
         case floatTypeString: return "float";
         case doubleTypeString: return "double";
-        default: return getCSharpName(type);
+        default: return getCSharpName(typeName);
     }
 }
 
@@ -709,12 +724,26 @@ private string getCSharpInterfaceType(string type) {
     }
 }
 
-private string getDLangReturnType(string type, bool isClass) {
+private string getDLangReturnType(T, Parent...)()
+    if(Parent.length <= 1)
+{
     import std.algorithm : among;
+    import std.traits : fullyQualifiedName;
 
-    string rtname = getReturnErrorTypeName(getDLangInterfaceType(type));
+    enum rtname = getReturnErrorTypeName(getDLangInterfaceType!T());
+
+    static if(Parent.length == 1)
+    {
+        static if(is(T == Parent[0]))
+            enum typeName = __traits(identifier, T);
+        else
+            enum typeName = fullyQualifiedName!T;
+    }
+    else
+        enum typeName = fullyQualifiedName!T;
+
     //These types have predefined C# types.
-    if (type.among(dateTypeString, dateTimeTypeString, sysTimeTypeString, timeOfDayTypeString, durationTypeString,
+    if (typeName.among(dateTypeString, dateTimeTypeString, sysTimeTypeString, timeOfDayTypeString, durationTypeString,
         voidTypeString, boolTypeString, stringTypeString, wstringTypeString, dstringTypeString) || rtname == "return_slice_error") {
         return rtname;
     }
@@ -728,12 +757,15 @@ private string getDLangReturnType(string type, bool isClass) {
         }
 ";
 
-    if (isClass) {
+    static if (is(T == class) || is(T == interface))
+    {
         typeStr ~= mixin(interp!"        public static implicit operator IntPtr(${rtname} ret) { ret.EnsureValid(); return ret._value; }${newline}");
         typeStr ~= "        private IntPtr _value;" ~ newline;
-    } else {
-        typeStr ~= mixin(interp!"        public static implicit operator ${getCSharpInterfaceType(type)}(${rtname} ret) { ret.EnsureValid(); return ret._value; }${newline}");
-        typeStr ~= mixin(interp!"        private ${getCSharpInterfaceType(type)} _value;${newline}");
+    }
+    else
+    {
+        typeStr ~= mixin(interp!"        public static implicit operator ${getCSharpInterfaceType(typeName)}(${rtname} ret) { ret.EnsureValid(); return ret._value; }${newline}");
+        typeStr ~= mixin(interp!"        private ${getCSharpInterfaceType(typeName)} _value;${newline}");
     }
     typeStr ~= "        private slice _error;" ~ newline;
     typeStr ~= "    }" ~ newline ~ newline;
@@ -803,22 +835,26 @@ private void generateRangeDef(T)(string libraryName) {
     rangeDef.setters ~= mixin(interp!"                else if (typeof(T) == typeof(${getCSharpInterfaceType(fqn)})) RangeFunctions.${getCSharpMethodInterfaceName(fqn, \"Set\")}(_slice, new IntPtr(i), (${getCSharpInterfaceType(fqn)})(object)value);${newline}");
     rangeDef.appendValues ~= mixin(interp!"            else if (typeof(T) == typeof(${getCSharpInterfaceType(fqn)})) { this._slice = RangeFunctions.${getCSharpMethodInterfaceName(fqn, \"AppendValue\")}(this._slice, (${getCSharpInterfaceType(fqn)})(object)value); }${newline}");
     rangeDef.appendArrays ~= mixin(interp!"            else if (typeof(T) == typeof(${getCSharpInterfaceType(fqn)})) { range._slice = RangeFunctions.${getCSharpMethodInterfaceName(fqn, \"AppendSlice\")}(range._slice, source._slice); return range; }${newline}");
-    if (is(T == class) || is(T == interface)) {
+    if (is(T == class) || is(T == interface))
+    {
         rangeDef.functions ~= dllImportString.format(libraryName, getDLangSliceInterfaceName(fqn, "Get"));
-        rangeDef.functions ~= externFuncString.format(getDLangReturnType(fqn, true), getCSharpMethodInterfaceName(fqn, "Get"), "slice dslice, IntPtr index");
+        rangeDef.functions ~= externFuncString.format(getDLangReturnType!T(), getCSharpMethodInterfaceName(fqn, "Get"), "slice dslice, IntPtr index");
         rangeDef.functions ~= dllImportString.format(libraryName, getDLangSliceInterfaceName(fqn, "Set"));
         rangeDef.functions ~= externFuncString.format("return_void_error", getCSharpMethodInterfaceName(fqn, "Set"), "slice dslice, IntPtr index, IntPtr value");
         rangeDef.functions ~= dllImportString.format(libraryName, getDLangSliceInterfaceName(fqn, "AppendValue"));
         rangeDef.functions ~= externFuncString.format("return_slice_error", getCSharpMethodInterfaceName(fqn, "AppendValue"), "slice dslice, IntPtr value");
         rangeDef.getters ~= mixin(interp!"                else if (typeof(T) == typeof(${getCSharpInterfaceType(fqn)})) return (T)(object)new ${getCSharpInterfaceType(fqn)}(RangeFunctions.${getCSharpMethodInterfaceName(fqn, \"Get\")}(_slice, new IntPtr(i)));${newline}");
         rangeDef.enumerators ~= mixin(interp!"                else if (typeof(T) == typeof(${getCSharpInterfaceType(fqn)})) yield return (T)(object)new ${getCSharpInterfaceType(fqn)}(RangeFunctions.${getCSharpMethodInterfaceName(fqn, \"Get\")}(_slice, new IntPtr(i)));${newline}");
-    } else {
+    }
+    else
+    {
+        enum dlangIT = getDLangInterfaceType!T;
         rangeDef.functions ~= dllImportString.format(libraryName, getDLangSliceInterfaceName(fqn, "Get"));
-        rangeDef.functions ~= externFuncString.format(getDLangReturnType(fqn, false), getCSharpMethodInterfaceName(fqn, "Get"), "slice dslice, IntPtr index");
+        rangeDef.functions ~= externFuncString.format(getDLangReturnType!T(), getCSharpMethodInterfaceName(fqn, "Get"), "slice dslice, IntPtr index");
         rangeDef.functions ~= dllImportString.format(libraryName, getDLangSliceInterfaceName(fqn, "Set"));
-        rangeDef.functions ~= externFuncString.format("return_void_error", getCSharpMethodInterfaceName(fqn, "Set"), mixin(interp!"slice dslice, IntPtr index, ${getDLangInterfaceType(fqn)} value"));
+        rangeDef.functions ~= externFuncString.format("return_void_error", getCSharpMethodInterfaceName(fqn, "Set"), mixin(interp!"slice dslice, IntPtr index, ${dlangIT} value"));
         rangeDef.functions ~= dllImportString.format(libraryName, getDLangSliceInterfaceName(fqn, "AppendValue"));
-        rangeDef.functions ~= externFuncString.format("return_slice_error", getCSharpMethodInterfaceName(fqn, "AppendValue"), mixin(interp!"slice dslice, ${getDLangInterfaceType(fqn)} value"));
+        rangeDef.functions ~= externFuncString.format("return_slice_error", getCSharpMethodInterfaceName(fqn, "AppendValue"), mixin(interp!"slice dslice, ${dlangIT} value"));
         rangeDef.getters ~= mixin(interp!"                else if (typeof(T) == typeof(${getCSharpInterfaceType(fqn)})) return (T)(object)(${getCSharpInterfaceType(fqn)})RangeFunctions.${getCSharpMethodInterfaceName(fqn, \"Get\")}(_slice, new IntPtr(i));${newline}");
         rangeDef.enumerators ~= mixin(interp!"                else if (typeof(T) == typeof(${getCSharpInterfaceType(fqn)})) yield return (T)(object)(${getCSharpInterfaceType(fqn)})RangeFunctions.${getCSharpMethodInterfaceName(fqn, \"Get\")}(_slice, new IntPtr(i));${newline}");
     }
