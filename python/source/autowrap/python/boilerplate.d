@@ -35,6 +35,24 @@ struct PostModuleInitCode {
 
 
 /**
+   Returns a string to mixin that implements the necessary boilerplate
+   to create a Python library containing one Python module
+   wrapping all relevant D code and data structures.
+ */
+string wrapDlang(
+    LibraryName libraryName,
+    Modules modules,
+    PreModuleInitCode preModuleInitCode = PreModuleInitCode(),
+    PostModuleInitCode postModuleInitCode = PostModuleInitCode())
+    ()
+{
+    return !__ctfe
+        ? null
+        : wrapAll(libraryName, modules, preModuleInitCode, postModuleInitCode);
+}
+
+
+/**
    A string to be mixed in that defines all the necessary runtime pyd boilerplate.
  */
 string wrapAll(in LibraryName libraryName,
