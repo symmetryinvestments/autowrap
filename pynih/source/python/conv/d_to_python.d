@@ -4,7 +4,7 @@ module python.conv.d_to_python;
 import python.raw: PyObject;
 import python.type: isUserAggregate, isTuple, isNonRangeUDT;
 import std.traits: Unqual, isIntegral, isFloatingPoint, isAggregateType, isArray,
-    isStaticArray, isAssociativeArray, isPointer, PointerTarget;
+    isStaticArray, isAssociativeArray, isPointer, PointerTarget, isSomeChar;
 import std.range: isInputRange;
 import std.datetime: Date, DateTime;
 
@@ -25,7 +25,16 @@ PyObject* toPython(T)(T value) @trusted if(isFloatingPoint!T) {
 PyObject* toPython(T)(T value) if(isInputRange!T && !is(T == string) && !isStaticArray!T) {
     import python.raw: PyList_New, PyList_SetItem;
 
-    auto ret = PyList_New(value.length);
+    static if(__traits(hasMember, T, "length"))
+        const length = value.length;
+    else {
+        import std.range: isForwardRange, walkLength;
+        import std.array: save;
+        static assert(isForwardRange!T);
+        const length = walkLength(value.save);
+    }
+
+    auto ret = PyList_New(length);
 
     foreach(i, elt; value) {
         PyList_SetItem(ret, i, toPython(elt));
@@ -99,4 +108,9 @@ PyObject* toPython(T)(T value) if(isTuple!T) {
     }
 
     return ret;
+}
+
+
+PyObject* toPython(T)(T value) if(isSomeChar!T) {
+    return null;
 }

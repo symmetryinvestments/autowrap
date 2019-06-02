@@ -55,6 +55,8 @@ string createPythonModuleMixin(LibraryName libraryName, Modules modules)
 {
     import autowrap.reflection: AllAggregates, AllFunctions;
     import std.format: format;
+    import std.algorithm: map;
+    import std.array: join;
 
     if(!__ctfe) return null;
 
@@ -75,6 +77,7 @@ string createPythonModuleMixin(LibraryName libraryName, Modules modules)
             import python.type: PythonFunction;
             import autowrap.pynih.wrap: createPythonModule;
             %s
+            %s
 
             mixin createPythonModule!(
                 Module("%s"),
@@ -86,6 +89,7 @@ string createPythonModuleMixin(LibraryName libraryName, Modules modules)
     }.format(
         pyInitFuncName,     // init function name
         libraryName.value,  // after init
+        `import ` ~ modules.value.map!(a => a.name).join(", ") ~ `;`, // import all modules
         aggregateModuleImports!aggregates,
         libraryName.value,  // Module
         functionNames!functions,

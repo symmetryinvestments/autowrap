@@ -230,7 +230,7 @@ private auto pythonArgsToDArgs(P...)(PyObject* args)
             // no default value for parameter at index i
             enforce(i < argsLength,
                     text(__FUNCTION__, ": not enough Python arguments"));
-            dArgs[i] = PyTuple_GetItem(args, i).to!(P[i].Type);
+            dArgs[i] = PyTuple_GetItem(args, i).to!(typeof(dArgs[i]));
         } else {
             if(i >= argsLength) {
                 // ran out of Python-supplied arguments, must be default value
@@ -255,10 +255,18 @@ struct PythonMethod(T, alias F) {
     static extern(C) PyObject* _py_method_impl(PyObject* self, PyObject* args, PyObject* kwargs) {
         import python.raw: pyDecRef;
         import python.conv: toPython, to;
-        import std.traits: Parameters, FunctionAttribute, functionAttributes, Unqual;
+        import std.traits: Parameters, FunctionAttribute, functionAttributes, Unqual, hasFunctionAttributes;
 
         assert(self !is null);
-        auto dAggregate = self.to!(Unqual!T);
+
+        static if(functionAttributes!F & FunctionAttribute.const_)
+            alias Aggregate = const T;
+        else static if(functionAttributes!F & FunctionAttribute.immutable_)
+            alias Aggregate = immutable T;
+        else
+            alias Aggregate = Unqual!T;
+
+        auto dAggregate = self.to!Aggregate;
 
         // Not sure how else to take `dAggregate` and `F` and call the member
         // function other than a mixin
