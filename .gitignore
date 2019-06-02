@@ -13,6 +13,7 @@ bin
 *.lst
 *.exe
 .vscode/
+csharp/tests/Wrapper.cs
 examples/simple/simple
 examples/simple/Simple.cs
 obj
