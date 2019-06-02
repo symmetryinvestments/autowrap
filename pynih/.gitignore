@@ -6,3 +6,4 @@
 *.exp
 __pycache__
 *.pyc
+*.d.tmp
