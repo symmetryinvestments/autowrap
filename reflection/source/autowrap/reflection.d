@@ -314,12 +314,12 @@ package template Symbol(alias parent, string memberName) {
 // T -> T, T[] -> T, T[][] -> T, T* -> T
 template PrimordialType(T) if(isArray!T) {
 
-    import std.range.primitives: ElementType;
+    import std.range.primitives: ElementEncodingType;
 
-    static if(isArray!(ElementType!T))
-        alias PrimordialType = PrimordialType!(ElementType!T);
+    static if(isArray!(ElementEncodingType!T))
+        alias PrimordialType = PrimordialType!(ElementEncodingType!T);
     else
-        alias PrimordialType = ElementType!T;
+        alias PrimordialType = ElementEncodingType!T;
 }
 
 
