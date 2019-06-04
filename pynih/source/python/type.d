@@ -183,9 +183,14 @@ struct PythonType(T) {
 
         auto dArgs = pythonArgsToDArgs!P(args);
 
-        static if(is(T == class))
-            scope dobj = new T(dArgs.expand);
-        else
+        static if(is(T == class)) {
+            // When immutable dmd prints an odd error message about not being
+            // able to modify dobj
+            static if(is(T == immutable))
+                auto dobj = new T(dArgs.expand);
+            else
+                scope dobj = new T(dArgs.expand);
+        } else
             auto dobj = T(dArgs.expand);
 
         return toPython(dobj);
@@ -222,7 +227,14 @@ private auto pythonArgsToDArgs(P...)(PyObject* args)
     alias Type(alias Param) = Param.Type;
     alias Types = staticMap!(Type, P);
 
-    Tuple!(staticMap!(Unqual, Types)) dArgs;
+    // If one or more of the parameters is const/immutable,
+    // it'll be hard to construct it as such, so we Unqual
+    // the types for construction and cast to the appropriate
+    // type when returning.
+    alias MutableTuple = Tuple!(staticMap!(Unqual, Types));
+    alias RetTuple = Tuple!(Types);
+
+    MutableTuple dArgs;
 
     int pythonArgIndex = 0;
     static foreach(i; 0 .. P.length) {
@@ -241,7 +253,7 @@ private auto pythonArgsToDArgs(P...)(PyObject* args)
         }
     }
 
-    return dArgs;
+    return cast(RetTuple) dArgs;
 }
 
 

@@ -4,7 +4,7 @@ module python.conv.python_to_d;
 import python.raw: PyObject;
 import python.type: isUserAggregate, isTuple;
 import std.traits: Unqual, isIntegral, isFloatingPoint, isAggregateType, isArray,
-    isStaticArray, isAssociativeArray, isPointer, PointerTarget, isSomeChar, isSomeString;
+    isStaticArray, isAssociativeArray, isPointer, PointerTarget, isSomeChar, isSomeString, isSomeFunction;
 import std.range: isInputRange;
 import std.datetime: DateTime, Date;
 
@@ -165,4 +165,9 @@ T to(T)(PyObject* value) if(isTuple!T) {
 T to(T)(PyObject* value) if(isSomeChar!T) {
     auto str = value.to!string;
     return str[0];
+}
+
+
+T to(T)(PyObject* value) if(isSomeFunction!T) {
+    return typeof(return).init;  // FIXME
 }

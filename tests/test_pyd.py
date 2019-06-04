@@ -163,10 +163,10 @@ def test_struct_wrap():
 
 
 def test_const():
-    from pyd import const_T1 as T1
+    from pyd import ConstMethods
     import pytest
 
-    boozy = T1()
+    boozy = ConstMethods()
 
     with pytest.raises(RuntimeError) as ex:
         boozy.a()

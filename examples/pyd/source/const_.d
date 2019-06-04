@@ -1,4 +1,4 @@
-class const_T1 {
+class ConstMethods {
     int i;
     string s;
 
@@ -10,13 +10,13 @@ class const_T1 {
         return "def";
     }
 
-    string c(const(const_T1) t) {
+    string c(const(ConstMethods) t) {
         return t.b ~ "_C";
     }
-    string d(immutable(const_T1) t) {
+    string d(immutable(ConstMethods) t) {
         return t.a() ~ "_I";
     }
-    void e(const_T1 t) {
+    void e(ConstMethods t) {
     }
 
     @property void p1(int i) {
@@ -41,6 +41,6 @@ class const_T1 {
         int i = 1 + 2;
     }
 
-    void im1(immutable(const_T1) tz) {
+    void im1(immutable(ConstMethods) tz) {
     }
 }

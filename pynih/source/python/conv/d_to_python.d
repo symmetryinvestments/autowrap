@@ -4,10 +4,9 @@ module python.conv.d_to_python;
 import python.raw: PyObject;
 import python.type: isUserAggregate, isTuple, isNonRangeUDT;
 import std.traits: Unqual, isIntegral, isFloatingPoint, isAggregateType, isArray,
-    isStaticArray, isAssociativeArray, isPointer, PointerTarget, isSomeChar;
+    isStaticArray, isAssociativeArray, isPointer, PointerTarget, isSomeChar, isSomeFunction;
 import std.range: isInputRange;
 import std.datetime: Date, DateTime;
-
 
 
 PyObject* toPython(T)(T value) @trusted if(isIntegral!T) {
@@ -23,21 +22,30 @@ PyObject* toPython(T)(T value) @trusted if(isFloatingPoint!T) {
 
 
 PyObject* toPython(T)(T value) if(isInputRange!T && !is(T == string) && !isStaticArray!T) {
-    import python.raw: PyList_New, PyList_SetItem;
+    import python.raw: PyList_New, PyList_SetItem, PyList_Append;
+    import std.range: isForwardRange, enumerate;
 
-    static if(__traits(hasMember, T, "length"))
+    static if(__traits(hasMember, T, "length")) {
         const length = value.length;
-    else {
-        import std.range: isForwardRange, walkLength;
+        enum append = false;
+    } else static if(isForwardRange!T){
+        import std.range: walkLength;
         import std.array: save;
         static assert(isForwardRange!T);
         const length = walkLength(value.save);
+        enum append = false;
+    } else {
+        enum length = 0;
+        enum append = true;
     }
 
     auto ret = PyList_New(length);
 
-    foreach(i, elt; value) {
-        PyList_SetItem(ret, i, toPython(elt));
+    foreach(i, elt; value.enumerate) {
+        static if(append)
+            PyList_Append(ret, toPython(elt));
+        else
+            PyList_SetItem(ret, i, toPython(elt));
     }
 
     return ret;
@@ -112,5 +120,10 @@ PyObject* toPython(T)(T value) if(isTuple!T) {
 
 
 PyObject* toPython(T)(T value) if(isSomeChar!T) {
-    return null;
+    return null;  // FIXME
+}
+
+
+PyObject* toPython(T)(T value) if(isSomeFunction!T) {
+    return null;  // FIXME
 }
