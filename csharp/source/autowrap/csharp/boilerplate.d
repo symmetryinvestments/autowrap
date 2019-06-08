@@ -23,18 +23,49 @@ import std.string;
 import std.traits;
 import std.utf;
 
+private void pinInternalPointers(T)(ref T value) @trusted nothrow
+    if(is(T == struct))
+{
+    import std.traits : Fields, isPointer, isDynamicArray, isStaticArray;
+
+    static foreach(i, Field; Fields!T)
+    {
+        static assert(!isPointer!T, "If we're now supporting pointers, this code needs to be updated");
+        static assert(!isStaticArray!T, "If we're now supporting static arrays, this code needs to be updated");
+
+        static if(is(Field == struct))
+            pinInternalPointers(value.tupleof[i]);
+        else static if(isDynamicArray!Field)
+        {
+            if(value.tupleof[i] !is null)
+                pinPointer(cast(void*)value.tupleof[i].ptr);
+        }
+        else static if(is(Field == class) || is(Field == interface))
+        {
+            if(value.tupleof[i] !is null)
+                pinPointer(cast(void*)value.tupleof[i]);
+        }
+    }
+}
+
 extern(C) export struct returnValue(T) {
     T value;
     wstring error;
 
     this(T value) nothrow {
         this.value = value;
-        static if (isArray!(T) || is(T == class) || is(T == interface)) {
-            if (this.value !is null) {
-                pinPointer(cast(void*)this.error.ptr);
-            }
+        static if (isDynamicArray!T)
+        {
+            if (this.value !is null)
+                pinPointer(cast(void*)this.value.ptr);
         }
-        this.error = null;
+        else static if (is(T == class) || is(T == interface))
+        {
+            if (this.value !is null)
+                pinPointer(cast(void*)this.value);
+        }
+        else static if (is(T == struct))
+            pinInternalPointers(value);
     }
 
     this(Exception error) nothrow {
