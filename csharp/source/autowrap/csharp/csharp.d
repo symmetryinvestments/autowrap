@@ -124,7 +124,7 @@ public struct csharpRange {
     public string enumerators = string.init;
     public string functions = string.init;
     public string getters = string.init;
-    public string setters = string.init; 
+    public string setters = string.init;
     public string appendValues = string.init;
     public string appendArrays = string.init;
     public string sliceEnd = string.init;
@@ -170,6 +170,7 @@ public string generateCSharp(Modules...)(LibraryName libraryName, RootNamespace 
 
 private void generateConstructors(T)(string libraryName) if (is(T == class) || is(T == struct)) {
     import autowrap.csharp.common : getDLangInterfaceName, verifySupported;
+    import std.conv : to;
     import std.traits : moduleName, fullyQualifiedName, hasMember, Parameters, ParameterIdentifierTuple;
     import std.meta: AliasSeq, Filter;
     import std.algorithm : among;
@@ -180,7 +181,7 @@ private void generateConstructors(T)(string libraryName) if (is(T == class) || i
 
     //Generate constructor methods
     static if(hasMember!(T, "__ctor") && __traits(getProtection, __traits(getMember, T, "__ctor")).among("export", "public")) {
-        foreach(c; __traits(getOverloads, T, "__ctor")) {
+        foreach(i, c; __traits(getOverloads, T, "__ctor")) {
             if (__traits(getProtection, c).among("export", "public")) {
                 alias paramNames = ParameterIdentifierTuple!c;
                 alias ParamTypes = Parameters!c;
@@ -188,8 +189,9 @@ private void generateConstructors(T)(string libraryName) if (is(T == class) || i
                 static if(Filter!(verifySupported, ParamTypes).length != ParamTypes.length)
                     continue;
 
-                const string interfaceName = getDLangInterfaceName(fqn, "__ctor");
-                const string methodName = getCSharpMethodInterfaceName(aggName, "__ctor");
+                enum iStr = to!string(i);
+                const string interfaceName = getDLangInterfaceName(fqn, "__ctor") ~ iStr;
+                const string methodName = getCSharpMethodInterfaceName(aggName, "__ctor") ~ iStr;
                 string ctor = dllImportString.format(libraryName, interfaceName);
                 ctor ~= mixin(interp!"        private static extern ${getDLangReturnType!(T, T)()} dlang_${methodName}(");
                 static foreach(pc; 0..paramNames.length) {
@@ -215,7 +217,7 @@ private void generateConstructors(T)(string libraryName) if (is(T == class) || i
                 else static if(is(T == struct))
                 {
                     ctor ~= ") {" ~ newline;
-                    ctor ~= mixin(interp!"            var dlang_ret = dlang_${methodName}(");
+                    ctor ~= mixin(interp!"            this = dlang_${methodName}(");
                 }
                 else
                     static assert(false, "Somehow, this type has a constructor even though it is neither a class nor a struct: " ~ T.stringof);
@@ -242,7 +244,6 @@ private void generateConstructors(T)(string libraryName) if (is(T == class) || i
                 else
                 {
                     ctor ~= ";" ~ newline;
-                    ctor ~= "            this = dlang_ret;" ~ newline;
                     ctor ~= "        }" ~ newline;
                 }
 

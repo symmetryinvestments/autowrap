@@ -69,6 +69,7 @@ private string generateConstructors(T)(ref string[] imports) {
     import autowrap.csharp.common : getDLangInterfaceName, verifySupported;
 
     import std.algorithm.comparison : among;
+    import std.conv : to;
     import std.meta : Filter, staticMap;
     import std.traits : fullyQualifiedName, hasMember, Parameters, ParameterIdentifierTuple;
 
@@ -77,7 +78,7 @@ private string generateConstructors(T)(ref string[] imports) {
 
     //Generate constructor methods
     static if(hasMember!(T, "__ctor") && __traits(getProtection, __traits(getMember, T, "__ctor")).among("export", "public")) {
-        foreach(c; __traits(getOverloads, T, "__ctor")) {
+        foreach(i, c; __traits(getOverloads, T, "__ctor")) {
             if (__traits(getProtection, c).among("export", "public")) {
                 alias paramNames = staticMap!(AdjParamName, ParameterIdentifierTuple!c);
                 alias ParamTypes = Parameters!c;
@@ -87,7 +88,7 @@ private string generateConstructors(T)(ref string[] imports) {
                 addImports!ParamTypes(imports);
 
                 string exp = "extern(C) export ";
-                const string interfaceName = getDLangInterfaceName(fqn, "__ctor");
+                const string interfaceName = getDLangInterfaceName(fqn, "__ctor") ~ to!string(i);
 
                 exp ~= mixin(interp!"returnValue!(${fqn}) ${interfaceName}(");
 
