@@ -198,11 +198,11 @@ private void generateConstructors(T)(string libraryName) if (is(T == class) || i
                 {{
                     enum numParams = ParamTypes.length - nda;
 
-                    const string interfaceName = format("%s%s_%s", getDLangInterfaceName(fqn, "__ctor"), i, numParams);
-                    const string methodName = format("%s%s_%s", getCSharpMethodInterfaceName(aggName, "__ctor"), i, numParams);
+                    enum interfaceName = format("%s%s_%s", getDLangInterfaceName(fqn, "__ctor"), i, numParams);
+                    enum methodInterfaceName = format("%s%s_%s", getCSharpMethodInterfaceName(aggName, "__ctor"), i, numParams);
 
                     string ctor = dllImportString.format(libraryName, interfaceName);
-                    ctor ~= mixin(interp!"        private static extern ${getDLangReturnType!(T, T)()} dlang_${methodName}(");
+                    ctor ~= mixin(interp!"        private static extern ${getDLangReturnType!(T, T)()} dlang_${methodInterfaceName}(");
 
                     static foreach(pc; 0 .. numParams)
                     {
@@ -224,11 +224,11 @@ private void generateConstructors(T)(string libraryName) if (is(T == class) || i
                         ctor = ctor[0 .. $ - 2];
 
                     static if (is(T == class))
-                        ctor ~= mixin(interp!") : base(dlang_${methodName}(");
+                        ctor ~= mixin(interp!") : base(dlang_${methodInterfaceName}(");
                     else static if(is(T == struct))
                     {
                         ctor ~= ") {" ~ newline;
-                        ctor ~= mixin(interp!"            this = dlang_${methodName}(");
+                        ctor ~= mixin(interp!"            this = dlang_${methodInterfaceName}(");
                     }
                     else
                         static assert(false, "Somehow, this type has a constructor even though it is neither a class nor a struct: " ~ T.stringof);
@@ -268,9 +268,14 @@ private void generateConstructors(T)(string libraryName) if (is(T == class) || i
         csagg.constructors ~= mixin(interp!"        internal ${getCSharpName(aggName)}(IntPtr ptr) : base(ptr) { }${newline}");
 }
 
-private void generateMethods(T)(string libraryName) if (is(T == class) || is(T == interface) || is(T == struct)) {
-    import autowrap.csharp.common : getDLangInterfaceName, verifySupported;
+private void generateMethods(T)(string libraryName)
+    if (is(T == class) || is(T == interface) || is(T == struct))
+{
+    import autowrap.csharp.common : getDLangInterfaceName, numDefaultArgs, verifySupported;
+
+    import std.algorithm.comparison : among;
     import std.conv : to;
+    import std.format : format;
     import std.meta : AliasSeq, Filter;
     import std.traits : moduleName, isArray, fullyQualifiedName, isFunction, functionAttributes, FunctionAttribute,
                         ReturnType, Parameters, ParameterIdentifierTuple;
@@ -281,97 +286,112 @@ private void generateMethods(T)(string libraryName) if (is(T == class) || is(T =
 
     foreach(m; __traits(allMembers, T))
     {
-        if (m == "__ctor" || m == "toHash" || m == "opEquals" || m == "opCmp" || m == "factory")
-            continue;
-
-        string methodName = getCSMemberName(aggName, cast(string)m);
-        const string methodInterfaceName = getCSharpMethodInterfaceName(aggName, cast(string)m);
-
-        static if (is(typeof(__traits(getMember, T, m))))
+        static if (!m.among("__ctor", "toHash", "opEquals", "opCmp", "factory") &&
+                   is(typeof(__traits(getMember, T, m))))
         {
+            enum methodName = getCSMemberName(aggName, cast(string)m);
+
             foreach(oc, mo; __traits(getOverloads, T, m))
             {
                 static if(isFunction!mo)
                 {
-                    string exp = string.init;
-                    enum bool isProperty = cast(bool)(functionAttributes!mo & FunctionAttribute.property);
-                    alias RT = ReturnType!mo;
-                    alias returnTypeStr = fullyQualifiedName!RT;
-                    alias ParamTypes = Parameters!mo;
-                    alias paramNames = ParameterIdentifierTuple!mo;
-                    const string interfaceName = getDLangInterfaceName(fqn, m) ~ to!string(oc);
-                    alias Types = AliasSeq!(RT, ParamTypes);
+                    static foreach(nda; 0 .. numDefaultArgs!mo + 1)
+                    {{
+                        alias RT = ReturnType!mo;
+                        alias ParamTypes = Parameters!mo;
+                        alias Types = AliasSeq!(RT, ParamTypes);
 
-                    static if(Filter!(verifySupported, Types).length != Types.length)
-                        continue;
-                    else
-                    {
-                        exp ~= dllImportString.format(libraryName, interfaceName);
-                        exp ~= "        private static extern ";
-                        if (!is(RT == void)) {
-                            exp ~= getDLangReturnType!(RT, T)();
-                        } else {
-                            exp ~= "return_void_error";
-                        }
-                        exp ~= mixin(interp!" dlang_${methodInterfaceName}(");
-                        if (is(T == struct)) {
-                            exp ~= mixin(interp!"ref ${getDLangInterfaceType!(T, T)()} __obj__, ");
-                        } else if (is(T == class) || is(T == interface)) {
-                            exp ~= "IntPtr __obj__, ";
-                        }
-                        static foreach(pc; 0..paramNames.length) {
-                            if (is(ParamTypes[pc] == class)) {
-                                exp ~= mixin(interp!"IntPtr ${paramNames[pc]}, ");
-                            } else {
-                                exp ~= mixin(interp!"${getDLangInterfaceType!(ParamTypes[pc], T)()} ${paramNames[pc]}, ");
+                        static if(Filter!(verifySupported, Types).length != Types.length)
+                            continue;
+                        else
+                        {
+                            enum numParams = ParamTypes.length - nda;
+                            alias paramNames = ParameterIdentifierTuple!mo;
+                            enum bool isProperty = cast(bool)(functionAttributes!mo & FunctionAttribute.property);
+
+                            enum dlangInterfaceName = format("%s%s_%s", getDLangInterfaceName(fqn, m), oc, numParams);
+                            enum methodInterfaceName = format("dlang_%s", getCSharpMethodInterfaceName(aggName, cast(string)m));
+
+                            string exp = dllImportString.format(libraryName, dlangInterfaceName);
+                            exp ~= "        private static extern ";
+
+                            if (!is(RT == void))
+                                exp ~= getDLangReturnType!(RT, T)();
+                            else
+                                exp ~= "return_void_error";
+
+                            exp ~= mixin(interp!" ${methodInterfaceName}(");
+
+                            if (is(T == struct))
+                                exp ~= mixin(interp!"ref ${getDLangInterfaceType!(T, T)()} __obj__, ");
+                            else if (is(T == class) || is(T == interface))
+                                exp ~= "IntPtr __obj__, ";
+
+                            static foreach(pc; 0 .. numParams)
+                            {
+                                if (is(ParamTypes[pc] == class))
+                                    exp ~= mixin(interp!"IntPtr ${paramNames[pc]}, ");
+                                else
+                                    exp ~= mixin(interp!"${getDLangInterfaceType!(ParamTypes[pc], T)()} ${paramNames[pc]}, ");
                             }
-                        }
-                        exp = exp[0..$-2];
-                        exp ~= ");" ~ newline;
-                        if (!isProperty) {
-                            exp ~= mixin(interp!"        public ${methodName == \"ToString\" ? \"override \" : string.init}${getCSharpInterfaceType(returnTypeStr)} ${methodName}(");
-                            static foreach(pc; 0..paramNames.length) {
-                                if (is(ParamTypes[pc] == string) || is(ParamTypes[pc] == wstring) || is(ParamTypes[pc] == dstring)) {
-                                    exp ~= mixin(interp!"${getCSharpInterfaceType(fullyQualifiedName!(ParamTypes[pc]))} ${paramNames[pc]}, ");
-                                } else if (isArray!(ParamTypes[pc])) {
-                                    exp ~= mixin(interp!"Range<${getCSharpInterfaceType(fullyQualifiedName!(ParamTypes[pc]))}> ${paramNames[pc]}, ");
-                                } else {
-                                    exp ~= mixin(interp!"${getCSharpInterfaceType(fullyQualifiedName!(ParamTypes[pc]))} ${paramNames[pc]}, ");
-                                }
-                            }
-                            if (paramNames.length > 0) {
-                                exp = exp[0..$-2];
-                            }
-                            exp ~= ") {" ~ newline;
-                            exp ~= mixin(interp!"            var dlang_ret = dlang_${methodInterfaceName}(${is(T == struct) ? \"ref \" : string.init}this, ");
-                            static foreach(pc; 0..paramNames.length) {
-                                static if (is(ParamTypes[pc] == string)) {
-                                    exp ~= mixin(interp!"SharedFunctions.CreateString(${paramNames[pc]}), ");
-                                } else static if (is(ParamTypes[pc] == wstring)) {
-                                    exp ~= mixin(interp!"SharedFunctions.CreateWstring(${paramNames[pc]}), ");
-                                } else static if (is(ParamTypes[pc] == dstring)) {
-                                    exp ~= mixin(interp!"SharedFunctions.CreateDstring(${paramNames[pc]}), ");
-                                } else {
-                                    exp ~= paramNames[pc] ~ ", ";
-                                }
-                            }
-                            exp = exp[0..$-2];
+
+                            exp = exp[0 .. $-2];
                             exp ~= ");" ~ newline;
-                            if (!is(RT == void)) {
-                                if (is(RT == string)) {
-                                    exp ~= "            return SharedFunctions.SliceToString(dlang_ret, DStringType._string);" ~ newline;
-                                } else if (is(RT == wstring)) {
-                                    exp ~= "            return SharedFunctions.SliceToString(dlang_ret, DStringType._wstring);" ~ newline;
-                                } else if (is(RT == dstring)) {
-                                    exp ~= "            return SharedFunctions.SliceToString(dlang_ret, DStringType._dstring);" ~ newline;
-                                } else {
-                                    exp ~= "            return dlang_ret;" ~ newline;
+
+                            if (!isProperty)
+                            {
+                                enum returnTypeStr = fullyQualifiedName!RT;
+
+                                exp ~= mixin(interp!"        public ${methodName == \"ToString\" ? \"override \" : string.init}${getCSharpInterfaceType(returnTypeStr)} ${methodName}(");
+                                static foreach(pc; 0 .. numParams)
+                                {
+                                    if (is(ParamTypes[pc] == string) || is(ParamTypes[pc] == wstring) || is(ParamTypes[pc] == dstring))
+                                        exp ~= mixin(interp!"${getCSharpInterfaceType(fullyQualifiedName!(ParamTypes[pc]))} ${paramNames[pc]}, ");
+                                    else if (isArray!(ParamTypes[pc]))
+                                        exp ~= mixin(interp!"Range<${getCSharpInterfaceType(fullyQualifiedName!(ParamTypes[pc]))}> ${paramNames[pc]}, ");
+                                    else
+                                        exp ~= mixin(interp!"${getCSharpInterfaceType(fullyQualifiedName!(ParamTypes[pc]))} ${paramNames[pc]}, ");
                                 }
+
+                                if (numParams != 0)
+                                    exp = exp[0 .. $-2];
+
+                                exp ~= ") {" ~ newline;
+                                exp ~= mixin(interp!"            var dlang_ret = ${methodInterfaceName}(${is(T == struct) ? \"ref \" : string.init}this, ");
+
+                                static foreach(pc; 0 .. numParams)
+                                {
+                                    static if (is(ParamTypes[pc] == string))
+                                        exp ~= mixin(interp!"SharedFunctions.CreateString(${paramNames[pc]}), ");
+                                    else static if (is(ParamTypes[pc] == wstring))
+                                        exp ~= mixin(interp!"SharedFunctions.CreateWstring(${paramNames[pc]}), ");
+                                    else static if (is(ParamTypes[pc] == dstring))
+                                        exp ~= mixin(interp!"SharedFunctions.CreateDstring(${paramNames[pc]}), ");
+                                    else
+                                        exp ~= paramNames[pc] ~ ", ";
+                                }
+
+                                exp = exp[0 .. $-2];
+                                exp ~= ");" ~ newline;
+
+                                if (!is(RT == void))
+                                {
+                                    if (is(RT == string))
+                                        exp ~= "            return SharedFunctions.SliceToString(dlang_ret, DStringType._string);" ~ newline;
+                                    else if (is(RT == wstring))
+                                        exp ~= "            return SharedFunctions.SliceToString(dlang_ret, DStringType._wstring);" ~ newline;
+                                    else if (is(RT == dstring))
+                                        exp ~= "            return SharedFunctions.SliceToString(dlang_ret, DStringType._dstring);" ~ newline;
+                                    else
+                                        exp ~= "            return dlang_ret;" ~ newline;
+                                }
+
+                                exp ~= "        }" ~ newline;
                             }
-                            exp ~= "        }" ~ newline;
+
+                            csagg.methods ~= exp;
                         }
-                        csagg.methods ~= exp;
-                    }
+                    }}
                 }
             }
         }

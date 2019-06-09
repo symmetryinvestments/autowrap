@@ -95,10 +95,9 @@ private string generateConstructors(T)(ref string[] imports)
                 static foreach(nda; 0 .. numDefaultArgs!c + 1)
                 {{
                     enum numParams = ParamTypes.length - nda;
-
-                    string exp = "extern(C) export ";
                     enum interfaceName = format("%s%s_%s", getDLangInterfaceName(fqn, "__ctor"), i, numParams);
 
+                    string exp = "extern(C) export ";
                     exp ~= mixin(interp!"returnValue!(${fqn}) ${interfaceName}(");
 
                     static foreach(pc; 0 .. paramNames.length - nda)
@@ -150,10 +149,13 @@ private string generateConstructors(T)(ref string[] imports)
     return ret;
 }
 
-private string generateMethods(T)(ref string[] imports) {
-    import autowrap.csharp.common : isDateTimeType, isDateTimeArrayType, getDLangInterfaceName, verifySupported;
+private string generateMethods(T)(ref string[] imports)
+{
+    import autowrap.csharp.common : isDateTimeType, isDateTimeArrayType, getDLangInterfaceName,
+                                    numDefaultArgs, verifySupported;
 
     import std.algorithm.comparison : among;
+    import std.format : format;
     import std.meta : AliasSeq, Filter, staticMap;
     import std.traits : isFunction, fullyQualifiedName, ReturnType, Parameters, ParameterIdentifierTuple;
 
@@ -162,17 +164,13 @@ private string generateMethods(T)(ref string[] imports) {
 
     foreach(m; __traits(allMembers, T))
     {
-        if (m.among("__ctor", "toHash", "opEquals", "opCmp", "factory"))
-            continue;
-
-        static if (is(typeof(__traits(getMember, T, m))))
+        static if (!m.among("__ctor", "toHash", "opEquals", "opCmp", "factory") &&
+                   is(typeof(__traits(getMember, T, m))))
         {
             foreach(oc, mo; __traits(getOverloads, T, m))
             {
                 static if(isFunction!mo && __traits(getProtection, mo).among("export", "public"))
                 {
-                    const string interfaceName = getDLangInterfaceName(fqn, m);
-
                     alias RT = ReturnType!mo;
                     alias returnTypeStr = getDLangInterfaceType!RT;
                     alias ParamTypes = Parameters!mo;
@@ -185,53 +183,65 @@ private string generateMethods(T)(ref string[] imports) {
                     {
                         addImports!Types(imports);
 
-                        string exp = "extern(C) export ";
-                        static if (!is(RT == void)) {
-                            exp ~= mixin(interp!"returnValue!(${returnTypeStr})");
-                        } else {
-                            exp ~= "returnVoid";
-                        }
-                        exp ~= mixin(interp!" ${interfaceName}${oc}(");
-                        if (is(T == struct)) {
-                            exp ~= mixin(interp!"ref ${fqn} __obj__, ");
-                        } else {
-                            exp ~= mixin(interp!"${fqn} __obj__, ");
-                        }
-                        static foreach(pc; 0..paramNames.length) {
-                            exp ~= mixin(interp!"${getDLangInterfaceType!(ParamTypes[pc])} ${paramNames[pc]}, ");
-                        }
-                        exp = exp[0..$-2];
-                        exp ~= ") nothrow {" ~ newline;
-                        exp ~= "    try {" ~ newline;
-                        exp ~= methodSetup ~ newline;
-                        exp ~= "        ";
-                        if (!is(RT == void)) {
-                            exp ~= "auto __result__ = ";
-                        }
-                        exp ~= mixin(interp!"__obj__.${m}(");
-                        static foreach(pc; 0..paramNames.length) {
-                            exp ~= mixin(interp!"${generateParameter!(ParamTypes[pc])(paramNames[pc])}, ");
-                        }
-                        if (paramNames.length > 0) {
-                            exp = exp[0..$-2];
-                        }
-                        exp ~= ");" ~ newline;
-                        static if (isDateTimeType!RT || isDateTimeArrayType!RT) {
-                            exp ~= mixin(interp!"        return returnValue!(${returnTypeStr})(${generateReturn!RT(\"__result__\")});${newline}");
-                        } else static if (!is(RT == void)) {
-                            exp ~= mixin(interp!"        return returnValue!(${returnTypeStr})(__result__);${newline}");
-                        } else {
-                            exp ~= "        return returnVoid();" ~ newline;
-                        }
-                        exp ~= "    } catch (Exception __ex__) {" ~ newline;
-                        if (!is(RT == void)) {
-                            exp ~= mixin(interp!"        return returnValue!(${returnTypeStr})(__ex__);${newline}");
-                        } else {
-                            exp ~= "        return returnVoid(__ex__);" ~ newline;
-                        }
-                        exp ~= "    }" ~ newline;
-                        exp ~= "}" ~ newline;
-                        ret ~= exp;
+                        static foreach(nda; 0 .. numDefaultArgs!mo + 1)
+                        {{
+                            enum numParams = ParamTypes.length - nda;
+                            enum interfaceName = format("%s%s_%s", getDLangInterfaceName(fqn, m), oc, numParams);
+
+                            string exp = "extern(C) export ";
+
+                            static if (!is(RT == void))
+                                exp ~= mixin(interp!"returnValue!(${returnTypeStr})");
+                            else
+                                exp ~= "returnVoid";
+
+                            exp ~= mixin(interp!" ${interfaceName}(");
+
+                            if (is(T == struct))
+                                exp ~= mixin(interp!"ref ${fqn} __obj__, ");
+                            else
+                                exp ~= mixin(interp!"${fqn} __obj__, ");
+
+                            static foreach(pc; 0 .. numParams)
+                                exp ~= mixin(interp!"${getDLangInterfaceType!(ParamTypes[pc])} ${paramNames[pc]}, ");
+
+                            exp = exp[0 .. $ - 2];
+                            exp ~= ") nothrow {" ~ newline;
+                            exp ~= "    try {" ~ newline;
+                            exp ~= methodSetup ~ newline;
+                            exp ~= "        ";
+
+                            if (!is(RT == void))
+                                exp ~= "auto __result__ = ";
+
+                            exp ~= mixin(interp!"__obj__.${m}(");
+
+                            static foreach(pc; 0 .. numParams)
+                                exp ~= mixin(interp!"${generateParameter!(ParamTypes[pc])(paramNames[pc])}, ");
+
+                            if (numParams != 0)
+                                exp = exp[0 .. $ - 2];
+
+                            exp ~= ");" ~ newline;
+
+                            static if (isDateTimeType!RT || isDateTimeArrayType!RT)
+                                exp ~= mixin(interp!"        return returnValue!(${returnTypeStr})(${generateReturn!RT(\"__result__\")});${newline}");
+                            else static if (!is(RT == void))
+                                exp ~= mixin(interp!"        return returnValue!(${returnTypeStr})(__result__);${newline}");
+                            else
+                                exp ~= "        return returnVoid();" ~ newline;
+
+                            exp ~= "    } catch (Exception __ex__) {" ~ newline;
+
+                            if (!is(RT == void))
+                                exp ~= mixin(interp!"        return returnValue!(${returnTypeStr})(__ex__);${newline}");
+                            else
+                                exp ~= "        return returnVoid(__ex__);" ~ newline;
+
+                            exp ~= "    }" ~ newline;
+                            exp ~= "}" ~ newline;
+                            ret ~= exp;
+                        }}
                     }
                 }
             }
