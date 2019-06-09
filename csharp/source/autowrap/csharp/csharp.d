@@ -277,7 +277,7 @@ private void generateMethods(T)(string libraryName)
     import std.conv : to;
     import std.format : format;
     import std.meta : AliasSeq, Filter;
-    import std.traits : moduleName, isArray, fullyQualifiedName, isFunction, functionAttributes, FunctionAttribute,
+    import std.traits : moduleName, isDynamicArray, fullyQualifiedName, isFunction, functionAttributes, FunctionAttribute,
                         ReturnType, Parameters, ParameterIdentifierTuple;
 
     alias fqn = fullyQualifiedName!T;
@@ -346,7 +346,7 @@ private void generateMethods(T)(string libraryName)
                                 {
                                     if (is(ParamTypes[pc] == string) || is(ParamTypes[pc] == wstring) || is(ParamTypes[pc] == dstring))
                                         exp ~= mixin(interp!"${getCSharpInterfaceType(fullyQualifiedName!(ParamTypes[pc]))} ${paramNames[pc]}, ");
-                                    else if (isArray!(ParamTypes[pc]))
+                                    else if (isDynamicArray!(ParamTypes[pc]))
                                         exp ~= mixin(interp!"Range<${getCSharpInterfaceType(fullyQualifiedName!(ParamTypes[pc]))}> ${paramNames[pc]}, ");
                                     else
                                         exp ~= mixin(interp!"${getCSharpInterfaceType(fullyQualifiedName!(ParamTypes[pc]))} ${paramNames[pc]}, ");
@@ -458,7 +458,7 @@ private void generateProperties(T)(string libraryName)
                         prop ~= mixin(interp!`get => new Range<string>(${getterInterfaceName}(${is(T == class) ? "" : "ref "}this), DStringType._wstring); `);
                     else static if (is(PT == dstring[]))
                         prop ~= mixin(interp!`get => new Range<string>(${getterInterfaceName}(${is(T == class) ? "" : "ref "}this), DStringType._dstring); `);
-                    else static if (isDynamicArray!(PT))
+                    else static if (isDynamicArray!PT)
                         prop ~= mixin(interp!`get => new Range<${getCSharpInterfaceType(fullyQualifiedName!PT)}>(${getterInterfaceName}(${is(T == class) ? "" : "ref "}this), DStringType.None); `);
                     else static if (is(PT == class))
                         prop ~= mixin(interp!`get => new ${getCSharpInterfaceType(fullyQualifiedName!PT)}(${getterInterfaceName}(${is(T == class) ? "" : "ref "}this)); `);
@@ -480,7 +480,7 @@ private void generateProperties(T)(string libraryName)
                         prop ~= mixin(interp!`set => ${setterInterfaceName}(${is(T == class) ? "" : "ref "}this, value.ToSlice(DStringType._wstring)); `);
                     else static if (is(PT == dstring[]))
                         prop ~= mixin(interp!`set => ${setterInterfaceName}(${is(T == class) ? "" : "ref "}this, value.ToSlice(DStringType._dstring)); `);
-                    else static if (isDynamicArray!(PT))
+                    else static if (isDynamicArray!PT)
                         prop ~= mixin(interp!`set => ${setterInterfaceName}(${is(T == class) ? "" : "ref "}this, value.ToSlice()); `);
                     else
                         prop ~= mixin(interp!`set => ${setterInterfaceName}(${is(T == class) ? "" : "ref "}this, value); `);
@@ -495,7 +495,7 @@ private void generateProperties(T)(string libraryName)
 
 private void generateFields(T)(string libraryName) if (is(T == class) || is(T == interface) || is(T == struct)) {
     import autowrap.csharp.common : getDLangInterfaceName, verifySupported;
-    import std.traits : moduleName, isArray, fullyQualifiedName, Fields, FieldNameTuple;
+    import std.traits : moduleName, isDynamicArray, fullyQualifiedName, Fields, FieldNameTuple;
 
     alias fqn = fullyQualifiedName!T;
     const string aggName = __traits(identifier, T);
@@ -541,7 +541,7 @@ private void generateFields(T)(string libraryName) if (is(T == class) || is(T ==
                         csagg.properties ~= mixin(interp!"        public Range<string> ${memberName} { get => new Range<string>(dlang_${fn}_get(this), DStringType._wstring); set => dlang_${fn}_set(this, value.ToSlice(DStringType._wstring)); }${newline}");
                     } else if (is(FT == dstring[])) {
                         csagg.properties ~= mixin(interp!"        public Range<string> ${memberName} { get => new Range<string>(dlang_${fn}_get(this), DStringType._dstring); set => dlang_${fn}_set(this, value.ToSlice(DStringType._dstring)); }${newline}");
-                    } else if (isArray!(FT)) {
+                    } else if (isDynamicArray!FT) {
                         csagg.properties ~= mixin(interp!"        public Range<${getCSharpInterfaceType(fullyQualifiedName!(FT))}> ${memberName} { get => new Range<${getCSharpInterfaceType(fullyQualifiedName!(FT))}>(dlang_${fn}_get(this), DStringType.None); set => dlang_${fn}_set(this, value.ToSlice()); }${newline}");
                     } else if (is(FT == class)) {
                         csagg.properties ~= mixin(interp!"        public ${getCSharpInterfaceType(fullyQualifiedName!(FT))} ${memberName} { get => new ${getCSharpInterfaceType(fullyQualifiedName!(FT))}(dlang_${fn}_get(this)); set => dlang_${fn}_set(this, value); }${newline}");
@@ -566,7 +566,7 @@ private void generateFields(T)(string libraryName) if (is(T == class) || is(T ==
                     auto pubName = nameTuple.public_;
                     auto privName = nameTuple.private_;
 
-                    if (isArray!(FT)) {
+                    if (isDynamicArray!FT) {
                         csagg.properties ~= mixin(interp!"        private slice ${privName};${newline}");
                         if (is(FT == string)) {
                             csagg.properties ~= mixin(interp!"        public string ${pubName} { get => SharedFunctions.SliceToString(${privName}, DStringType._string); set => ${privName} = SharedFunctions.CreateString(value); }${newline}");
@@ -601,7 +601,7 @@ private void generateFunctions(Modules...)(string libraryName) if(allSatisfy!(is
     import autowrap.csharp.common : getDLangInterfaceName, verifySupported;
     import autowrap.reflection: AllFunctions;
     import std.meta : AliasSeq, Filter;
-    import std.traits : isArray, fullyQualifiedName, ReturnType, Parameters, ParameterIdentifierTuple;
+    import std.traits : isDynamicArray, fullyQualifiedName, ReturnType, Parameters, ParameterIdentifierTuple;
 
     foreach(func; AllFunctions!Modules) {
         alias modName = func.moduleName;
@@ -631,7 +631,7 @@ private void generateFunctions(Modules...)(string libraryName) if(allSatisfy!(is
             funcStr ~= ");" ~ newline;
             if (is(RT == string) || is(RT == wstring) || is(RT == dstring)) {
                 funcStr ~= mixin(interp!"        public static string ${methodName}(");
-            } else if (isArray!RT) {
+            } else if (isDynamicArray!RT) {
                 funcStr ~= mixin(interp!"        public static Range<${getCSharpInterfaceType(returnTypeStr)}> ${methodName}(");
             } else {
                 funcStr ~= mixin(interp!"        public static ${getCSharpInterfaceType(returnTypeStr)} ${methodName}(");
@@ -639,7 +639,7 @@ private void generateFunctions(Modules...)(string libraryName) if(allSatisfy!(is
             static foreach(pc; 0..paramNames.length) {
                 if (is(ParamTypes[pc] == string) || is(ParamTypes[pc] == wstring) || is(ParamTypes[pc] == dstring)) {
                     funcStr ~= mixin(interp!"${getCSharpInterfaceType(fullyQualifiedName!(ParamTypes[pc]))} ${paramNames[pc]}, ");
-                } else if (isArray!(ParamTypes[pc])) {
+                } else if (isDynamicArray!(ParamTypes[pc])) {
                     funcStr ~= mixin(interp!"Range<${getCSharpInterfaceType(fullyQualifiedName!(ParamTypes[pc]))}> ${paramNames[pc]}, ");
                 } else {
                     funcStr ~= mixin(interp!"${getCSharpInterfaceType(fullyQualifiedName!(ParamTypes[pc]))} ${paramNames[pc]}, ");
@@ -657,7 +657,7 @@ private void generateFunctions(Modules...)(string libraryName) if(allSatisfy!(is
                     funcStr ~= mixin(interp!"SharedFunctions.CreateWString(${paramNames[pc]}), ");
                 } else if (is(ParamTypes[pc] == dstring)) {
                     funcStr ~= mixin(interp!"SharedFunctions.CreateDString(${paramNames[pc]}), ");
-                } else if (isArray!(ParamTypes[pc])) {
+                } else if (isDynamicArray!(ParamTypes[pc])) {
                     funcStr ~= mixin(interp!"${paramNames[pc]}.ToSlice(), ");
                 } else {
                     funcStr ~= mixin(interp!"${paramNames[pc]}, ");
@@ -682,7 +682,7 @@ private void generateFunctions(Modules...)(string libraryName) if(allSatisfy!(is
                     funcStr ~= mixin(interp!"            return new Range<string>(dlang_ret, DStringType._wstring);${newline}");
                 } else if (is(RT == dstring[])) {
                     funcStr ~= mixin(interp!"            return new Range<string>(dlang_ret, DStringType._dstring);${newline}");
-                } else if (isArray!RT) {
+                } else if (isDynamicArray!RT) {
                     funcStr ~= mixin(interp!"            return new Range<${getCSharpInterfaceType(returnTypeStr)}>(dlang_ret, DStringType.None);${newline}");
                 } else {
                     funcStr ~= "            return dlang_ret;" ~ newline;
