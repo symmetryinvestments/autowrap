@@ -169,91 +169,103 @@ public string generateCSharp(Modules...)(LibraryName libraryName, RootNamespace 
 }
 
 private void generateConstructors(T)(string libraryName) if (is(T == class) || is(T == struct)) {
-    import autowrap.csharp.common : getDLangInterfaceName, verifySupported;
-    import std.conv : to;
-    import std.traits : moduleName, fullyQualifiedName, hasMember, Parameters, ParameterIdentifierTuple;
-    import std.meta: AliasSeq, Filter;
+    import autowrap.csharp.common : getDLangInterfaceName, numDefaultArgs, verifySupported;
+
     import std.algorithm : among;
+    import std.conv : to;
+    import std.format : format;
+    import std.meta: AliasSeq, Filter;
+    import std.traits : moduleName, fullyQualifiedName, hasMember, Parameters, ParameterIdentifierTuple;
 
     alias fqn = fullyQualifiedName!T;
     const string aggName = __traits(identifier, T);
     CSharpAggregate csagg = getAggregate(getCSharpName(moduleName!T), getCSharpName(aggName), !is(T == class));
 
     //Generate constructor methods
-    static if(hasMember!(T, "__ctor") && __traits(getProtection, __traits(getMember, T, "__ctor")).among("export", "public")) {
-        foreach(i, c; __traits(getOverloads, T, "__ctor")) {
-            if (__traits(getProtection, c).among("export", "public")) {
+    static if(hasMember!(T, "__ctor") && __traits(getProtection, __traits(getMember, T, "__ctor")).among("export", "public"))
+    {
+        foreach(i, c; __traits(getOverloads, T, "__ctor"))
+        {
+            if (__traits(getProtection, c).among("export", "public"))
+            {
                 alias paramNames = ParameterIdentifierTuple!c;
                 alias ParamTypes = Parameters!c;
 
                 static if(Filter!(verifySupported, ParamTypes).length != ParamTypes.length)
                     continue;
 
-                enum iStr = to!string(i);
-                const string interfaceName = getDLangInterfaceName(fqn, "__ctor") ~ iStr;
-                const string methodName = getCSharpMethodInterfaceName(aggName, "__ctor") ~ iStr;
-                string ctor = dllImportString.format(libraryName, interfaceName);
-                ctor ~= mixin(interp!"        private static extern ${getDLangReturnType!(T, T)()} dlang_${methodName}(");
-                static foreach(pc; 0..paramNames.length) {
-                    if (is(ParamTypes[pc] == class)) {
-                        ctor ~= mixin(interp!"IntPtr ${paramNames[pc]}, ");
-                    } else {
-                        ctor ~= mixin(interp!"${is(ParamTypes[pc] == bool) ? \"[MarshalAs(UnmanagedType.Bool)]\" : string.init}${getDLangInterfaceType!(ParamTypes[pc], T)()} ${paramNames[pc]}, ");
+                static foreach(nda; 0 .. numDefaultArgs!c + 1)
+                {{
+                    enum numParams = ParamTypes.length - nda;
+
+                    const string interfaceName = format("%s%s_%s", getDLangInterfaceName(fqn, "__ctor"), i, numParams);
+                    const string methodName = format("%s%s_%s", getCSharpMethodInterfaceName(aggName, "__ctor"), i, numParams);
+
+                    string ctor = dllImportString.format(libraryName, interfaceName);
+                    ctor ~= mixin(interp!"        private static extern ${getDLangReturnType!(T, T)()} dlang_${methodName}(");
+
+                    static foreach(pc; 0 .. numParams)
+                    {
+                        if (is(ParamTypes[pc] == class))
+                            ctor ~= mixin(interp!"IntPtr ${paramNames[pc]}, ");
+                        else
+                            ctor ~= mixin(interp!"${is(ParamTypes[pc] == bool) ? \"[MarshalAs(UnmanagedType.Bool)]\" : string.init}${getDLangInterfaceType!(ParamTypes[pc], T)()} ${paramNames[pc]}, ");
                     }
-                }
-                if (paramNames.length > 0) {
-                    ctor = ctor[0..$-2];
-                }
-                ctor ~= ");" ~ newline;
-                ctor ~= mixin(interp!"        public ${getCSharpName(aggName)}(");
-                static foreach(pc; 0..paramNames.length) {
-                    ctor ~= mixin(interp!"${getCSharpInterfaceType(fullyQualifiedName!(ParamTypes[pc]))} ${paramNames[pc]}, ");
-                }
-                if (paramNames.length > 0) {
-                    ctor = ctor[0..$-2];
-                }
-                static if (is(T == class))
-                    ctor ~= mixin(interp!") : base(dlang_${methodName}(");
-                else static if(is(T == struct))
-                {
-                    ctor ~= ") {" ~ newline;
-                    ctor ~= mixin(interp!"            this = dlang_${methodName}(");
-                }
-                else
-                    static assert(false, "Somehow, this type has a constructor even though it is neither a class nor a struct: " ~ T.stringof);
 
-                static foreach(pc; 0..paramNames.length) {
-                    static if (is(ParamTypes[pc] == string)) {
-                        ctor ~= mixin(interp!"SharedFunctions.CreateString(${paramNames[pc]}), ");
-                    } else static if (is(ParamTypes[pc] == wstring)) {
-                        ctor ~= mixin(interp!"SharedFunctions.CreateWString(${paramNames[pc]}), ");
-                    } else static if (is(ParamTypes[pc] == dstring)) {
-                        ctor ~= mixin(interp!"SharedFunctions.CreateDString(${paramNames[pc]}), ");
-                    } else {
-                        ctor ~= mixin(interp!"${paramNames[pc]}, ");
+                    if (numParams != 0)
+                        ctor = ctor[0 .. $ - 2];
+
+                    ctor ~= ");" ~ newline;
+                    ctor ~= mixin(interp!"        public ${getCSharpName(aggName)}(");
+                    static foreach(pc; 0 .. numParams)
+                        ctor ~= mixin(interp!"${getCSharpInterfaceType(fullyQualifiedName!(ParamTypes[pc]))} ${paramNames[pc]}, ");
+
+                    if (numParams != 0)
+                        ctor = ctor[0 .. $ - 2];
+
+                    static if (is(T == class))
+                        ctor ~= mixin(interp!") : base(dlang_${methodName}(");
+                    else static if(is(T == struct))
+                    {
+                        ctor ~= ") {" ~ newline;
+                        ctor ~= mixin(interp!"            this = dlang_${methodName}(");
                     }
-                }
-                if (paramNames.length > 0) {
-                    ctor = ctor[0..$-2];
-                }
+                    else
+                        static assert(false, "Somehow, this type has a constructor even though it is neither a class nor a struct: " ~ T.stringof);
 
-                ctor ~= ")";
+                    static foreach(pc; 0 .. numParams)
+                    {
+                        static if (is(ParamTypes[pc] == string))
+                            ctor ~= mixin(interp!"SharedFunctions.CreateString(${paramNames[pc]}), ");
+                        else static if (is(ParamTypes[pc] == wstring))
+                            ctor ~= mixin(interp!"SharedFunctions.CreateWString(${paramNames[pc]}), ");
+                        else static if (is(ParamTypes[pc] == dstring))
+                            ctor ~= mixin(interp!"SharedFunctions.CreateDString(${paramNames[pc]}), ");
+                        else
+                            ctor ~= mixin(interp!"${paramNames[pc]}, ");
+                    }
 
-                static if (is(T == class))
-                    ctor ~= ") { }" ~ newline;
-                else
-                {
-                    ctor ~= ";" ~ newline;
-                    ctor ~= "        }" ~ newline;
-                }
+                    if (numParams != 0)
+                        ctor = ctor[0 .. $ - 2];
 
-                csagg.constructors ~= ctor;
+                    ctor ~= ")";
+
+                    static if (is(T == class))
+                        ctor ~= ") { }" ~ newline;
+                    else
+                    {
+                        ctor ~= ";" ~ newline;
+                        ctor ~= "        }" ~ newline;
+                    }
+
+                    csagg.constructors ~= ctor;
+                }}
             }
         }
     }
-    if (is(T == class)) {
+
+    if (is(T == class))
         csagg.constructors ~= mixin(interp!"        internal ${getCSharpName(aggName)}(IntPtr ptr) : base(ptr) { }${newline}");
-    }
 }
 
 private void generateMethods(T)(string libraryName) if (is(T == class) || is(T == interface) || is(T == struct)) {

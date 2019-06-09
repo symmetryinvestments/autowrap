@@ -65,11 +65,13 @@ public string wrapDLang(Modules...)() if(allSatisfy!(isModule, Modules)) {
 // parameter is named prefix).
 private enum AdjParamName(string paramName) = paramName ~ "_param";
 
-private string generateConstructors(T)(ref string[] imports) {
-    import autowrap.csharp.common : getDLangInterfaceName, verifySupported;
+private string generateConstructors(T)(ref string[] imports)
+{
+    import autowrap.csharp.common : getDLangInterfaceName, numDefaultArgs, verifySupported;
 
     import std.algorithm.comparison : among;
     import std.conv : to;
+    import std.format : format;
     import std.meta : Filter, staticMap;
     import std.traits : fullyQualifiedName, hasMember, Parameters, ParameterIdentifierTuple;
 
@@ -77,9 +79,12 @@ private string generateConstructors(T)(ref string[] imports) {
     alias fqn = getDLangInterfaceType!T;
 
     //Generate constructor methods
-    static if(hasMember!(T, "__ctor") && __traits(getProtection, __traits(getMember, T, "__ctor")).among("export", "public")) {
-        foreach(i, c; __traits(getOverloads, T, "__ctor")) {
-            if (__traits(getProtection, c).among("export", "public")) {
+    static if(hasMember!(T, "__ctor") && __traits(getProtection, __traits(getMember, T, "__ctor")).among("export", "public"))
+    {
+        foreach(i, c; __traits(getOverloads, T, "__ctor"))
+        {
+            if (__traits(getProtection, c).among("export", "public"))
+            {
                 alias paramNames = staticMap!(AdjParamName, ParameterIdentifierTuple!c);
                 alias ParamTypes = Parameters!c;
 
@@ -87,46 +92,57 @@ private string generateConstructors(T)(ref string[] imports) {
                     continue;
                 addImports!ParamTypes(imports);
 
-                string exp = "extern(C) export ";
-                const string interfaceName = getDLangInterfaceName(fqn, "__ctor") ~ to!string(i);
+                static foreach(nda; 0 .. numDefaultArgs!c + 1)
+                {{
+                    enum numParams = ParamTypes.length - nda;
 
-                exp ~= mixin(interp!"returnValue!(${fqn}) ${interfaceName}(");
+                    string exp = "extern(C) export ";
+                    enum interfaceName = format("%s%s_%s", getDLangInterfaceName(fqn, "__ctor"), i, numParams);
 
-                static foreach(pc; 0..paramNames.length) {
-                    exp ~= mixin(interp!"${getDLangInterfaceType!(ParamTypes[pc])} ${paramNames[pc]}, ");
-                }
-                if (ParamTypes.length > 0) {
-                    exp = exp[0..$-2];
-                }
-                exp ~= ") nothrow {" ~ newline;
-                exp ~= "    try {" ~ newline;
-                exp ~= methodSetup ~ newline;
-                if (is(T == class)) {
-                    exp ~= mixin(interp!"        ${fqn} __temp__ = new ${fqn}(");
-                    static foreach(pc; 0..paramNames.length) {
-                        exp ~= mixin(interp!"${paramNames[pc]}, ");
+                    exp ~= mixin(interp!"returnValue!(${fqn}) ${interfaceName}(");
+
+                    static foreach(pc; 0 .. paramNames.length - nda)
+                        exp ~= mixin(interp!"${getDLangInterfaceType!(ParamTypes[pc])} ${paramNames[pc]}, ");
+
+                    if (numParams != 0)
+                        exp = exp[0 .. $ - 2];
+
+                    exp ~= ") nothrow {" ~ newline;
+                    exp ~= "    try {" ~ newline;
+                    exp ~= methodSetup ~ newline;
+                    if (is(T == class))
+                    {
+                        exp ~= mixin(interp!"        ${fqn} __temp__ = new ${fqn}(");
+
+                        static foreach(pc; 0 .. numParams)
+                            exp ~= mixin(interp!"${paramNames[pc]}, ");
+
+                        if (numParams != 0)
+                            exp = exp[0 .. $ - 2];
+
+                        exp ~= ");" ~ newline;
+                        exp ~= "        pinPointer(cast(void*)__temp__);" ~ newline;
+                        exp ~= mixin(interp!"        return returnValue!(${fqn})(__temp__);${newline}");
                     }
-                    if (ParamTypes.length > 0) {
-                        exp = exp[0..$-2];
+                    else if (is(T == struct))
+                    {
+                        exp ~= mixin(interp!"        return returnValue!(${fqn})(${fqn}(");
+
+                        foreach(pn; paramNames)
+                            exp ~= mixin(interp!"${pn}, ");
+
+                        if (numParams != 0)
+                            exp = exp[0 .. $ - 2];
+
+                        exp ~= "));" ~ newline;
                     }
-                    exp ~= ");" ~ newline;
-                    exp ~= "        pinPointer(cast(void*)__temp__);" ~ newline;
-                    exp ~= mixin(interp!"        return returnValue!(${fqn})(__temp__);${newline}");
-                } else if (is(T == struct)) {
-                    exp ~= mixin(interp!"        return returnValue!(${fqn})(${fqn}(");
-                    foreach(pn; paramNames) {
-                        exp ~= mixin(interp!"${pn}, ");
-                    }
-                    if (ParamTypes.length > 0) {
-                        exp = exp[0..$-2];
-                    }
-                    exp ~= "));" ~ newline;
-                }
-                exp ~= "    } catch (Exception __ex__) {" ~ newline;
-                exp ~= mixin(interp!"        return returnValue!(${fqn})(__ex__);${newline}");
-                exp ~= "    }" ~ newline;
-                exp ~= "}" ~ newline;
-                ret ~= exp;
+
+                    exp ~= "    } catch (Exception __ex__) {" ~ newline;
+                    exp ~= mixin(interp!"        return returnValue!(${fqn})(__ex__);${newline}");
+                    exp ~= "    }" ~ newline;
+                    exp ~= "}" ~ newline;
+                    ret ~= exp;
+                }}
             }
         }
     }

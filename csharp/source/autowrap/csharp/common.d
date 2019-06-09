@@ -81,8 +81,56 @@ package template verifySupported(T)
     }
 }
 
+package template numDefaultArgs(alias func)
+{
+    import std.meta : Filter;
+    import std.traits : ParameterDefaults;
+
+    enum numDefaultArgs = Filter!(isNotVoid, ParameterDefaults!func).length;
+
+    private static template isNotVoid(values...)
+        if(values.length == 1)
+    {
+        enum isNotVoid = !is(values[0] == void);
+    }
+}
+
+// Unfortunately, while these tests have been tested on their own, they don't
+// currently run as part of autowrap's tests, because dub test doesn't work for
+// the csharp folder, and the top level one does not run them.
+unittest
+{
+    import std.meta : AliasSeq;
+
+    static void foo1() {}
+    static void foo2(int) {}
+    static void foo3(int, string) {}
+    static void foo4(int, string, int) {}
+
+    foreach(f; AliasSeq!(foo1, foo2, foo3, foo4))
+        static assert(numDefaultArgs!f == 0);
+
+    static void foo5(int i = 42) {}
+    static void foo6(int, string s = "hello") {}
+    static void foo7(int, string, int j = 97) {}
+
+    foreach(f; AliasSeq!(foo5, foo6, foo7))
+        static assert(numDefaultArgs!f == 1);
+
+    static void foo9(int i = 42, string s = "hello") {}
+    static void foo10(int, string s = "hello", int j = 97) {}
+
+    foreach(f; AliasSeq!(foo9, foo10))
+        static assert(numDefaultArgs!f == 2);
+
+    static void foo11(int i = 42, string s = "hello", int j = 97) {}
+
+    static assert(numDefaultArgs!foo11 == 3);
+}
+
 package template isSupportedType(T)
 {
+    import std.range.primitives : ElementType;
     import std.traits : isBoolean, isDynamicArray, isIntegral, isSomeChar, TemplateOf, Unqual;
 
     static if(isIntegral!T || isBoolean!T || isSomeChar!T ||
@@ -102,11 +150,12 @@ package template isSupportedType(T)
         enum isSupportedType = false;
 }
 
-// Unfortunately, these aren't actually tested yet, because dub test doesn't work
-// for the csharp folder, and the top level one does not run them.
+// Unfortunately, while these tests have been tested on their own, they don't
+// currently run as part of autowrap's tests, because dub test doesn't work for
+// the csharp folder, and the top level one does not run them.
 unittest
 {
-    import std.meta : AiasSeq;
+    import std.meta : AliasSeq;
     import std.typecons : Tuple;
 
     static struct S {}
@@ -119,8 +168,8 @@ unittest
         static assert(isSupportedType!T, T.stringof);
     }
     foreach(T; AliasSeq!(int*, int*[], int[][], int[][][], int[int], cfloat, cdouble, creal, ifloat, idouble, ireal,
-                         Tuple!int, Tuple(string, string)))
+                         Tuple!int, Tuple!(string, string)))
     {
-        static assert(isSupportedType!T, T.stringof);
+        static assert(!isSupportedType!T, T.stringof);
     }
 }
