@@ -285,76 +285,85 @@ private string generateFields(T)(ref string[] imports) {
     return ret;
 }
 
-private string generateFunctions(Modules...)(ref string[] imports) if(allSatisfy!(isModule, Modules)) {
-    import autowrap.csharp.common : getDLangInterfaceName, verifySupported;
+private string generateFunctions(Modules...)(ref string[] imports)
+    if(allSatisfy!(isModule, Modules))
+{
+    import autowrap.csharp.common : getDLangInterfaceName, numDefaultArgs, verifySupported;
     import autowrap.reflection: AllFunctions;
 
+    import std.format : format;
     import std.meta : AliasSeq, Filter, staticMap;
     import std.traits : fullyQualifiedName, hasMember, functionAttributes, FunctionAttribute,
                         ReturnType, Parameters, ParameterIdentifierTuple;
 
     string ret;
 
-    foreach(func; AllFunctions!Modules) {
-        alias modName = func.moduleName;
-        alias funcName = func.name;
-
-        alias RT = ReturnType!(__traits(getMember, func.module_, func.name));
-        alias returnTypeStr = getDLangInterfaceType!(ReturnType!(__traits(getMember, func.module_, func.name)));
-        alias ParamTypes = Parameters!(__traits(getMember, func.module_, func.name));
-        alias paramNames = staticMap!(AdjParamName, ParameterIdentifierTuple!(__traits(getMember, func.module_, func.name)));
-        enum interfaceName = getDLangInterfaceName(modName, null, funcName);
-        alias Types = AliasSeq!(RT, ParamTypes);
-
-        static if(Filter!(verifySupported, Types).length != Types.length)
-            continue;
-        else
+    foreach(func; AllFunctions!Modules)
+    {
+        foreach(oc, overload; __traits(getOverloads, func.module_, func.name))
         {
-            addImports!Types(imports);
+            alias RT = ReturnType!overload;
+            alias ParamTypes = Parameters!overload;
+            alias Types = AliasSeq!(RT, ParamTypes);
 
-            string retType;
-            string funcStr = "extern(C) export ";
+            static if(Filter!(verifySupported, Types).length != Types.length)
+                continue;
+            else
+            {
+                addImports!Types(imports);
 
-            static if (!is(RT == void)) {
-                retType ~= mixin(interp!"returnValue!(${returnTypeStr})");
-            } else {
-                retType ~= "returnVoid";
-            }
+                static foreach(nda; 0 .. numDefaultArgs!overload + 1)
+                {{
+                    enum numParams = ParamTypes.length - nda;
+                    enum interfaceName = format("%s%s_%s", getDLangInterfaceName(func.moduleName, null, func.name), oc, numParams);
+                    alias returnTypeStr = getDLangInterfaceType!RT;
+                    alias paramNames = staticMap!(AdjParamName, ParameterIdentifierTuple!overload);
 
-            funcStr ~= mixin(interp!"${retType} ${interfaceName}(");
-            static foreach(pc; 0..paramNames.length) {
-                funcStr ~= mixin(interp!"${getDLangInterfaceType!(ParamTypes[pc])} ${paramNames[pc]}, ");
-            }
-            if(paramNames.length > 0) {
-                funcStr = funcStr[0..$-2];
-            }
-            funcStr ~= ") nothrow {" ~ newline;
-            funcStr ~= "    try {" ~ newline;
-            funcStr ~= methodSetup ~ newline;
-            funcStr ~= "        ";
-            if (!is(RT == void)) {
-                funcStr ~= mixin(interp!"auto __return__ = ${func.name}(");
-            } else {
-                funcStr ~= mixin(interp!"${func.name}(");
-            }
-            static foreach(pc; 0..paramNames.length) {
-                funcStr ~= mixin(interp!"${generateParameter!(ParamTypes[pc])(paramNames[pc])}, ");
-            }
-            if(paramNames.length > 0) {
-                funcStr = funcStr[0..$-2];
-            }
-            funcStr ~= ");" ~ newline;
-            if (!is(RT == void)) {
-                funcStr ~= mixin(interp!"        return ${retType}(${generateReturn!RT(\"__return__\")});${newline}");
-            } else {
-                funcStr ~= mixin(interp!"        return ${retType}();${newline}");
-            }
-            funcStr ~= "    } catch (Exception __ex__) {" ~ newline;
-            funcStr ~= mixin(interp!"        return ${retType}(__ex__);${newline}");
-            funcStr ~= "    }" ~ newline;
-            funcStr ~= "}" ~ newline;
+                    static if (!is(RT == void))
+                        string retType = mixin(interp!"returnValue!(${returnTypeStr})");
+                    else
+                        string retType = "returnVoid";
 
-            ret ~= funcStr;
+                    string funcStr = "extern(C) export ";
+                    funcStr ~= mixin(interp!"${retType} ${interfaceName}(");
+
+                    static foreach(pc; 0 .. numParams)
+                        funcStr ~= mixin(interp!"${getDLangInterfaceType!(ParamTypes[pc])} ${paramNames[pc]}, ");
+
+                    if(numParams != 0)
+                        funcStr = funcStr[0 .. $ - 2];
+
+                    funcStr ~= ") nothrow {" ~ newline;
+                    funcStr ~= "    try {" ~ newline;
+                    funcStr ~= methodSetup ~ newline;
+                    funcStr ~= "        ";
+
+                    if (!is(RT == void))
+                        funcStr ~= mixin(interp!"auto __return__ = ${func.name}(");
+                    else
+                        funcStr ~= mixin(interp!"${func.name}(");
+
+                    static foreach(pc; 0 .. numParams)
+                        funcStr ~= mixin(interp!"${generateParameter!(ParamTypes[pc])(paramNames[pc])}, ");
+
+                    if(numParams != 0)
+                        funcStr = funcStr[0 .. $ - 2];
+
+                    funcStr ~= ");" ~ newline;
+
+                    if (!is(RT == void))
+                        funcStr ~= mixin(interp!"        return ${retType}(${generateReturn!RT(\"__return__\")});${newline}");
+                    else
+                        funcStr ~= mixin(interp!"        return ${retType}();${newline}");
+
+                    funcStr ~= "    } catch (Exception __ex__) {" ~ newline;
+                    funcStr ~= mixin(interp!"        return ${retType}(__ex__);${newline}");
+                    funcStr ~= "    }" ~ newline;
+                    funcStr ~= "}" ~ newline;
+
+                    ret ~= funcStr;
+                }}
+            }
         }
     }
 

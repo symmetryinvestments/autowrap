@@ -597,100 +597,118 @@ private void generateFields(T)(string libraryName) if (is(T == class) || is(T ==
     }
 }
 
-private void generateFunctions(Modules...)(string libraryName) if(allSatisfy!(isModule, Modules)) {
-    import autowrap.csharp.common : getDLangInterfaceName, verifySupported;
+private void generateFunctions(Modules...)(string libraryName)
+    if(allSatisfy!(isModule, Modules))
+{
+    import autowrap.csharp.common : getDLangInterfaceName, numDefaultArgs, verifySupported;
     import autowrap.reflection: AllFunctions;
+
+    import std.format : format;
     import std.meta : AliasSeq, Filter;
     import std.traits : isDynamicArray, fullyQualifiedName, ReturnType, Parameters, ParameterIdentifierTuple;
 
-    foreach(func; AllFunctions!Modules) {
-        alias modName = func.moduleName;
-        alias funcName = func.name;
-
-        alias RT = ReturnType!(__traits(getMember, func.module_, func.name));
-        alias returnTypeStr = fullyQualifiedName!RT;
-        alias ParamTypes = Parameters!(__traits(getMember, func.module_, func.name));
-        alias paramNames = ParameterIdentifierTuple!(__traits(getMember, func.module_, func.name));
-        alias Types = AliasSeq!(RT, ParamTypes);
-
-        static if(Filter!(verifySupported, Types).length != Types.length)
-            continue;
-        else
+    foreach(func; AllFunctions!Modules)
+    {
+        foreach(oc, overload; __traits(getOverloads, func.module_, func.name))
         {
-            const string interfaceName = getDLangInterfaceName(modName, null, funcName);
-            const string methodName = getCSharpMethodInterfaceName(null, funcName);
-            string retType = getDLangReturnType!RT();
-            string funcStr = dllImportString.format(libraryName, interfaceName) ~ newline;
-            funcStr ~= mixin(interp!"        private static extern ${retType} dlang_${methodName}(");
-            static foreach(pc; 0..paramNames.length) {
-                funcStr ~= mixin(interp!"${is(ParamTypes[pc] == bool) ? \"[MarshalAs(UnmanagedType.Bool)]\" : string.init}${getDLangInterfaceType!(ParamTypes[pc])()} ${paramNames[pc]}, ");
-            }
-            if (paramNames.length > 0) {
-                funcStr = funcStr[0..$-2];
-            }
-            funcStr ~= ");" ~ newline;
-            if (is(RT == string) || is(RT == wstring) || is(RT == dstring)) {
-                funcStr ~= mixin(interp!"        public static string ${methodName}(");
-            } else if (isDynamicArray!RT) {
-                funcStr ~= mixin(interp!"        public static Range<${getCSharpInterfaceType(returnTypeStr)}> ${methodName}(");
-            } else {
-                funcStr ~= mixin(interp!"        public static ${getCSharpInterfaceType(returnTypeStr)} ${methodName}(");
-            }
-            static foreach(pc; 0..paramNames.length) {
-                if (is(ParamTypes[pc] == string) || is(ParamTypes[pc] == wstring) || is(ParamTypes[pc] == dstring)) {
-                    funcStr ~= mixin(interp!"${getCSharpInterfaceType(fullyQualifiedName!(ParamTypes[pc]))} ${paramNames[pc]}, ");
-                } else if (isDynamicArray!(ParamTypes[pc])) {
-                    funcStr ~= mixin(interp!"Range<${getCSharpInterfaceType(fullyQualifiedName!(ParamTypes[pc]))}> ${paramNames[pc]}, ");
-                } else {
-                    funcStr ~= mixin(interp!"${getCSharpInterfaceType(fullyQualifiedName!(ParamTypes[pc]))} ${paramNames[pc]}, ");
-                }
-            }
-            if (paramNames.length > 0) {
-                funcStr = funcStr[0..$-2];
-            }
-            funcStr ~= ") {" ~ newline;
-            funcStr ~= mixin(interp!"            var dlang_ret = dlang_${methodName}(");
-            static foreach(pc; 0..paramNames.length) {
-                if (is(ParamTypes[pc] == string)) {
-                    funcStr ~= mixin(interp!"SharedFunctions.CreateString(${paramNames[pc]}), ");
-                } else if (is(ParamTypes[pc] == wstring)) {
-                    funcStr ~= mixin(interp!"SharedFunctions.CreateWString(${paramNames[pc]}), ");
-                } else if (is(ParamTypes[pc] == dstring)) {
-                    funcStr ~= mixin(interp!"SharedFunctions.CreateDString(${paramNames[pc]}), ");
-                } else if (isDynamicArray!(ParamTypes[pc])) {
-                    funcStr ~= mixin(interp!"${paramNames[pc]}.ToSlice(), ");
-                } else {
-                    funcStr ~= mixin(interp!"${paramNames[pc]}, ");
-                }
-            }
-            if (paramNames.length > 0) {
-                funcStr = funcStr[0..$-2];
-            }
-            funcStr ~= ");" ~ newline;
-            if (is(RT == void)) {
-                funcStr ~= "            dlang_ret.EnsureValid();" ~ newline;
-            } else {
-                if (is(RT == string)) {
-                    funcStr ~= "            return SharedFunctions.SliceToString(dlang_ret, DStringType._string);" ~ newline;
-                } else if (is(RT == wstring)) {
-                    funcStr ~= "            return SharedFunctions.SliceToString(dlang_ret, DStringType._wstring);" ~ newline;
-                } else if (is(RT == dstring)) {
-                    funcStr ~= "            return SharedFunctions.SliceToString(dlang_ret, DStringType._dstring);" ~ newline;
-                } else if (is(RT == string[])) {
-                    funcStr ~= mixin(interp!"            return new Range<string>(dlang_ret, DStringType._string);${newline}");
-                } else if (is(RT == wstring[])) {
-                    funcStr ~= mixin(interp!"            return new Range<string>(dlang_ret, DStringType._wstring);${newline}");
-                } else if (is(RT == dstring[])) {
-                    funcStr ~= mixin(interp!"            return new Range<string>(dlang_ret, DStringType._dstring);${newline}");
-                } else if (isDynamicArray!RT) {
-                    funcStr ~= mixin(interp!"            return new Range<${getCSharpInterfaceType(returnTypeStr)}>(dlang_ret, DStringType.None);${newline}");
-                } else {
-                    funcStr ~= "            return dlang_ret;" ~ newline;
-                }
-            }
-            funcStr ~= "        }" ~ newline;
+            alias RT = ReturnType!overload;
+            alias ParamTypes = Parameters!overload;
+            alias Types = AliasSeq!(RT, ParamTypes);
 
-            getNamespace(getCSharpName(modName)).functions ~= funcStr;
+            static if(Filter!(verifySupported, Types).length != Types.length)
+                continue;
+            else
+            {
+                static foreach(nda; 0 .. numDefaultArgs!overload + 1)
+                {{
+                    enum numParams = ParamTypes.length - nda;
+                    enum interfaceName = format("%s%s_%s", getDLangInterfaceName(func.moduleName, null, func.name), oc, numParams);
+                    enum methodName = getCSharpMethodInterfaceName(null, func.name);
+                    enum methodInterfaceName = format("dlang_%s", methodName);
+
+                    enum returnTypeStr = getCSharpInterfaceType(fullyQualifiedName!RT);
+                    alias paramNames = ParameterIdentifierTuple!overload;
+
+                    string retType = getDLangReturnType!RT();
+                    string funcStr = dllImportString.format(libraryName, interfaceName) ~ newline;
+                    funcStr ~= mixin(interp!"        private static extern ${retType} ${methodInterfaceName}(");
+                    static foreach(pc; 0 .. numParams)
+                        funcStr ~= mixin(interp!"${is(ParamTypes[pc] == bool) ? \"[MarshalAs(UnmanagedType.Bool)]\" : string.init}${getDLangInterfaceType!(ParamTypes[pc])()} ${paramNames[pc]}, ");
+
+                    if (numParams != 0)
+                        funcStr = funcStr[0 .. $ - 2];
+
+                    funcStr ~= ");" ~ newline;
+
+                    if (is(RT == string) || is(RT == wstring) || is(RT == dstring))
+                        funcStr ~= mixin(interp!"        public static string ${methodName}(");
+                    else if (isDynamicArray!RT)
+                        funcStr ~= mixin(interp!"        public static Range<${returnTypeStr}> ${methodName}(");
+                    else
+                        funcStr ~= mixin(interp!"        public static ${returnTypeStr} ${methodName}(");
+
+                    static foreach(pc; 0 .. numParams)
+                    {
+                        if (is(ParamTypes[pc] == string) || is(ParamTypes[pc] == wstring) || is(ParamTypes[pc] == dstring))
+                            funcStr ~= mixin(interp!"${getCSharpInterfaceType(fullyQualifiedName!(ParamTypes[pc]))} ${paramNames[pc]}, ");
+                        else if (isDynamicArray!(ParamTypes[pc]))
+                            funcStr ~= mixin(interp!"Range<${getCSharpInterfaceType(fullyQualifiedName!(ParamTypes[pc]))}> ${paramNames[pc]}, ");
+                        else
+                            funcStr ~= mixin(interp!"${getCSharpInterfaceType(fullyQualifiedName!(ParamTypes[pc]))} ${paramNames[pc]}, ");
+                    }
+
+                    if (numParams != 0)
+                        funcStr = funcStr[0 .. $ - 2];
+
+                    funcStr ~= ") {" ~ newline;
+                    funcStr ~= mixin(interp!"            var dlang_ret = ${methodInterfaceName}(");
+
+                    static foreach(pc; 0 .. numParams)
+                    {
+                        if (is(ParamTypes[pc] == string))
+                            funcStr ~= mixin(interp!"SharedFunctions.CreateString(${paramNames[pc]}), ");
+                        else if (is(ParamTypes[pc] == wstring))
+                            funcStr ~= mixin(interp!"SharedFunctions.CreateWString(${paramNames[pc]}), ");
+                        else if (is(ParamTypes[pc] == dstring))
+                            funcStr ~= mixin(interp!"SharedFunctions.CreateDString(${paramNames[pc]}), ");
+                        else if (isDynamicArray!(ParamTypes[pc]))
+                            funcStr ~= mixin(interp!"${paramNames[pc]}.ToSlice(), ");
+                        else
+                            funcStr ~= mixin(interp!"${paramNames[pc]}, ");
+                    }
+
+                    if (numParams != 0)
+                        funcStr = funcStr[0 .. $ - 2];
+
+                    funcStr ~= ");" ~ newline;
+
+                    if (is(RT == void))
+                        funcStr ~= "            dlang_ret.EnsureValid();" ~ newline;
+                    else
+                    {
+                        if (is(RT == string))
+                            funcStr ~= "            return SharedFunctions.SliceToString(dlang_ret, DStringType._string);" ~ newline;
+                        else if (is(RT == wstring))
+                            funcStr ~= "            return SharedFunctions.SliceToString(dlang_ret, DStringType._wstring);" ~ newline;
+                        else if (is(RT == dstring))
+                            funcStr ~= "            return SharedFunctions.SliceToString(dlang_ret, DStringType._dstring);" ~ newline;
+                        else if (is(RT == string[]))
+                            funcStr ~= mixin(interp!"            return new Range<string>(dlang_ret, DStringType._string);${newline}");
+                        else if (is(RT == wstring[]))
+                            funcStr ~= mixin(interp!"            return new Range<string>(dlang_ret, DStringType._wstring);${newline}");
+                        else if (is(RT == dstring[]))
+                            funcStr ~= mixin(interp!"            return new Range<string>(dlang_ret, DStringType._dstring);${newline}");
+                        else if (isDynamicArray!RT)
+                            funcStr ~= mixin(interp!"            return new Range<${returnTypeStr}>(dlang_ret, DStringType.None);${newline}");
+                        else
+                            funcStr ~= "            return dlang_ret;" ~ newline;
+                    }
+
+                    funcStr ~= "        }" ~ newline;
+
+                    getNamespace(getCSharpName(func.moduleName)).functions ~= funcStr;
+                }}
+            }
         }
     }
 }
