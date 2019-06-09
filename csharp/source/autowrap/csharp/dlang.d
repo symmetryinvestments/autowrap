@@ -303,7 +303,7 @@ private string generateFunctions(Modules...)(ref string[] imports) if(allSatisfy
         alias returnTypeStr = getDLangInterfaceType!(ReturnType!(__traits(getMember, func.module_, func.name)));
         alias ParamTypes = Parameters!(__traits(getMember, func.module_, func.name));
         alias paramNames = staticMap!(AdjParamName, ParameterIdentifierTuple!(__traits(getMember, func.module_, func.name)));
-        const string interfaceName = getDLangInterfaceName(modName, null, funcName);
+        enum interfaceName = getDLangInterfaceName(modName, null, funcName);
         alias Types = AliasSeq!(RT, ParamTypes);
 
         static if(Filter!(verifySupported, Types).length != Types.length)

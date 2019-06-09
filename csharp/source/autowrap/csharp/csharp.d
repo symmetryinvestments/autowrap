@@ -307,7 +307,6 @@ private void generateMethods(T)(string libraryName)
                         {
                             enum numParams = ParamTypes.length - nda;
                             alias paramNames = ParameterIdentifierTuple!mo;
-                            enum bool isProperty = cast(bool)(functionAttributes!mo & FunctionAttribute.property);
 
                             enum dlangInterfaceName = format("%s%s_%s", getDLangInterfaceName(fqn, m), oc, numParams);
                             enum methodInterfaceName = format("dlang_%s", getCSharpMethodInterfaceName(aggName, cast(string)m));
@@ -338,11 +337,11 @@ private void generateMethods(T)(string libraryName)
                             exp = exp[0 .. $-2];
                             exp ~= ");" ~ newline;
 
-                            if (!isProperty)
+                            if ((functionAttributes!mo & FunctionAttribute.property) == 0)
                             {
                                 enum returnTypeStr = fullyQualifiedName!RT;
 
-                                exp ~= mixin(interp!"        public ${methodName == \"ToString\" ? \"override \" : string.init}${getCSharpInterfaceType(returnTypeStr)} ${methodName}(");
+                                exp ~= mixin(interp!`        public ${methodName == "ToString" ? "override " : ""}${getCSharpInterfaceType(returnTypeStr)} ${methodName}(`);
                                 static foreach(pc; 0 .. numParams)
                                 {
                                     if (is(ParamTypes[pc] == string) || is(ParamTypes[pc] == wstring) || is(ParamTypes[pc] == dstring))
@@ -357,7 +356,7 @@ private void generateMethods(T)(string libraryName)
                                     exp = exp[0 .. $-2];
 
                                 exp ~= ") {" ~ newline;
-                                exp ~= mixin(interp!"            var dlang_ret = ${methodInterfaceName}(${is(T == struct) ? \"ref \" : string.init}this, ");
+                                exp ~= mixin(interp!`            var dlang_ret = ${methodInterfaceName}(${is(T == struct) ? "ref " : ""}this, `);
 
                                 static foreach(pc; 0 .. numParams)
                                 {
@@ -398,100 +397,97 @@ private void generateMethods(T)(string libraryName)
     }
 }
 
-private void generateProperties(T)(string libraryName) if (is(T == class) || is(T == interface) || is(T == struct)) {
+private void generateProperties(T)(string libraryName)
+    if (is(T == class) || is(T == interface) || is(T == struct))
+{
     import autowrap.csharp.common : verifySupported;
-    import std.meta : AliasSeq, Filter;
-    import std.traits : moduleName, isArray, fullyQualifiedName, functionAttributes, FunctionAttribute, ReturnType, Parameters;
 
-    alias fqn = fullyQualifiedName!T;
-    const string aggName = __traits(identifier, T);
+    import std.algorithm.comparison : among;
+    import std.format : format;
+    import std.meta : AliasSeq, Filter, staticIndexOf;
+    import std.traits : moduleName, isDynamicArray, fullyQualifiedName;
+
+    enum fqn = fullyQualifiedName!T;
+    enum aggName = __traits(identifier, T);
     CSharpAggregate csagg = getAggregate(getCSharpName(moduleName!T), getCSharpName(aggName), !is(T == class));
 
-    foreach(m; __traits(allMembers, T)) {
-        if (m == "__ctor" || m == "toHash" || m == "opEquals" || m == "opCmp" || m == "factory") {
-            continue;
-        }
+    foreach(m; __traits(allMembers, T))
+    {
+        static if (!m.among("__ctor", "toHash", "opEquals", "opCmp", "factory") &&
+                   is(typeof(__traits(getMember, T, m))))
+        {
+            enum methodName = getCSMemberName(aggName, cast(string)m);
 
-        string methodName = getCSMemberName(aggName, cast(string)m);
-        const string methodInterfaceName = getCSharpMethodInterfaceName(aggName, cast(string)m);
+            alias GType = GetterPropertyType!(T, m);
+            alias STypes = SetterPropertyTypes!(T, m);
 
-        static if (is(typeof(__traits(getMember, T, m)))) {
-            const olc = __traits(getOverloads, T, m).length;
-            static if(olc > 0 && olc <= 2) {
-                bool isProperty = false;
-                bool propertyGet = false;
-                bool propertySet = false;
-                foreach(mo; __traits(getOverloads, T, m)) {
-                    static if (cast(bool)(functionAttributes!mo & FunctionAttribute.property)) {
-                        alias RT = ReturnType!mo;
-                        alias ParamTypes = Parameters!mo;
+            static if(GType.length == 1)
+            {
+                alias PT = GType[0];
+                enum getterInterfaceName = format("dlang_%s", getCSharpMethodInterfaceName(aggName, cast(string)m));
 
-                        alias Types = AliasSeq!(RT, ParamTypes);
-                        static if(Filter!(verifySupported, Types).length != Types.length)
-                            continue;
+                static if(staticIndexOf!(PT, STypes) != -1)
+                    enum setterInterfaceName = format("dlang_%s", getCSharpMethodInterfaceName(aggName, cast(string)m));
+            }
+            else static if(STypes.length == 1)
+            {
+                alias PT = STypes[0];
+                enum setterInterfaceName = format("dlang_%s", getCSharpMethodInterfaceName(aggName, cast(string)m));
+            }
 
-                        isProperty = true;
-                        if (ParamTypes.length == 0) {
-                            propertyGet = true;
-                        } else {
-                            propertySet = true;
-                        }
-                    }
+            static if(is(PT) && verifySupported!PT)
+            {
+                static if (is(PT == string) || is(PT == wstring) || is(PT == dstring))
+                    string prop = mixin(interp!"        public string ${methodName} { ");
+                else static if (isDynamicArray!PT)
+                    string prop = mixin(interp!"        public Range<${getCSharpInterfaceType(fullyQualifiedName!PT)}> ${methodName} { ");
+                else
+                    string prop = mixin(interp!"        public ${getCSharpInterfaceType(fullyQualifiedName!PT)} ${methodName} { ");
+
+                static if (is(typeof(getterInterfaceName)))
+                {
+                    static if (is(PT == string))
+                        prop ~= mixin(interp!`get => SharedFunctions.SliceToString(${getterInterfaceName}(${is(T == class) ? "" : "ref "}this), DStringType._string);`);
+                    else static if (is(PT == wstring))
+                        prop ~= mixin(interp!`get => SharedFunctions.SliceToString(${getterInterfaceName}(${is(T == class) ? "" : "ref "}this), DStringType._wstring);`);
+                    else static if (is(PT == dstring))
+                        prop ~= mixin(interp!`get => SharedFunctions.SliceToString(${getterInterfaceName}(${is(T == class) ? "" : "ref "}this), DStringType._dstring);`);
+                    else static if (is(PT == string[]))
+                        prop ~= mixin(interp!`get => new Range<string>(${getterInterfaceName}(${is(T == class) ? "" : "ref "}this), DStringType._string); `);
+                    else static if (is(PT == wstring[]))
+                        prop ~= mixin(interp!`get => new Range<string>(${getterInterfaceName}(${is(T == class) ? "" : "ref "}this), DStringType._wstring); `);
+                    else static if (is(PT == dstring[]))
+                        prop ~= mixin(interp!`get => new Range<string>(${getterInterfaceName}(${is(T == class) ? "" : "ref "}this), DStringType._dstring); `);
+                    else static if (isDynamicArray!(PT))
+                        prop ~= mixin(interp!`get => new Range<${getCSharpInterfaceType(fullyQualifiedName!PT)}>(${getterInterfaceName}(${is(T == class) ? "" : "ref "}this), DStringType.None); `);
+                    else static if (is(PT == class))
+                        prop ~= mixin(interp!`get => new ${getCSharpInterfaceType(fullyQualifiedName!PT)}(${getterInterfaceName}(${is(T == class) ? "" : "ref "}this)); `);
+                    else
+                        prop ~= mixin(interp!`get => ${getterInterfaceName}(${is(T == class) ? "" : "ref "}this); `);
                 }
 
-                if (isProperty) {
-                    string prop = string.init;
-                    alias propertyType = ReturnType!(__traits(getOverloads, T, m)[0]);
-                    if (is(propertyType == string) || is(propertyType == wstring) || is(propertyType == dstring)) {
-                        prop = mixin(interp!"        public string ${methodName} { ");
-                    } else if (isArray!(propertyType)) {
-                        prop = mixin(interp!"        public Range<${getCSharpInterfaceType(fullyQualifiedName!propertyType)}> ${methodName} { ");
-                    } else {
-                        prop = mixin(interp!"        public ${getCSharpInterfaceType(fullyQualifiedName!propertyType)} ${methodName} { ");
-                    }
-                    if (propertyGet) {
-                        if (is(propertyType == string)) {
-                            prop ~= mixin(interp!"get => SharedFunctions.SliceToString(dlang_${methodInterfaceName}(${is(T == class) ? string.init : \"ref \"}this), DStringType._string);");
-                        } else if (is(propertyType == wstring)) {
-                            prop ~= mixin(interp!"get => SharedFunctions.SliceToString(dlang_${methodInterfaceName}(${is(T == class) ? string.init : \"ref \"}this), DStringType._wstring);");
-                        } else if (is(propertyType == dstring)) {
-                            prop ~= mixin(interp!"get => SharedFunctions.SliceToString(dlang_${methodInterfaceName}(${is(T == class) ? string.init : \"ref \"}this), DStringType._dstring);");
-                        } else if (is(propertyType == string[])) {
-                            prop ~= mixin(interp!"get => new Range<string>(dlang_${methodInterfaceName}(${is(T == class) ? string.init : \"ref \"}this), DStringType._string); ");
-                        } else if (is(propertyType == wstring[])) {
-                            prop ~= mixin(interp!"get => new Range<string>(dlang_${methodInterfaceName}(${is(T == class) ? string.init : \"ref \"}this), DStringType._wstring); ");
-                        } else if (is(propertyType == dstring[])) {
-                            prop ~= mixin(interp!"get => new Range<string>(dlang_${methodInterfaceName}(${is(T == class) ? string.init : \"ref \"}this), DStringType._dstring); ");
-                        } else if (isArray!(propertyType)) {
-                            prop ~= mixin(interp!"get => new Range<${getCSharpInterfaceType(fullyQualifiedName!propertyType)}>(dlang_${methodInterfaceName}(${is(T == class) ? string.init : \"ref \"}this), DStringType.None); ");
-                        } else if (is(propertyType == class)) {
-                            prop ~= mixin(interp!"get => new ${getCSharpInterfaceType(fullyQualifiedName!propertyType)}(dlang_${methodInterfaceName}(${is(T == class) ? string.init : \"ref \"}this)); ");
-                        } else {
-                            prop ~= mixin(interp!"get => dlang_${methodInterfaceName}(${is(T == class) ? string.init : \"ref \"}this); ");
-                        }
-                    }
-                    if (propertySet) {
-                        if (is(propertyType == string)) {
-                            prop ~= mixin(interp!"set => dlang_${methodInterfaceName}(this, SharedFunctions.CreateString(value));");
-                        } else if (is(propertyType == wstring)) {
-                            prop ~= mixin(interp!"set => dlang_${methodInterfaceName}(this, SharedFunctions.CreateWstring(value));");
-                        } else if (is(propertyType == dstring)) {
-                            prop ~= mixin(interp!"set => dlang_${methodInterfaceName}(this, SharedFunctions.CreateDstring(value));");
-                        } else if (is(propertyType == string[])) {
-                            prop ~= mixin(interp!"set => dlang_${methodInterfaceName}(${is(T == class) ? string.init : \"ref \"}this, value.ToSlice(DStringType._string)); ");
-                        } else if (is(propertyType == wstring[])) {
-                            prop ~= mixin(interp!"set => dlang_${methodInterfaceName}(${is(T == class) ? string.init : \"ref \"}this, value.ToSlice(DStringType._wstring)); ");
-                        } else if (is(propertyType == dstring[])) {
-                            prop ~= mixin(interp!"set => dlang_${methodInterfaceName}(${is(T == class) ? string.init : \"ref \"}this, value.ToSlice(DStringType._dstring)); ");
-                        } else if (isArray!(propertyType)) {
-                            prop ~= mixin(interp!"set => dlang_${methodInterfaceName}(${is(T == class) ? string.init : \"ref \"}this, value.ToSlice()); ");
-                        } else {
-                            prop ~= mixin(interp!"set => dlang_${methodInterfaceName}(${is(T == class) ? string.init : \"ref \"}this, value); ");
-                        }
-                    }
-                    prop ~= "}" ~ newline;
-                    csagg.properties ~= prop;
+                static if (is(typeof(setterInterfaceName)))
+                {
+                    static if (is(PT == string))
+                        prop ~= mixin(interp!`set => ${setterInterfaceName}(this, SharedFunctions.CreateString(value));`);
+                    else static if (is(PT == wstring))
+                        prop ~= mixin(interp!`set => ${setterInterfaceName}(this, SharedFunctions.CreateWstring(value));`);
+                    else static if (is(PT == dstring))
+                        prop ~= mixin(interp!`set => ${setterInterfaceName}(this, SharedFunctions.CreateDstring(value));`);
+                    else static if (is(PT == string[]))
+                        prop ~= mixin(interp!`set => ${setterInterfaceName}(${is(T == class) ? "" : "ref "}this, value.ToSlice(DStringType._string)); `);
+                    else static if (is(PT == wstring[]))
+                        prop ~= mixin(interp!`set => ${setterInterfaceName}(${is(T == class) ? "" : "ref "}this, value.ToSlice(DStringType._wstring)); `);
+                    else static if (is(PT == dstring[]))
+                        prop ~= mixin(interp!`set => ${setterInterfaceName}(${is(T == class) ? "" : "ref "}this, value.ToSlice(DStringType._dstring)); `);
+                    else static if (isDynamicArray!(PT))
+                        prop ~= mixin(interp!`set => ${setterInterfaceName}(${is(T == class) ? "" : "ref "}this, value.ToSlice()); `);
+                    else
+                        prop ~= mixin(interp!`set => ${setterInterfaceName}(${is(T == class) ? "" : "ref "}this, value); `);
                 }
+
+                prop ~= "}" ~ newline;
+                csagg.properties ~= prop;
             }
         }
     }
@@ -1020,4 +1016,124 @@ Tuple!(string, "public_", string, "private_") getCSFieldNameTuple(string dlangTy
     import std.typecons : tuple;
     auto memberName = getCSMemberName(dlangTypeName, dlangFieldName);
     return typeof(return)(memberName, "_" ~ memberName);
+}
+
+private template GetterPropertyType(T, string memberName)
+{
+    import std.meta : AliasSeq, staticMap;
+    import std.traits : fullyQualifiedName;
+
+    alias GetterPropertyType = staticMap!(GetterType, __traits(getOverloads, T, memberName));
+    static assert(GetterPropertyType.length <= 1,
+                  "It should not be possible to have multiple getters with the same name. " ~
+                  fullyQualifiedName!T ~ "." ~ memberName);
+
+    static template GetterType(alias func)
+    {
+        import std.traits : FunctionAttribute, functionAttributes, Parameters, ReturnType;
+
+        static if((functionAttributes!func & FunctionAttribute.property) != 0 &&
+                  !is(ReturnType!func == void) &&
+                  Parameters!func.length == 0)
+        {
+            alias GetterType = ReturnType!func;
+        }
+        else
+            alias GetterType = AliasSeq!();
+    }
+}
+
+// This does ignore getters which return by ref, but they can be checked by
+// looking at the getter, and it wouldn't work to use such a function as a
+// setter without an extra D function around it to call it, which we don't
+// currently do. But even if we wanted to handle such a case, it's simpler to
+// check the getter than to treat it as another setter.
+private template SetterPropertyTypes(T, string memberName)
+{
+    import std.meta : AliasSeq, staticMap;
+
+    alias SetterPropertyTypes = staticMap!(SetterType, __traits(getOverloads, T, memberName));
+
+    static template SetterType(alias func)
+    {
+        import std.traits : FunctionAttribute, functionAttributes, Parameters, ReturnType;
+
+        alias ParamTypes = Parameters!func;
+
+        static if(ParamTypes.length == 1 && (functionAttributes!func & FunctionAttribute.property) != 0)
+            alias SetterType = ParamTypes;
+        else
+            alias SetterType = AliasSeq!();
+    }
+}
+
+// Unfortunately, while these tests have been tested on their own, they don't
+// currently run as part of autowrap's tests, because dub test doesn't work for
+// the csharp folder, and the top level one does not run them.
+unittest
+{
+    import std.meta : AliasSeq;
+
+    static struct S
+    {
+        @property void noprop() { assert(0); }
+        @property void noprop(int, int) { assert(0); }
+        @property int noprop(int, int) { assert(0); }
+
+        int noprop2() { assert(0); }
+        void noprop2(string) { assert(0); }
+        int noprop2(int) { assert(0); }
+        bool noprop2(float) { assert(0); }
+
+        @property int getter() { assert(0); }
+        @property void getter(int, int) { assert(0); }
+        @property string getter(string, int) { assert(0); }
+
+        @property ref string getter2() { assert(0); }
+        void getter2(string) { assert(0); }
+        ref int getter2(int) { assert(0); }
+        bool getter2(float) { assert(0); }
+
+        @property string setter(int) { assert(0); }
+        @property string setter(float, bool) { assert(0); }
+        @property int setter(bool, int) { assert(0); }
+
+        int setter2() { assert(0); }
+        @property void setter2(string) { assert(0); }
+        @property int setter2(int) { assert(0); }
+        @property bool setter2(wstring, bool) { assert(0); }
+        @property bool setter2(float) { assert(0); }
+
+        @property int both() { assert(0); }
+        @property void both(string) { assert(0); }
+        @property int both(int) { assert(0); }
+        @property bool both(float) { assert(0); }
+    }
+
+    static assert(GetterPropertyType!(S, "noprop").length == 0);
+    static assert(SetterPropertyTypes!(S, "noprop").length == 0);
+
+    static assert(GetterPropertyType!(S, "noprop2").length == 0);
+    static assert(SetterPropertyTypes!(S, "noprop2").length == 0);
+
+    static assert(is(GetterPropertyType!(S, "getter") == AliasSeq!int));
+    static assert(SetterPropertyTypes!(S, "getter").length == 0);
+
+    static assert(is(GetterPropertyType!(S, "getter2") == AliasSeq!string));
+    static assert(SetterPropertyTypes!(S, "getter2").length == 0);
+
+    static assert(GetterPropertyType!(S, "setter").length == 0);
+    static assert(is(SetterPropertyTypes!(S, "setter") == AliasSeq!int));
+
+    static assert(GetterPropertyType!(S, "setter2").length == 0);
+    static assert(is(SetterPropertyTypes!(S, "setter2") == AliasSeq!(string, int, float)));
+
+    static assert(is(GetterPropertyType!(S, "both") == AliasSeq!int));
+    static assert(is(SetterPropertyTypes!(S, "both") == AliasSeq!(string, int, float)));
+}
+
+private template isNotVoid(T...)
+    if(T.length == 1)
+{
+    enum isNotVoid = !is(T[0] == void);
 }
