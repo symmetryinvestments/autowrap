@@ -166,8 +166,6 @@ struct PythonType(T) {
             return toPython(T.init);
         }
 
-        // TODO: kwargs
-
         static if(hasMember!(T, "__ctor"))
             alias constructors = AliasSeq!(__traits(getOverloads, T, "__ctor"));
         else
@@ -183,6 +181,10 @@ struct PythonType(T) {
 
             static foreach(constructor; constructors) {
                 if(Parameters!constructor.length == numArgs) {
+                    return pythonConstructor!(T, FunctionParameters!constructor)(args);
+                } else if(numArgs >= NumRequiredParameters!constructor
+                          && numArgs <= Parameters!constructor.length)
+                {
                     return pythonConstructor!(T, FunctionParameters!constructor)(args);
                 }
             }
@@ -332,22 +334,33 @@ struct PythonFunction(alias F) {
     }
 }
 
-private auto callDlangFunction(alias F)(PyObject* self, PyObject* args, PyObject* kwargs) {
-    import python.raw: PyTuple_Size, pyNone, pyIncRef, PyErr_SetString, PyExc_RuntimeError;
-    import python.conv: toPython;
-    import std.traits: Parameters, ParameterDefaults;
-    import std.conv: text;
-    import std.string: toStringz;
-    import std.exception: enforce;
-    import std.meta: Filter, aliasSeqOf, staticMap;
-    import std.range: iota;
+
+private template NumDefaultParameters(alias F) {
+    import std.meta: Filter;
+    import std.traits: ParameterDefaults;
 
     template notVoid(T...) if(T.length == 1) {
         enum notVoid = !is(T[0] == void);
     }
 
-    enum numDefaults = Filter!(notVoid, ParameterDefaults!F).length;
-    enum numRequired = Parameters!F.length - numDefaults;
+    enum NumDefaultParameters = Filter!(notVoid, ParameterDefaults!F).length;
+}
+
+private template NumRequiredParameters(alias F) {
+    import std.traits: Parameters;
+    enum NumRequiredParameters = Parameters!F.length - NumDefaultParameters!F;
+}
+
+private auto callDlangFunction(alias F)(PyObject* self, PyObject* args, PyObject* kwargs) {
+    import python.raw: PyTuple_Size, PyErr_SetString, PyExc_RuntimeError;
+    import python.conv: toPython;
+    import std.traits: Parameters;
+    import std.conv: text;
+    import std.string: toStringz;
+    import std.exception: enforce;
+
+    enum numDefaults = NumDefaultParameters!F;
+    enum numRequired = NumRequiredParameters!F;
 
     try {
 
