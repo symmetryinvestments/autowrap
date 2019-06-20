@@ -481,7 +481,7 @@ struct PythonClass(T) if(isUserAggregate!T) {
     }
 
     // The function pointer for PyGetSetDef.get
-    private static extern(C) PyObject* get(int FieldIndex)(PyObject* self_, void* closure = null) {
+    private static extern(C) PyObject* get(int FieldIndex)(PyObject* self_, void* closure = null) nothrow {
         import python.raw: pyIncRef;
 
         assert(self_ !is null);
@@ -495,7 +495,7 @@ struct PythonClass(T) if(isUserAggregate!T) {
     }
 
     // The function pointer for PyGetSetDef.set
-    static extern(C) int set(int FieldIndex)(PyObject* self_, PyObject* value, void* closure = null) {
+    static extern(C) int set(int FieldIndex)(PyObject* self_, PyObject* value, void* closure = null) nothrow {
         import python.raw: pyIncRef, pyDecRef, PyErr_SetString, PyExc_TypeError;
 
         if(value is null) {
