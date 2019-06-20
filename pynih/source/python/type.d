@@ -123,19 +123,18 @@ struct PythonType(T) {
     }
 
     private static extern(C) PyObject* _py_repr(PyObject* self_) nothrow {
-        import python: pyUnicodeDecodeUTF8, PyErr_SetString, PyExc_RuntimeError;
-        import python.conv: to;
-        import std.string: toStringz;
-        import std.conv: text;
 
-        try {
+        return noThrowable!({
+
+            import python: pyUnicodeDecodeUTF8, PyErr_SetString, PyExc_RuntimeError;
+            import python.conv: to;
+            import std.string: toStringz;
+            import std.conv: text;
+
             assert(self_ !is null);
             auto ret = text(self_.to!T);
             return pyUnicodeDecodeUTF8(ret.ptr, ret.length, null /*errors*/);
-        } catch(Throwable e) {
-            PyErr_SetString(PyExc_RuntimeError, e.msg.toStringz);
-            return null;
-        }
+        });
     }
 
     private static extern(C) int _py_init(PyObject* self_, PyObject* args, PyObject* kwargs) nothrow {
@@ -144,54 +143,46 @@ struct PythonType(T) {
     }
 
     private static extern(C) PyObject* _py_new(PyTypeObject *type, PyObject* args, PyObject* kwargs) nothrow {
-        import python: PyErr_SetString, PyExc_RuntimeError;
-        import std.string: toStringz;
-        try
-            return _py_new_impl(type, args, kwargs);
-        catch(Throwable e) {
-            PyErr_SetString(PyExc_RuntimeError, e.msg.toStringz);
-            return null;
-        }
-    }
+        return noThrowable!({
+            import python.conv: toPython, to;
+            import python.raw: PyTuple_Size, PyTuple_GetItem;
+            import std.traits: hasMember, Unqual;
+            import std.meta: AliasSeq;
 
-    private static PyObject* _py_new_impl(PyTypeObject *type, PyObject* args, PyObject* kwargs) {
-        import python.conv: toPython, to;
-        import python.raw: PyTuple_Size, PyTuple_GetItem;
-        import std.traits: hasMember, Unqual;
-        import std.meta: AliasSeq;
+            const numArgs = PyTuple_Size(args);
 
-        const numArgs = PyTuple_Size(args);
-
-        if(numArgs == 0) {
-            return toPython(T.init);
-        }
-
-        static if(hasMember!(T, "__ctor"))
-            alias constructors = AliasSeq!(__traits(getOverloads, T, "__ctor"));
-        else
-            alias constructors = AliasSeq!();
-
-        static if(constructors.length == 0) {
-            alias parameter(FieldType) = Parameter!(FieldType, void);
-            alias parameters = staticMap!(parameter, fieldTypes);
-            return pythonConstructor!(T, parameters)(args);
-        } else {
-            import python.raw: PyErr_SetString, PyExc_TypeError;
-            import std.traits: Parameters;
-
-            static foreach(constructor; constructors) {
-                if(Parameters!constructor.length == numArgs) {
-                    return pythonConstructor!(T, FunctionParameters!constructor)(args);
-                } else if(numArgs >= NumRequiredParameters!constructor
-                          && numArgs <= Parameters!constructor.length)
-                {
-                    return pythonConstructor!(T, FunctionParameters!constructor)(args);
-                }
+            if(numArgs == 0) {
+                return toPython(T.init);
             }
 
-            PyErr_SetString(PyExc_TypeError, "Could not find a suitable constructor");
-            return null;
-        }
+            static if(hasMember!(T, "__ctor"))
+                alias constructors = AliasSeq!(__traits(getOverloads, T, "__ctor"));
+            else
+                alias constructors = AliasSeq!();
+
+            static if(constructors.length == 0) {
+                alias parameter(FieldType) = Parameter!(FieldType, void);
+                alias parameters = staticMap!(parameter, fieldTypes);
+                return pythonConstructor!(T, parameters)(args);
+            } else {
+                import python.raw: PyErr_SetString, PyExc_TypeError;
+                import std.traits: Parameters;
+
+                static foreach(constructor; constructors) {
+                    if(Parameters!constructor.length == numArgs) {
+                        return pythonConstructor!(T, FunctionParameters!constructor)(args);
+                    } else if(numArgs >= NumRequiredParameters!constructor
+                              && numArgs <= Parameters!constructor.length)
+                    {
+                        return pythonConstructor!(T, FunctionParameters!constructor)(args);
+                    }
+                }
+
+                PyErr_SetString(PyExc_TypeError, "Could not find a suitable constructor");
+                return null;
+            }
+
+        });
     }
 
     // Creates a python object from the given arguments by converting them to D
@@ -288,55 +279,45 @@ struct PythonMethod(T, alias F) {
                                                PyObject* kwargs)
         nothrow
     {
-        try
-            return _py_method_impl_throws(self, args, kwargs);
-        catch(Throwable e) {
-            import python.raw: PyErr_SetString, PyExc_RuntimeError;
-            import std.string: toStringz;
-            PyErr_SetString(PyExc_RuntimeError, e.msg.toStringz);
-            return null;
-        }
-    }
+        return noThrowable!({
+            import python.raw: pyDecRef;
+            import python.conv: toPython, to;
+            import std.traits: Parameters, FunctionAttribute, functionAttributes, Unqual, hasFunctionAttributes;
 
-    static PyObject* _py_method_impl_throws(PyObject* self, PyObject* args, PyObject* kwargs) {
+            assert(self !is null,
+                   "Cannot call PythonMethod!" ~ __traits(identifier, F) ~ " on null self");
 
-        import python.raw: pyDecRef;
-        import python.conv: toPython, to;
-        import std.traits: Parameters, FunctionAttribute, functionAttributes, Unqual, hasFunctionAttributes;
+            static if(functionAttributes!F & FunctionAttribute.const_)
+                alias Aggregate = const T;
+            else static if(functionAttributes!F & FunctionAttribute.immutable_)
+                alias Aggregate = immutable T;
+            else
+                alias Aggregate = Unqual!T;
 
-        assert(self !is null,
-               "Cannot call PythonMethod!" ~ __traits(identifier, F) ~ " on null self");
+            auto dAggregate = self.to!Aggregate;
 
-        static if(functionAttributes!F & FunctionAttribute.const_)
-            alias Aggregate = const T;
-        else static if(functionAttributes!F & FunctionAttribute.immutable_)
-            alias Aggregate = immutable T;
-        else
-            alias Aggregate = Unqual!T;
+            // Not sure how else to take `dAggregate` and `F` and call the member
+            // function other than a mixin
+            mixin(`auto ret = callDlangFunction!((Parameters!F args) => dAggregate.`,
+                  __traits(identifier, F), `(args))(self, args, kwargs);`);
 
-        auto dAggregate = self.to!Aggregate;
+            // The member function could have side-effects, we need to copy the changes
+            // back to the Python object.
+            static if(!(functionAttributes!F & FunctionAttribute.const_)) {
+                auto newSelf = toPython(dAggregate);
+                scope(exit) {
+                    pyDecRef(newSelf);
+                }
+                auto pyClassSelf = cast(PythonClass!T*) self;
+                auto pyClassNewSelf = cast(PythonClass!T*) newSelf;
 
-        // Not sure how else to take `dAggregate` and `F` and call the member
-        // function other than a mixin
-        mixin(`auto ret = callDlangFunction!((Parameters!F args) => dAggregate.`,
-              __traits(identifier, F), `(args))(self, args, kwargs);`);
-
-        // The member function could have side-effects, we need to copy the changes
-        // back to the Python object.
-        static if(!(functionAttributes!F & FunctionAttribute.const_)) {
-            auto newSelf = toPython(dAggregate);
-            scope(exit) {
-                pyDecRef(newSelf);
+                static foreach(i; 0 .. PythonClass!T.fieldNames.length) {
+                    pyClassSelf.set!i(self, pyClassNewSelf.get!i(newSelf));
+                }
             }
-            auto pyClassSelf = cast(PythonClass!T*) self;
-            auto pyClassNewSelf = cast(PythonClass!T*) newSelf;
 
-            static foreach(i; 0 .. PythonClass!T.fieldNames.length) {
-                pyClassSelf.set!i(self, pyClassNewSelf.get!i(newSelf));
-            }
-        }
-
-        return ret;
+            return ret;
+        });
     }
 }
 
@@ -346,7 +327,7 @@ struct PythonMethod(T, alias F) {
  */
 struct PythonFunction(alias F) {
     static extern(C) PyObject* _py_function_impl(PyObject* self, PyObject* args, PyObject* kwargs) nothrow {
-        return callDlangFunction!F(self, args, kwargs);
+        return noThrowable!(() => callDlangFunction!F(self, args, kwargs));
     }
 }
 
@@ -362,15 +343,21 @@ private auto callDlangFunction(alias F)(PyObject* self, PyObject* args, PyObject
     enum numDefaults = NumDefaultParameters!F;
     enum numRequired = NumRequiredParameters!F;
 
+    enforce(PyTuple_Size(args) >= numRequired
+            && PyTuple_Size(args) <= Parameters!F.length,
+            text("Received ", PyTuple_Size(args), " parameters but ",
+                 __traits(identifier, F), " takes ", Parameters!F.length));
+
+    auto dArgs = pythonArgsToDArgs!(FunctionParameters!F)(args);
+    return callDlangFunction!F(dArgs);
+}
+
+private auto noThrowable(alias F, A...)(auto ref A args) {
+    import python.raw: PyErr_SetString, PyExc_RuntimeError;
+    import std.string: toStringz;
+
     try {
-
-        enforce(PyTuple_Size(args) >= numRequired
-                && PyTuple_Size(args) <= Parameters!F.length,
-                text("Received ", PyTuple_Size(args), " parameters but ",
-                     __traits(identifier, F), " takes ", Parameters!F.length));
-
-        auto dArgs = pythonArgsToDArgs!(FunctionParameters!F)(args);
-        return callDlangFunction!F(dArgs);
+        return F(args);
     } catch(Exception e) {
         PyErr_SetString(PyExc_RuntimeError, e.msg.toStringz);
         return null;
@@ -379,6 +366,7 @@ private auto callDlangFunction(alias F)(PyObject* self, PyObject* args, PyObject
         return null;
     }
 }
+
 
 private auto callDlangFunction(alias F, A)(auto ref A argTuple) {
     import python.raw: pyIncRef, pyNone;
