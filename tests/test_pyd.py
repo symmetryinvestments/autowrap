@@ -264,13 +264,13 @@ def test_class_wrap_bizzy2():
 def test_class_wrap_bizzy3():
     from pyd import Bizzy3
 
-    bizzy = Bizzy3(1,2)
+    bizzy = Bizzy3(1, 2)
     assert bizzy.a(7, 32.1) == 3224
     assert bizzy.a(i=7, d=32.1) == 3224
-    assert bizzy.a(d=32.1,i=7) == 3224
+    assert bizzy.a(d=32.1, i=7) == 3224
 
     assert bizzy.b(7, 32.1) == 32244
-    assert bizzy.b(d=32.1,i=7) == 32244
+    assert bizzy.b(d=32.1, i=7) == 32244
     assert bizzy.b(i=7, d=32.1) == 32244
     assert bizzy.b(7) == 3344
     assert bizzy.b(i=7) == 3344
@@ -278,8 +278,8 @@ def test_class_wrap_bizzy3():
     assert bizzy.c(7) == 7
     assert bizzy.c(i=7) == 7
     assert bizzy.c(i=[7]) == 7
-    assert bizzy.c(7,5,6) == 756
-    assert bizzy.c(i=[7,5,6]) == 756
+    assert bizzy.c(7, 5, 6) == 756
+    assert bizzy.c(i=[7, 5, 6]) == 756
 
     assert bizzy.d(i=7, k='foobiz') == "<7, 102, 'foobiz'>"
 
