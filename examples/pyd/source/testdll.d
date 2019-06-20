@@ -109,6 +109,7 @@ void delegate() func_test() {
 }
 
 string dg_test(string delegate() dg) {
+    assert(dg !is null, "delegate cannot be null");
     return dg();
 }
 

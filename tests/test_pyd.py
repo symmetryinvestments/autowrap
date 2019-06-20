@@ -183,7 +183,6 @@ def test_const():
 
 def test_class_wrap_bizzy():
     from pyd import Bizzy
-    import pytest
 
     bizzy = Bizzy(i=4)
     assert bizzy.a(1) == 12
@@ -224,7 +223,6 @@ def test_class_wrap_bizzy():
     assert bizzy(40.5) == 45023
 
 
-
 def test_class_wrap_bizzy2():
     from pyd import Bizzy2
     import pytest
@@ -238,7 +236,7 @@ def test_class_wrap_bizzy2():
     bizzy = Bizzy2(i=4)
     assert bizzy.jj() == [4]
 
-    bizzy = Bizzy2(i=[4,5])
+    bizzy = Bizzy2(i=[4, 5])
     assert bizzy.jj() == [4, 5]
 
     assert Bizzy2.a(7, 32.1) == 6427

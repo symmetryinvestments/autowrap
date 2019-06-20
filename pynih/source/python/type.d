@@ -62,7 +62,7 @@ struct PythonType(T) {
         _pyType.tp_methods = methodDefs;
         _pyType.tp_repr = &repr;
         _pyType.tp_init = &init;
-        _pyType.tp_new = &new_;
+        _pyType.tp_new = &_py_new;
 
         if(PyType_Ready(&_pyType) < 0) {
             PyErr_SetString(PyExc_TypeError, &"not ready"[0]);
@@ -137,7 +137,18 @@ struct PythonType(T) {
         return 0;
     }
 
-    private static extern(C) PyObject* new_(PyTypeObject *type, PyObject* args, PyObject* kwargs) {
+    private static extern(C) PyObject* _py_new(PyTypeObject *type, PyObject* args, PyObject* kwargs) nothrow {
+        import python: PyErr_SetString, PyExc_RuntimeError;
+        import std.string: toStringz;
+        try
+            return _py_new_impl(type, args, kwargs);
+        catch(Throwable e) {
+            PyErr_SetString(PyExc_RuntimeError, e.msg.toStringz);
+            return null;
+        }
+    }
+
+    private static PyObject* _py_new_impl(PyTypeObject *type, PyObject* args, PyObject* kwargs) {
         import python.conv: toPython, to;
         import python.raw: PyTuple_Size, PyTuple_GetItem;
         import std.traits: hasMember, Unqual;
@@ -385,6 +396,11 @@ PyObject* pythonClass(T)(auto ref T dobj) {
     import python.conv: toPython;
     import python.raw: pyObjectNew;
     import std.traits: FieldNameTuple;
+
+    static if(is(T == class)) {
+        if(dobj is null)
+            throw new Exception("Cannot create Python class from null D class");
+    }
 
     auto ret = pyObjectNew!(PythonClass!T)(PythonType!T.pyType);
 
