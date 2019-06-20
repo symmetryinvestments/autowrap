@@ -286,7 +286,8 @@ struct PythonMethod(T, alias F) {
         import python.conv: toPython, to;
         import std.traits: Parameters, FunctionAttribute, functionAttributes, Unqual, hasFunctionAttributes;
 
-        assert(self !is null);
+        assert(self !is null,
+               "Cannot call PythonMethod!" ~ __traits(identifier, F) ~ " on null self");
 
         static if(functionAttributes!F & FunctionAttribute.const_)
             alias Aggregate = const T;
