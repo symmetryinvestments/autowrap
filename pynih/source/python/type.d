@@ -282,7 +282,8 @@ struct PythonMethod(T, alias F) {
 
         // Not sure how else to take `dAggregate` and `F` and call the member
         // function other than a mixin
-        mixin(`auto ret = callDlangFunction!((Parameters!F args) => dAggregate.`, __traits(identifier, F), `(args))(self, args, kwargs);`);
+        mixin(`auto ret = callDlangFunction!((Parameters!F args) => dAggregate.`,
+              __traits(identifier, F), `(args))(self, args, kwargs);`);
 
         // The member function could have side-effects, we need to copy the changes
         // back to the Python object.
