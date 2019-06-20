@@ -60,8 +60,8 @@ struct PythonType(T) {
         _pyType.tp_new = &PyType_GenericNew;
         _pyType.tp_getset = getsetDefs;
         _pyType.tp_methods = methodDefs;
-        _pyType.tp_repr = &repr;
-        _pyType.tp_init = &init;
+        _pyType.tp_repr = &_py_repr;
+        _pyType.tp_init = &_py_init;
         _pyType.tp_new = &_py_new;
 
         if(PyType_Ready(&_pyType) < 0) {
@@ -122,17 +122,23 @@ struct PythonType(T) {
         return &methods[0];
     }
 
-    private static extern(C) PyObject* repr(PyObject* self_) {
-        import python: pyUnicodeDecodeUTF8;
+    private static extern(C) PyObject* _py_repr(PyObject* self_) nothrow {
+        import python: pyUnicodeDecodeUTF8, PyErr_SetString, PyExc_RuntimeError;
         import python.conv: to;
+        import std.string: toStringz;
         import std.conv: text;
 
-        assert(self_ !is null);
-        auto ret = text(self_.to!T);
-        return pyUnicodeDecodeUTF8(ret.ptr, ret.length, null /*errors*/);
+        try {
+            assert(self_ !is null);
+            auto ret = text(self_.to!T);
+            return pyUnicodeDecodeUTF8(ret.ptr, ret.length, null /*errors*/);
+        } catch(Throwable e) {
+            PyErr_SetString(PyExc_RuntimeError, e.msg.toStringz);
+            return null;
+        }
     }
 
-    private static extern(C) int init(PyObject* self_, PyObject* args, PyObject* kwargs) {
+    private static extern(C) int _py_init(PyObject* self_, PyObject* args, PyObject* kwargs) nothrow {
         // nothing to do
         return 0;
     }
