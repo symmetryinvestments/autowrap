@@ -30,3 +30,16 @@ struct StructWithPrivateMember {
     int i;
     private int j;
 }
+
+
+struct Overloads {
+    int fun(int i) { return i * 2; }
+    int fun(int i, int j) { return i * j; }
+}
+
+
+struct NoCtor {
+    int i;
+    double d;
+    string s;
+}

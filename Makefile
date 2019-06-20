@@ -19,6 +19,9 @@ examples/simple/lib/pyd/libsimple.so: examples/simple/dub.sdl examples/simple/du
 example/simple/dub.selections.json:
 	@cd examples/simple && dub upgrade -q
 
+test_simple_pynih_only: tests/test_simple_pynih_only.py examples/simple/lib/pynih/simple.so
+	PYTHONPATH=$(PWD)/examples/simple/lib/pynih pytest -s -vv $<
+
 test_simple_pynih: tests/test_simple.py examples/simple/lib/pynih/simple.so
 	PYTHONPATH=$(PWD)/examples/simple/lib/pynih pytest -s -vv $<
 
