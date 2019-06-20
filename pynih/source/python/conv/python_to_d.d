@@ -33,6 +33,8 @@ T to(T)(PyObject* value) @trusted if(isUserAggregate!T) {
 
     static if(is(T == class)) {
         auto buffer = new void[__traits(classInstanceSize, T)];
+        // this is needed for the vtable to work
+        buffer[] = typeid(Unqual!T).initializer[];
         auto ret = cast(Unqual!T) buffer.ptr;
     } else
         Unqual!T ret;
