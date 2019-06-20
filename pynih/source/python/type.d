@@ -283,7 +283,23 @@ private alias Type(alias A) = typeof(A);
    The C API implementation of a Python method F of aggregate type T
  */
 struct PythonMethod(T, alias F) {
-    static extern(C) PyObject* _py_method_impl(PyObject* self, PyObject* args, PyObject* kwargs) {
+    static extern(C) PyObject* _py_method_impl(PyObject* self,
+                                               PyObject* args,
+                                               PyObject* kwargs)
+        nothrow
+    {
+        try
+            return _py_method_impl_throws(self, args, kwargs);
+        catch(Throwable e) {
+            import python.raw: PyErr_SetString, PyExc_RuntimeError;
+            import std.string: toStringz;
+            PyErr_SetString(PyExc_RuntimeError, e.msg.toStringz);
+            return null;
+        }
+    }
+
+    static PyObject* _py_method_impl_throws(PyObject* self, PyObject* args, PyObject* kwargs) {
+
         import python.raw: pyDecRef;
         import python.conv: toPython, to;
         import std.traits: Parameters, FunctionAttribute, functionAttributes, Unqual, hasFunctionAttributes;
@@ -329,7 +345,7 @@ struct PythonMethod(T, alias F) {
    The C API implementation that calls a D function F.
  */
 struct PythonFunction(alias F) {
-    static extern(C) PyObject* _py_function_impl(PyObject* self, PyObject* args, PyObject* kwargs) {
+    static extern(C) PyObject* _py_function_impl(PyObject* self, PyObject* args, PyObject* kwargs) nothrow {
         return callDlangFunction!F(self, args, kwargs);
     }
 }
