@@ -351,22 +351,6 @@ struct PythonFunction(alias F) {
 }
 
 
-private template NumDefaultParameters(alias F) {
-    import std.meta: Filter;
-    import std.traits: ParameterDefaults;
-
-    template notVoid(T...) if(T.length == 1) {
-        enum notVoid = !is(T[0] == void);
-    }
-
-    enum NumDefaultParameters = Filter!(notVoid, ParameterDefaults!F).length;
-}
-
-private template NumRequiredParameters(alias F) {
-    import std.traits: Parameters;
-    enum NumRequiredParameters = Parameters!F.length - NumDefaultParameters!F;
-}
-
 private auto callDlangFunction(alias F)(PyObject* self, PyObject* args, PyObject* kwargs) {
     import python.raw: PyTuple_Size, PyErr_SetString, PyExc_RuntimeError;
     import python.conv: toPython;
@@ -422,6 +406,23 @@ private template FunctionParameters(alias F) {
     alias FunctionParameters = staticMap!(parameter, aliasSeqOf!(Parameters!F.length.iota));
 }
 
+
+private template NumDefaultParameters(alias F) {
+    import std.meta: Filter;
+    import std.traits: ParameterDefaults;
+
+    template notVoid(T...) if(T.length == 1) {
+        enum notVoid = !is(T[0] == void);
+    }
+
+    enum NumDefaultParameters = Filter!(notVoid, ParameterDefaults!F).length;
+}
+
+
+private template NumRequiredParameters(alias F) {
+    import std.traits: Parameters;
+    enum NumRequiredParameters = Parameters!F.length - NumDefaultParameters!F;
+}
 
 /**
    Creates an instance of a Python class that is equivalent to the D type `T`.
