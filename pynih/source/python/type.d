@@ -152,7 +152,7 @@ struct PythonType(T) {
             const numArgs = PyTuple_Size(args);
 
             if(numArgs == 0) {
-                return toPython(T.init);
+                return toPython(userAggregateInit!T);
             }
 
             static if(hasMember!(T, "__ctor"))
@@ -595,4 +595,15 @@ private void setPyErrTypeString(string type)() @trusted @nogc nothrow {
     import python.raw: PyErr_SetString, PyExc_TypeError;
     enum str = "must be a " ~ type;
     PyErr_SetString(PyExc_TypeError, &str[0]);
+}
+
+// Generalises T.init for classes since null isn't a value we want to use
+private T userAggregateInit(T)() {
+    static if(is(T == class)) {
+        auto buffer = new void[__traits(classInstanceSize, T)];
+        // this is needed for the vtable to work
+        buffer[] = typeid(T).initializer[];
+        return cast(T) buffer.ptr;
+    } else
+        return T.init;
 }
