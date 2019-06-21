@@ -598,7 +598,7 @@ private void setPyErrTypeString(string type)() @trusted @nogc nothrow {
 }
 
 // Generalises T.init for classes since null isn't a value we want to use
-private T userAggregateInit(T)() {
+T userAggregateInit(T)() {
     static if(is(T == class)) {
         auto buffer = new void[__traits(classInstanceSize, T)];
         // this is needed for the vtable to work

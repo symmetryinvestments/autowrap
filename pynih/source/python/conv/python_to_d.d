@@ -27,17 +27,10 @@ T to(T)(PyObject* value) @trusted if(isFloatingPoint!T) {
 
 
 T to(T)(PyObject* value) @trusted if(isUserAggregate!T) {
-    import python.type: PythonClass;
+    import python.type: PythonClass, userAggregateInit;
 
     auto pyclass = cast(PythonClass!T*) value;
-
-    static if(is(T == class)) {
-        auto buffer = new void[__traits(classInstanceSize, T)];
-        // this is needed for the vtable to work
-        buffer[] = typeid(Unqual!T).initializer[];
-        auto ret = cast(Unqual!T) buffer.ptr;
-    } else
-        Unqual!T ret;
+    auto ret = userAggregateInit!(Unqual!T);
 
     static foreach(i; 0 .. T.tupleof.length) {
         ret.tupleof[i] = pyclass.getField!i.to!(typeof(T.tupleof[i]));
