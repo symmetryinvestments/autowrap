@@ -163,18 +163,18 @@ struct PythonType(T) {
             static if(constructors.length == 0) {
                 alias parameter(FieldType) = Parameter!(FieldType, void);
                 alias parameters = staticMap!(parameter, fieldTypes);
-                return pythonConstructor!(T, parameters)(args);
+                return pythonConstructor!(T, parameters)(args, kwargs);
             } else {
                 import python.raw: PyErr_SetString, PyExc_TypeError;
                 import std.traits: Parameters;
 
                 static foreach(constructor; constructors) {
                     if(Parameters!constructor.length == numArgs) {
-                        return pythonConstructor!(T, FunctionParameters!constructor)(args);
+                        return pythonConstructor!(T, FunctionParameters!constructor)(args, kwargs);
                     } else if(numArgs >= NumRequiredParameters!constructor
                               && numArgs <= Parameters!constructor.length)
                     {
-                        return pythonConstructor!(T, FunctionParameters!constructor)(args);
+                        return pythonConstructor!(T, FunctionParameters!constructor)(args, kwargs);
                     }
                 }
 
@@ -188,10 +188,10 @@ struct PythonType(T) {
     // Creates a python object from the given arguments by converting them to D
     // types, calling the D constructor and converting the result to a Python
     // object.
-    private static auto pythonConstructor(T, P...)(PyObject* args) {
+    private static auto pythonConstructor(T, P...)(PyObject* args, PyObject* kwargs) {
         import python.conv: toPython;
 
-        auto dArgs = pythonArgsToDArgs!P(args);
+        auto dArgs = pythonArgsToDArgs!P(args, kwargs);
 
         static if(is(T == class)) {
             // When immutable dmd prints an odd error message about not being
@@ -221,7 +221,7 @@ private template isParameter(alias T) {
     enum isParameter = __traits(isSame, TemplateOf!T, Parameter);
 }
 
-private auto pythonArgsToDArgs(P...)(PyObject* args)
+private auto pythonArgsToDArgs(P...)(PyObject* args, PyObject* kwargs)
     if(allSatisfy!(isParameter, P))
 {
     import python.raw: PyTuple_Size, PyTuple_GetItem;
@@ -348,7 +348,7 @@ private auto callDlangFunction(alias F)(PyObject* self, PyObject* args, PyObject
             text("Received ", PyTuple_Size(args), " parameters but ",
                  __traits(identifier, F), " takes ", Parameters!F.length));
 
-    auto dArgs = pythonArgsToDArgs!(FunctionParameters!F)(args);
+    auto dArgs = pythonArgsToDArgs!(FunctionParameters!F)(args, kwargs);
     return callDlangFunction!F(dArgs);
 }
 
