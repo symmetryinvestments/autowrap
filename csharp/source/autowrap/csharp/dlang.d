@@ -13,8 +13,11 @@ import autowrap.reflection : isModule, PrimordialType;
 
 enum string methodSetup = "        thread_attachThis();
         rt_moduleTlsCtor();
-        scope(exit) rt_moduleTlsDtor();
-        scope(exit) thread_detachThis();";
+        scope(exit)
+        {
+            thread_detachThis();
+            rt_moduleTlsDtor();
+        }";
 
 
 // Wrap global functions from multiple modules
