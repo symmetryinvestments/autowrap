@@ -314,27 +314,28 @@ package template Symbol(alias parent, string memberName) {
 // T -> T, T[] -> T, T[][] -> T, T* -> T
 template PrimordialType(T) if(isArray!T) {
 
-    import std.range.primitives: ElementType;
+    import std.range.primitives: ElementEncodingType;
+    import std.traits: Unqual;
 
-    static if(isArray!(ElementType!T))
-        alias PrimordialType = PrimordialType!(ElementType!T);
+    static if(isArray!(ElementEncodingType!T))
+        alias PrimordialType = PrimordialType!(ElementEncodingType!T);
     else
-        alias PrimordialType = ElementType!T;
+        alias PrimordialType = Unqual!(ElementEncodingType!T);
 }
 
 
 // T -> T, T[] -> T, T[][] -> T, T* -> T
 template PrimordialType(T) if(!isArray!T) {
 
-    import std.traits: isPointer, PointerTarget;
+    import std.traits: isPointer, PointerTarget, Unqual;
 
     static if(isPointer!T) {
         static if(isPointer!(PointerTarget!T))
             alias PrimordialType = PrimordialType!(PointerTarget!T);
         else
-            alias PrimordialType = PointerTarget!T;
+            alias PrimordialType = Unqual!(PointerTarget!T);
     } else
-        alias PrimordialType = T;
+        alias PrimordialType = Unqual!T;
 }
 
 
@@ -343,7 +344,7 @@ version(TestingAutowrap) {
     static assert(is(PrimordialType!(int[]) == int));
     static assert(is(PrimordialType!(int[][]) == int));
     static assert(is(PrimordialType!(double[][]) == double));
-    static assert(is(PrimordialType!(string[][]) == dchar));
+    static assert(is(PrimordialType!(string[][]) == char));
     static assert(is(PrimordialType!(int*) == int));
     static assert(is(PrimordialType!(int**) == int));
 }

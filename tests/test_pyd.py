@@ -163,10 +163,10 @@ def test_struct_wrap():
 
 
 def test_const():
-    from pyd import const_T1 as T1
+    from pyd import ConstMethods
     import pytest
 
-    boozy = T1()
+    boozy = ConstMethods()
 
     with pytest.raises(RuntimeError) as ex:
         boozy.a()
@@ -183,7 +183,6 @@ def test_const():
 
 def test_class_wrap_bizzy():
     from pyd import Bizzy
-    import pytest
 
     bizzy = Bizzy(i=4)
     assert bizzy.a(1) == 12
@@ -224,7 +223,6 @@ def test_class_wrap_bizzy():
     assert bizzy(40.5) == 45023
 
 
-
 def test_class_wrap_bizzy2():
     from pyd import Bizzy2
     import pytest
@@ -238,7 +236,7 @@ def test_class_wrap_bizzy2():
     bizzy = Bizzy2(i=4)
     assert bizzy.jj() == [4]
 
-    bizzy = Bizzy2(i=[4,5])
+    bizzy = Bizzy2(i=[4, 5])
     assert bizzy.jj() == [4, 5]
 
     assert Bizzy2.a(7, 32.1) == 6427
@@ -266,13 +264,13 @@ def test_class_wrap_bizzy2():
 def test_class_wrap_bizzy3():
     from pyd import Bizzy3
 
-    bizzy = Bizzy3(1,2)
+    bizzy = Bizzy3(1, 2)
     assert bizzy.a(7, 32.1) == 3224
     assert bizzy.a(i=7, d=32.1) == 3224
-    assert bizzy.a(d=32.1,i=7) == 3224
+    assert bizzy.a(d=32.1, i=7) == 3224
 
     assert bizzy.b(7, 32.1) == 32244
-    assert bizzy.b(d=32.1,i=7) == 32244
+    assert bizzy.b(d=32.1, i=7) == 32244
     assert bizzy.b(i=7, d=32.1) == 32244
     assert bizzy.b(7) == 3344
     assert bizzy.b(i=7) == 3344
@@ -280,8 +278,8 @@ def test_class_wrap_bizzy3():
     assert bizzy.c(7) == 7
     assert bizzy.c(i=7) == 7
     assert bizzy.c(i=[7]) == 7
-    assert bizzy.c(7,5,6) == 756
-    assert bizzy.c(i=[7,5,6]) == 756
+    assert bizzy.c(7, 5, 6) == 756
+    assert bizzy.c(i=[7, 5, 6]) == 756
 
     assert bizzy.d(i=7, k='foobiz') == "<7, 102, 'foobiz'>"
 

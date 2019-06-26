@@ -60,9 +60,9 @@ struct PythonType(T) {
         _pyType.tp_new = &PyType_GenericNew;
         _pyType.tp_getset = getsetDefs;
         _pyType.tp_methods = methodDefs;
-        _pyType.tp_repr = &repr;
-        _pyType.tp_init = &init;
-        _pyType.tp_new = &new_;
+        _pyType.tp_repr = &_py_repr;
+        _pyType.tp_init = &_py_init;
+        _pyType.tp_new = &_py_new;
 
         if(PyType_Ready(&_pyType) < 0) {
             PyErr_SetString(PyExc_TypeError, &"not ready"[0]);
@@ -122,57 +122,67 @@ struct PythonType(T) {
         return &methods[0];
     }
 
-    private static extern(C) PyObject* repr(PyObject* self_) {
-        import python: pyUnicodeDecodeUTF8;
-        import python.conv: to;
-        import std.conv: text;
+    private static extern(C) PyObject* _py_repr(PyObject* self_) nothrow {
 
-        assert(self_ !is null);
-        auto ret = text(self_.to!T);
-        return pyUnicodeDecodeUTF8(ret.ptr, ret.length, null /*errors*/);
+        return noThrowable!({
+
+            import python: pyUnicodeDecodeUTF8, PyErr_SetString, PyExc_RuntimeError;
+            import python.conv: to;
+            import std.string: toStringz;
+            import std.conv: text;
+
+            assert(self_ !is null);
+            auto ret = text(self_.to!T);
+            return pyUnicodeDecodeUTF8(ret.ptr, ret.length, null /*errors*/);
+        });
     }
 
-    private static extern(C) int init(PyObject* self_, PyObject* args, PyObject* kwargs) {
+    private static extern(C) int _py_init(PyObject* self_, PyObject* args, PyObject* kwargs) nothrow {
         // nothing to do
         return 0;
     }
 
-    private static extern(C) PyObject* new_(PyTypeObject *type, PyObject* args, PyObject* kwargs) {
-        import python.conv: toPython, to;
-        import python.raw: PyTuple_Size, PyTuple_GetItem;
-        import std.traits: hasMember, Unqual;
-        import std.meta: AliasSeq;
+    private static extern(C) PyObject* _py_new(PyTypeObject *type, PyObject* args, PyObject* kwargs) nothrow {
+        return noThrowable!({
+            import python.conv: toPython, to;
+            import python.raw: PyTuple_Size, PyTuple_GetItem;
+            import std.traits: hasMember, Unqual;
+            import std.meta: AliasSeq;
 
-        const numArgs = PyTuple_Size(args);
+            const numArgs = PyTuple_Size(args);
 
-        if(numArgs == 0) {
-            return toPython(T.init);
-        }
-
-        // TODO: kwargs
-
-        static if(hasMember!(T, "__ctor"))
-            alias constructors = AliasSeq!(__traits(getOverloads, T, "__ctor"));
-        else
-            alias constructors = AliasSeq!();
-
-        static if(constructors.length == 0) {
-            alias parameter(FieldType) = Parameter!(FieldType, void);
-            alias parameters = staticMap!(parameter, fieldTypes);
-            return pythonConstructor!(T, parameters)(args);
-        } else {
-            import python.raw: PyErr_SetString, PyExc_TypeError;
-            import std.traits: Parameters;
-
-            static foreach(constructor; constructors) {
-                if(Parameters!constructor.length == numArgs) {
-                    return pythonConstructor!(T, FunctionParameters!constructor)(args);
-                }
+            if(numArgs == 0) {
+                return toPython(T.init);
             }
 
-            PyErr_SetString(PyExc_TypeError, "Could not find a suitable constructor");
-            return null;
-        }
+            static if(hasMember!(T, "__ctor"))
+                alias constructors = AliasSeq!(__traits(getOverloads, T, "__ctor"));
+            else
+                alias constructors = AliasSeq!();
+
+            static if(constructors.length == 0) {
+                alias parameter(FieldType) = Parameter!(FieldType, void);
+                alias parameters = staticMap!(parameter, fieldTypes);
+                return pythonConstructor!(T, parameters)(args);
+            } else {
+                import python.raw: PyErr_SetString, PyExc_TypeError;
+                import std.traits: Parameters;
+
+                static foreach(constructor; constructors) {
+                    if(Parameters!constructor.length == numArgs) {
+                        return pythonConstructor!(T, FunctionParameters!constructor)(args);
+                    } else if(numArgs >= NumRequiredParameters!constructor
+                              && numArgs <= Parameters!constructor.length)
+                    {
+                        return pythonConstructor!(T, FunctionParameters!constructor)(args);
+                    }
+                }
+
+                PyErr_SetString(PyExc_TypeError, "Could not find a suitable constructor");
+                return null;
+            }
+
+        });
     }
 
     // Creates a python object from the given arguments by converting them to D
@@ -183,9 +193,14 @@ struct PythonType(T) {
 
         auto dArgs = pythonArgsToDArgs!P(args);
 
-        static if(is(T == class))
-            scope dobj = new T(dArgs.expand);
-        else
+        static if(is(T == class)) {
+            // When immutable dmd prints an odd error message about not being
+            // able to modify dobj
+            static if(is(T == immutable))
+                auto dobj = new T(dArgs.expand);
+            else
+                scope dobj = new T(dArgs.expand);
+        } else
             auto dobj = T(dArgs.expand);
 
         return toPython(dobj);
@@ -222,7 +237,14 @@ private auto pythonArgsToDArgs(P...)(PyObject* args)
     alias Type(alias Param) = Param.Type;
     alias Types = staticMap!(Type, P);
 
-    Tuple!(staticMap!(Unqual, Types)) dArgs;
+    // If one or more of the parameters is const/immutable,
+    // it'll be hard to construct it as such, so we Unqual
+    // the types for construction and cast to the appropriate
+    // type when returning.
+    alias MutableTuple = Tuple!(staticMap!(Unqual, Types));
+    alias RetTuple = Tuple!(Types);
+
+    MutableTuple dArgs;
 
     int pythonArgIndex = 0;
     static foreach(i; 0 .. P.length) {
@@ -230,7 +252,7 @@ private auto pythonArgsToDArgs(P...)(PyObject* args)
             // no default value for parameter at index i
             enforce(i < argsLength,
                     text(__FUNCTION__, ": not enough Python arguments"));
-            dArgs[i] = PyTuple_GetItem(args, i).to!(P[i].Type);
+            dArgs[i] = PyTuple_GetItem(args, i).to!(typeof(dArgs[i]));
         } else {
             if(i >= argsLength) {
                 // ran out of Python-supplied arguments, must be default value
@@ -241,7 +263,7 @@ private auto pythonArgsToDArgs(P...)(PyObject* args)
         }
     }
 
-    return dArgs;
+    return cast(RetTuple) dArgs;
 }
 
 
@@ -252,34 +274,50 @@ private alias Type(alias A) = typeof(A);
    The C API implementation of a Python method F of aggregate type T
  */
 struct PythonMethod(T, alias F) {
-    static extern(C) PyObject* _py_method_impl(PyObject* self, PyObject* args, PyObject* kwargs) {
-        import python.raw: pyDecRef;
-        import python.conv: toPython, to;
-        import std.traits: Parameters, FunctionAttribute, functionAttributes, Unqual;
+    static extern(C) PyObject* _py_method_impl(PyObject* self,
+                                               PyObject* args,
+                                               PyObject* kwargs)
+        nothrow
+    {
+        return noThrowable!({
+            import python.raw: pyDecRef;
+            import python.conv: toPython, to;
+            import std.traits: Parameters, FunctionAttribute, functionAttributes, Unqual, hasFunctionAttributes;
 
-        assert(self !is null);
-        auto dAggregate = self.to!(Unqual!T);
+            assert(self !is null,
+                   "Cannot call PythonMethod!" ~ __traits(identifier, F) ~ " on null self");
 
-        // Not sure how else to take `dAggregate` and `F` and call the member
-        // function other than a mixin
-        mixin(`auto ret = callDlangFunction!((Parameters!F args) => dAggregate.`, __traits(identifier, F), `(args))(self, args, kwargs);`);
+            static if(functionAttributes!F & FunctionAttribute.const_)
+                alias Aggregate = const T;
+            else static if(functionAttributes!F & FunctionAttribute.immutable_)
+                alias Aggregate = immutable T;
+            else
+                alias Aggregate = Unqual!T;
 
-        // The member function could have side-effects, we need to copy the changes
-        // back to the Python object.
-        static if(!(functionAttributes!F & FunctionAttribute.const_)) {
-            auto newSelf = toPython(dAggregate);
-            scope(exit) {
-                pyDecRef(newSelf);
+            auto dAggregate = self.to!Aggregate;
+
+            // Not sure how else to take `dAggregate` and `F` and call the member
+            // function other than a mixin
+            mixin(`auto ret = callDlangFunction!((Parameters!F args) => dAggregate.`,
+                  __traits(identifier, F), `(args))(self, args, kwargs);`);
+
+            // The member function could have side-effects, we need to copy the changes
+            // back to the Python object.
+            static if(!(functionAttributes!F & FunctionAttribute.const_)) {
+                auto newSelf = toPython(dAggregate);
+                scope(exit) {
+                    pyDecRef(newSelf);
+                }
+                auto pyClassSelf = cast(PythonClass!T*) self;
+                auto pyClassNewSelf = cast(PythonClass!T*) newSelf;
+
+                static foreach(i; 0 .. PythonClass!T.fieldNames.length) {
+                    pyClassSelf.set!i(self, pyClassNewSelf.get!i(newSelf));
+                }
             }
-            auto pyClassSelf = cast(PythonClass!T*) self;
-            auto pyClassNewSelf = cast(PythonClass!T*) newSelf;
 
-            static foreach(i; 0 .. PythonClass!T.fieldNames.length) {
-                pyClassSelf.set!i(self, pyClassNewSelf.get!i(newSelf));
-            }
-        }
-
-        return ret;
+            return ret;
+        });
     }
 }
 
@@ -288,37 +326,38 @@ struct PythonMethod(T, alias F) {
    The C API implementation that calls a D function F.
  */
 struct PythonFunction(alias F) {
-    static extern(C) PyObject* _py_function_impl(PyObject* self, PyObject* args, PyObject* kwargs) {
-        return callDlangFunction!F(self, args, kwargs);
+    static extern(C) PyObject* _py_function_impl(PyObject* self, PyObject* args, PyObject* kwargs) nothrow {
+        return noThrowable!(() => callDlangFunction!F(self, args, kwargs));
     }
 }
 
+
 private auto callDlangFunction(alias F)(PyObject* self, PyObject* args, PyObject* kwargs) {
-    import python.raw: PyTuple_Size, pyNone, pyIncRef, PyErr_SetString, PyExc_RuntimeError;
+    import python.raw: PyTuple_Size, PyErr_SetString, PyExc_RuntimeError;
     import python.conv: toPython;
-    import std.traits: Parameters, ParameterDefaults;
+    import std.traits: Parameters;
     import std.conv: text;
     import std.string: toStringz;
     import std.exception: enforce;
-    import std.meta: Filter, aliasSeqOf, staticMap;
-    import std.range: iota;
 
-    template notVoid(T...) if(T.length == 1) {
-        enum notVoid = !is(T[0] == void);
-    }
+    enum numDefaults = NumDefaultParameters!F;
+    enum numRequired = NumRequiredParameters!F;
 
-    enum numDefaults = Filter!(notVoid, ParameterDefaults!F).length;
-    enum numRequired = Parameters!F.length - numDefaults;
+    enforce(PyTuple_Size(args) >= numRequired
+            && PyTuple_Size(args) <= Parameters!F.length,
+            text("Received ", PyTuple_Size(args), " parameters but ",
+                 __traits(identifier, F), " takes ", Parameters!F.length));
+
+    auto dArgs = pythonArgsToDArgs!(FunctionParameters!F)(args);
+    return callDlangFunction!F(dArgs);
+}
+
+private auto noThrowable(alias F, A...)(auto ref A args) {
+    import python.raw: PyErr_SetString, PyExc_RuntimeError;
+    import std.string: toStringz;
 
     try {
-
-        enforce(PyTuple_Size(args) >= numRequired
-                && PyTuple_Size(args) <= Parameters!F.length,
-                text("Received ", PyTuple_Size(args), " parameters but ",
-                     __traits(identifier, F), " takes ", Parameters!F.length));
-
-        auto dArgs = pythonArgsToDArgs!(FunctionParameters!F)(args);
-        return callDlangFunction!F(dArgs);
+        return F(args);
     } catch(Exception e) {
         PyErr_SetString(PyExc_RuntimeError, e.msg.toStringz);
         return null;
@@ -327,6 +366,7 @@ private auto callDlangFunction(alias F)(PyObject* self, PyObject* args, PyObject
         return null;
     }
 }
+
 
 private auto callDlangFunction(alias F, A)(auto ref A argTuple) {
     import python.raw: pyIncRef, pyNone;
@@ -355,6 +395,23 @@ private template FunctionParameters(alias F) {
 }
 
 
+private template NumDefaultParameters(alias F) {
+    import std.meta: Filter;
+    import std.traits: ParameterDefaults;
+
+    template notVoid(T...) if(T.length == 1) {
+        enum notVoid = !is(T[0] == void);
+    }
+
+    enum NumDefaultParameters = Filter!(notVoid, ParameterDefaults!F).length;
+}
+
+
+private template NumRequiredParameters(alias F) {
+    import std.traits: Parameters;
+    enum NumRequiredParameters = Parameters!F.length - NumDefaultParameters!F;
+}
+
 /**
    Creates an instance of a Python class that is equivalent to the D type `T`.
    Return PyObject*.
@@ -364,6 +421,11 @@ PyObject* pythonClass(T)(auto ref T dobj) {
     import python.conv: toPython;
     import python.raw: pyObjectNew;
     import std.traits: FieldNameTuple;
+
+    static if(is(T == class)) {
+        if(dobj is null)
+            throw new Exception("Cannot create Python class from null D class");
+    }
 
     auto ret = pyObjectNew!(PythonClass!T)(PythonType!T.pyType);
 
@@ -419,7 +481,7 @@ struct PythonClass(T) if(isUserAggregate!T) {
     }
 
     // The function pointer for PyGetSetDef.get
-    private static extern(C) PyObject* get(int FieldIndex)(PyObject* self_, void* closure = null) {
+    private static extern(C) PyObject* get(int FieldIndex)(PyObject* self_, void* closure = null) nothrow {
         import python.raw: pyIncRef;
 
         assert(self_ !is null);
@@ -433,7 +495,7 @@ struct PythonClass(T) if(isUserAggregate!T) {
     }
 
     // The function pointer for PyGetSetDef.set
-    static extern(C) int set(int FieldIndex)(PyObject* self_, PyObject* value, void* closure = null) {
+    static extern(C) int set(int FieldIndex)(PyObject* self_, PyObject* value, void* closure = null) nothrow {
         import python.raw: pyIncRef, pyDecRef, PyErr_SetString, PyExc_TypeError;
 
         if(value is null) {

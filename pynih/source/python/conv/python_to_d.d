@@ -4,7 +4,7 @@ module python.conv.python_to_d;
 import python.raw: PyObject;
 import python.type: isUserAggregate, isTuple;
 import std.traits: Unqual, isIntegral, isFloatingPoint, isAggregateType, isArray,
-    isStaticArray, isAssociativeArray, isPointer, PointerTarget;
+    isStaticArray, isAssociativeArray, isPointer, PointerTarget, isSomeChar, isSomeString, isSomeFunction;
 import std.range: isInputRange;
 import std.datetime: DateTime, Date;
 
@@ -33,6 +33,8 @@ T to(T)(PyObject* value) @trusted if(isUserAggregate!T) {
 
     static if(is(T == class)) {
         auto buffer = new void[__traits(classInstanceSize, T)];
+        // this is needed for the vtable to work
+        buffer[] = typeid(Unqual!T).initializer[];
         auto ret = cast(Unqual!T) buffer.ptr;
     } else
         Unqual!T ret;
@@ -41,7 +43,8 @@ T to(T)(PyObject* value) @trusted if(isUserAggregate!T) {
         ret.tupleof[i] = pyclass.getField!i.to!(typeof(T.tupleof[i]));
     }
 
-    return ret;
+    // might need to be cast to `const` or `immutable`
+    return cast(T) ret;
 }
 
 
@@ -74,25 +77,28 @@ T to(T)(PyObject* value) if(is(Unqual!T == Date)) {
 }
 
 
-T to(T)(PyObject* value) if(isArray!T && !is(Unqual!T == string)) {
+T to(T)(PyObject* value) if(isArray!T && !isSomeString!T) {
     import python.raw: PyList_Size, PyList_GetItem;
-    import std.range: ElementType;
+    import std.range: ElementEncodingType;
+    import std.traits: Unqual;
 
-    T ret;
+    Unqual!T ret;
     static if(__traits(compiles, ret.length = 1))
         ret.length = PyList_Size(value);
 
     foreach(i, ref elt; ret) {
-        elt = PyList_GetItem(value, i).to!(ElementType!T);
+        elt = PyList_GetItem(value, i).to!(ElementEncodingType!T);
     }
 
     return ret;
 }
 
 
-T to(T)(PyObject* value) if(is(Unqual!T == string)) {
+T to(T)(PyObject* value) if(isSomeString!T) {
     import python.raw: pyUnicodeGetSize, pyUnicodeCheck,
         pyBytesAsString, pyObjectUnicode, pyUnicodeAsUtf8String, Py_ssize_t;
+    import std.range: ElementEncodingType;
+    import std.conv: to;
 
     value = pyObjectUnicode(value);
 
@@ -101,7 +107,9 @@ T to(T)(PyObject* value) if(is(Unqual!T == string)) {
     auto ptr = pyBytesAsString(pyUnicodeAsUtf8String(value));
     assert(length == 0 || ptr !is null);
 
-    return ptr[0 .. length].idup;
+    auto slice = ptr[0 .. length];
+
+    return slice.to!T;
 }
 
 
@@ -109,7 +117,6 @@ T to(T)(PyObject* value) if(is(Unqual!T == bool)) {
     import python.raw: pyTrue;
     return value is pyTrue;
 }
-
 
 
 T to(T)(PyObject* value) if(isAssociativeArray!T)
@@ -154,4 +161,15 @@ T to(T)(PyObject* value) if(isTuple!T) {
     }
 
     return ret;
+}
+
+
+T to(T)(PyObject* value) if(isSomeChar!T) {
+    auto str = value.to!string;
+    return str[0];
+}
+
+
+T to(T)(PyObject* value) if(isSomeFunction!T) {
+    return typeof(return).init;  // FIXME
 }
