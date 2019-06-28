@@ -161,20 +161,24 @@ struct PythonType(T) {
                 alias constructors = AliasSeq!();
 
             static if(constructors.length == 0) {
-                alias parameter(FieldType) = Parameter!(FieldType, void);
+                alias parameter(FieldType) = Parameter!(
+                    FieldType,
+                    "",
+                    void,
+                );
                 alias parameters = staticMap!(parameter, fieldTypes);
-                return pythonConstructor!(T, parameters)(args);
+                return pythonConstructor!(T, parameters)(args, kwargs);
             } else {
                 import python.raw: PyErr_SetString, PyExc_TypeError;
                 import std.traits: Parameters;
 
                 static foreach(constructor; constructors) {
                     if(Parameters!constructor.length == numArgs) {
-                        return pythonConstructor!(T, FunctionParameters!constructor)(args);
+                        return pythonConstructor!(T, FunctionParameters!constructor)(args, kwargs);
                     } else if(numArgs >= NumRequiredParameters!constructor
                               && numArgs <= Parameters!constructor.length)
                     {
-                        return pythonConstructor!(T, FunctionParameters!constructor)(args);
+                        return pythonConstructor!(T, FunctionParameters!constructor)(args, kwargs);
                     }
                 }
 
@@ -188,10 +192,10 @@ struct PythonType(T) {
     // Creates a python object from the given arguments by converting them to D
     // types, calling the D constructor and converting the result to a Python
     // object.
-    private static auto pythonConstructor(T, P...)(PyObject* args) {
+    private static auto pythonConstructor(T, P...)(PyObject* args, PyObject* kwargs) {
         import python.conv: toPython;
 
-        auto dArgs = pythonArgsToDArgs!P(args);
+        auto dArgs = pythonArgsToDArgs!P(args, kwargs);
 
         static if(is(T == class)) {
             // When immutable dmd prints an odd error message about not being
@@ -208,8 +212,26 @@ struct PythonType(T) {
 }
 
 
-private template Parameter(T, D...) if(D.length == 1) {
+// From a function symbol to an AliasSeq of `Parameter`
+private template FunctionParameters(alias F) {
+    import std.traits: Parameters, ParameterIdentifierTuple, ParameterDefaults;
+    import std.meta: staticMap, aliasSeqOf;
+    import std.range: iota;
+
+    alias parameter(size_t i) = Parameter!(
+        Parameters!F[i],
+        ParameterIdentifierTuple!F[i],
+        ParameterDefaults!F[i]
+    );
+
+    alias FunctionParameters = staticMap!(parameter, aliasSeqOf!(Parameters!F.length.iota));
+}
+
+
+private template Parameter(T, string id, D...) if(D.length == 1) {
     alias Type = T;
+    enum identifier = id;
+
     static if(is(D[0] == void))
         alias Default = void;
     else
@@ -221,10 +243,10 @@ private template isParameter(alias T) {
     enum isParameter = __traits(isSame, TemplateOf!T, Parameter);
 }
 
-private auto pythonArgsToDArgs(P...)(PyObject* args)
+private auto pythonArgsToDArgs(P...)(PyObject* args, PyObject* kwargs)
     if(allSatisfy!(isParameter, P))
 {
-    import python.raw: PyTuple_Size, PyTuple_GetItem;
+    import python.raw: PyTuple_Size, PyTuple_GetItem, pyUnicodeDecodeUTF8, PyDict_GetItem;
     import python.conv: to;
     import std.typecons: Tuple;
     import std.meta: staticMap;
@@ -249,14 +271,23 @@ private auto pythonArgsToDArgs(P...)(PyObject* args)
     int pythonArgIndex = 0;
     static foreach(i; 0 .. P.length) {
         static if(is(P[i].Default == void)) {
-            // no default value for parameter at index i
+            // ith parameter is required
             enforce(i < argsLength,
                     text(__FUNCTION__, ": not enough Python arguments"));
             dArgs[i] = PyTuple_GetItem(args, i).to!(typeof(dArgs[i]));
         } else {
+            // Here it gets tricky. The user could have supplied it in
+            // args positionally or via kwargs
             if(i >= argsLength) {
-                // ran out of Python-supplied arguments, must be default value
-                dArgs[i] = P[i].Default;
+
+                auto key = pyUnicodeDecodeUTF8(&P[i].identifier[0],
+                                               P[i].identifier.length,
+                                               null /*errors*/);
+                enforce(key, "Errors converting '" ~ P[i].identifier ~ "' to Python object");
+                auto val = kwargs ? PyDict_GetItem(kwargs, key) : null;
+                dArgs[i] = val
+                    ? val.to!(P[i].Type) // use kwargs
+                    : P[i].Default; // use default value
             } else {
                 dArgs[i] = PyTuple_GetItem(args, i).to!(P[i].Type);
             }
@@ -348,7 +379,7 @@ private auto callDlangFunction(alias F)(PyObject* self, PyObject* args, PyObject
             text("Received ", PyTuple_Size(args), " parameters but ",
                  __traits(identifier, F), " takes ", Parameters!F.length));
 
-    auto dArgs = pythonArgsToDArgs!(FunctionParameters!F)(args);
+    auto dArgs = pythonArgsToDArgs!(FunctionParameters!F)(args, kwargs);
     return callDlangFunction!F(dArgs);
 }
 
@@ -382,16 +413,6 @@ private auto callDlangFunction(alias F, A)(auto ref A argTuple) {
         auto dret = F(argTuple.expand);
         return dret.toPython;
     }
-}
-
-// From a function symbol to an AliasSeq of `Parameter` structs
-private template FunctionParameters(alias F) {
-    import std.traits: Parameters, ParameterDefaults;
-    import std.meta: staticMap, aliasSeqOf;
-    import std.range: iota;
-
-    alias parameter(size_t i) = Parameter!(Parameters!F[i], ParameterDefaults!F[i]);
-    alias FunctionParameters = staticMap!(parameter, aliasSeqOf!(Parameters!F.length.iota));
 }
 
 
@@ -568,7 +589,6 @@ private bool checkPythonType(T)(PyObject* value) if(is(T == Date)) {
     if(!ret) setPyErrTypeString!"Date";
     return ret;
 }
-
 
 
 private void setPyErrTypeString(string type)() @trusted @nogc nothrow {
