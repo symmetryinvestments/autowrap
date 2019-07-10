@@ -76,10 +76,11 @@ struct PythonType(T) {
         // +1 due to the sentinel
         static PyGetSetDef[fieldNames.length + 1] getsets;
 
+        // don't bother if already initialised
         if(getsets != getsets.init) return &getsets[0];
 
         static foreach(i; 0 .. fieldNames.length) {
-            getsets[i].name = cast(typeof(PyGetSetDef.name))fieldNames[i];
+            getsets[i].name = cast(typeof(PyGetSetDef.name)) fieldNames[i];
             getsets[i].get = &PythonClass!T.get!i;
             getsets[i].set = &PythonClass!T.set!i;
         }
