@@ -200,3 +200,19 @@ def test_struct_with_private_member():
     s.i = 42
     with pytest.raises(AttributeError):
         s.j = 5
+
+
+def test_struct_fields():
+    from simple import IntString
+
+    obj = IntString(7, "foobar")
+    assert obj.i == 7
+    assert obj.s == "foobar"
+
+    obj.i = 42
+    assert obj.i == 42
+    assert obj.s == "foobar"
+
+    obj.s = "quux"
+    assert obj.i == 42
+    assert obj.s == "quux"
