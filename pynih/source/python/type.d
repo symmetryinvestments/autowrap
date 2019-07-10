@@ -503,10 +503,13 @@ struct PythonClass(T) if(isUserAggregate!T) {
     }
 
     // The function pointer for PyGetSetDef.get
-    private static extern(C) PyObject* get(int FieldIndex)(PyObject* self_, void* closure = null) nothrow {
+    private static extern(C) PyObject* get(int FieldIndex)
+                                          (PyObject* self_, void* closure = null)
+        nothrow
+        in(self_ !is null)
+    {
         import python.raw: pyIncRef;
 
-        assert(self_ !is null);
         auto self = cast(PythonClass*) self_;
 
         auto field = self.getField!FieldIndex;
@@ -517,7 +520,11 @@ struct PythonClass(T) if(isUserAggregate!T) {
     }
 
     // The function pointer for PyGetSetDef.set
-    static extern(C) int set(int FieldIndex)(PyObject* self_, PyObject* value, void* closure = null) nothrow {
+    static extern(C) int set(int FieldIndex)
+                            (PyObject* self_, PyObject* value, void* closure = null)
+        nothrow
+        in(self_ !is null)
+    {
         import python.raw: pyIncRef, pyDecRef, PyErr_SetString, PyExc_TypeError;
 
         if(value is null) {
@@ -531,7 +538,6 @@ struct PythonClass(T) if(isUserAggregate!T) {
         //     return -1;
         // }
 
-        assert(self_ !is null);
         auto self = cast(PythonClass!T*) self_;
         auto tmp = self.getField!FieldIndex;
 
@@ -542,7 +548,7 @@ struct PythonClass(T) if(isUserAggregate!T) {
         return 0;
     }
 
-    PyObject* getField(int FieldIndex)() {
+    private PyObject* getField(int FieldIndex)() {
         mixin(`return this.`, fieldNames[FieldIndex], `;`);
     }
 
