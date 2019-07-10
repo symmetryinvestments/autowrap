@@ -542,7 +542,7 @@ struct PythonClass(T) if(isUserAggregate!T) {
         auto tmp = self.getField!FieldIndex;
 
         pyIncRef(value);
-        self.setField!FieldIndex(value);
+        mixin(`self.`, fieldNames[FieldIndex], ` = value;`);
         pyDecRef(tmp);
 
         return 0;
@@ -550,10 +550,6 @@ struct PythonClass(T) if(isUserAggregate!T) {
 
     private PyObject* getField(int FieldIndex)() {
         mixin(`return this.`, fieldNames[FieldIndex], `;`);
-    }
-
-    private void setField(int FieldIndex)(PyObject* value) {
-        mixin(`this.`, fieldNames[FieldIndex], ` = value;`);
     }
 }
 
