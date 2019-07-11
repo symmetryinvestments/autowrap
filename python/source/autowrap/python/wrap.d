@@ -107,17 +107,13 @@ void wrapAllAggregates(Modules...)() if(allSatisfy!(isModule, Modules)) {
     }
 }
 
-private template isProperty(alias F) {
-    import std.traits: functionAttributes, FunctionAttribute;
-    enum isProperty = functionAttributes!F & FunctionAttribute.property;
-}
 
 /**
    Wrap aggregate of type T.
  */
 auto wrapAggregate(T)() if(isUserAggregate!T) {
 
-    import autowrap.reflection: Symbol, PublicFieldNames;
+    import autowrap.reflection: Symbol, PublicFieldNames, Properties, isProperty;
     import autowrap.python.pyd.class_wrap: MemberFunction;
     import pyd.pyd: wrap_class, Member, Init, StaticDef, Repr, Property;
     import std.meta: staticMap, Filter, templateNot;
@@ -360,12 +356,6 @@ private template OpCalls(T) {
         alias OpCalls = staticMap!(opCall, overloads);
     } else
         alias OpCalls = AliasSeq!();
-}
-
-private template Properties(functions...) {
-    import std.meta: Filter;
-    import std.traits: functionAttributes, FunctionAttribute;
-    alias Properties = Filter!(isProperty, functions);
 }
 
 
