@@ -28,11 +28,11 @@ package enum isNonRangeUDT(T) = isUserAggregate!T && !isInputRange!T;
  */
 struct PythonType(T) {
     import python.raw: PyTypeObject;
-    import autowrap.reflection: PublicFieldNames, PublicFieldTypes;
+    import std.traits: FieldNameTuple, Fields;
     import std.meta: Alias, staticMap;
 
-    alias fieldNames = PublicFieldNames!T;
-    alias fieldTypes = PublicFieldTypes!T;
+    alias fieldNames = FieldNameTuple!T;
+    alias fieldTypes = Fields!T;
 
     static PyTypeObject _pyType;
     static bool failedToReady;
@@ -80,8 +80,10 @@ struct PythonType(T) {
 
         static foreach(i; 0 .. fieldNames.length) {
             getsets[i].name = cast(typeof(PyGetSetDef.name)) fieldNames[i];
-            getsets[i].get = &PythonClass!T.get!i;
-            getsets[i].set = &PythonClass!T.set!i;
+            static if(__traits(getProtection, __traits(getMember, T, fieldNames[i])) == "public") {
+                getsets[i].get = &PythonClass!T.get!i;
+                getsets[i].set = &PythonClass!T.set!i;
+            }
         }
 
         return &getsets[0];
@@ -490,12 +492,10 @@ struct PythonClass(T) if(isUserAggregate!T) {
     alias fieldNames = FieldNameTuple!T;
     alias fieldTypes = Fields!T;
 
-    // +1 for the sentinel
-    static PyGetSetDef[fieldNames.length + 1] getsets;
-
-    /// Field members
     // Every python object must have this
     mixin PyObjectHead;
+
+    // Field members
     // Generate a python object field for every field in T
     static foreach(fieldName; fieldNames) {
         mixin(`PyObject* `, fieldName, `;`);

@@ -197,9 +197,15 @@ def test_struct_with_private_member():
     from simple import StructWithPrivateMember
 
     s = StructWithPrivateMember()
+
     s.i = 42
+    # j is private
     with pytest.raises(AttributeError):
-        s.j = 5
+        s.j = "oops"
+    s.k = 33
+
+    assert s.i == 42
+    assert s.k == 33
 
 
 def test_struct_fields():

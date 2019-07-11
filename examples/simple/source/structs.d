@@ -28,7 +28,8 @@ struct SafePureEtcStruct {
 
 struct StructWithPrivateMember {
     int i;
-    private int j;
+    private string j;
+    int k;
 }
 
 
