@@ -443,7 +443,6 @@ PyObject* pythonClass(T)(auto ref T dobj) {
 
     import python.conv: toPython;
     import python.raw: pyObjectNew;
-    import std.traits: FieldNameTuple;
 
     static if(is(T == class)) {
         if(dobj is null)
@@ -452,7 +451,7 @@ PyObject* pythonClass(T)(auto ref T dobj) {
 
     auto ret = pyObjectNew!(PythonClass!T)(PythonType!T.pyType);
 
-    static foreach(fieldName; FieldNameTuple!T) {
+    static foreach(fieldName; PythonType!T.fieldNames) {
         static if(isPublic!(T, fieldName))
             mixin(`ret.`, fieldName, ` = dobj.`, fieldName, `.toPython;`);
     }
@@ -487,10 +486,9 @@ private template isPublic(T, string memberName) {
  */
 struct PythonClass(T) if(isUserAggregate!T) {
     import python.raw: PyObjectHead, PyGetSetDef;
-    import std.traits: FieldNameTuple, Fields;
 
-    alias fieldNames = FieldNameTuple!T;
-    alias fieldTypes = Fields!T;
+    alias fieldNames = PythonType!T.fieldNames;
+    alias fieldTypes = PythonType!T.fieldTypes;
 
     // Every python object must have this
     mixin PyObjectHead;
