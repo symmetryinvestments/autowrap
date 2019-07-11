@@ -516,9 +516,10 @@ private template isPublic(T, string memberName) {
  */
 struct PythonClass(T) if(isUserAggregate!T) {
     import python.raw: PyObjectHead, PyGetSetDef;
+    import std.traits: Unqual;
 
-    alias fieldNames = PythonType!T.fieldNames;
-    alias fieldTypes = PythonType!T.fieldTypes;
+    alias fieldNames = PythonType!(Unqual!T).fieldNames;
+    alias fieldTypes = PythonType!(Unqual!T).fieldTypes;
 
     // Every python object must have this
     mixin PyObjectHead;
