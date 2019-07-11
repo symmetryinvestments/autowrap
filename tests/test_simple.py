@@ -222,3 +222,42 @@ def test_struct_fields():
     obj.s = "quux"
     assert obj.i == 42
     assert obj.s == "quux"
+
+
+def test_property_getter():
+    from simple import Getter
+
+    g = Getter(42)
+    # can't call the property function since not registered
+    with pytest.raises(TypeError):
+        g.i()
+
+    assert g.i == 42
+
+
+def test_property_setter():
+    from simple import Setter
+
+    s = Setter()
+    # can't call the property function since not registered
+    with pytest.raises(AttributeError):
+        s.i(33)
+    s.i = 33  # shouldn't throw
+
+
+def test_property_getter_setter():
+    from simple import GetterSetter
+
+    obj = GetterSetter(42)
+
+    # can't call the property function since not registered
+    with pytest.raises(TypeError):
+        obj.i()
+
+    # can't call the property function since not registered
+    with pytest.raises(TypeError):
+        obj.i(33)
+
+    assert obj.i == 42
+    obj.i = 33  # shouldn't throw
+    assert obj.i == 33

@@ -418,3 +418,19 @@ template isProperty(alias F) {
     import std.traits: functionAttributes, FunctionAttribute;
     enum isProperty = functionAttributes!F & FunctionAttribute.property;
 }
+
+
+template isStatic(alias F) {
+    import std.traits: hasStaticMember;
+    enum isStatic = hasStaticMember!(__traits(parent, F), __traits(identifier, F));
+}
+
+@safe pure unittest {
+    static struct Struct {
+        int foo();
+        static int bar();
+    }
+
+    static assert(!isStatic!(Struct.foo));
+    static assert( isStatic!(Struct.bar));
+}

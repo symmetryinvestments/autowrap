@@ -44,3 +44,33 @@ struct NoCtor {
     double d;
     string s;
 }
+
+
+struct Getter {
+    int _i;
+    this(int i) { _i = i;}
+    @property int i() { return _i; }
+}
+
+
+struct Setter {
+    int _i;
+    @property void i(int i) { _i = i; }
+}
+
+
+struct GetterSetter {
+    int _i;
+    this(int i) { _i = i; }
+    // would be const but pyd doesn't like it
+    @property int i() { return _i; }
+    @property void i(int i) { _i = i; }
+}
+
+
+struct GetterSetterConst {
+    int _i;
+    this(int i) @safe pure nothrow { _i = i; }
+    @property int i() @safe const pure nothrow { return _i; }
+    @property void i(int i) @safe pure nothrow { _i = i; }
+}

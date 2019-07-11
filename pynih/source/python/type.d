@@ -70,14 +70,23 @@ struct PythonType(T) {
     }
 
     private static auto getsetDefs() {
+        import autowrap.reflection: Properties;
         import python.raw: PyGetSetDef;
+        import std.meta: staticMap, Filter;
+        import std.traits: isFunction, ReturnType;
+
+        alias AggMember(string memberName) = __traits(getMember, T, memberName);
+        alias members = staticMap!(AggMember, __traits(allMembers, T));
+        alias memberFunctions = Filter!(isFunction, members);
+        alias properties = Properties!memberFunctions;
 
         // +1 due to the sentinel
-        static PyGetSetDef[fieldNames.length + 1] getsets;
+        static PyGetSetDef[fieldNames.length + properties.length + 1] getsets;
 
         // don't bother if already initialised
         if(getsets != getsets.init) return &getsets[0];
 
+        // first deal with the public fields
         static foreach(i; 0 .. fieldNames.length) {
             getsets[i].name = cast(typeof(PyGetSetDef.name)) fieldNames[i];
             static if(__traits(getProtection, __traits(getMember, T, fieldNames[i])) == "public") {
@@ -86,13 +95,28 @@ struct PythonType(T) {
             }
         }
 
+        // then deal with the property functions
+        static foreach(j, property; properties) {{
+            enum i = fieldNames.length + j;
+
+            getsets[i].name = cast(typeof(PyGetSetDef.name)) __traits(identifier, property);
+
+            static foreach(overload; __traits(getOverloads, T, __traits(identifier, property))) {
+                static if(is(ReturnType!overload == void))
+                    getsets[i].set = &PythonClass!T.propertySet!(overload);
+                else
+                    getsets[i].get = &PythonClass!T.propertyGet!(overload);
+            }
+        }}
+
         return &getsets[0];
     }
 
     private static auto methodDefs()() {
+        import autowrap.reflection: isProperty;
         import python.raw: PyMethodDef;
         import python.cooked: pyMethodDef;
-        import std.meta: AliasSeq, Alias, staticMap, Filter;
+        import std.meta: AliasSeq, Alias, staticMap, Filter, templateNot;
         import std.traits: isSomeFunction;
         import std.algorithm: startsWith;
 
@@ -109,7 +133,7 @@ struct PythonType(T) {
         alias regularMemberNames = Filter!(isRegular, publicMemberNames);
         alias Member(string name) = Alias!(__traits(getMember, T, name));
         alias members = staticMap!(Member, regularMemberNames);
-        alias memberFunctions = Filter!(isSomeFunction, members);
+        alias memberFunctions = Filter!(templateNot!isProperty, Filter!(isSomeFunction, members));
 
         // +1 due to sentinel
         static PyMethodDef[memberFunctions.length + 1] methods;
@@ -256,7 +280,7 @@ private auto pythonArgsToDArgs(P...)(PyObject* args, PyObject* kwargs)
     import std.conv: text;
     import std.exception: enforce;
 
-    const argsLength = PyTuple_Size(args);
+    const argsLength = args is null ? 0 : PyTuple_Size(args);
 
     alias Type(alias Param) = Param.Type;
     alias Types = staticMap!(Type, P);
@@ -332,7 +356,7 @@ struct PythonMethod(T, alias F) {
             // Not sure how else to take `dAggregate` and `F` and call the member
             // function other than a mixin
             mixin(`auto ret = callDlangFunction!((Parameters!F args) => dAggregate.`,
-                  __traits(identifier, F), `(args))(self, args, kwargs);`);
+                  __traits(identifier, F), `(args), __traits(identifier, F))(self, args, kwargs);`);
 
             // The member function could have side-effects, we need to copy the changes
             // back to the Python object.
@@ -365,7 +389,8 @@ struct PythonFunction(alias F) {
 }
 
 
-private auto callDlangFunction(alias F)(PyObject* self, PyObject* args, PyObject* kwargs) {
+private auto callDlangFunction(alias F, string functionName = __traits(identifier, F))
+                              (PyObject* self, PyObject* args, PyObject* kwargs) {
     import python.raw: PyTuple_Size, PyErr_SetString, PyExc_RuntimeError;
     import python.conv: toPython;
     import std.traits: Parameters;
@@ -376,10 +401,11 @@ private auto callDlangFunction(alias F)(PyObject* self, PyObject* args, PyObject
     enum numDefaults = NumDefaultParameters!F;
     enum numRequired = NumRequiredParameters!F;
 
-    enforce(PyTuple_Size(args) >= numRequired
-            && PyTuple_Size(args) <= Parameters!F.length,
-            text("Received ", PyTuple_Size(args), " parameters but ",
-                 __traits(identifier, F), " takes ", Parameters!F.length));
+    const numArgs = args is null ? 0 : PyTuple_Size(args);
+    enforce(numArgs >= numRequired
+            && numArgs <= Parameters!F.length,
+            text("Received ", numArgs, " parameters but ",
+                 functionName, " takes ", Parameters!F.length));
 
     auto dArgs = pythonArgsToDArgs!(FunctionParameters!F)(args, kwargs);
     return callDlangFunction!F(dArgs);
@@ -547,6 +573,30 @@ struct PythonClass(T) if(isUserAggregate!T) {
 
     PyObject* getField(int FieldIndex)() {
         mixin(`return this.`, fieldNames[FieldIndex], `;`);
+    }
+
+    static extern(C) PyObject* propertyGet(alias F)
+                                          (PyObject* self_, void* closure = null)
+        nothrow
+        in(self_ !is null)
+    {
+        return PythonMethod!(T, F)._py_method_impl(self_, null /*args*/, null /*kwargs*/);
+    }
+
+    static extern(C) int propertySet(alias F)
+                                    (PyObject* self_, PyObject* value, void* closure = null)
+        nothrow
+        in(self_ !is null)
+    {
+        import python.raw: PyTuple_New, PyTuple_SetItem, pyDecRef;
+
+        auto args = PyTuple_New(1);
+        PyTuple_SetItem(args, 0, value);
+        scope(exit) pyDecRef(args);
+
+        PythonMethod!(T, F)._py_method_impl(self_, args, null /*kwargs*/);
+
+        return 0;
     }
 }
 
