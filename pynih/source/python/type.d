@@ -29,7 +29,6 @@ package enum isNonRangeUDT(T) = isUserAggregate!T && !isInputRange!T;
 struct PythonType(T) {
     import python.raw: PyTypeObject;
     import autowrap.reflection: PublicFieldNames, PublicFieldTypes;
-    import std.traits: FieldNameTuple, Fields;
     import std.meta: Alias, staticMap;
 
     alias fieldNames = PublicFieldNames!T;
@@ -548,7 +547,7 @@ struct PythonClass(T) if(isUserAggregate!T) {
         return 0;
     }
 
-    private PyObject* getField(int FieldIndex)() {
+    PyObject* getField(int FieldIndex)() {
         mixin(`return this.`, fieldNames[FieldIndex], `;`);
     }
 }
