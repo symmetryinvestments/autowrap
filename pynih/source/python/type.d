@@ -72,11 +72,15 @@ struct PythonType(T) {
     private static auto getsetDefs() {
         import autowrap.reflection: Properties;
         import python.raw: PyGetSetDef;
-        import std.meta: staticMap, Filter;
+        import std.meta: staticMap, Filter, Alias;
         import std.traits: isFunction, ReturnType;
 
-        alias AggMember(string memberName) = __traits(getMember, T, memberName);
-        alias members = staticMap!(AggMember, __traits(allMembers, T));
+        alias AggMember(string memberName) = Alias!(__traits(getMember, T, memberName));
+        alias memberNames = __traits(allMembers, T);
+        enum isPublic(string memberName) =
+            __traits(getProtection, __traits(getMember, T, memberName)) == "public";
+        alias publicMemberNames = Filter!(isPublic, memberNames);
+        alias members = staticMap!(AggMember, publicMemberNames);
         alias memberFunctions = Filter!(isFunction, members);
         alias properties = Properties!memberFunctions;
 
