@@ -27,12 +27,13 @@ package enum isNonRangeUDT(T) = isUserAggregate!T && !isInputRange!T;
    type `T`.
  */
 struct PythonType(T) {
-    import python.raw: PyTypeObject;
+    import python.raw: PyTypeObject, PySequenceMethods;
     import std.traits: FieldNameTuple, Fields;
     import std.meta: Alias, staticMap;
 
     alias fieldNames = FieldNameTuple!T;
     alias fieldTypes = Fields!T;
+    enum hasLength = is(typeof({ size_t len = T.init.length; }));
 
     static PyTypeObject _pyType;
     static bool failedToReady;
@@ -62,6 +63,12 @@ struct PythonType(T) {
         _pyType.tp_repr = &_py_repr;
         _pyType.tp_init = &_py_init;
         _pyType.tp_new = &_py_new;
+
+        static if(hasLength) {
+            if(_pyType.tp_as_sequence is null)
+                _pyType.tp_as_sequence = new PySequenceMethods;
+            _pyType.tp_as_sequence.sq_length = &_py_length;
+        }
 
         if(PyType_Ready(&_pyType) < 0) {
             PyErr_SetString(PyExc_TypeError, &"not ready"[0]);
@@ -150,6 +157,19 @@ struct PythonType(T) {
         }
 
         return &methods[0];
+    }
+
+    import python.raw: Py_ssize_t;
+    private static extern(C) Py_ssize_t _py_length(PyObject* self_) nothrow {
+
+        return noThrowable!({
+            assert(self_ !is null);
+            static if(hasLength) {
+                import python.conv: to;
+                return self_.to!T.length;
+            } else
+                return -1;
+        });
     }
 
     private static extern(C) PyObject* _py_repr(PyObject* self_) nothrow {
@@ -422,15 +442,16 @@ private auto callDlangFunction(alias F, string functionName = __traits(identifie
 private auto noThrowable(alias F, A...)(auto ref A args) {
     import python.raw: PyErr_SetString, PyExc_RuntimeError;
     import std.string: toStringz;
+    import std.traits: ReturnType;
 
     try {
         return F(args);
     } catch(Exception e) {
         PyErr_SetString(PyExc_RuntimeError, e.msg.toStringz);
-        return null;
+        return ReturnType!F.init;
     } catch(Error e) {
         PyErr_SetString(PyExc_RuntimeError, ("FATAL ERROR: " ~ e.msg).toStringz);
-        return null;
+        return ReturnType!F.init;
     }
 }
 
