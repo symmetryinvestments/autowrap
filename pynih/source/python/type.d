@@ -224,16 +224,20 @@ struct PythonType(T) {
     // object.
     private static auto pythonConstructor(T, P...)(PyObject* args, PyObject* kwargs) {
         import python.conv: toPython;
+        import std.traits: hasMember;
 
         auto dArgs = pythonArgsToDArgs!P(args, kwargs);
 
         static if(is(T == class)) {
-            // When immutable dmd prints an odd error message about not being
-            // able to modify dobj
-            static if(is(T == immutable))
-                auto dobj = new T(dArgs.expand);
-            else
-                scope dobj = new T(dArgs.expand);
+            static if(hasMember!(T, "__ctor")) {
+                // When immutable dmd prints an odd error message about not being
+                // able to modify dobj
+                static if(is(T == immutable))
+                    auto dobj = new T(dArgs.expand);
+                else
+                    scope dobj = new T(dArgs.expand);
+            } else
+                T dobj;
         } else
             auto dobj = T(dArgs.expand);
 
