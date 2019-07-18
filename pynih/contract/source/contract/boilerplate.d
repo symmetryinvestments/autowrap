@@ -1,6 +1,7 @@
 module contract.boilerplate;
 
 import python.boilerplate;
+import python.raw: isPython2, isPython3;
 
 /**
    A string mixin to reduce boilerplate when creating a Python module.

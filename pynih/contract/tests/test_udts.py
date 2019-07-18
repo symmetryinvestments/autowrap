@@ -21,8 +21,10 @@ def test_struct_getset():
     from contract import struct_getset
     s = struct_getset()
     # no setter for i
-    with pytest.raises(AttributeError):
+    with pytest.raises(AttributeError) as set_error:
         s.i = 0
+    assert str(set_error.value) == \
+        "attribute 'i' of 'StructGetSet' objects is not writable"
 
     # this always returns 42 no matter what
     assert s.i == 42

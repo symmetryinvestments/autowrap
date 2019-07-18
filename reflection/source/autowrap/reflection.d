@@ -373,8 +373,6 @@ package template isExportFunction(alias F, Flag!"alwaysExport" alwaysExport = No
 
 
 private template isExportSymbol(alias S, Flag!"alwaysExport" alwaysExport = No.alwaysExport) {
-    import std.traits: isFunction;
-
     version(AutowrapAlwaysExport)
         enum isExportSymbol = isPublicSymbol!S;
     else
@@ -407,4 +405,32 @@ template PublicFieldTypes(T) {
     alias fieldType(string name) = typeof(__traits(getMember, T, name));
 
     alias PublicFieldTypes = staticMap!(fieldType, PublicFieldNames!T);
+}
+
+
+template Properties(functions...) {
+    import std.meta: Filter;
+    alias Properties = Filter!(isProperty, functions);
+}
+
+
+template isProperty(alias F) {
+    import std.traits: functionAttributes, FunctionAttribute;
+    enum isProperty = functionAttributes!F & FunctionAttribute.property;
+}
+
+
+template isStatic(alias F) {
+    import std.traits: hasStaticMember;
+    enum isStatic = hasStaticMember!(__traits(parent, F), __traits(identifier, F));
+}
+
+@safe pure unittest {
+    static struct Struct {
+        int foo();
+        static int bar();
+    }
+
+    static assert(!isStatic!(Struct.foo));
+    static assert( isStatic!(Struct.bar));
 }

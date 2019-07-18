@@ -107,17 +107,13 @@ void wrapAllAggregates(Modules...)() if(allSatisfy!(isModule, Modules)) {
     }
 }
 
-private template isProperty(alias F) {
-    import std.traits: functionAttributes, FunctionAttribute;
-    enum isProperty = functionAttributes!F & FunctionAttribute.property;
-}
 
 /**
    Wrap aggregate of type T.
  */
 auto wrapAggregate(T)() if(isUserAggregate!T) {
 
-    import autowrap.reflection: Symbol, PublicFieldNames;
+    import autowrap.reflection: Symbol, PublicFieldNames, Properties, isProperty, isStatic;
     import autowrap.python.pyd.class_wrap: MemberFunction;
     import pyd.pyd: wrap_class, Member, Init, StaticDef, Repr, Property;
     import std.meta: staticMap, Filter, templateNot;
@@ -362,12 +358,6 @@ private template OpCalls(T) {
         alias OpCalls = AliasSeq!();
 }
 
-private template Properties(functions...) {
-    import std.meta: Filter;
-    import std.traits: functionAttributes, FunctionAttribute;
-    alias Properties = Filter!(isProperty, functions);
-}
-
 
 // must be a global template
 private template isMemberFunction(A...) if(A.length == 1) {
@@ -391,20 +381,4 @@ private template isPublicFunction(alias F) {
     import std.traits: isFunction;
     enum prot = __traits(getProtection, F);
     enum isPublicFunction = isFunction!F && (prot == "export" || prot == "public");
-}
-
-
-private template isStatic(alias F) {
-    import std.traits: hasStaticMember;
-    enum isStatic = hasStaticMember!(__traits(parent, F), __traits(identifier, F));
-}
-
-@safe pure unittest {
-    static struct Struct {
-        int foo();
-        static int bar();
-    }
-
-    static assert(!isStatic!(Struct.foo));
-    static assert( isStatic!(Struct.bar));
 }

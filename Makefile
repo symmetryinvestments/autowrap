@@ -2,10 +2,10 @@
 
 DUB_CONFIGURATION ?= python37
 
-.PHONY: test test_simple_pyd test_simple_pynih test_issues test_pyd_pyd test_numpy examples/simple/lib/pyd/libsimple.so examples/simple/lib/pynih/libsimple.so examples/issues/libissues.so examples/pyd/libpydtests.so examples/numpy/libnumpy.so examples/pyd/lib/pyd/libpydtests.so examples/pyd/lib/pynih/libpydtests.so
+.PHONY: test test_simple_pyd test_simple_pynih test_pyd_pyd test_issues test_numpy examples/simple/lib/pyd/libsimple.so examples/simple/lib/pynih/libsimple.so examples/issues/libissues.so examples/pyd/libpydtests.so examples/numpy/libnumpy.so examples/pyd/lib/pyd/libpydtests.so examples/pyd/lib/pynih/libpydtests.so
 
 all: test
-test: test_simple_pyd test_issues test_pyd_pyd test_numpy test_simple_pynih
+test: test_simple_pyd test_simple_pynih test_pyd_pyd test_numpy test_issues
 
 test_simple_pyd: tests/test_simple.py examples/simple/lib/pyd/simple.so
 	PYTHONPATH=$(PWD)/examples/simple/lib/pyd pytest -s -vv $<
@@ -19,11 +19,14 @@ examples/simple/lib/pyd/libsimple.so: examples/simple/dub.sdl examples/simple/du
 example/simple/dub.selections.json:
 	@cd examples/simple && dub upgrade -q
 
-test_simple_pynih_only: tests/test_simple_pynih_only.py examples/simple/lib/pynih/simple.so
+test_simple_pynih_only: tests/test_simple_pynih_only.py examples/simple/lib/pynih/simple.so pynih/source/python/raw.d
 	PYTHONPATH=$(PWD)/examples/simple/lib/pynih pytest -s -vv $<
 
-test_simple_pynih: tests/test_simple.py examples/simple/lib/pynih/simple.so
+test_simple_pynih: tests/test_simple.py examples/simple/lib/pynih/simple.so pynih/source/python/raw.d
 	PYTHONPATH=$(PWD)/examples/simple/lib/pynih pytest -s -vv $<
+
+pynih/source/python/raw.d: pynih/Makefile pynih/source/python/raw.dpp
+	make -C pynih source/python/raw.d
 
 examples/simple/lib/pynih/simple.so: examples/simple/lib/pynih/libsimple.so
 	@cp $^ $@

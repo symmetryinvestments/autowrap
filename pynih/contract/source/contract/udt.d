@@ -215,6 +215,7 @@ package PyObject* struct_getset(PyObject* self, PyObject *args) nothrow @nogc {
 
         outerGetSets[0].name = cast(typeof(PyGetSetDef.name)) &"i"[0];
         outerGetSets[0].get = &getOuterInt;
+        // outerGetSets[0].set is null so will raise AttributeError
         outerGetSets[1].name = cast(typeof(PyGetSetDef.name)) &"d"[0];
         outerGetSets[1].get = &getOuterDouble;
         outerGetSets[1].set = &setOuterDouble;

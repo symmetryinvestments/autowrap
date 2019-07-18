@@ -197,6 +197,67 @@ def test_struct_with_private_member():
     from simple import StructWithPrivateMember
 
     s = StructWithPrivateMember()
+
     s.i = 42
+    # j is private
     with pytest.raises(AttributeError):
-        s.j = 5
+        s.j = "oops"
+    s.k = 33
+
+    assert s.i == 42
+    assert s.k == 33
+
+
+def test_struct_fields():
+    from simple import IntString
+
+    obj = IntString(7, "foobar")
+    assert obj.i == 7
+    assert obj.s == "foobar"
+
+    obj.i = 42
+    assert obj.i == 42
+    assert obj.s == "foobar"
+
+    obj.s = "quux"
+    assert obj.i == 42
+    assert obj.s == "quux"
+
+
+def test_property_getter():
+    from simple import Getter
+
+    g = Getter(42)
+    # can't call the property function since not registered
+    with pytest.raises(TypeError):
+        g.i()
+
+    assert g.i == 42
+
+
+def test_property_setter():
+    from simple import Setter
+
+    s = Setter()
+    # can't call the property function since not registered
+    with pytest.raises(AttributeError):
+        s.i(33)
+    s.i = 33  # shouldn't throw
+
+
+def test_property_getter_setter():
+    from simple import GetterSetter
+
+    obj = GetterSetter(42)
+
+    # can't call the property function since not registered
+    with pytest.raises(TypeError):
+        obj.i()
+
+    # can't call the property function since not registered
+    with pytest.raises(TypeError):
+        obj.i(33)
+
+    assert obj.i == 42
+    obj.i = 33  # shouldn't throw
+    assert obj.i == 33
