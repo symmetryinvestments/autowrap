@@ -51,7 +51,7 @@ example/issues/dub.selections.json:
 	@cd examples/issues && dub upgrade -q
 
 test_pyd_pyd: tests/test_pyd.py examples/pyd/lib/pyd/pyd.so
-	PYTHONPATH=$(PWD)/examples/pyd/lib/pyd pytest -s -vv $<
+	PYTHONPATH=$(PWD)/examples/pyd/lib/pyd PYD=1 pytest -s -vv $<
 
 examples/pyd/lib/pyd/pyd.so: examples/pyd/lib/pyd/libpydtests.so
 	@cp $^ $@
@@ -60,7 +60,7 @@ examples/pyd/lib/pyd/libpydtests.so: examples/pyd/dub.sdl examples/pyd/dub.selec
 	@cd examples/pyd && dub build -q -c $(DUB_CONFIGURATION)
 
 test_pyd_pynih: tests/test_pyd.py examples/pyd/lib/pynih/pyd.so
-	PYTHONPATH=$(PWD)/examples/pyd/lib/pynih pytest -s -vv $<
+	PYTHONPATH=$(PWD)/examples/pyd/lib/pynih PYNIH=1 pytest -s -vv $<
 
 examples/pyd/lib/pynih/pyd.so: examples/pyd/lib/pynih/libpydtests.so
 	@cp $^ $@
