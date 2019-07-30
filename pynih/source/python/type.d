@@ -301,10 +301,12 @@ private auto pythonArgsToDArgs(P...)(PyObject* args, PyObject* kwargs)
                     text(__FUNCTION__, ": not enough Python arguments"));
             dArgs[i] = PyTuple_GetItem(args, i).to!(typeof(dArgs[i]));
         } else {
-            // Here it gets tricky. The user could have supplied it in
-            // args positionally or via kwargs
-            if(i >= argsLength) {
 
+            if(i < argsLength) {  // regular case
+                dArgs[i] = PyTuple_GetItem(args, i).to!(P[i].Type);
+            } else {
+                // Here it gets tricky. The user could have supplied it in
+                // args positionally or via kwargs
                 auto key = pyUnicodeDecodeUTF8(&P[i].identifier[0],
                                                P[i].identifier.length,
                                                null /*errors*/);
@@ -313,8 +315,6 @@ private auto pythonArgsToDArgs(P...)(PyObject* args, PyObject* kwargs)
                 dArgs[i] = val
                     ? val.to!(P[i].Type) // use kwargs
                     : P[i].Default; // use default value
-            } else {
-                dArgs[i] = PyTuple_GetItem(args, i).to!(P[i].Type);
             }
         }
     }
