@@ -354,8 +354,9 @@ struct PythonMethod(T, alias F) {
             import python.conv: toPython, to;
             import std.traits: Parameters, FunctionAttribute, functionAttributes, Unqual, hasFunctionAttributes;
 
-            assert(self !is null,
-                   "Cannot call PythonMethod!" ~ __traits(identifier, F) ~ " on null self");
+            static if(!__traits(isStaticFunction, F))
+                assert(self !is null,
+                       "Cannot call PythonMethod!" ~ __traits(identifier, F) ~ " on null self");
 
             static if(functionAttributes!F & FunctionAttribute.const_)
                 alias Aggregate = const T;
@@ -364,7 +365,10 @@ struct PythonMethod(T, alias F) {
             else
                 alias Aggregate = Unqual!T;
 
-            auto dAggregate = self.to!Aggregate;
+            auto dAggregate = {
+                // could be null for static member functions
+                return self is null ? Aggregate.init : self.to!Aggregate;
+            }();
 
             // Not sure how else to take `dAggregate` and `F` and call the member
             // function other than a mixin
@@ -374,15 +378,18 @@ struct PythonMethod(T, alias F) {
             // The member function could have side-effects, we need to copy the changes
             // back to the Python object.
             static if(!(functionAttributes!F & FunctionAttribute.const_)) {
-                auto newSelf = toPython(dAggregate);
+                auto newSelf = {
+                    return self is null ? self : toPython(dAggregate);
+                }();
                 scope(exit) {
-                    pyDecRef(newSelf);
+                    if(self !is null) pyDecRef(newSelf);
                 }
                 auto pyClassSelf = cast(PythonClass!T*) self;
                 auto pyClassNewSelf = cast(PythonClass!T*) newSelf;
 
                 static foreach(i; 0 .. PythonClass!T.fieldNames.length) {
-                    pyClassSelf.set!i(self, pyClassNewSelf.get!i(newSelf));
+                    if(self !is null)
+                        pyClassSelf.set!i(self, pyClassNewSelf.get!i(newSelf));
                 }
             }
 
