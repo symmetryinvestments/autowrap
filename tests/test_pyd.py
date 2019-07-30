@@ -291,7 +291,12 @@ def test_class_wrap_bizzy3():
         assert bizzy.c(i=[7, 5, 6]) == 756
     assert bizzy.c(7, 5, 6) == 756
 
-    assert bizzy.d(i=7, k='foobiz') == "<7, 102, 'foobiz'>"
+    if is_pyd:  # not sure why pyd allows this
+        assert bizzy.d(i=7, k='foobiz') == "<7, 102, 'foobiz'>"
+    assert bizzy.d(2) == "<2, 102, 'bizbar'>"
+    assert bizzy.d(3, 42) == "<3, 42, 'bizbar'>"
+    assert bizzy.d(4, 42, "foobar") == "<4, 42, 'foobar'>"
+    assert bizzy.d(5, k='quux', j=33) == "<5, 33, 'quux'>"
 
 
 def test_class_wrap_bizzy4():

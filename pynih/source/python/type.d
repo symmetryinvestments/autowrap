@@ -298,7 +298,12 @@ private auto pythonArgsToDArgs(bool isVariadic, P...)(PyObject* args, PyObject* 
 
     int pythonArgIndex = 0;
     static foreach(i; 0 .. P.length) {
-        static if(is(P[i].Default == void)) {
+
+        static if(i == P.length - 1 && isVariadic) {  // last parameter and it's a typesafe variadic one
+            // slice the remaining arguments
+            auto remainingArgs = PyTuple_GetSlice(args, i, PyTuple_Size(args));
+            dArgs[i] = remainingArgs.to!(P[i].Type);
+        } else static if(is(P[i].Default == void)) {
             // ith parameter is required
             enforce(i < argsLength,
                     text(__FUNCTION__, ": not enough Python arguments"));
@@ -435,14 +440,15 @@ private auto callDlangFunction(alias callable, alias originalFunction)
 
     enum numDefaults = NumDefaultParameters!originalFunction;
     enum numRequired = NumRequiredParameters!originalFunction;
+    enum isVariadic = variadicFunctionStyle!originalFunction == Variadic.typesafe;
 
     const numArgs = args is null ? 0 : PyTuple_Size(args);
-    enforce(numArgs >= numRequired
-            && numArgs <= Parameters!originalFunction.length,
-            text("Received ", numArgs, " parameters but ",
-                 __traits(identifier, originalFunction), " takes ", Parameters!originalFunction.length));
+    if(!isVariadic)
+        enforce(numArgs >= numRequired
+                && numArgs <= Parameters!originalFunction.length,
+                text("Received ", numArgs, " parameters but ",
+                     __traits(identifier, originalFunction), " takes ", Parameters!originalFunction.length));
 
-    enum isVariadic = variadicFunctionStyle!originalFunction == Variadic.typesafe;
     auto dArgs = pythonArgsToDArgs!(isVariadic, FunctionParameters!originalFunction)(args, kwargs);
     return callDlangFunction!callable(dArgs);
 }
