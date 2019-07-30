@@ -434,3 +434,31 @@ template isStatic(alias F) {
     static assert(!isStatic!(Struct.foo));
     static assert( isStatic!(Struct.bar));
 }
+
+
+template Parameters(alias F) {
+    import std.traits:
+        ParameterTypes = Parameters,
+        ParameterIdentifiers = ParameterIdentifierTuple,
+        ParameterDefaults;
+    import std.meta: staticMap, aliasSeqOf;
+    import std.range: iota;
+
+    enum toParameter(size_t i) = Parameter!(ParameterTypes!F[i], ParameterDefaults!F[i])(ParameterIdentifiers!F[i]);
+    alias Parameters = staticMap!(toParameter, aliasSeqOf!(ParameterTypes!F.length.iota));
+}
+
+
+struct Parameter(T, D...) if(D.length == 1) {
+    alias Type = T;
+    alias default_ = D[0];
+    string identifier;
+}
+
+
+@safe pure unittest {
+    import std.meta: AliasSeq;
+    static void fun(int i, float f, string s = "foobar");
+    static assert(Parameters!fun ==
+                  AliasSeq!(Parameter!(int, void)("i"), Parameter!(float, void)("f"), Parameter!(string, "foobar")("s")));
+}
