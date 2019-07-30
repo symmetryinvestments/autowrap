@@ -399,7 +399,12 @@ private auto noThrowable(alias F, A...)(auto ref A args) {
         PyErr_SetString(PyExc_RuntimeError, e.msg.toStringz);
         return ReturnType!F.init;
     } catch(Error e) {
-        PyErr_SetString(PyExc_RuntimeError, ("FATAL ERROR: " ~ e.msg).toStringz);
+        import std.conv: text;
+        try
+            PyErr_SetString(PyExc_RuntimeError, ("FATAL ERROR: " ~ e.text).toStringz);
+        catch(Exception _)
+            PyErr_SetString(PyExc_RuntimeError, ("FATAL ERROR: " ~ e.msg).toStringz);
+
         return ReturnType!F.init;
     }
 }

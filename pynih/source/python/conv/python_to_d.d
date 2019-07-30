@@ -1,7 +1,7 @@
 module python.conv.python_to_d;
 
 
-import python.raw: PyObject;
+import python.raw: PyObject, pyListCheck;
 import python.type: isUserAggregate, isTuple;
 import std.traits: Unqual, isIntegral, isFloatingPoint, isAggregateType, isArray,
     isStaticArray, isAssociativeArray, isPointer, PointerTarget, isSomeChar, isSomeString, isSomeFunction;
@@ -70,7 +70,9 @@ T to(T)(PyObject* value) if(is(Unqual!T == Date)) {
 }
 
 
-T to(T)(PyObject* value) if(isArray!T && !isSomeString!T) {
+T to(T)(PyObject* value) if(isArray!T && !isSomeString!T)
+    in(pyListCheck(value))
+{
     import python.raw: PyList_Size, PyList_GetItem;
     import std.range: ElementEncodingType;
     import std.traits: Unqual;
