@@ -126,8 +126,8 @@ struct PythonType(T) {
 
     private static auto methodDefs()() {
         import autowrap.reflection: isProperty;
-        import python.raw: PyMethodDef;
-        import python.cooked: pyMethodDef;
+        import python.raw: PyMethodDef, MethodArgs;
+        import python.cooked: pyMethodDef, defaultMethodFlags;
         import std.meta: AliasSeq, Alias, staticMap, Filter, templateNot;
         import std.traits: isSomeFunction;
         import std.algorithm: startsWith;
@@ -152,10 +152,16 @@ struct PythonType(T) {
 
         if(methods != methods.init) return &methods[0];
 
-        static foreach(i, memberFunction; memberFunctions) {
-            methods[i] = pyMethodDef!(__traits(identifier, memberFunction))
+        static foreach(i, memberFunction; memberFunctions) {{
+
+            static if(__traits(isStaticFunction, memberFunction))
+                enum flags = defaultMethodFlags | MethodArgs.Static;
+            else
+                enum flags = defaultMethodFlags;
+
+            methods[i] = pyMethodDef!(__traits(identifier, memberFunction), flags)
                                      (&PythonMethod!(T, memberFunction)._py_method_impl);
-        }
+        }}
 
         return &methods[0];
     }

@@ -110,3 +110,6 @@ auto pyMethodDef(string name, int flags = MethodArgs.Var | MethodArgs.Keywords, 
 
     return PyMethodDef(name.ptr, cast(PyCFunction) cfunction, flags, doc.ptr);
 }
+
+
+enum defaultMethodFlags = MethodArgs.Var | MethodArgs.Keywords;
