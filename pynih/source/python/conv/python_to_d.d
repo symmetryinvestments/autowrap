@@ -1,7 +1,7 @@
 module python.conv.python_to_d;
 
 
-import python.raw: PyObject, pyListCheck, pyTupleCheck;
+import python.raw: PyObject, pyListCheck, pyTupleCheck, PyTuple_Size;
 import python.type: isUserAggregate, isTuple;
 import std.traits: Unqual, isIntegral, isFloatingPoint, isAggregateType, isArray,
     isStaticArray, isAssociativeArray, isPointer, PointerTarget, isSomeChar, isSomeString, isSomeFunction;
