@@ -1,7 +1,7 @@
 module python.conv.python_to_d;
 
 
-import python.raw: PyObject, pyListCheck;
+import python.raw: PyObject, pyListCheck, pyTupleCheck;
 import python.type: isUserAggregate, isTuple;
 import std.traits: Unqual, isIntegral, isFloatingPoint, isAggregateType, isArray,
     isStaticArray, isAssociativeArray, isPointer, PointerTarget, isSomeChar, isSomeString, isSomeFunction;
@@ -71,18 +71,39 @@ T to(T)(PyObject* value) if(is(Unqual!T == Date)) {
 
 
 T to(T)(PyObject* value) if(isArray!T && !isSomeString!T)
-    in(pyListCheck(value))
+    in(pyListCheck(value) || pyTupleCheck(value))
 {
-    import python.raw: PyList_Size, PyList_GetItem;
+    import python.raw: PyList_Size, PyList_GetItem, PyTuple_Size, PyTuple_GetItem;
     import std.range: ElementEncodingType;
     import std.traits: Unqual;
+    import std.exception: enforce;
+    import std.conv: text;
 
     Unqual!T ret;
-    static if(__traits(compiles, ret.length = 1))
-        ret.length = PyList_Size(value);
+
+    static if(__traits(compiles, ret.length = 1)) {
+        const valueLength = {
+            if(pyListCheck(value))
+                return PyList_Size(value);
+            else if(pyTupleCheck(value))
+                return PyTuple_Size(value);
+            else
+                assert(0);
+        }();
+        assert(valueLength >= 0, text("Invalid length ", valueLength));
+        ret.length = valueLength;
+    }
 
     foreach(i, ref elt; ret) {
-        elt = PyList_GetItem(value, i).to!(ElementEncodingType!T);
+        auto pythonItem = {
+            if(pyListCheck(value))
+                return PyList_GetItem(value, i);
+            else if(pyTupleCheck(value))
+                return PyTuple_GetItem(value, i);
+            else
+                assert(0);
+        }();
+        elt = pythonItem.to!(ElementEncodingType!T);
     }
 
     return ret;
@@ -143,11 +164,12 @@ T to(T)(PyObject* value) if(isAssociativeArray!T)
 }
 
 
-T to(T)(PyObject* value) if(isTuple!T) {
+T to(T)(PyObject* value) if(isTuple!T)
+    in(pyTupleCheck(value))
+    in(PyTuple_Size(value) == T.length)
+    do
+{
     import python.raw: pyTupleCheck, PyTuple_Size, PyTuple_GetItem;
-
-    assert(pyTupleCheck(value));
-    assert(PyTuple_Size(value) == T.length);
 
     T ret;
 
