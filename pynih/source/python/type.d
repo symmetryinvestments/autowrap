@@ -177,7 +177,7 @@ struct PythonType(T) {
 
         return noThrowable!({
 
-            import python: pyUnicodeDecodeUTF8, PyErr_SetString, PyExc_RuntimeError;
+            import python: pyUnicodeDecodeUTF8;
             import python.conv: to;
             import std.string: toStringz;
             import std.conv: text;
@@ -274,7 +274,7 @@ struct PythonType(T) {
 private auto pythonArgsToDArgs(bool isVariadic, P...)(PyObject* args, PyObject* kwargs)
     if(allSatisfy!(isParameter, P))
 {
-    import python.raw: PyTuple_Size, PyTuple_GetItem, pyUnicodeDecodeUTF8, PyDict_GetItem;
+    import python.raw: PyTuple_Size, PyTuple_GetItem, PyTuple_GetSlice, pyUnicodeDecodeUTF8, PyDict_GetItem;
     import python.conv: to;
     import std.typecons: Tuple;
     import std.meta: staticMap;
@@ -426,7 +426,7 @@ private auto callDlangFunction(alias callable, alias originalFunction)
                               (PyObject* self, PyObject* args, PyObject* kwargs)
 {
     import autowrap.reflection: FunctionParameters;
-    import python.raw: PyTuple_Size, PyErr_SetString, PyExc_RuntimeError;
+    import python.raw: PyTuple_Size;
     import python.conv: toPython;
     import std.traits: Parameters, variadicFunctionStyle, Variadic;
     import std.conv: text;
