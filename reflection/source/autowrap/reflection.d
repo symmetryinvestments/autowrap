@@ -436,29 +436,33 @@ template isStatic(alias F) {
 }
 
 
-template Parameters(alias F) {
-    import std.traits:
-        ParameterTypes = Parameters,
-        ParameterIdentifiers = ParameterIdentifierTuple,
-        ParameterDefaults;
+// From a function symbol to an AliasSeq of `Parameter`
+template FunctionParameters(alias F) {
+    import std.traits: Parameters, ParameterIdentifierTuple, ParameterDefaults;
     import std.meta: staticMap, aliasSeqOf;
     import std.range: iota;
 
-    enum toParameter(size_t i) = Parameter!(ParameterTypes!F[i], ParameterDefaults!F[i])(ParameterIdentifiers!F[i]);
-    alias Parameters = staticMap!(toParameter, aliasSeqOf!(ParameterTypes!F.length.iota));
+    alias parameter(size_t i) = Parameter!(
+        Parameters!F[i],
+        ParameterIdentifierTuple!F[i],
+        ParameterDefaults!F[i]
+    );
+
+    alias FunctionParameters = staticMap!(parameter, aliasSeqOf!(Parameters!F.length.iota));
 }
 
 
-struct Parameter(T, D...) if(D.length == 1) {
+template Parameter(T, string id, D...) if(D.length == 1) {
     alias Type = T;
-    alias default_ = D[0];
-    string identifier;
+    enum identifier = id;
+
+    static if(is(D[0] == void))
+        alias Default = void;
+    else
+        enum Default = D[0];
 }
 
-
-@safe pure unittest {
-    import std.meta: AliasSeq;
-    static void fun(int i, float f, string s = "foobar");
-    static assert(Parameters!fun ==
-                  AliasSeq!(Parameter!(int, void)("i"), Parameter!(float, void)("f"), Parameter!(string, "foobar")("s")));
+template isParameter(alias T) {
+    import std.traits: TemplateOf;
+    enum isParameter = __traits(isSame, TemplateOf!T, Parameter);
 }

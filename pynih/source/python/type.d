@@ -4,6 +4,7 @@
 module python.type;
 
 
+import autowrap.reflection: isParameter;
 import python.raw: PyObject;
 import std.traits: Unqual, isArray, isIntegral, isBoolean, isFloatingPoint, isAggregateType;
 import std.datetime: DateTime, Date;
@@ -194,6 +195,7 @@ struct PythonType(T) {
 
     private static extern(C) PyObject* _py_new(PyTypeObject *type, PyObject* args, PyObject* kwargs) nothrow {
         return noThrowable!({
+            import autowrap.reflection: FunctionParameters, Parameter;
             import python.conv: toPython, to;
             import python.raw: PyTuple_Size, PyTuple_GetItem;
             import std.traits: hasMember, Unqual;
@@ -265,37 +267,6 @@ struct PythonType(T) {
     }
 }
 
-
-// From a function symbol to an AliasSeq of `Parameter`
-private template FunctionParameters(alias F) {
-    import std.traits: Parameters, ParameterIdentifierTuple, ParameterDefaults;
-    import std.meta: staticMap, aliasSeqOf;
-    import std.range: iota;
-
-    alias parameter(size_t i) = Parameter!(
-        Parameters!F[i],
-        ParameterIdentifierTuple!F[i],
-        ParameterDefaults!F[i]
-    );
-
-    alias FunctionParameters = staticMap!(parameter, aliasSeqOf!(Parameters!F.length.iota));
-}
-
-
-private template Parameter(T, string id, D...) if(D.length == 1) {
-    alias Type = T;
-    enum identifier = id;
-
-    static if(is(D[0] == void))
-        alias Default = void;
-    else
-        enum Default = D[0];
-}
-
-private template isParameter(alias T) {
-    import std.traits: TemplateOf;
-    enum isParameter = __traits(isSame, TemplateOf!T, Parameter);
-}
 
 private auto pythonArgsToDArgs(P...)(PyObject* args, PyObject* kwargs)
     if(allSatisfy!(isParameter, P))
@@ -418,7 +389,9 @@ struct PythonFunction(alias F) {
 
 
 private auto callDlangFunction(alias F, string functionName = __traits(identifier, F))
-                              (PyObject* self, PyObject* args, PyObject* kwargs) {
+                              (PyObject* self, PyObject* args, PyObject* kwargs)
+{
+    import autowrap.reflection: FunctionParameters;
     import python.raw: PyTuple_Size, PyErr_SetString, PyExc_RuntimeError;
     import python.conv: toPython;
     import std.traits: Parameters;
