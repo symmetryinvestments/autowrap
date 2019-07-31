@@ -177,7 +177,7 @@ struct PythonType(T) {
 
         return noThrowable!({
 
-            import python: pyUnicodeDecodeUTF8, PyErr_SetString, PyExc_RuntimeError;
+            import python: pyUnicodeDecodeUTF8;
             import python.conv: to;
             import std.string: toStringz;
             import std.conv: text;
@@ -219,20 +219,23 @@ struct PythonType(T) {
                     void,
                 );
                 alias parameters = staticMap!(parameter, fieldTypes);
-                return pythonConstructor!(T, parameters)(args, kwargs);
+                return pythonConstructor!(T, false /*is variadic*/, parameters)(args, kwargs);
             } else {
                 import python.raw: PyErr_SetString, PyExc_TypeError;
-                import std.traits: Parameters;
+                import std.traits: Parameters, variadicFunctionStyle, Variadic;
 
-                static foreach(constructor; constructors) {
+                static foreach(constructor; constructors) {{
+
+                    enum isVariadic = variadicFunctionStyle!constructor == Variadic.typesafe;
+
                     if(Parameters!constructor.length == numArgs) {
-                        return pythonConstructor!(T, FunctionParameters!constructor)(args, kwargs);
+                        return pythonConstructor!(T, isVariadic, FunctionParameters!constructor)(args, kwargs);
                     } else if(numArgs >= NumRequiredParameters!constructor
                               && numArgs <= Parameters!constructor.length)
                     {
-                        return pythonConstructor!(T, FunctionParameters!constructor)(args, kwargs);
+                        return pythonConstructor!(T, isVariadic, FunctionParameters!constructor)(args, kwargs);
                     }
-                }
+                }}
 
                 PyErr_SetString(PyExc_TypeError, "Could not find a suitable constructor");
                 return null;
@@ -244,11 +247,11 @@ struct PythonType(T) {
     // Creates a python object from the given arguments by converting them to D
     // types, calling the D constructor and converting the result to a Python
     // object.
-    private static auto pythonConstructor(T, P...)(PyObject* args, PyObject* kwargs) {
+    private static auto pythonConstructor(T, bool isVariadic, P...)(PyObject* args, PyObject* kwargs) {
         import python.conv: toPython;
         import std.traits: hasMember;
 
-        auto dArgs = pythonArgsToDArgs!P(args, kwargs);
+        auto dArgs = pythonArgsToDArgs!(isVariadic, P)(args, kwargs);
 
         static if(is(T == class)) {
             static if(hasMember!(T, "__ctor")) {
@@ -268,10 +271,10 @@ struct PythonType(T) {
 }
 
 
-private auto pythonArgsToDArgs(P...)(PyObject* args, PyObject* kwargs)
+private auto pythonArgsToDArgs(bool isVariadic, P...)(PyObject* args, PyObject* kwargs)
     if(allSatisfy!(isParameter, P))
 {
-    import python.raw: PyTuple_Size, PyTuple_GetItem, pyUnicodeDecodeUTF8, PyDict_GetItem;
+    import python.raw: PyTuple_Size, PyTuple_GetItem, PyTuple_GetSlice, pyUnicodeDecodeUTF8, PyDict_GetItem;
     import python.conv: to;
     import std.typecons: Tuple;
     import std.meta: staticMap;
@@ -295,16 +298,23 @@ private auto pythonArgsToDArgs(P...)(PyObject* args, PyObject* kwargs)
 
     int pythonArgIndex = 0;
     static foreach(i; 0 .. P.length) {
-        static if(is(P[i].Default == void)) {
+
+        static if(i == P.length - 1 && isVariadic) {  // last parameter and it's a typesafe variadic one
+            // slice the remaining arguments
+            auto remainingArgs = PyTuple_GetSlice(args, i, PyTuple_Size(args));
+            dArgs[i] = remainingArgs.to!(P[i].Type);
+        } else static if(is(P[i].Default == void)) {
             // ith parameter is required
             enforce(i < argsLength,
                     text(__FUNCTION__, ": not enough Python arguments"));
             dArgs[i] = PyTuple_GetItem(args, i).to!(typeof(dArgs[i]));
         } else {
-            // Here it gets tricky. The user could have supplied it in
-            // args positionally or via kwargs
-            if(i >= argsLength) {
 
+            if(i < argsLength) {  // regular case
+                dArgs[i] = PyTuple_GetItem(args, i).to!(P[i].Type);
+            } else {
+                // Here it gets tricky. The user could have supplied it in
+                // args positionally or via kwargs
                 auto key = pyUnicodeDecodeUTF8(&P[i].identifier[0],
                                                P[i].identifier.length,
                                                null /*errors*/);
@@ -313,8 +323,6 @@ private auto pythonArgsToDArgs(P...)(PyObject* args, PyObject* kwargs)
                 dArgs[i] = val
                     ? val.to!(P[i].Type) // use kwargs
                     : P[i].Default; // use default value
-            } else {
-                dArgs[i] = PyTuple_GetItem(args, i).to!(P[i].Type);
             }
         }
     }
@@ -399,7 +407,12 @@ private auto noThrowable(alias F, A...)(auto ref A args) {
         PyErr_SetString(PyExc_RuntimeError, e.msg.toStringz);
         return ReturnType!F.init;
     } catch(Error e) {
-        PyErr_SetString(PyExc_RuntimeError, ("FATAL ERROR: " ~ e.msg).toStringz);
+        import std.conv: text;
+        try
+            PyErr_SetString(PyExc_RuntimeError, ("FATAL ERROR: " ~ e.text).toStringz);
+        catch(Exception _)
+            PyErr_SetString(PyExc_RuntimeError, ("FATAL ERROR: " ~ e.msg).toStringz);
+
         return ReturnType!F.init;
     }
 }
@@ -418,23 +431,25 @@ private auto callDlangFunction(alias callable, alias originalFunction)
                               (PyObject* self, PyObject* args, PyObject* kwargs)
 {
     import autowrap.reflection: FunctionParameters;
-    import python.raw: PyTuple_Size, PyErr_SetString, PyExc_RuntimeError;
+    import python.raw: PyTuple_Size;
     import python.conv: toPython;
-    import std.traits: Parameters;
+    import std.traits: Parameters, variadicFunctionStyle, Variadic;
     import std.conv: text;
     import std.string: toStringz;
     import std.exception: enforce;
 
     enum numDefaults = NumDefaultParameters!originalFunction;
     enum numRequired = NumRequiredParameters!originalFunction;
+    enum isVariadic = variadicFunctionStyle!originalFunction == Variadic.typesafe;
 
     const numArgs = args is null ? 0 : PyTuple_Size(args);
-    enforce(numArgs >= numRequired
-            && numArgs <= Parameters!originalFunction.length,
-            text("Received ", numArgs, " parameters but ",
-                 __traits(identifier, originalFunction), " takes ", Parameters!originalFunction.length));
+    if(!isVariadic)
+        enforce(numArgs >= numRequired
+                && numArgs <= Parameters!originalFunction.length,
+                text("Received ", numArgs, " parameters but ",
+                     __traits(identifier, originalFunction), " takes ", Parameters!originalFunction.length));
 
-    auto dArgs = pythonArgsToDArgs!(FunctionParameters!originalFunction)(args, kwargs);
+    auto dArgs = pythonArgsToDArgs!(isVariadic, FunctionParameters!originalFunction)(args, kwargs);
     return callDlangFunction!callable(dArgs);
 }
 

@@ -79,6 +79,12 @@ static if(isPython3) {
     }
 }
 
+
+// Demacroify
+bool pyIterCheck(PyObject* obj) @nogc nothrow {
+    return PyIter_Check(obj);
+}
+
 // Demacroify
 bool pyListCheck(PyObject* obj) @nogc nothrow {
     return PyList_Check(obj);
