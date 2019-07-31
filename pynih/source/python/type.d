@@ -126,8 +126,8 @@ struct PythonType(T) {
 
     private static auto methodDefs()() {
         import autowrap.reflection: isProperty;
-        import python.raw: PyMethodDef;
-        import python.cooked: pyMethodDef;
+        import python.raw: PyMethodDef, MethodArgs;
+        import python.cooked: pyMethodDef, defaultMethodFlags;
         import std.meta: AliasSeq, Alias, staticMap, Filter, templateNot;
         import std.traits: isSomeFunction;
         import std.algorithm: startsWith;
@@ -152,10 +152,16 @@ struct PythonType(T) {
 
         if(methods != methods.init) return &methods[0];
 
-        static foreach(i, memberFunction; memberFunctions) {
-            methods[i] = pyMethodDef!(__traits(identifier, memberFunction))
+        static foreach(i, memberFunction; memberFunctions) {{
+
+            static if(__traits(isStaticFunction, memberFunction))
+                enum flags = defaultMethodFlags | MethodArgs.Static;
+            else
+                enum flags = defaultMethodFlags;
+
+            methods[i] = pyMethodDef!(__traits(identifier, memberFunction), flags)
                                      (&PythonMethod!(T, memberFunction)._py_method_impl);
-        }
+        }}
 
         return &methods[0];
     }
@@ -348,8 +354,9 @@ struct PythonMethod(T, alias F) {
             import python.conv: toPython, to;
             import std.traits: Parameters, FunctionAttribute, functionAttributes, Unqual, hasFunctionAttributes;
 
-            assert(self !is null,
-                   "Cannot call PythonMethod!" ~ __traits(identifier, F) ~ " on null self");
+            static if(!__traits(isStaticFunction, F))
+                assert(self !is null,
+                       "Cannot call PythonMethod!" ~ __traits(identifier, F) ~ " on null self");
 
             static if(functionAttributes!F & FunctionAttribute.const_)
                 alias Aggregate = const T;
@@ -358,7 +365,10 @@ struct PythonMethod(T, alias F) {
             else
                 alias Aggregate = Unqual!T;
 
-            auto dAggregate = self.to!Aggregate;
+            auto dAggregate = {
+                // could be null for static member functions
+                return self is null ? Aggregate.init : self.to!Aggregate;
+            }();
 
             // Not sure how else to take `dAggregate` and `F` and call the member
             // function other than a mixin
@@ -368,15 +378,18 @@ struct PythonMethod(T, alias F) {
             // The member function could have side-effects, we need to copy the changes
             // back to the Python object.
             static if(!(functionAttributes!F & FunctionAttribute.const_)) {
-                auto newSelf = toPython(dAggregate);
+                auto newSelf = {
+                    return self is null ? self : toPython(dAggregate);
+                }();
                 scope(exit) {
-                    pyDecRef(newSelf);
+                    if(self !is null) pyDecRef(newSelf);
                 }
                 auto pyClassSelf = cast(PythonClass!T*) self;
                 auto pyClassNewSelf = cast(PythonClass!T*) newSelf;
 
                 static foreach(i; 0 .. PythonClass!T.fieldNames.length) {
-                    pyClassSelf.set!i(self, pyClassNewSelf.get!i(newSelf));
+                    if(self !is null)
+                        pyClassSelf.set!i(self, pyClassNewSelf.get!i(newSelf));
                 }
             }
 

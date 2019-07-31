@@ -196,7 +196,11 @@ def test_const():
 def test_class_wrap_bizzy():
     from pyd import Bizzy
 
-    bizzy = Bizzy(i=4)
+    if is_pyd:  # not sure why pyd allows this
+        bizzy = Bizzy(i=4)
+    else:
+        bizzy = Bizzy(4)
+
     assert bizzy.a(1) == 12
     assert Bizzy.b(1) == 14
     assert str(bizzy) == 'bye'
