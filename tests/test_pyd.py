@@ -174,15 +174,21 @@ def test_const():
 
     boozy = ConstMethods()
 
-    with pytest.raises(RuntimeError) as ex:
-        boozy.a()
-    assert 'constness mismatch required:' in str(ex.value)
+    if is_pyd:
+        with pytest.raises(RuntimeError) as ex:
+            boozy.a()
+        assert 'constness mismatch required:' in str(ex.value)
+    else:
+        boozy.a()  # why would constness be a problem?
 
     assert boozy.b() == 'def'
 
-    with pytest.raises(RuntimeError) as ex:
-        boozy.p1i
-    assert 'constness mismatch required:' in str(ex.value)
+    if is_pyd:
+        with pytest.raises(RuntimeError) as ex:
+            boozy.p1i
+        assert 'constness mismatch required:' in str(ex.value)
+    else:
+        assert boozy.p1i == 200  # why would constness be a problem?
 
     assert boozy.p1c == 300
 
