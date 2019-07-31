@@ -434,3 +434,35 @@ template isStatic(alias F) {
     static assert(!isStatic!(Struct.foo));
     static assert( isStatic!(Struct.bar));
 }
+
+
+// From a function symbol to an AliasSeq of `Parameter`
+template FunctionParameters(alias F) {
+    import std.traits: Parameters, ParameterIdentifierTuple, ParameterDefaults;
+    import std.meta: staticMap, aliasSeqOf;
+    import std.range: iota;
+
+    alias parameter(size_t i) = Parameter!(
+        Parameters!F[i],
+        ParameterIdentifierTuple!F[i],
+        ParameterDefaults!F[i]
+    );
+
+    alias FunctionParameters = staticMap!(parameter, aliasSeqOf!(Parameters!F.length.iota));
+}
+
+
+template Parameter(T, string id, D...) if(D.length == 1) {
+    alias Type = T;
+    enum identifier = id;
+
+    static if(is(D[0] == void))
+        alias Default = void;
+    else
+        enum Default = D[0];
+}
+
+template isParameter(alias T) {
+    import std.traits: TemplateOf;
+    enum isParameter = __traits(isSame, TemplateOf!T, Parameter);
+}

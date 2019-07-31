@@ -4,6 +4,7 @@
 module python.type;
 
 
+import autowrap.reflection: isParameter;
 import python.raw: PyObject;
 import std.traits: Unqual, isArray, isIntegral, isBoolean, isFloatingPoint, isAggregateType;
 import std.datetime: DateTime, Date;
@@ -194,6 +195,7 @@ struct PythonType(T) {
 
     private static extern(C) PyObject* _py_new(PyTypeObject *type, PyObject* args, PyObject* kwargs) nothrow {
         return noThrowable!({
+            import autowrap.reflection: FunctionParameters, Parameter;
             import python.conv: toPython, to;
             import python.raw: PyTuple_Size, PyTuple_GetItem;
             import std.traits: hasMember, Unqual;
@@ -265,37 +267,6 @@ struct PythonType(T) {
     }
 }
 
-
-// From a function symbol to an AliasSeq of `Parameter`
-private template FunctionParameters(alias F) {
-    import std.traits: Parameters, ParameterIdentifierTuple, ParameterDefaults;
-    import std.meta: staticMap, aliasSeqOf;
-    import std.range: iota;
-
-    alias parameter(size_t i) = Parameter!(
-        Parameters!F[i],
-        ParameterIdentifierTuple!F[i],
-        ParameterDefaults!F[i]
-    );
-
-    alias FunctionParameters = staticMap!(parameter, aliasSeqOf!(Parameters!F.length.iota));
-}
-
-
-private template Parameter(T, string id, D...) if(D.length == 1) {
-    alias Type = T;
-    enum identifier = id;
-
-    static if(is(D[0] == void))
-        alias Default = void;
-    else
-        enum Default = D[0];
-}
-
-private template isParameter(alias T) {
-    import std.traits: TemplateOf;
-    enum isParameter = __traits(isSame, TemplateOf!T, Parameter);
-}
 
 private auto pythonArgsToDArgs(P...)(PyObject* args, PyObject* kwargs)
     if(allSatisfy!(isParameter, P))
@@ -384,7 +355,7 @@ struct PythonMethod(T, alias F) {
             // Not sure how else to take `dAggregate` and `F` and call the member
             // function other than a mixin
             mixin(`auto ret = callDlangFunction!((Parameters!F args) => dAggregate.`,
-                  __traits(identifier, F), `(args), __traits(identifier, F))(self, args, kwargs);`);
+                  __traits(identifier, F), `(args), F)(self, args, kwargs);`);
 
             // The member function could have side-effects, we need to copy the changes
             // back to the Python object.
@@ -417,28 +388,6 @@ struct PythonFunction(alias F) {
 }
 
 
-private auto callDlangFunction(alias F, string functionName = __traits(identifier, F))
-                              (PyObject* self, PyObject* args, PyObject* kwargs) {
-    import python.raw: PyTuple_Size, PyErr_SetString, PyExc_RuntimeError;
-    import python.conv: toPython;
-    import std.traits: Parameters;
-    import std.conv: text;
-    import std.string: toStringz;
-    import std.exception: enforce;
-
-    enum numDefaults = NumDefaultParameters!F;
-    enum numRequired = NumRequiredParameters!F;
-
-    const numArgs = args is null ? 0 : PyTuple_Size(args);
-    enforce(numArgs >= numRequired
-            && numArgs <= Parameters!F.length,
-            text("Received ", numArgs, " parameters but ",
-                 functionName, " takes ", Parameters!F.length));
-
-    auto dArgs = pythonArgsToDArgs!(FunctionParameters!F)(args, kwargs);
-    return callDlangFunction!F(dArgs);
-}
-
 private auto noThrowable(alias F, A...)(auto ref A args) {
     import python.raw: PyErr_SetString, PyExc_RuntimeError;
     import std.string: toStringz;
@@ -453,6 +402,40 @@ private auto noThrowable(alias F, A...)(auto ref A args) {
         PyErr_SetString(PyExc_RuntimeError, ("FATAL ERROR: " ~ e.msg).toStringz);
         return ReturnType!F.init;
     }
+}
+
+// simple, regular version for functions
+private auto callDlangFunction(alias F)
+                              (PyObject* self, PyObject* args, PyObject* kwargs)
+{
+    return callDlangFunction!(F, F)(self, args, kwargs);
+}
+
+// Takes two functions due to how we're calling methods.
+// One is the original function to reflect on, the other
+// is the closure that's actually going to be called.
+private auto callDlangFunction(alias callable, alias originalFunction)
+                              (PyObject* self, PyObject* args, PyObject* kwargs)
+{
+    import autowrap.reflection: FunctionParameters;
+    import python.raw: PyTuple_Size, PyErr_SetString, PyExc_RuntimeError;
+    import python.conv: toPython;
+    import std.traits: Parameters;
+    import std.conv: text;
+    import std.string: toStringz;
+    import std.exception: enforce;
+
+    enum numDefaults = NumDefaultParameters!originalFunction;
+    enum numRequired = NumRequiredParameters!originalFunction;
+
+    const numArgs = args is null ? 0 : PyTuple_Size(args);
+    enforce(numArgs >= numRequired
+            && numArgs <= Parameters!originalFunction.length,
+            text("Received ", numArgs, " parameters but ",
+                 __traits(identifier, originalFunction), " takes ", Parameters!originalFunction.length));
+
+    auto dArgs = pythonArgsToDArgs!(FunctionParameters!originalFunction)(args, kwargs);
+    return callDlangFunction!callable(dArgs);
 }
 
 
