@@ -77,7 +77,7 @@ def test_inherit():
 def test_testdll():
     from pyd import \
         (testdll_foo, testdll_bar, testdll_baz, dg_test, TestDllFoo,
-         testdll_throws, TestDllStruct, testdll_spam)
+         testdll_throws, TestDllStruct, testdll_spam, func_test)
     import pytest
 
     assert testdll_foo() == '20 Monkey'
@@ -100,6 +100,8 @@ def test_testdll():
     def callback(arg):
         return 'callback works with ' + arg
     assert dg_test(callback) == 'callback works with foo'
+
+    assert func_test()() == 'returning a delegate works'
 
     foo = TestDllFoo(10)
     assert foo.foo() == 'Foo.foo(): i = 10'

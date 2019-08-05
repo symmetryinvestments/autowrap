@@ -103,9 +103,8 @@ class TestDllFoo {
     }
 }
 
-void delegate() func_test() {
-    import std.stdio: writeln;
-    return { writeln("Delegate works!"); };
+string delegate() func_test() {
+    return { return "returning a delegate works"; };
 }
 
 string dg_test(string delegate(string arg) dg) {
