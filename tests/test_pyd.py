@@ -97,9 +97,9 @@ def test_testdll():
     assert baz_i == 30
     assert baz_s == 'cat'
 
-    def callback():
-        return 'callback works'
-    assert dg_test(callback) == 'callback works'
+    def callback(arg):
+        return 'callback works with ' + arg
+    assert dg_test(callback) == 'callback works with foo'
 
     foo = TestDllFoo(10)
     assert foo.foo() == 'Foo.foo(): i = 10'

@@ -108,9 +108,9 @@ void delegate() func_test() {
     return { writeln("Delegate works!"); };
 }
 
-string dg_test(string delegate() dg) {
+string dg_test(string delegate(string arg) dg) {
     assert(dg !is null, "dg_test: delegate cannot be null");
-    return dg();
+    return dg("foo");
 }
 
 class TestDllBar {
