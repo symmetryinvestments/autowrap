@@ -1,8 +1,10 @@
 module autowrap.reflection;
 
+
 import std.meta: allSatisfy;
-import std.traits: isArray, Unqual, moduleName;
+import std.traits: isArray, Unqual, moduleName, isCallable;
 import std.typecons: Flag, No;
+
 
 private alias I(alias T) = T;
 private enum isString(alias T) = is(typeof(T) == string);
@@ -437,10 +439,12 @@ template isStatic(alias F) {
 
 
 // From a function symbol to an AliasSeq of `Parameter`
-template FunctionParameters(alias F) {
+template FunctionParameters(A...) if(A.length == 1 && isCallable!(A[0])) {
     import std.traits: Parameters, ParameterIdentifierTuple, ParameterDefaults;
     import std.meta: staticMap, aliasSeqOf;
     import std.range: iota;
+
+    alias F = A[0];
 
     alias parameter(size_t i) = Parameter!(
         Parameters!F[i],
@@ -468,9 +472,11 @@ template isParameter(alias T) {
 }
 
 
-template NumDefaultParameters(alias F) {
+template NumDefaultParameters(A...) if(A.length == 1 && isCallable!(A[0])) {
     import std.meta: Filter;
     import std.traits: ParameterDefaults;
+
+    alias F = A[0];
 
     template notVoid(T...) if(T.length == 1) {
         enum notVoid = !is(T[0] == void);
@@ -480,7 +486,8 @@ template NumDefaultParameters(alias F) {
 }
 
 
-template NumRequiredParameters(alias F) {
+template NumRequiredParameters(A...) if(A.length == 1 && isCallable!(A[0])) {
     import std.traits: Parameters;
+    alias F = A[0];
     enum NumRequiredParameters = Parameters!F.length - NumDefaultParameters!F;
 }
