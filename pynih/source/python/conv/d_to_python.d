@@ -4,7 +4,7 @@ module python.conv.d_to_python;
 import python.raw: PyObject;
 import python.type: isUserAggregate, isTuple, isNonRangeUDT;
 import std.traits: Unqual, isIntegral, isFloatingPoint, isAggregateType, isArray,
-    isStaticArray, isAssociativeArray, isPointer, PointerTarget, isSomeChar, isSomeFunction;
+    isStaticArray, isAssociativeArray, isPointer, PointerTarget, isSomeChar, isCallable;
 import std.range: isInputRange;
 import std.datetime: Date, DateTime;
 
@@ -124,6 +124,7 @@ PyObject* toPython(T)(T value) if(isSomeChar!T) {
 }
 
 
-PyObject* toPython(T)(T value) if(isSomeFunction!T) {
-    return null;  // FIXME
+PyObject* toPython(T)(T value) if(isCallable!T && !isUserAggregate!T) {
+    import python.type: pythonCallable;
+    return pythonCallable(value);
 }

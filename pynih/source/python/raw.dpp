@@ -138,6 +138,10 @@ bool pyDateCheck(PyObject* obj) @nogc nothrow {
     return PyDate_Check(obj);
 }
 
+bool pyCallableCheck(PyObject* obj) @nogc nothrow {
+    return cast(bool) PyCallable_Check(obj);
+}
+
 
 // Demacroify
 auto pyTrue() {
