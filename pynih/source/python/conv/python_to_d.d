@@ -1,10 +1,10 @@
 module python.conv.python_to_d;
 
 
-import python.raw: PyObject, pyListCheck, pyTupleCheck, PyTuple_Size;
+import python.raw: PyObject, pyListCheck, pyTupleCheck, PyTuple_Size, pyCallableCheck;
 import python.type: isUserAggregate, isTuple;
 import std.traits: Unqual, isIntegral, isFloatingPoint, isAggregateType, isArray,
-    isStaticArray, isAssociativeArray, isPointer, PointerTarget, isSomeChar, isSomeString, isSomeFunction;
+    isStaticArray, isAssociativeArray, isPointer, PointerTarget, isSomeChar, isSomeString, isDelegate;
 import std.range: isInputRange;
 import std.datetime: DateTime, Date;
 
@@ -187,6 +187,25 @@ T to(T)(PyObject* value) if(isSomeChar!T) {
 }
 
 
-T to(T)(PyObject* value) if(isSomeFunction!T) {
-    return typeof(return).init;  // FIXME
+T to(T)(PyObject* value) if(isDelegate!T)
+    in(pyCallableCheck(value))
+{
+    import python.raw: PyObject_CallObject;
+    import python.conv.d_to_python: toPython;
+    import python.conv.python_to_d: to;
+    import std.traits: ReturnType, Parameters, Unqual;
+    import std.meta: staticMap;
+    import std.typecons: Tuple;
+
+    alias UnqualParams = staticMap!(Unqual, Parameters!T);
+
+    return (UnqualParams dArgs) {
+        Tuple!UnqualParams dArgsTuple;
+        static foreach(i; 0 .. UnqualParams.length) {
+            dArgsTuple[i] = dArgs[i];
+        }
+        auto pyArgs = dArgsTuple.toPython;
+        auto pyResult = PyObject_CallObject(value, pyArgs);
+        return pyResult.to!(ReturnType!T);
+    };
 }
