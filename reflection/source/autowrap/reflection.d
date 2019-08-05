@@ -466,3 +466,21 @@ template isParameter(alias T) {
     import std.traits: TemplateOf;
     enum isParameter = __traits(isSame, TemplateOf!T, Parameter);
 }
+
+
+template NumDefaultParameters(alias F) {
+    import std.meta: Filter;
+    import std.traits: ParameterDefaults;
+
+    template notVoid(T...) if(T.length == 1) {
+        enum notVoid = !is(T[0] == void);
+    }
+
+    enum NumDefaultParameters = Filter!(notVoid, ParameterDefaults!F).length;
+}
+
+
+template NumRequiredParameters(alias F) {
+    import std.traits: Parameters;
+    enum NumRequiredParameters = Parameters!F.length - NumDefaultParameters!F;
+}
