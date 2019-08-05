@@ -6,7 +6,7 @@ module python.type;
 
 import autowrap.reflection: isParameter;
 import python.raw: PyObject;
-import std.traits: Unqual, isArray, isIntegral, isBoolean, isFloatingPoint, isAggregateType;
+import std.traits: Unqual, isArray, isIntegral, isBoolean, isFloatingPoint, isAggregateType, isCallable;
 import std.datetime: DateTime, Date;
 import std.typecons: Tuple;
 import std.range.primitives: isInputRange;
@@ -56,14 +56,21 @@ struct PythonType(T) {
         if(_pyType != _pyType.init) return;
 
         _pyType.tp_name = T.stringof;
-        _pyType.tp_basicsize = PythonClass!T.sizeof;
         _pyType.tp_flags = TypeFlags.Default;
-        _pyType.tp_new = &PyType_GenericNew;
-        _pyType.tp_getset = getsetDefs;
-        _pyType.tp_methods = methodDefs;
-        _pyType.tp_repr = &_py_repr;
-        _pyType.tp_init = &_py_init;
-        _pyType.tp_new = &_py_new;
+
+        static if(isUserAggregate!T) {
+            _pyType.tp_basicsize = PythonClass!T.sizeof;
+            _pyType.tp_getset = getsetDefs;
+            _pyType.tp_methods = methodDefs;
+            _pyType.tp_new = &_py_new;
+            _pyType.tp_repr = &_py_repr;
+            _pyType.tp_init = &_py_init;
+
+        } else static if(isCallable!T) {
+            _pyType.tp_basicsize = PythonCallable!T.sizeof;
+            _pyType.tp_call = &PythonCallable!T._py_call;
+        } else
+            static assert(false, "Don't know what to do for type " ~ T.stringof);
 
         static if(hasLength) {
             if(_pyType.tp_as_sequence is null)
@@ -77,6 +84,7 @@ struct PythonType(T) {
         }
     }
 
+    static if(isUserAggregate!T)
     private static auto getsetDefs() {
         import autowrap.reflection: Properties;
         import python.raw: PyGetSetDef;
@@ -199,6 +207,7 @@ struct PythonType(T) {
         return 0;
     }
 
+    static if(isUserAggregate!T)
     private static extern(C) PyObject* _py_new(PyTypeObject *type, PyObject* args, PyObject* kwargs) nothrow {
         return noThrowable!({
             import autowrap.reflection: FunctionParameters, Parameter;
@@ -254,6 +263,7 @@ struct PythonType(T) {
     // Creates a python object from the given arguments by converting them to D
     // types, calling the D constructor and converting the result to a Python
     // object.
+    static if(isUserAggregate!T)
     private static auto pythonConstructor(T, bool isVariadic, P...)(PyObject* args, PyObject* kwargs) {
         import python.conv: toPython;
         import std.traits: hasMember;
@@ -441,8 +451,9 @@ private auto callDlangFunction(alias F)
 // Takes two functions due to how we're calling methods.
 // One is the original function to reflect on, the other
 // is the closure that's actually going to be called.
-private auto callDlangFunction(alias callable, alias originalFunction)
+private auto callDlangFunction(alias callable, A...)
                               (PyObject* self, PyObject* args, PyObject* kwargs)
+    if(A.length == 1 && isCallable!(A[0]))
 {
     import autowrap.reflection: FunctionParameters, NumDefaultParameters, NumRequiredParameters;
     import python.raw: PyTuple_Size;
@@ -452,16 +463,23 @@ private auto callDlangFunction(alias callable, alias originalFunction)
     import std.string: toStringz;
     import std.exception: enforce;
 
+    alias originalFunction = A[0];
+
     enum numDefaults = NumDefaultParameters!originalFunction;
     enum numRequired = NumRequiredParameters!originalFunction;
     enum isVariadic = variadicFunctionStyle!originalFunction == Variadic.typesafe;
+
+    static if(__traits(compiles, __traits(identifier, originalFunction)))
+        enum identifier = __traits(identifier, originalFunction);
+    else
+        enum identifier = "anonymous";
 
     const numArgs = args is null ? 0 : PyTuple_Size(args);
     if(!isVariadic)
         enforce(numArgs >= numRequired
                 && numArgs <= Parameters!originalFunction.length,
                 text("Received ", numArgs, " parameters but ",
-                     __traits(identifier, originalFunction), " takes ", Parameters!originalFunction.length));
+                     identifier, " takes ", Parameters!originalFunction.length));
 
     auto dArgs = pythonArgsToDArgs!(isVariadic, FunctionParameters!originalFunction)(args, kwargs);
     return callDlangFunction!callable(dArgs);
@@ -518,6 +536,7 @@ private template isPublic(T, string memberName) {
     } else
         enum isPublic = false;
 }
+
 
 
 /**
@@ -622,6 +641,40 @@ struct PythonClass(T) if(isUserAggregate!T) {
         PythonMethod!(T, F)._py_method_impl(self_, args, null /*kwargs*/);
 
         return 0;
+    }
+}
+
+
+PyObject* pythonCallable(T)(T callable) {
+    import python.raw: pyObjectNew;
+
+    auto ret = pyObjectNew!(PythonCallable!T)(PythonType!T.pyType);
+    ret._callable = callable;
+
+    return cast(PyObject*) ret;
+}
+
+
+/**
+   Reserves space for a callable to be stored in a PyObject struct so that it
+   can later be called.
+ */
+struct PythonCallable(T) if(isCallable!T) {
+    import python.raw: PyObjectHead;
+
+    // Every python object must have this
+    mixin PyObjectHead;
+
+    private T _callable;
+
+    private static extern(C) PyObject* _py_call(PyObject* self_, PyObject* args, PyObject* kwargs)
+        nothrow
+        in(self_ !is null)
+        in(self_._callable !is null)
+    {
+        import std.traits: Parameters, ReturnType;
+        auto self = cast(PythonCallable!T*) self_;
+        return noThrowable!(() => callDlangFunction!((Parameters!T args) => self._callable(args), T)(self_, args, kwargs));
     }
 }
 
