@@ -13,6 +13,7 @@ def test_method_overloads():
 def test_struct_no_ctor():
     from simple import NoCtor
     _ = NoCtor(42, 33.3, "foobar")
+    _
 
 
 def test_property_getter_setter_const():
@@ -31,3 +32,10 @@ def test_property_getter_setter_const():
 
     assert obj.i == 42
     obj.i = 33  # shouldn't throw
+
+
+def test_funcs():
+    from pyd import appends_to_fn_cb
+
+    assert appends_to_fn_cb(lambda x: str(x), 42, "post") == \
+        "42post"
