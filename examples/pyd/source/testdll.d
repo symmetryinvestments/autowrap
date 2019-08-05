@@ -103,12 +103,12 @@ class TestDllFoo {
     }
 }
 
-string delegate() func_test() {
+string delegate() dg_ret() {
     return { return "returning a delegate works"; };
 }
 
-string dg_test(string delegate(string arg) dg) {
-    assert(dg !is null, "dg_test: delegate cannot be null");
+string dg_arg(string delegate(string arg) dg) {
+    assert(dg !is null, "dg_arg: delegate cannot be null");
     return dg("foo");
 }
 
