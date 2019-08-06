@@ -44,12 +44,12 @@ struct PythonType(T) {
         return failedToReady ? null : cast(PyObject*) &_pyType;
     }
 
-    static PyTypeObject* pyType() {
+    static PyTypeObject* pyType() nothrow {
         initialise;
         return failedToReady ? null : &_pyType;
     }
 
-    private static void initialise() {
+    private static void initialise() nothrow {
         import python.raw: PyType_GenericNew, PyType_Ready, TypeFlags,
             PyErr_SetString, PyExc_TypeError,
             PyNumberMethods, PySequenceMethods;
@@ -748,13 +748,21 @@ struct PythonBinaryOperator(T, string op) {
         alias RHS = parameters[0];
 
         return noThrowable!(() {
+            if(!lhs_.isInstanceOf!T)
+                throw new Exception("lhs is not a " ~ T.stringof);
+
             auto lhs = lhs_.to!T;
             auto rhs = rhs_.to!RHS;
             mixin(`auto ret = lhs.opBinary!"`, op, `"(rhs);`);
             return ret.toPython;
         });
     }
+}
 
+
+private bool isInstanceOf(T)(PyObject* obj) {
+    import python.raw: PyObject_IsInstance;
+    return cast(bool) PyObject_IsInstance(obj, cast(PyObject*) PythonType!T.pyType);
 }
 
 
