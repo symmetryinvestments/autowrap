@@ -731,7 +731,12 @@ struct PythonCallable(T) if(isCallable!T) {
 
 struct PythonBinaryOperator(T, string op) {
 
-    static extern(C) PyObject* _py_bin_func(PyObject* lhs_, PyObject* rhs_) nothrow {
+    static extern(C) PyObject* _py_bin_func(PyObject* lhs, PyObject* rhs) nothrow {
+        return _py_ter_func(lhs, rhs, null);
+    }
+
+    // Should only be for `^^` because in Python the function is ternary
+    static extern(C) PyObject* _py_ter_func(PyObject* lhs_, PyObject* rhs_, PyObject* extra) nothrow {
         import python.conv.python_to_d: to;
         import python.conv.d_to_python: toPython;
         import std.traits: Parameters;
@@ -748,10 +753,6 @@ struct PythonBinaryOperator(T, string op) {
             mixin(`auto ret = lhs.opBinary!"`, op, `"(rhs);`);
             return ret.toPython;
         });
-    }
-
-    static extern(C) PyObject* _py_ter_func(PyObject* self, PyObject* arg0, PyObject* arg1) nothrow {
-        return null;
     }
 
 }
