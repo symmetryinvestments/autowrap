@@ -491,3 +491,57 @@ template NumRequiredParameters(A...) if(A.length == 1 && isCallable!(A[0])) {
     alias F = A[0];
     enum NumRequiredParameters = Parameters!F.length - NumDefaultParameters!F;
 }
+
+
+template BinaryOperators(T) {
+    import std.meta;
+    import std.traits;
+
+    // See https://dlang.org/spec/operatoroverloading.html#binary
+    alias overloadable = AliasSeq!(
+        "+", "-",  "*",  "/",  "%", "^^",  "&",
+        "|", "^", "<<", ">>", ">>>", "~", "in",
+    );
+
+    private auto probeTemplate(string op)() {
+        import std.traits: ReturnType, Parameters;
+        import std.meta: Alias;
+
+        mixin(`alias func = T.` ~ "opBinary" ~ `;`);
+        alias R = ReturnType!(func!op);
+        alias P = Parameters!(func!op);
+
+        auto obj = T.init;
+
+        static if(is(R == void))
+            mixin(`obj.` ~ "opBinary" ~ `!op(P.init);`);
+        else
+            mixin(`R ret = obj.` ~ "opBinary" ~ `!op(P.init);`);
+    }
+
+    private enum hasOperator(string op) = is(typeof(probeTemplate!(op)));
+
+    static if(hasMember!(T, "opBinary")) {
+        alias BinaryOperators = Filter!(hasOperator, overloadable);
+    } else
+        alias BinaryOperators = AliasSeq!();
+}
+
+
+@("BinaryOperators")
+@safe pure unittest {
+
+    import std.meta: AliasSeq;
+
+    static struct Number {
+        int i;
+        Number opBinary(string op)(Number other) if(op == "+") {
+            return Number(i + other.i);
+        }
+        Number opBinary(string op)(Number other) if(op == "-") {
+            return Number(i - other.i);
+        }
+    }
+
+    static assert([BinaryOperators!Number] == ["+", "-"]);
+}
