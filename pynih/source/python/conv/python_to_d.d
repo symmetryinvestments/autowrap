@@ -4,7 +4,8 @@ module python.conv.python_to_d;
 import python.raw: PyObject, pyListCheck, pyTupleCheck, PyTuple_Size, pyCallableCheck;
 import python.type: isUserAggregate, isTuple;
 import std.traits: Unqual, isIntegral, isFloatingPoint, isAggregateType, isArray,
-    isStaticArray, isAssociativeArray, isPointer, PointerTarget, isSomeChar, isSomeString, isDelegate;
+    isStaticArray, isAssociativeArray, isPointer, PointerTarget, isSomeChar, isSomeString,
+    isDelegate, isFunctionPointer;
 import std.range: isInputRange;
 import std.datetime: DateTime, Date;
 
@@ -208,4 +209,9 @@ T to(T)(PyObject* value) if(isDelegate!T)
         auto pyResult = PyObject_CallObject(value, pyArgs);
         return pyResult.to!(ReturnType!T);
     };
+}
+
+T to(T)(PyObject* value) if(isFunctionPointer!T)
+{
+    throw new Exception("Can't handle function pointers yet");
 }

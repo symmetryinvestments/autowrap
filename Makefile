@@ -59,13 +59,13 @@ examples/pyd/lib/pyd/pyd.so: examples/pyd/lib/pyd/libpydtests.so
 examples/pyd/lib/pyd/libpydtests.so: examples/pyd/dub.sdl examples/pyd/dub.selections.json
 	@cd examples/pyd && dub build -q -c $(DUB_CONFIGURATION)
 
-test_pyd_pynih: tests/test_pyd.py examples/pyd/lib/pynih/pyd.so pynih/source/python/raw.d
+test_pyd_pynih: tests/test_pyd.py examples/pyd/lib/pynih/pyd.so
 	PYTHONPATH=$(PWD)/examples/pyd/lib/pynih PYNIH=1 pytest -s -vv $<
 
 examples/pyd/lib/pynih/pyd.so: examples/pyd/lib/pynih/libpydtests.so
 	@cp $^ $@
 
-examples/pyd/lib/pynih/libpydtests.so: examples/pyd/dub.sdl examples/pyd/dub.selections.json
+examples/pyd/lib/pynih/libpydtests.so: examples/pyd/dub.sdl examples/pyd/dub.selections.json pynih/source/python/raw.d
 	@cd examples/pyd && dub build -q -c pynih
 
 test_numpy: tests/test_numpy.py examples/numpy/numpytests.so

@@ -670,10 +670,10 @@ struct PythonCallable(T) if(isCallable!T) {
     private static extern(C) PyObject* _py_call(PyObject* self_, PyObject* args, PyObject* kwargs)
         nothrow
         in(self_ !is null)
-        in(self_._callable !is null)
     {
         import std.traits: Parameters, ReturnType;
         auto self = cast(PythonCallable!T*) self_;
+        assert(self._callable !is null, "Cannot have null callable");
         return noThrowable!(() => callDlangFunction!((Parameters!T args) => self._callable(args), T)(self_, args, kwargs));
     }
 }
