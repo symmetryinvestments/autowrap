@@ -44,20 +44,24 @@ struct PythonType(T) {
         return failedToReady ? null : cast(PyObject*) &_pyType;
     }
 
-    static PyTypeObject* pyType() {
+    static PyTypeObject* pyType() nothrow {
         initialise;
         return failedToReady ? null : &_pyType;
     }
 
-    private static void initialise() {
+    private static void initialise() nothrow {
         import python.raw: PyType_GenericNew, PyType_Ready, TypeFlags,
-            PyErr_SetString, PyExc_TypeError;
+            PyErr_SetString, PyExc_TypeError,
+            PyNumberMethods, PySequenceMethods;
+        import autowrap.reflection: BinaryOperators;
+        import std.traits: arity;
 
         if(_pyType != _pyType.init) return;
 
         _pyType.tp_name = T.stringof;
         _pyType.tp_flags = TypeFlags.Default;
 
+        // FIXME: types are that user aggregates *and* callables
         static if(isUserAggregate!T) {
             _pyType.tp_basicsize = PythonClass!T.sizeof;
             _pyType.tp_getset = getsetDefs;
@@ -65,6 +69,31 @@ struct PythonType(T) {
             _pyType.tp_new = &_py_new;
             _pyType.tp_repr = &_py_repr;
             _pyType.tp_init = &_py_init;
+
+            alias binaryOperators = BinaryOperators!T;
+            static if(binaryOperators.length > 0) {
+                _pyType.tp_as_number = new PyNumberMethods;
+                _pyType.tp_as_sequence = new PySequenceMethods;
+            }
+
+            static foreach(binOp; binaryOperators) {{
+                // first get the Python function pointer name
+                enum slot = dlangOpToPythonSlot(binOp);
+                // some of them differ in arity
+                enum slotArity = arity!(mixin(`typeof(PyTypeObject.`, slot, `)`));
+
+                // get the function name in PythonBinaryOperator
+                static if(slotArity == 2)
+                    enum funcName = "_py_bin_func";
+                else static if(slotArity == 3)
+                    enum funcName = "_py_ter_func";
+                else
+                    static assert("Do not know how to deal with slot " ~ slot);
+
+                // set the C function that implements this operator
+                mixin(`_pyType.`, slot, ` = &PythonBinaryOperator!(T, "`, binOp, `").`, funcName, `;`);
+            }}
+
 
         } else static if(isCallable!T) {
             _pyType.tp_basicsize = PythonCallable!T.sizeof;
@@ -287,6 +316,27 @@ struct PythonType(T) {
     }
 }
 
+
+// From a D operator (e.g. `+`) to a Python function pointer member name
+private string dlangOpToPythonSlot(string op) {
+    enum opToSlot = [
+        "+": "tp_as_number.nb_add",
+        "-": "tp_as_number.nb_subtract",
+        "*": "tp_as_number.nb_multiply",
+        "/": "tp_as_number.nb_divide",
+        "%": "tp_as_number.nb_remainder",
+        "^^": "tp_as_number.nb_power",
+        "&": "tp_as_number.nb_and",
+        "|": "tp_as_number.nb_or",
+        "^": "tp_as_number.nb_xor",
+        "<<": "tp_as_number.nb_lshift",
+        ">>": "tp_as_number.nb_rshift",
+        "~": "tp_as_sequence.sq_concat",
+        "in": "tp_as_sequence.sq_contains",
+    ];
+    if(op !in opToSlot) throw new Exception("Unknown operator " ~ op);
+    return opToSlot[op];
+}
 
 private auto pythonArgsToDArgs(bool isVariadic, P...)(PyObject* args, PyObject* kwargs)
     if(allSatisfy!(isParameter, P))
@@ -676,6 +726,43 @@ struct PythonCallable(T) if(isCallable!T) {
         assert(self._callable !is null, "Cannot have null callable");
         return noThrowable!(() => callDlangFunction!((Parameters!T args) => self._callable(args), T)(self_, args, kwargs));
     }
+}
+
+
+struct PythonBinaryOperator(T, string op) {
+
+    static extern(C) PyObject* _py_bin_func(PyObject* lhs, PyObject* rhs) nothrow {
+        return _py_ter_func(lhs, rhs, null);
+    }
+
+    // Should only be for `^^` because in Python the function is ternary
+    static extern(C) PyObject* _py_ter_func(PyObject* lhs_, PyObject* rhs_, PyObject* extra) nothrow {
+        import python.conv.python_to_d: to;
+        import python.conv.d_to_python: toPython;
+        import std.traits: Parameters;
+
+        enum methodName = `opBinary!"` ~ op ~ `"`;
+        mixin(`alias parameters = Parameters!(T.`, methodName, `);`);
+
+        static assert(parameters.length == 1, "Binary operators must take one parameter");
+        alias RHS = parameters[0];
+
+        return noThrowable!(() {
+            if(!lhs_.isInstanceOf!T)
+                throw new Exception("lhs is not a " ~ T.stringof);
+
+            auto lhs = lhs_.to!T;
+            auto rhs = rhs_.to!RHS;
+            mixin(`auto ret = lhs.opBinary!"`, op, `"(rhs);`);
+            return ret.toPython;
+        });
+    }
+}
+
+
+private bool isInstanceOf(T)(PyObject* obj) {
+    import python.raw: PyObject_IsInstance;
+    return cast(bool) PyObject_IsInstance(obj, cast(PyObject*) PythonType!T.pyType);
 }
 
 
