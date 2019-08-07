@@ -526,6 +526,7 @@ template BinaryOperators(T) {
         template toBinOp(string op) {
             enum hasLeft  = hasOperatorDir!(BinOpDir.left, op);
             enum hasRight = hasOperatorDir!(BinOpDir.right, op);
+
             static if(hasLeft && hasRight)
                 enum toBinOp = BinaryOperator(op, BinOpDir.left | BinOpDir.right);
             else static if(hasLeft)
@@ -540,6 +541,17 @@ template BinaryOperators(T) {
     } else
         alias BinaryOperators = AliasSeq!();
 }
+
+
+private auto probeOperator(T, string funcName, string op)() {
+    import std.traits: Parameters;
+
+    mixin(`alias func = T.` ~ funcName ~ `;`);
+    alias P = Parameters!(func!op);
+
+    mixin(`return T.init.` ~ funcName ~ `!op(P.init);`);
+}
+
 
 
 struct BinaryOperator {
@@ -586,4 +598,24 @@ string functionName(BinOpDir dir) {
             BinaryOperator("-", BinOpDir.left),
         ]
     );
+}
+
+
+template UnaryOperators(T) {
+    import std.meta: AliasSeq, Filter;
+
+    alias overloadable = AliasSeq!("-", "+", "~", "*", "++", "--");
+    enum hasOperator(string op) = is(typeof(probeOperator!(T, "opUnary", op)));
+    alias UnaryOperators = Filter!(hasOperator, overloadable);
+}
+
+@("UnaryOperators")
+@safe pure unittest {
+
+    static struct Struct {
+        int opUnary(string op)() if(op == "+") { return 42; }
+        int opUnary(string op)() if(op == "~") { return 33; }
+    }
+
+    static assert([UnaryOperators!Struct] == ["+", "~"]);
 }
