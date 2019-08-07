@@ -3,7 +3,7 @@ description "Wrap existing D code for use in python"
 authors "Atila Neves"
 license "BSD"
 targetType "library"
-dependency "pyd" version="~>0.10.4"
+dependency "pyd" version="~>0.11.0"
 dependency "autowrap:reflection" path="../reflection"
 versions "PydPythonExtension"
 
