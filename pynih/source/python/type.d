@@ -28,7 +28,7 @@ package enum isNonRangeUDT(T) = isUserAggregate!T && !isInputRange!T;
    type `T`.
  */
 struct PythonType(T) {
-    import python.raw: PyTypeObject, PySequenceMethods;
+    import python.raw: PyTypeObject, PySequenceMethods, PyMappingMethods;
     import std.traits: FieldNameTuple, Fields;
     import std.meta: Alias, staticMap;
 
@@ -81,6 +81,12 @@ struct PythonType(T) {
                 )
             {
                 _pyType.tp_richcompare = &PythonOpCmp!T._py_cmp;
+            }
+
+            static if(hasMember!(T, "opIndex") || hasMember!(T, "opSlice")) {
+                if(_pyType.tp_as_mapping is null)
+                    _pyType.tp_as_mapping = new PyMappingMethods;
+                _pyType.tp_as_mapping.mp_subscript = &PythonSubscript!T._py_index;
             }
 
             enum isPythonableUnary(string op) = op == "+" || op == "-" || op == "~";
@@ -871,13 +877,12 @@ private template PythonBinaryOperator(T, BinaryOperator operator) {
 private template PythonOpCmp(T) {
     static extern(C) PyObject* _py_cmp(PyObject* lhs, PyObject* rhs, int opId) nothrow {
         import python.raw: Py_LT, Py_LE, Py_EQ, Py_NE, Py_GT, Py_GE;
+        import python.conv.python_to_d: to;
+        import python.conv.d_to_python: toPython;
         import std.conv: text;
         import std.traits: Unqual, Parameters;
 
         return noThrowable!({
-
-            import python.conv.python_to_d: to;
-            import python.conv.d_to_python: toPython;
 
             alias parameters = Parameters!(T.opCmp);
             static assert(parameters.length == 1, T.stringof ~ ".opCmp must have exactly one parameter");
@@ -898,6 +903,29 @@ private template PythonOpCmp(T) {
 
             return dRes.toPython;
        });
+    }
+}
+
+
+private template PythonSubscript(T) {
+    static extern(C) PyObject* _py_index(PyObject* self, PyObject* key) nothrow {
+        import python.raw: pyIndexCheck;
+        import python.conv.python_to_d: to;
+        import python.conv.d_to_python: toPython;
+        import std.traits: Parameters, Unqual;
+
+        PyObject* impl() {
+            if(pyIndexCheck(obj)) {
+                alias parameters = Parameters!(T.opIndex);
+                static if(Parameters.length == 1)
+                    return self.to!(Unqual!T).opIndex(key.to!(parameters[0])).toPython;
+                else
+                    throw new Exception("Don't know how to handle opIndex with more than one parameter");
+            } else
+                throw new Exception("Can only handle index for now");
+        }
+
+        return noThrowable!impl;
     }
 }
 
