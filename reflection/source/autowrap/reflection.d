@@ -511,9 +511,7 @@ template BinaryOperators(T) {
         mixin(`alias func = T.` ~ funcName ~ `;`);
         alias P = Parameters!(func!op);
 
-        auto obj = T.init;
-
-        mixin(`return obj.` ~ funcName ~ `!op(P.init);`);
+        mixin(`return T.init.` ~ funcName ~ `!op(P.init);`);
     }
 
     static if(hasMember!(T, "opBinary") || hasMember!(T, "opBinaryRight")) {
