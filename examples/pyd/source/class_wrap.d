@@ -31,7 +31,7 @@ class Bizzy {
         static if(op == "+") return i+1;
         else static if(op == "*") return i+2;
         else static if(op == "^^") return i+3;
-        else static assert(0);
+        else static assert(0, "Unknown op " ~ op);
     }
     bool opBinaryRight(string op)(int i) if(op == "in") {
         return i > 10;

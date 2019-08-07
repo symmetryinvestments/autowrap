@@ -53,7 +53,7 @@ struct PythonType(T) {
         import python.raw: PyType_GenericNew, PyType_Ready, TypeFlags,
             PyErr_SetString, PyExc_TypeError,
             PyNumberMethods, PySequenceMethods;
-        import autowrap.reflection: BinaryOperators;
+        import autowrap.reflection: BinaryOperators, functionName;
         import std.traits: arity;
 
         if(_pyType != _pyType.init) return;
@@ -78,20 +78,25 @@ struct PythonType(T) {
 
             static foreach(binOp; binaryOperators) {{
                 // first get the Python function pointer name
-                enum slot = dlangOpToPythonSlot(binOp);
+                enum slot = dlangOpToPythonSlot(binOp.op);
                 // some of them differ in arity
                 enum slotArity = arity!(mixin(`typeof(PyTypeObject.`, slot, `)`));
 
                 // get the function name in PythonBinaryOperator
-                static if(slotArity == 2)
-                    enum cFuncName = "_py_bin_func";
-                else static if(slotArity == 3)
-                    enum cFuncName = "_py_ter_func";
-                else
-                    static assert("Do not know how to deal with slot " ~ slot);
+                // `in` is special because the function signature is different
+                static if(binOp.op == "in") {
+                    enum cFuncName = "_py_in_func";
+                } else {
+                    static if(slotArity == 2)
+                        enum cFuncName = "_py_bin_func";
+                    else static if(slotArity == 3)
+                        enum cFuncName = "_py_ter_func";
+                    else
+                        static assert("Do not know how to deal with slot " ~ slot);
+                }
 
                 // set the C function that implements this operator
-                mixin(`_pyType.`, slot, ` = &PythonBinaryOperator!(T, "`, binOp, `").`, cFuncName, `;`);
+                mixin(`_pyType.`, slot, ` = &PythonBinaryOperator!(T, binOp.op, functionName(binOp.direction)).`, cFuncName, `;`);
             }}
 
 
@@ -729,7 +734,11 @@ struct PythonCallable(T) if(isCallable!T) {
 }
 
 
-struct PythonBinaryOperator(T, string op) {
+struct PythonBinaryOperator(T, string op, string funcName) {
+
+    static extern(C) int _py_in_func(PyObject* lhs, PyObject* rhs) nothrow {
+        return 0;  // FIXME
+    }
 
     static extern(C) PyObject* _py_bin_func(PyObject* lhs, PyObject* rhs) nothrow {
         return _py_ter_func(lhs, rhs, null);
@@ -741,8 +750,7 @@ struct PythonBinaryOperator(T, string op) {
         import python.conv.d_to_python: toPython;
         import std.traits: Parameters;
 
-        enum methodName = `opBinary!"` ~ op ~ `"`;
-        mixin(`alias parameters = Parameters!(T.`, methodName, `);`);
+        mixin(`alias parameters = Parameters!(T.`, funcName, `!op);`);
 
         static assert(parameters.length == 1, "Binary operators must take one parameter");
         alias RHS = parameters[0];
@@ -753,7 +761,7 @@ struct PythonBinaryOperator(T, string op) {
 
             auto lhs = lhs_.to!T;
             auto rhs = rhs_.to!RHS;
-            mixin(`auto ret = lhs.opBinary!"`, op, `"(rhs);`);
+            mixin(`auto ret = lhs.`, funcName, `!op(rhs);`);
             return ret.toPython;
         });
     }
