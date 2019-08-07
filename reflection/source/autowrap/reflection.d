@@ -496,6 +496,10 @@ template NumRequiredParameters(A...) if(A.length == 1 && isCallable!(A[0])) {
 
 
 template BinaryOperators(T) {
+    alias BinaryOperators = BinaryOperatorsImpl!(T, BinOpDir.left);
+}
+
+private template BinaryOperatorsImpl(T, BinOpDir dir) {
     import std.meta: staticMap, Filter, AliasSeq;
     import std.traits: hasMember;
 
@@ -526,9 +530,9 @@ template BinaryOperators(T) {
     enum toBinOp(string op) = BinaryOperator(op, BinOpDir.left);
 
     static if(hasMember!(T, "opBinary")) {
-        alias BinaryOperators = staticMap!(toBinOp, Filter!(hasOperator, overloadable));
+        alias BinaryOperatorsImpl = staticMap!(toBinOp, Filter!(hasOperator, overloadable));
     } else
-        alias BinaryOperators = AliasSeq!();
+        alias BinaryOperatorsImpl = AliasSeq!();
 }
 
 
