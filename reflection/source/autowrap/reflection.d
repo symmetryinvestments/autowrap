@@ -503,6 +503,8 @@ private template BinaryOperatorsImpl(T, BinOpDir dir) {
     import std.meta: staticMap, Filter, AliasSeq;
     import std.traits: hasMember;
 
+    enum funcName = functionName(dir);
+
     // See https://dlang.org/spec/operatoroverloading.html#binary
     alias overloadable = AliasSeq!(
         "+", "-",  "*",  "/",  "%", "^^",  "&",
@@ -513,23 +515,23 @@ private template BinaryOperatorsImpl(T, BinOpDir dir) {
         import std.traits: ReturnType, Parameters;
         import std.meta: Alias;
 
-        mixin(`alias func = T.` ~ "opBinary" ~ `;`);
+        mixin(`alias func = T.` ~ funcName ~ `;`);
         alias R = ReturnType!(func!op);
         alias P = Parameters!(func!op);
 
         auto obj = T.init;
 
         static if(is(R == void))
-            mixin(`obj.` ~ "opBinary" ~ `!op(P.init);`);
+            mixin(`obj.` ~ funcName ~ `!op(P.init);`);
         else
-            mixin(`R ret = obj.` ~ "opBinary" ~ `!op(P.init);`);
+            mixin(`R ret = obj.` ~ funcName ~ `!op(P.init);`);
     }
 
     private enum hasOperator(string op) = is(typeof(probeTemplate!(op)));
 
     enum toBinOp(string op) = BinaryOperator(op, BinOpDir.left);
 
-    static if(hasMember!(T, "opBinary")) {
+    static if(hasMember!(T, funcName)) {
         alias BinaryOperatorsImpl = staticMap!(toBinOp, Filter!(hasOperator, overloadable));
     } else
         alias BinaryOperatorsImpl = AliasSeq!();
@@ -545,6 +547,15 @@ struct BinaryOperator {
 enum BinOpDir {
     left,
     right,
+}
+
+
+string functionName(BinOpDir dir) {
+    final switch(dir) with(BinOpDir) {
+        case left: return "opBinary";
+        case right: return "opBinaryRight";
+    }
+    assert(0);
 }
 
 
