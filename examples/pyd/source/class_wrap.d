@@ -25,7 +25,8 @@ class Bizzy {
         return "hi";
     }
     override string toString() const {
-        return "bye";
+        import std.conv: text;
+        return text("bye(", _m, ")");
     }
     int opBinary(string op)(int i) {
         static if(op == "+") return i+1;
