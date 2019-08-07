@@ -2,10 +2,10 @@
 	"fileVersion": 1,
 	"versions": {
 		"automem": "0.4.6",
-		"excel-d": "0.3.14",
-		"nogc": "0.2.1",
+		"excel-d": "0.3.16",
+		"nogc": "0.2.2",
 		"stdx-allocator": "2.77.5",
 		"test_allocator": "0.3.2",
-		"unit-threaded": "0.8.0"
+		"unit-threaded": "0.10.3"
 	}
 }
