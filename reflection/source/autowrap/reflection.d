@@ -427,6 +427,8 @@ template isStatic(alias F) {
     enum isStatic = hasStaticMember!(__traits(parent, F), __traits(identifier, F));
 }
 
+
+@("isStatic")
 @safe pure unittest {
     static struct Struct {
         int foo();
@@ -494,8 +496,8 @@ template NumRequiredParameters(A...) if(A.length == 1 && isCallable!(A[0])) {
 
 
 template BinaryOperators(T) {
-    import std.meta;
-    import std.traits;
+    import std.meta: staticMap, Filter, AliasSeq;
+    import std.traits: hasMember;
 
     // See https://dlang.org/spec/operatoroverloading.html#binary
     alias overloadable = AliasSeq!(
@@ -521,10 +523,24 @@ template BinaryOperators(T) {
 
     private enum hasOperator(string op) = is(typeof(probeTemplate!(op)));
 
+    enum toBinOp(string op) = BinaryOperator(op, BinOpDir.left);
+
     static if(hasMember!(T, "opBinary")) {
-        alias BinaryOperators = Filter!(hasOperator, overloadable);
+        alias BinaryOperators = staticMap!(toBinOp, Filter!(hasOperator, overloadable));
     } else
         alias BinaryOperators = AliasSeq!();
+}
+
+
+struct BinaryOperator {
+    string op;
+    BinOpDir direction;
+}
+
+
+enum BinOpDir {
+    left,
+    right,
 }
 
 
@@ -543,5 +559,11 @@ template BinaryOperators(T) {
         }
     }
 
-    static assert([BinaryOperators!Number] == ["+", "-"]);
+    static assert(
+        [BinaryOperators!Number] ==
+        [
+            BinaryOperator("+", BinOpDir.left),
+            BinaryOperator("-", BinOpDir.left),
+        ]
+    );
 }
