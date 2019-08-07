@@ -736,8 +736,38 @@ struct PythonCallable(T) if(isCallable!T) {
 
 struct PythonBinaryOperator(T, BinaryOperator operator) {
 
-    static extern(C) int _py_in_func(PyObject* lhs, PyObject* rhs) nothrow {
-        return 0;  // FIXME
+    static extern(C) int _py_in_func(PyObject* lhs, PyObject* rhs)
+        nothrow
+        in(operator.op == "in")
+    {
+        import python.conv.python_to_d: to;
+        import python.conv.d_to_python: toPython;
+        import std.traits: Parameters, hasMember;
+
+        alias inParams(U) = Parameters!(U.opBinaryRight!(operator.op));
+
+        static if(__traits(compiles, inParams!T))
+            alias parameters = inParams!T;
+        else
+            alias parameters = void;
+
+        static if(is(typeof(T.init.opBinaryRight!(operator.op)(parameters.init)): bool)) {
+            return noThrowable!({
+
+                static assert(parameters.length == 1, "opBinaryRight!in must have one parameter");
+                alias Arg = parameters[0];
+
+                auto this_ = lhs.to!T;
+                auto dArg  = rhs.to!Arg;
+
+                const ret = this_.opBinaryRight!(operator.op)(dArg);
+                // See https://docs.python.org/3/c-api/sequence.html#c.PySequence_Contains
+                return ret ? 1 : 0;
+            });
+        } else {
+            // Error. See https://docs.python.org/3/c-api/sequence.html#c.PySequence_Contains
+            return -1;
+        }
     }
 
     static extern(C) PyObject* _py_bin_func(PyObject* lhs, PyObject* rhs) nothrow {
