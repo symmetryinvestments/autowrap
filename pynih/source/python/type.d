@@ -748,7 +748,7 @@ struct PythonBinaryOperator(T, BinaryOperator operator) {
     static extern(C) PyObject* _py_ter_func(PyObject* lhs_, PyObject* rhs_, PyObject* extra) nothrow {
         import python.conv.python_to_d: to;
         import python.conv.d_to_python: toPython;
-        import autowrap.reflection: BinOpDir;
+        import autowrap.reflection: BinOpDir, functionName;
         import std.traits: Parameters;
         import std.exception: enforce;
         import std.conv: text;
@@ -765,34 +765,25 @@ struct PythonBinaryOperator(T, BinaryOperator operator) {
             } else
                 throw new Exception("Neither lhs or rhs were of type " ~ T.stringof);
 
-            PyObject* impl(string funcName)() {
-                mixin(`alias parameters = Parameters!(T.`, funcName, `!(operator.op));`);
-                static assert(parameters.length == 1, "Binary operators must take one parameter");
-                alias Arg = parameters[0];
+            PyObject* impl(BinOpDir dir)() {
+                enum funcName = functionName(dir);
+                static if(operator.dirs & dir) {
+                    mixin(`alias parameters = Parameters!(T.`, funcName, `!(operator.op));`);
+                    static assert(parameters.length == 1, "Binary operators must take one parameter");
+                    alias Arg = parameters[0];
 
-                auto this_ = self.to!T;
-                auto dArg  = pArg.to!Arg;
-                mixin(`return this_.`, funcName, `!(operator.op)(dArg).toPython;`);
+                    auto this_ = self.to!T;
+                    auto dArg  = pArg.to!Arg;
+                    mixin(`return this_.`, funcName, `!(operator.op)(dArg).toPython;`);
+                } else {
+                    throw new Exception(text(T.stringof, " does not support ", funcName, " with self on ", dir));
+                }
             }
 
             if(lhs_.isInstanceOf!T) {  // self is on the left hand side
-                static if(operator.dirs & BinOpDir.left) {
-                    return impl!"opBinary";
-                } else {
-                    PyObject* ret;  // just so the inferred return type is PyObject
-                    if(ret is null)
-                        throw new Exception(text(T.stringof, " does not support opBinary with self on the left"));
-                    return ret;
-                }
+                return impl!(BinOpDir.left);
             } else if(rhs_.isInstanceOf!T) {  // self is on the right hand side
-                static if(operator.dirs & BinOpDir.right) {
-                    return impl!"opBinaryRight";
-                } else {
-                    PyObject* ret;  // just so the inferred return type is PyObject
-                    if(ret is null)
-                        throw new Exception(text(T.stringof, " does not support opBinary with self on the right"));
-                    return ret;
-                }
+                return impl!(BinOpDir.right);
             } else {
                 throw new Exception("Neither lhs or rhs were of type " ~ T.stringof);
             }
