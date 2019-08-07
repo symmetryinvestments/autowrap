@@ -53,8 +53,9 @@ struct PythonType(T) {
         import python.raw: PyType_GenericNew, PyType_Ready, TypeFlags,
             PyErr_SetString, PyExc_TypeError,
             PyNumberMethods, PySequenceMethods;
-        import autowrap.reflection: BinaryOperators, functionName;
+        import autowrap.reflection: UnaryOperators, BinaryOperators, functionName;
         import std.traits: arity;
+        import std.meta: Filter;
 
         if(_pyType != _pyType.init) return;
 
@@ -76,9 +77,14 @@ struct PythonType(T) {
                 _pyType.tp_as_sequence = new PySequenceMethods;
             }
 
+            enum isPythonableUnary(string op) = op == "+" || op == "-" || op == "~";
+            static foreach(op; Filter!(isPythonableUnary, UnaryOperators!T)) {
+                mixin(`_pyType.`, dlangUnOpToPythonSlot(op), ` = &PythonUnaryOperator!(T, op)._py_un_op;`);
+            }
+
             static foreach(binOp; binaryOperators) {{
                 // first get the Python function pointer name
-                enum slot = dlangOpToPythonSlot(binOp.op);
+                enum slot = dlangBinOpToPythonSlot(binOp.op);
                 // some of them differ in arity
                 enum slotArity = arity!(mixin(`typeof(PyTypeObject.`, slot, `)`));
 
@@ -323,7 +329,18 @@ struct PythonType(T) {
 
 
 // From a D operator (e.g. `+`) to a Python function pointer member name
-private string dlangOpToPythonSlot(string op) {
+private string dlangUnOpToPythonSlot(string op) {
+    enum opToSlot = [
+        "+": "tp_as_number.nb_positive",
+        "-": "tp_as_number.nb_negative",
+        "~": "tp_as_number.nb_invert",
+    ];
+    if(op !in opToSlot) throw new Exception("Unknown unary operator " ~ op);
+    return opToSlot[op];
+}
+
+// From a D operator (e.g. `+`) to a Python function pointer member name
+private string dlangBinOpToPythonSlot(string op) {
     enum opToSlot = [
         "+": "tp_as_number.nb_add",
         "-": "tp_as_number.nb_subtract",
@@ -339,7 +356,7 @@ private string dlangOpToPythonSlot(string op) {
         "~": "tp_as_sequence.sq_concat",
         "in": "tp_as_sequence.sq_contains",
     ];
-    if(op !in opToSlot) throw new Exception("Unknown operator " ~ op);
+    if(op !in opToSlot) throw new Exception("Unknown binary operator " ~ op);
     return opToSlot[op];
 }
 
@@ -734,7 +751,22 @@ struct PythonCallable(T) if(isCallable!T) {
 }
 
 
-struct PythonBinaryOperator(T, BinaryOperator operator) {
+template PythonUnaryOperator(T, string op) {
+    static extern(C) PyObject* _py_un_op(PyObject* self) {
+        return noThrowable!({
+            import python.conv.python_to_d: to;
+            import python.conv.d_to_python: toPython;
+            import std.traits: Parameters;
+
+            static assert(Parameters!(T.opUnary!op).length == 0, "opUnary can't take any parameters");
+
+            return self.to!T.opUnary!op.toPython;
+        });
+    }
+}
+
+
+template PythonBinaryOperator(T, BinaryOperator operator) {
 
     static extern(C) int _py_in_func(PyObject* lhs, PyObject* rhs)
         nothrow
