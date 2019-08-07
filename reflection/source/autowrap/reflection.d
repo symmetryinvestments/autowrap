@@ -512,19 +512,14 @@ private template BinaryOperatorsImpl(T, BinOpDir dir) {
     );
 
     private auto probeTemplate(string op)() {
-        import std.traits: ReturnType, Parameters;
-        import std.meta: Alias;
+        import std.traits: Parameters;
 
         mixin(`alias func = T.` ~ funcName ~ `;`);
-        alias R = ReturnType!(func!op);
         alias P = Parameters!(func!op);
 
         auto obj = T.init;
 
-        static if(is(R == void))
-            mixin(`obj.` ~ funcName ~ `!op(P.init);`);
-        else
-            mixin(`R ret = obj.` ~ funcName ~ `!op(P.init);`);
+        mixin(`return obj.` ~ funcName ~ `!op(P.init);`);
     }
 
     private enum hasOperator(string op) = is(typeof(probeTemplate!(op)));
