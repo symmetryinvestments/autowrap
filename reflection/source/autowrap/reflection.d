@@ -496,7 +496,12 @@ template NumRequiredParameters(A...) if(A.length == 1 && isCallable!(A[0])) {
 
 
 template BinaryOperators(T) {
-    alias BinaryOperators = BinaryOperatorsImpl!(T, BinOpDir.left);
+    import std.meta: AliasSeq, staticMap;
+
+    alias dirs = AliasSeq!(BinOpDir.left, BinOpDir.right);
+    alias binOps(BinOpDir dir) = BinaryOperatorsImpl!(T, dir);
+    //alias BinaryOperators = BinaryOperatorsImpl!(T, BinOpDir.left);
+    alias BinaryOperators = staticMap!(binOps, dirs);
 }
 
 private template BinaryOperatorsImpl(T, BinOpDir dir) {
@@ -524,7 +529,7 @@ private template BinaryOperatorsImpl(T, BinOpDir dir) {
 
     private enum hasOperator(string op) = is(typeof(probeTemplate!(op)));
 
-    enum toBinOp(string op) = BinaryOperator(op, BinOpDir.left);
+    enum toBinOp(string op) = BinaryOperator(op, dir);
 
     static if(hasMember!(T, funcName)) {
         alias BinaryOperatorsImpl = staticMap!(toBinOp, Filter!(hasOperator, overloadable));
@@ -567,6 +572,9 @@ string functionName(BinOpDir dir) {
         Number opBinary(string op)(Number other) if(op == "-") {
             return Number(i - other.i);
         }
+        Number opBinaryRight(string op)(int other) if(op == "*") {
+            return Number(i * other);
+        }
     }
 
     static assert(
@@ -574,6 +582,7 @@ string functionName(BinOpDir dir) {
         [
             BinaryOperator("+", BinOpDir.left),
             BinaryOperator("-", BinOpDir.left),
+            BinaryOperator("*", BinOpDir.right),
         ]
     );
 }
