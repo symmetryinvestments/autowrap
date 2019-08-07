@@ -4,7 +4,7 @@
 module python.type;
 
 
-import autowrap.reflection: isParameter;
+import autowrap.reflection: isParameter, BinaryOperator;
 import python.raw: PyObject;
 import std.traits: Unqual, isArray, isIntegral, isBoolean, isFloatingPoint, isAggregateType, isCallable;
 import std.datetime: DateTime, Date;
@@ -53,7 +53,7 @@ struct PythonType(T) {
         import python.raw: PyType_GenericNew, PyType_Ready, TypeFlags,
             PyErr_SetString, PyExc_TypeError,
             PyNumberMethods, PySequenceMethods;
-        import autowrap.reflection: BinaryOperators;
+        import autowrap.reflection: BinaryOperators, functionName;
         import std.traits: arity;
 
         if(_pyType != _pyType.init) return;
@@ -78,20 +78,25 @@ struct PythonType(T) {
 
             static foreach(binOp; binaryOperators) {{
                 // first get the Python function pointer name
-                enum slot = dlangOpToPythonSlot(binOp);
+                enum slot = dlangOpToPythonSlot(binOp.op);
                 // some of them differ in arity
                 enum slotArity = arity!(mixin(`typeof(PyTypeObject.`, slot, `)`));
 
                 // get the function name in PythonBinaryOperator
-                static if(slotArity == 2)
-                    enum funcName = "_py_bin_func";
-                else static if(slotArity == 3)
-                    enum funcName = "_py_ter_func";
-                else
-                    static assert("Do not know how to deal with slot " ~ slot);
+                // `in` is special because the function signature is different
+                static if(binOp.op == "in") {
+                    enum cFuncName = "_py_in_func";
+                } else {
+                    static if(slotArity == 2)
+                        enum cFuncName = "_py_bin_func";
+                    else static if(slotArity == 3)
+                        enum cFuncName = "_py_ter_func";
+                    else
+                        static assert("Do not know how to deal with slot " ~ slot);
+                }
 
                 // set the C function that implements this operator
-                mixin(`_pyType.`, slot, ` = &PythonBinaryOperator!(T, "`, binOp, `").`, funcName, `;`);
+                mixin(`_pyType.`, slot, ` = &PythonBinaryOperator!(T, binOp).`, cFuncName, `;`);
             }}
 
 
@@ -729,7 +734,41 @@ struct PythonCallable(T) if(isCallable!T) {
 }
 
 
-struct PythonBinaryOperator(T, string op) {
+struct PythonBinaryOperator(T, BinaryOperator operator) {
+
+    static extern(C) int _py_in_func(PyObject* lhs, PyObject* rhs)
+        nothrow
+        in(operator.op == "in")
+    {
+        import python.conv.python_to_d: to;
+        import python.conv.d_to_python: toPython;
+        import std.traits: Parameters, hasMember;
+
+        alias inParams(U) = Parameters!(U.opBinaryRight!(operator.op));
+
+        static if(__traits(compiles, inParams!T))
+            alias parameters = inParams!T;
+        else
+            alias parameters = void;
+
+        static if(is(typeof(T.init.opBinaryRight!(operator.op)(parameters.init)): bool)) {
+            return noThrowable!({
+
+                static assert(parameters.length == 1, "opBinaryRight!in must have one parameter");
+                alias Arg = parameters[0];
+
+                auto this_ = lhs.to!T;
+                auto dArg  = rhs.to!Arg;
+
+                const ret = this_.opBinaryRight!(operator.op)(dArg);
+                // See https://docs.python.org/3/c-api/sequence.html#c.PySequence_Contains
+                return ret ? 1 : 0;
+            });
+        } else {
+            // Error. See https://docs.python.org/3/c-api/sequence.html#c.PySequence_Contains
+            return -1;
+        }
+    }
 
     static extern(C) PyObject* _py_bin_func(PyObject* lhs, PyObject* rhs) nothrow {
         return _py_ter_func(lhs, rhs, null);
@@ -739,22 +778,45 @@ struct PythonBinaryOperator(T, string op) {
     static extern(C) PyObject* _py_ter_func(PyObject* lhs_, PyObject* rhs_, PyObject* extra) nothrow {
         import python.conv.python_to_d: to;
         import python.conv.d_to_python: toPython;
+        import autowrap.reflection: BinOpDir, functionName;
         import std.traits: Parameters;
+        import std.exception: enforce;
+        import std.conv: text;
 
-        enum methodName = `opBinary!"` ~ op ~ `"`;
-        mixin(`alias parameters = Parameters!(T.`, methodName, `);`);
+        return noThrowable!({
 
-        static assert(parameters.length == 1, "Binary operators must take one parameter");
-        alias RHS = parameters[0];
+            PyObject* self, pArg;
+            if(lhs_.isInstanceOf!T) {
+                self = lhs_;
+                pArg = rhs_;
+            } else if(rhs_.isInstanceOf!T) {
+                self = rhs_;
+                pArg = lhs_;
+            } else
+                throw new Exception("Neither lhs or rhs were of type " ~ T.stringof);
 
-        return noThrowable!(() {
-            if(!lhs_.isInstanceOf!T)
-                throw new Exception("lhs is not a " ~ T.stringof);
+            PyObject* impl(BinOpDir dir)() {
+                enum funcName = functionName(dir);
+                static if(operator.dirs & dir) {
+                    mixin(`alias parameters = Parameters!(T.`, funcName, `!(operator.op));`);
+                    static assert(parameters.length == 1, "Binary operators must take one parameter");
+                    alias Arg = parameters[0];
 
-            auto lhs = lhs_.to!T;
-            auto rhs = rhs_.to!RHS;
-            mixin(`auto ret = lhs.opBinary!"`, op, `"(rhs);`);
-            return ret.toPython;
+                    auto this_ = self.to!T;
+                    auto dArg  = pArg.to!Arg;
+                    mixin(`return this_.`, funcName, `!(operator.op)(dArg).toPython;`);
+                } else {
+                    throw new Exception(text(T.stringof, " does not support ", funcName, " with self on ", dir));
+                }
+            }
+
+            if(lhs_.isInstanceOf!T) {  // self is on the left hand side
+                return impl!(BinOpDir.left);
+            } else if(rhs_.isInstanceOf!T) {  // self is on the right hand side
+                return impl!(BinOpDir.right);
+            } else {
+                throw new Exception("Neither lhs or rhs were of type " ~ T.stringof);
+            }
         });
     }
 }

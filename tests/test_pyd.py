@@ -217,8 +217,8 @@ def test_class_wrap_bizzy():
 
     assert bizzy.a(1) == 12
     assert Bizzy.b(1) == 14
-    assert str(bizzy) == 'bye'
-    assert repr(bizzy) == 'bye'
+    assert str(bizzy) == 'bye(0)'
+    assert repr(bizzy) == 'bye(0)'
 
     assert bizzy + 1 == 2
     assert bizzy * 1 == 3

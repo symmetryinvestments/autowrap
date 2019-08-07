@@ -427,6 +427,8 @@ template isStatic(alias F) {
     enum isStatic = hasStaticMember!(__traits(parent, F), __traits(identifier, F));
 }
 
+
+@("isStatic")
 @safe pure unittest {
     static struct Struct {
         int foo();
@@ -494,8 +496,8 @@ template NumRequiredParameters(A...) if(A.length == 1 && isCallable!(A[0])) {
 
 
 template BinaryOperators(T) {
-    import std.meta;
-    import std.traits;
+    import std.meta: staticMap, Filter, AliasSeq;
+    import std.traits: hasMember;
 
     // See https://dlang.org/spec/operatoroverloading.html#binary
     alias overloadable = AliasSeq!(
@@ -503,35 +505,66 @@ template BinaryOperators(T) {
         "|", "^", "<<", ">>", ">>>", "~", "in",
     );
 
-    private auto probeTemplate(string op)() {
-        import std.traits: ReturnType, Parameters;
-        import std.meta: Alias;
+    private auto probeBinOp(string funcName, string op)() {
+        import std.traits: Parameters;
 
-        mixin(`alias func = T.` ~ "opBinary" ~ `;`);
-        alias R = ReturnType!(func!op);
+        mixin(`alias func = T.` ~ funcName ~ `;`);
         alias P = Parameters!(func!op);
 
-        auto obj = T.init;
-
-        static if(is(R == void))
-            mixin(`obj.` ~ "opBinary" ~ `!op(P.init);`);
-        else
-            mixin(`R ret = obj.` ~ "opBinary" ~ `!op(P.init);`);
+        mixin(`return T.init.` ~ funcName ~ `!op(P.init);`);
     }
 
-    private enum hasOperator(string op) = is(typeof(probeTemplate!(op)));
+    static if(hasMember!(T, "opBinary") || hasMember!(T, "opBinaryRight")) {
 
-    static if(hasMember!(T, "opBinary")) {
-        alias BinaryOperators = Filter!(hasOperator, overloadable);
+        private enum hasOperatorDir(BinOpDir dir, string op) = is(typeof(probeBinOp!(functionName(dir), op)));
+        private enum hasOperator(string op) =
+            hasOperatorDir!(BinOpDir.left, op)
+            || hasOperatorDir!(BinOpDir.right, op);
+
+        alias ops = Filter!(hasOperator, overloadable);
+
+        template toBinOp(string op) {
+            enum hasLeft  = hasOperatorDir!(BinOpDir.left, op);
+            enum hasRight = hasOperatorDir!(BinOpDir.right, op);
+            static if(hasLeft && hasRight)
+                enum toBinOp = BinaryOperator(op, BinOpDir.left | BinOpDir.right);
+            else static if(hasLeft)
+                enum toBinOp = BinaryOperator(op, BinOpDir.left);
+            else static if(hasRight)
+                enum toBinOp = BinaryOperator(op, BinOpDir.right);
+            else
+                static assert(false);
+        }
+
+        alias BinaryOperators = staticMap!(toBinOp, ops);
     } else
         alias BinaryOperators = AliasSeq!();
 }
 
 
+struct BinaryOperator {
+    string op;
+    BinOpDir dirs;  /// left, right, or both
+}
+
+
+enum BinOpDir {
+    left = 1,
+    right = 2,
+}
+
+
+string functionName(BinOpDir dir) {
+    final switch(dir) with(BinOpDir) {
+        case left: return "opBinary";
+        case right: return "opBinaryRight";
+    }
+    assert(0);
+}
+
+
 @("BinaryOperators")
 @safe pure unittest {
-
-    import std.meta: AliasSeq;
 
     static struct Number {
         int i;
@@ -541,7 +574,16 @@ template BinaryOperators(T) {
         Number opBinary(string op)(Number other) if(op == "-") {
             return Number(i - other.i);
         }
+        Number opBinaryRight(string op)(int other) if(op == "+") {
+            return Number(i + other);
+        }
     }
 
-    static assert([BinaryOperators!Number] == ["+", "-"]);
+    static assert(
+        [BinaryOperators!Number] ==
+        [
+            BinaryOperator("+", BinOpDir.left | BinOpDir.right),
+            BinaryOperator("-", BinOpDir.left),
+        ]
+    );
 }
