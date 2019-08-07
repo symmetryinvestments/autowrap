@@ -767,7 +767,7 @@ template PythonUnaryOperator(T, string op) {
 }
 
 
-struct PythonBinaryOperator(T, BinaryOperator operator) {
+template PythonBinaryOperator(T, BinaryOperator operator) {
 
     static extern(C) int _py_in_func(PyObject* lhs, PyObject* rhs)
         nothrow
