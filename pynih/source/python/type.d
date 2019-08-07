@@ -84,14 +84,14 @@ struct PythonType(T) {
 
                 // get the function name in PythonBinaryOperator
                 static if(slotArity == 2)
-                    enum funcName = "_py_bin_func";
+                    enum cFuncName = "_py_bin_func";
                 else static if(slotArity == 3)
-                    enum funcName = "_py_ter_func";
+                    enum cFuncName = "_py_ter_func";
                 else
                     static assert("Do not know how to deal with slot " ~ slot);
 
                 // set the C function that implements this operator
-                mixin(`_pyType.`, slot, ` = &PythonBinaryOperator!(T, "`, binOp, `").`, funcName, `;`);
+                mixin(`_pyType.`, slot, ` = &PythonBinaryOperator!(T, "`, binOp, `").`, cFuncName, `;`);
             }}
 
 
