@@ -4,7 +4,7 @@
 module python.type;
 
 
-import autowrap.reflection: isParameter;
+import autowrap.reflection: isParameter, BinaryOperator;
 import python.raw: PyObject;
 import std.traits: Unqual, isArray, isIntegral, isBoolean, isFloatingPoint, isAggregateType, isCallable;
 import std.datetime: DateTime, Date;
@@ -96,7 +96,7 @@ struct PythonType(T) {
                 }
 
                 // set the C function that implements this operator
-                mixin(`_pyType.`, slot, ` = &PythonBinaryOperator!(T, binOp.op, functionName(binOp.direction)).`, cFuncName, `;`);
+                mixin(`_pyType.`, slot, ` = &PythonBinaryOperator!(T, binOp).`, cFuncName, `;`);
             }}
 
 
@@ -734,7 +734,7 @@ struct PythonCallable(T) if(isCallable!T) {
 }
 
 
-struct PythonBinaryOperator(T, string op, string funcName) {
+struct PythonBinaryOperator(T, BinaryOperator operator) {
 
     static extern(C) int _py_in_func(PyObject* lhs, PyObject* rhs) nothrow {
         return 0;  // FIXME
@@ -748,21 +748,46 @@ struct PythonBinaryOperator(T, string op, string funcName) {
     static extern(C) PyObject* _py_ter_func(PyObject* lhs_, PyObject* rhs_, PyObject* extra) nothrow {
         import python.conv.python_to_d: to;
         import python.conv.d_to_python: toPython;
+        import autowrap.reflection: BinOpDir;
         import std.traits: Parameters;
+        import std.conv: text;
 
-        mixin(`alias parameters = Parameters!(T.`, funcName, `!op);`);
+        return noThrowable!({
+            if(lhs_.isInstanceOf!T) {  // self is on the left hand side
+                static if(operator.dirs & BinOpDir.left) {
 
-        static assert(parameters.length == 1, "Binary operators must take one parameter");
-        alias RHS = parameters[0];
+                    alias parameters = Parameters!(T.opBinary!(operator.op));
+                    static assert(parameters.length == 1, "Binary operators must take one parameter");
+                    alias RHS = parameters[0];
 
-        return noThrowable!(() {
-            if(!lhs_.isInstanceOf!T)
-                throw new Exception("lhs is not a " ~ T.stringof);
+                    auto lhs = lhs_.to!T;
+                    auto rhs = rhs_.to!RHS;
+                    return lhs.opBinary!(operator.op)(rhs).toPython;
+                } else {
+                    PyObject* ret;  // just so the inferred return type is PyObject
+                    if(ret is null)
+                        throw new Exception(text(T.stringof, " does not support opBinary with self on the left"));
+                    return ret;
+                }
+            } else if(rhs_.isInstanceOf!T) {  // self is on the right hand side
+                static if(operator.dirs & BinOpDir.right) {
 
-            auto lhs = lhs_.to!T;
-            auto rhs = rhs_.to!RHS;
-            mixin(`auto ret = lhs.`, funcName, `!op(rhs);`);
-            return ret.toPython;
+                    alias parameters = Parameters!(T.opBinaryRight!(operator.op));
+                    static assert(parameters.length == 1, "Binary operators must take one parameter");
+                    alias RHS = parameters[0];
+
+                    auto lhs = rhs_.to!T;
+                    auto rhs = lhs_.to!RHS;
+                    return lhs.opBinaryRight!(operator.op)(rhs).toPython;
+                } else {
+                    PyObject* ret;  // just so the inferred return type is PyObject
+                    if(ret is null)
+                        throw new Exception(text(T.stringof, " does not support opBinary with self on the right"));
+                    return ret;
+                }
+            } else {
+                throw new Exception("Neither lhs or rhs were of type " ~ T.stringof);
+            }
         });
     }
 }
