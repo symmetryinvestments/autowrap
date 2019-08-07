@@ -505,18 +505,9 @@ template BinaryOperators(T) {
         "|", "^", "<<", ">>", ">>>", "~", "in",
     );
 
-    private auto probeBinOp(string funcName, string op)() {
-        import std.traits: Parameters;
-
-        mixin(`alias func = T.` ~ funcName ~ `;`);
-        alias P = Parameters!(func!op);
-
-        mixin(`return T.init.` ~ funcName ~ `!op(P.init);`);
-    }
-
     static if(hasMember!(T, "opBinary") || hasMember!(T, "opBinaryRight")) {
 
-        private enum hasOperatorDir(BinOpDir dir, string op) = is(typeof(probeBinOp!(functionName(dir), op)));
+        private enum hasOperatorDir(BinOpDir dir, string op) = is(typeof(probeOperator!(T, functionName(dir), op)));
         private enum hasOperator(string op) =
             hasOperatorDir!(BinOpDir.left, op)
             || hasOperatorDir!(BinOpDir.right, op);
@@ -609,6 +600,7 @@ template UnaryOperators(T) {
     alias UnaryOperators = Filter!(hasOperator, overloadable);
 }
 
+///
 @("UnaryOperators")
 @safe pure unittest {
 
