@@ -758,8 +758,7 @@ template PythonUnaryOperator(T, string op) {
             import python.conv.d_to_python: toPython;
             import std.traits: Parameters;
 
-            mixin(`alias func = T.opUnary!op;`);
-            static assert(Parameters!func.length == 0, "opUnary can't take any parameters");
+            static assert(Parameters!(T.opUnary!op).length == 0, "opUnary can't take any parameters");
 
             return self.to!T.opUnary!op.toPython;
         });
