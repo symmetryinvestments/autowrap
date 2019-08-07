@@ -750,19 +750,34 @@ struct PythonBinaryOperator(T, BinaryOperator operator) {
         import python.conv.d_to_python: toPython;
         import autowrap.reflection: BinOpDir;
         import std.traits: Parameters;
+        import std.exception: enforce;
         import std.conv: text;
 
         return noThrowable!({
+
+            PyObject* self, pArg;
+            if(lhs_.isInstanceOf!T) {
+                self = lhs_;
+                pArg = rhs_;
+            } else if(rhs_.isInstanceOf!T) {
+                self = rhs_;
+                pArg = lhs_;
+            } else
+                throw new Exception("Neither lhs or rhs were of type " ~ T.stringof);
+
+            PyObject* impl(string funcName)() {
+                mixin(`alias parameters = Parameters!(T.`, funcName, `!(operator.op));`);
+                static assert(parameters.length == 1, "Binary operators must take one parameter");
+                alias Arg = parameters[0];
+
+                auto this_ = self.to!T;
+                auto dArg  = pArg.to!Arg;
+                mixin(`return this_.`, funcName, `!(operator.op)(dArg).toPython;`);
+            }
+
             if(lhs_.isInstanceOf!T) {  // self is on the left hand side
                 static if(operator.dirs & BinOpDir.left) {
-
-                    alias parameters = Parameters!(T.opBinary!(operator.op));
-                    static assert(parameters.length == 1, "Binary operators must take one parameter");
-                    alias RHS = parameters[0];
-
-                    auto lhs = lhs_.to!T;
-                    auto rhs = rhs_.to!RHS;
-                    return lhs.opBinary!(operator.op)(rhs).toPython;
+                    return impl!"opBinary";
                 } else {
                     PyObject* ret;  // just so the inferred return type is PyObject
                     if(ret is null)
@@ -771,14 +786,7 @@ struct PythonBinaryOperator(T, BinaryOperator operator) {
                 }
             } else if(rhs_.isInstanceOf!T) {  // self is on the right hand side
                 static if(operator.dirs & BinOpDir.right) {
-
-                    alias parameters = Parameters!(T.opBinaryRight!(operator.op));
-                    static assert(parameters.length == 1, "Binary operators must take one parameter");
-                    alias RHS = parameters[0];
-
-                    auto lhs = rhs_.to!T;
-                    auto rhs = lhs_.to!RHS;
-                    return lhs.opBinaryRight!(operator.op)(rhs).toPython;
+                    return impl!"opBinaryRight";
                 } else {
                     PyObject* ret;  // just so the inferred return type is PyObject
                     if(ret is null)
