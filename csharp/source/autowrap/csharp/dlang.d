@@ -36,13 +36,14 @@ public string wrapDLang(Modules...)() if(allSatisfy!(isModule, Modules)) {
         ret ~= generateSliceMethods!T(imports);
     }
 
-
-    static foreach(agg; AllAggregates!Modules) {
-        static if (!isDateTimeType!agg) {
-            ret ~= generateSliceMethods!agg(imports);
-            ret ~= generateConstructors!agg(imports);
-            ret ~= generateMethods!agg(imports);
-            ret ~= generateFields!agg(imports);
+    static foreach(Agg; AllAggregates!Modules)
+    {
+        static if(verifySupported!Agg && !isDateTimeType!Agg)
+        {
+            ret ~= generateSliceMethods!Agg(imports);
+            ret ~= generateConstructors!Agg(imports);
+            ret ~= generateMethods!Agg(imports);
+            ret ~= generateFields!Agg(imports);
         }
     }
 
@@ -68,9 +69,8 @@ private string generateConstructors(T)(ref string[] imports) {
     import autowrap.csharp.common : getDLangInterfaceName, getDLangInterfaceType;
 
     import std.algorithm.comparison : among;
-    import std.algorithm.searching : canFind;
-    import std.meta : staticMap;
-    import std.traits : fullyQualifiedName, hasMember, isBuiltinType, moduleName, Parameters, ParameterIdentifierTuple;
+    import std.meta : Filter, staticMap;
+    import std.traits : fullyQualifiedName, hasMember, Parameters, ParameterIdentifierTuple;
 
     string ret;
     alias fqn = getDLangInterfaceType!T;
@@ -80,17 +80,11 @@ private string generateConstructors(T)(ref string[] imports) {
         foreach(c; __traits(getOverloads, T, "__ctor")) {
             if (__traits(getProtection, c).among("export", "public")) {
                 alias paramNames = staticMap!(AdjParamName, ParameterIdentifierTuple!c);
-                alias paramTypes = Parameters!c;
+                alias ParamTypes = Parameters!c;
 
-                foreach(P; paramTypes)
-                {
-                    static if(!isBuiltinType!P)
-                    {
-                        enum mod = moduleName!P;
-                        if(!mod.empty && !imports.canFind(mod))
-                            imports ~= mod;
-                    }
-                }
+                static if(Filter!(verifySupported, ParamTypes).length != ParamTypes.length)
+                    continue;
+                addImports!ParamTypes(imports);
 
                 string exp = "extern(C) export ";
                 const string interfaceName = getDLangInterfaceName(fqn, "__ctor");
@@ -98,9 +92,9 @@ private string generateConstructors(T)(ref string[] imports) {
                 exp ~= mixin(interp!"returnValue!(${fqn}) ${interfaceName}(");
 
                 static foreach(pc; 0..paramNames.length) {
-                    exp ~= mixin(interp!"${getDLangInterfaceType!(paramTypes[pc])} ${paramNames[pc]}, ");
+                    exp ~= mixin(interp!"${getDLangInterfaceType!(ParamTypes[pc])} ${paramNames[pc]}, ");
                 }
-                if (paramTypes.length > 0) {
+                if (ParamTypes.length > 0) {
                     exp = exp[0..$-2];
                 }
                 exp ~= ") nothrow {" ~ newline;
@@ -111,7 +105,7 @@ private string generateConstructors(T)(ref string[] imports) {
                     static foreach(pc; 0..paramNames.length) {
                         exp ~= mixin(interp!"${paramNames[pc]}, ");
                     }
-                    if (paramTypes.length > 0) {
+                    if (ParamTypes.length > 0) {
                         exp = exp[0..$-2];
                     }
                     exp ~= ");" ~ newline;
@@ -122,7 +116,7 @@ private string generateConstructors(T)(ref string[] imports) {
                     foreach(pn; paramNames) {
                         exp ~= mixin(interp!"${pn}, ");
                     }
-                    if (paramTypes.length > 0) {
+                    if (ParamTypes.length > 0) {
                         exp = exp[0..$-2];
                     }
                     exp ~= "));" ~ newline;
@@ -143,88 +137,87 @@ private string generateMethods(T)(ref string[] imports) {
     import autowrap.csharp.common : isDateTimeType, isDateTimeArrayType, getDLangInterfaceName, getDLangInterfaceType;
 
     import std.algorithm.comparison : among;
-    import std.algorithm.searching : canFind;
-    import std.meta : AliasSeq, staticMap;
-    import std.traits : isFunction, fullyQualifiedName, isBuiltinType, moduleName, ReturnType, Parameters, ParameterIdentifierTuple;
+    import std.meta : AliasSeq, Filter, staticMap;
+    import std.traits : isFunction, fullyQualifiedName, ReturnType, Parameters, ParameterIdentifierTuple;
 
     string ret;
     alias fqn = getDLangInterfaceType!T;
 
-    foreach(m; __traits(allMembers, T)) {
-        if (m.among("__ctor", "toHash", "opEquals", "opCmp", "factory")) {
+    foreach(m; __traits(allMembers, T))
+    {
+        if (m.among("__ctor", "toHash", "opEquals", "opCmp", "factory"))
             continue;
-        }
 
-        static if (is(typeof(__traits(getMember, T, m)))) {
-            foreach(oc, mo; __traits(getOverloads, T, m)) {
-                const bool isMethod = isFunction!mo;
+        static if (is(typeof(__traits(getMember, T, m))))
+        {
+            foreach(oc, mo; __traits(getOverloads, T, m))
+            {
+                enum isMethod = isFunction!mo;
 
-                static if(isMethod && __traits(getProtection, mo).among("export", "public")) {
-                    string exp;
+                static if(isMethod && __traits(getProtection, mo).among("export", "public"))
+                {
                     const string interfaceName = getDLangInterfaceName(fqn, m);
 
-                    alias returnType = ReturnType!mo;
-                    alias returnTypeStr = getDLangInterfaceType!returnType;
-                    alias paramTypes = Parameters!mo;
+                    alias RT = ReturnType!mo;
+                    alias returnTypeStr = getDLangInterfaceType!RT;
+                    alias ParamTypes = Parameters!mo;
                     alias paramNames = staticMap!(AdjParamName, ParameterIdentifierTuple!mo);
+                    alias Types = AliasSeq!(RT, ParamTypes);
 
-                    foreach(P; AliasSeq!(returnType, paramTypes))
+                    static if(Filter!(verifySupported, Types).length != Types.length)
+                        continue;
+                    else
                     {
-                        static if(!isBuiltinType!P)
-                        {
-                            enum mod = moduleName!P;
-                            if(!mod.empty && !imports.canFind(mod))
-                                imports ~= mod;
-                        }
-                    }
+                        addImports!Types(imports);
 
-                    exp ~= "extern(C) export ";
-                    static if (!is(returnType == void)) {
-                        exp ~= mixin(interp!"returnValue!(${returnTypeStr})");
-                    } else {
-                        exp ~= "returnVoid";
-                    }
-                    exp ~= mixin(interp!" ${interfaceName}${oc}(");
-                    if (is(T == struct)) {
-                        exp ~= mixin(interp!"ref ${fqn} __obj__, ");
-                    } else {
-                        exp ~= mixin(interp!"${fqn} __obj__, ");
-                    }
-                    static foreach(pc; 0..paramNames.length) {
-                        exp ~= mixin(interp!"${getDLangInterfaceType!(paramTypes[pc])} ${paramNames[pc]}, ");
-                    }
-                    exp = exp[0..$-2];
-                    exp ~= ") nothrow {" ~ newline;
-                    exp ~= "    try {" ~ newline;
-                    exp ~= methodSetup ~ newline;
-                    exp ~= "        ";
-                    if (!is(returnType == void)) {
-                        exp ~= "auto __result__ = ";
-                    }
-                    exp ~= mixin(interp!"__obj__.${m}(");
-                    static foreach(pc; 0..paramNames.length) {
-                        exp ~= mixin(interp!"${generateParameter!(paramTypes[pc])(paramNames[pc])}, ");
-                    }
-                    if (paramNames.length > 0) {
+                        string exp = "extern(C) export ";
+                        static if (!is(RT == void)) {
+                            exp ~= mixin(interp!"returnValue!(${returnTypeStr})");
+                        } else {
+                            exp ~= "returnVoid";
+                        }
+                        exp ~= mixin(interp!" ${interfaceName}${oc}(");
+                        if (is(T == struct)) {
+                            exp ~= mixin(interp!"ref ${fqn} __obj__, ");
+                        } else {
+                            exp ~= mixin(interp!"${fqn} __obj__, ");
+                        }
+                        static foreach(pc; 0..paramNames.length) {
+                            exp ~= mixin(interp!"${getDLangInterfaceType!(ParamTypes[pc])} ${paramNames[pc]}, ");
+                        }
                         exp = exp[0..$-2];
+                        exp ~= ") nothrow {" ~ newline;
+                        exp ~= "    try {" ~ newline;
+                        exp ~= methodSetup ~ newline;
+                        exp ~= "        ";
+                        if (!is(RT == void)) {
+                            exp ~= "auto __result__ = ";
+                        }
+                        exp ~= mixin(interp!"__obj__.${m}(");
+                        static foreach(pc; 0..paramNames.length) {
+                            exp ~= mixin(interp!"${generateParameter!(ParamTypes[pc])(paramNames[pc])}, ");
+                        }
+                        if (paramNames.length > 0) {
+                            exp = exp[0..$-2];
+                        }
+                        exp ~= ");" ~ newline;
+                        static if (isDateTimeType!RT || isDateTimeArrayType!RT) {
+                            exp ~= mixin(interp!"        return returnValue!(${returnTypeStr})(${generateReturn!RT(\"__result__\")});${newline}");
+                        } else static if (!is(RT == void)) {
+                            exp ~= mixin(interp!"        return returnValue!(${returnTypeStr})(__result__);${newline}");
+                        } else {
+                            exp ~= "        return returnVoid();" ~ newline;
+                        }
+                        exp ~= "    } catch (Exception __ex__) {" ~ newline;
+                        if (!is(RT == void)) {
+                            exp ~= mixin(interp!"        return returnValue!(${returnTypeStr})(__ex__);${newline}");
+                        } else {
+                            exp ~= "        return returnVoid(__ex__);" ~ newline;
+                        }
+                        exp ~= "    }" ~ newline;
+                        exp ~= "}" ~ newline;
+                        ret ~= exp;
                     }
-                    exp ~= ");" ~ newline;
-                    static if (isDateTimeType!returnType || isDateTimeArrayType!returnType) {
-                        exp ~= mixin(interp!"        return returnValue!(${returnTypeStr})(${generateReturn!returnType(\"__result__\")});${newline}");
-                    } else static if (!is(returnType == void)) {
-                        exp ~= mixin(interp!"        return returnValue!(${returnTypeStr})(__result__);${newline}");
-                    } else {
-                        exp ~= "        return returnVoid();" ~ newline;
-                    }
-                    exp ~= "    } catch (Exception __ex__) {" ~ newline;
-                    if (!is(returnType == void)) {
-                        exp ~= mixin(interp!"        return returnValue!(${returnTypeStr})(__ex__);${newline}");
-                    } else {
-                        exp ~= "        return returnVoid(__ex__);" ~ newline;
-                    }
-                    exp ~= "    }" ~ newline;
-                    exp ~= "}" ~ newline;
-                    ret ~= exp;
                 }
             }
         }
@@ -236,28 +229,31 @@ private string generateMethods(T)(ref string[] imports) {
 private string generateFields(T)(ref string[] imports) {
     import autowrap.csharp.common : getDLangInterfaceName, getDLangInterfaceType;
 
-    import std.algorithm.searching : canFind;
-    import std.traits : fullyQualifiedName, Fields, FieldNameTuple, isBuiltinType, moduleName;
+    import std.traits : fullyQualifiedName, Fields, FieldNameTuple;
 
     string ret;
     alias fqn = getDLangInterfaceType!T;
-    if (is(T == class) || is(T == interface)) {
-        alias fieldTypes = Fields!T;
+    if (is(T == class) || is(T == interface))
+    {
+        alias FieldTypes = Fields!T;
         alias fieldNames = FieldNameTuple!T;
-        static foreach(fc; 0..fieldTypes.length) {{
-            static if (is(typeof(__traits(getMember, T, fieldNames[fc])))) {
-                static if(!isBuiltinType!(fieldTypes[fc]))
+        static foreach(fc; 0 .. FieldTypes.length)
+        {{
+            alias fn = fieldNames[fc];
+            static if (is(typeof(__traits(getMember, T, fn))))
+            {
+                alias FT = FieldTypes[fc];
+                static if(verifySupported!FT)
                 {
-                    enum mod = moduleName!(fieldTypes[fc]);
-                    if(!mod.empty && !imports.canFind(mod))
-                        imports ~= mod;
+                    addImport!FT(imports);
+
+                    ret ~= mixin(interp!"extern(C) export returnValue!(${getDLangInterfaceType!FT}) ${getDLangInterfaceName(fqn, fn ~ \"_get\")}(${fqn} __obj__) nothrow {${newline}");
+                    ret ~= generateMethodErrorHandling(mixin(interp!"        auto __value__ = __obj__.${fn};${newline}        return returnValue!(${getDLangInterfaceType!FT})(${generateReturn!FT(\"__value__\")});"), mixin(interp!"returnValue!(${getDLangInterfaceType!FT})"));
+                    ret ~= "}" ~ newline;
+                    ret ~= mixin(interp!"extern(C) export returnVoid ${getDLangInterfaceName(fqn, fn ~ \"_set\")}(${fqn} __obj__, ${getDLangInterfaceType!FT} value) nothrow {${newline}");
+                    ret ~= generateMethodErrorHandling(mixin(interp!"        __obj__.${fn} = ${generateParameter!FT(\"value\")};${newline}        return returnVoid();"), "returnVoid");
+                    ret ~= "}" ~ newline;
                 }
-                ret ~= mixin(interp!"extern(C) export returnValue!(${getDLangInterfaceType!(fieldTypes[fc])}) ${getDLangInterfaceName(fqn, fieldNames[fc] ~ \"_get\")}(${fqn} __obj__) nothrow {${newline}");
-                ret ~= generateMethodErrorHandling(mixin(interp!"        auto __value__ = __obj__.${fieldNames[fc]};${newline}        return returnValue!(${getDLangInterfaceType!(fieldTypes[fc])})(${generateReturn!(fieldTypes[fc])(\"__value__\")});"), mixin(interp!"returnValue!(${getDLangInterfaceType!(fieldTypes[fc])})"));
-                ret ~= "}" ~ newline;
-                ret ~= mixin(interp!"extern(C) export returnVoid ${getDLangInterfaceName(fqn, fieldNames[fc] ~ \"_set\")}(${fqn} __obj__, ${getDLangInterfaceType!(fieldTypes[fc])} value) nothrow {${newline}");
-                ret ~= generateMethodErrorHandling(mixin(interp!"        __obj__.${fieldNames[fc]} = ${generateParameter!(fieldTypes[fc])(\"value\")};${newline}        return returnVoid();"), "returnVoid");
-                ret ~= "}" ~ newline;
             }
         }}
     }
@@ -268,10 +264,9 @@ private string generateFunctions(Modules...)(ref string[] imports) if(allSatisfy
     import autowrap.csharp.common : getDLangInterfaceName, getDLangInterfaceType;
     import autowrap.reflection: AllFunctions;
 
-    import std.algorithm.searching : canFind;
-    import std.meta : AliasSeq, staticMap;
-    import std.traits : fullyQualifiedName, hasMember, functionAttributes, FunctionAttribute, isBuiltinType,
-                        moduleName, ReturnType, Parameters, ParameterIdentifierTuple;
+    import std.meta : AliasSeq, Filter, staticMap;
+    import std.traits : fullyQualifiedName, hasMember, functionAttributes, FunctionAttribute,
+                        ReturnType, Parameters, ParameterIdentifierTuple;
 
     string ret;
 
@@ -279,65 +274,63 @@ private string generateFunctions(Modules...)(ref string[] imports) if(allSatisfy
         alias modName = func.moduleName;
         alias funcName = func.name;
 
-        alias returnType = ReturnType!(__traits(getMember, func.module_, func.name));
+        alias RT = ReturnType!(__traits(getMember, func.module_, func.name));
         alias returnTypeStr = getDLangInterfaceType!(ReturnType!(__traits(getMember, func.module_, func.name)));
-        alias paramTypes = Parameters!(__traits(getMember, func.module_, func.name));
+        alias ParamTypes = Parameters!(__traits(getMember, func.module_, func.name));
         alias paramNames = staticMap!(AdjParamName, ParameterIdentifierTuple!(__traits(getMember, func.module_, func.name)));
         const string interfaceName = getDLangInterfaceName(modName, null, funcName);
+        alias Types = AliasSeq!(RT, ParamTypes);
 
-        foreach(P; AliasSeq!(returnType, paramTypes))
+        static if(Filter!(verifySupported, Types).length != Types.length)
+            continue;
+        else
         {
-            static if(!isBuiltinType!P)
-            {
-                enum mod = moduleName!P;
-                if(!mod.empty && !imports.canFind(mod))
-                    imports ~= mod;
+            addImports!Types(imports);
+
+            string retType;
+            string funcStr = "extern(C) export ";
+
+            static if (!is(RT == void)) {
+                retType ~= mixin(interp!"returnValue!(${returnTypeStr})");
+            } else {
+                retType ~= "returnVoid";
             }
-        }
 
-        string retType;
-        string funcStr = "extern(C) export ";
+            funcStr ~= mixin(interp!"${retType} ${interfaceName}(");
+            static foreach(pc; 0..paramNames.length) {
+                funcStr ~= mixin(interp!"${getDLangInterfaceType!(ParamTypes[pc])} ${paramNames[pc]}, ");
+            }
+            if(paramNames.length > 0) {
+                funcStr = funcStr[0..$-2];
+            }
+            funcStr ~= ") nothrow {" ~ newline;
+            funcStr ~= "    try {" ~ newline;
+            funcStr ~= methodSetup ~ newline;
+            funcStr ~= "        ";
+            if (!is(RT == void)) {
+                funcStr ~= mixin(interp!"auto __return__ = ${func.name}(");
+            } else {
+                funcStr ~= mixin(interp!"${func.name}(");
+            }
+            static foreach(pc; 0..paramNames.length) {
+                funcStr ~= mixin(interp!"${generateParameter!(ParamTypes[pc])(paramNames[pc])}, ");
+            }
+            if(paramNames.length > 0) {
+                funcStr = funcStr[0..$-2];
+            }
+            funcStr ~= ");" ~ newline;
+            if (!is(RT == void)) {
+                funcStr ~= mixin(interp!"        return ${retType}(${generateReturn!RT(\"__return__\")});${newline}");
+            } else {
+                funcStr ~= mixin(interp!"        return ${retType}();${newline}");
+            }
+            funcStr ~= "    } catch (Exception __ex__) {" ~ newline;
+            funcStr ~= mixin(interp!"        return ${retType}(__ex__);${newline}");
+            funcStr ~= "    }" ~ newline;
+            funcStr ~= "}" ~ newline;
 
-        static if (!is(returnType == void)) {
-            retType ~= mixin(interp!"returnValue!(${returnTypeStr})");
-        } else {
-            retType ~= "returnVoid";
+            ret ~= funcStr;
         }
-
-        funcStr ~= mixin(interp!"${retType} ${interfaceName}(");
-        static foreach(pc; 0..paramNames.length) {
-            funcStr ~= mixin(interp!"${getDLangInterfaceType!(paramTypes[pc])} ${paramNames[pc]}, ");
-        }
-        if(paramNames.length > 0) {
-            funcStr = funcStr[0..$-2];
-        }
-        funcStr ~= ") nothrow {" ~ newline;
-        funcStr ~= "    try {" ~ newline;
-        funcStr ~= methodSetup ~ newline;
-        funcStr ~= "        ";
-        if (!is(returnType == void)) {
-            funcStr ~= mixin(interp!"auto __return__ = ${func.name}(");
-        } else {
-            funcStr ~= mixin(interp!"${func.name}(");
-        }
-        static foreach(pc; 0..paramNames.length) {
-            funcStr ~= mixin(interp!"${generateParameter!(paramTypes[pc])(paramNames[pc])}, ");
-        }
-        if(paramNames.length > 0) {
-            funcStr = funcStr[0..$-2];
-        }
-        funcStr ~= ");" ~ newline;
-        if (!is(returnType == void)) {
-            funcStr ~= mixin(interp!"        return ${retType}(${generateReturn!(returnType)(\"__return__\")});${newline}");
-        } else {
-            funcStr ~= mixin(interp!"        return ${retType}();${newline}");
-        }
-        funcStr ~= "    } catch (Exception __ex__) {" ~ newline;
-        funcStr ~= mixin(interp!"        return ${retType}(__ex__);${newline}");
-        funcStr ~= "    }" ~ newline;
-        funcStr ~= "}" ~ newline;
-
-        ret ~= funcStr;
     }
 
     return ret;
@@ -346,17 +339,11 @@ private string generateFunctions(Modules...)(ref string[] imports) if(allSatisfy
 private string generateSliceMethods(T)(ref string[] imports) {
     import autowrap.csharp.common : getDLangSliceInterfaceName, getDLangInterfaceType;
 
-    import std.algorithm.searching : canFind;
-    import std.traits : fullyQualifiedName, isBuiltinType, moduleName;
+    import std.traits : fullyQualifiedName, moduleName,  TemplateOf;
+
+    addImport!T(imports);
 
     alias fqn = getDLangInterfaceType!T;
-
-    static if(!isBuiltinType!T)
-    {
-        enum mod = moduleName!T;
-        if(!mod.empty && !imports.canFind(mod))
-            imports ~= mod;
-    }
 
     //Generate slice creation method
     string ret = mixin(interp!"extern(C) export returnValue!(${fqn}[]) ${getDLangSliceInterfaceName(fqn, \"Create\")}(size_t capacity) nothrow {${newline}");
@@ -428,5 +415,83 @@ private string generateReturn(T)(string name) {
         return mixin(interp!"toDatetime1DArray!(${fqn})(${name})");
     } else {
         return name;
+    }
+}
+
+private void addImports(T...)(ref string[] imports)
+{
+    foreach(U; T)
+        addImport!U(imports);
+}
+
+private void addImport(T)(ref string[] imports)
+{
+    import std.algorithm.searching : canFind;
+    import std.traits : isBuiltinType, isDynamicArray, moduleName;
+
+    static assert(isSupportedType!T, "missing check for supported type");
+
+    static if(isDynamicArray!T)
+        addImport!(ElementType!T)(imports);
+    else static if(!isBuiltinType!T)
+    {
+        enum mod = moduleName!T;
+        if(!mod.empty && !imports.canFind(mod))
+            imports ~= mod;
+    }
+}
+
+private template verifySupported(T)
+{
+    static if(isSupportedType!T)
+        enum verifySupported = true;
+    else
+    {
+        pragma(msg, T.stringof ~ " is not currently supported by autowrap's C#");
+        enum verifySupported = false;
+    }
+}
+
+private template isSupportedType(T)
+{
+    import std.traits : isBoolean, isDynamicArray, isIntegral, isSomeChar, TemplateOf, Unqual;
+
+    static if(isIntegral!T || isBoolean!T || isSomeChar!T ||
+              is(Unqual!T == float) || is(Unqual!T == double) || is(T == void))
+    {
+        enum isSupportedType = true;
+    }
+    else static if(isDynamicArray!T)
+    {
+        alias E = ElementType!T;
+        enum isSupportedType = is(E == string) || is(E == wstring) || is(E == dstring) ||
+                               !isDynamicArray!E && isSupportedType!E;
+    }
+    else static if(is(T == struct) || is(T == class) || is(T == interface))
+        enum isSupportedType = !is(typeof(TemplateOf!T));
+    else
+        enum isSupportedType = false;
+}
+
+// Unfortunately, these aren't actually tested yet, because dub test doesn't work
+// for the csharp folder, and the top level one does not run them.
+unittest
+{
+    import std.meta : AiasSeq;
+    import std.typecons : Tuple;
+
+    static struct S {}
+    static class C {}
+
+    foreach(T; AliasSeq!(byte, ubyte, const ubyte, immutable ubyte, short, ushort, int, uint, long, ulong,
+                         float, double, bool, char, wchar, dchar, string, wstring, dstring, S, S[], C, int[],
+                         string[], wstring[], dstring[], void))
+    {
+        static assert(isSupportedType!T, T.stringof);
+    }
+    foreach(T; AliasSeq!(int*, int*[], int[][], int[][][], int[int], cfloat, cdouble, creal, ifloat, idouble, ireal,
+                         Tuple!int, Tuple(string, string)))
+    {
+        static assert(isSupportedType!T, T.stringof);
     }
 }

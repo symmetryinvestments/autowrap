@@ -3,6 +3,7 @@
 	"versions": {
 		"autowrap": {"path":"../../"},
 		"pyd": "0.10.5",
+		"scriptlike": "0.10.2",
 		"unit-threaded": "0.9.3"
 	}
 }
