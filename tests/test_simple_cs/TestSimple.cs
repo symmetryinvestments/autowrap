@@ -2,14 +2,14 @@ namespace Autowrap.CSharp.Examples.Simple.Tests
 {
     using System;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
-    using Autowrap.CSharp.Examples.Simple;
+    using Autowrap;
 
     [TestClass]
     public class TestSimple
     {
         public TestSimple()
         {
-            SharedFunctions.DruntimeInitialize();
+            SharedFunctions.DRuntimeInitialize();
         }
 
         [TestMethod]

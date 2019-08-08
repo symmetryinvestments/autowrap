@@ -120,7 +120,7 @@ namespace Autowrap {
     public static class SharedFunctions {
         static SharedFunctions() {
             Stream stream = null;
-            var outputName = Path.Combine(Environment.CurrentDirectory, RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? "libcsharp-tests.dylib" : RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? "libcsharp-tests.so" : "csharp-tests.dll");
+            var outputName = Path.Combine(Environment.CurrentDirectory, RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? "lib%1$s.dylib" : RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? "lib%1$s.so" : "lib%1$s.dll");
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
                 stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("%2$s.lib%1$s.dylib");
