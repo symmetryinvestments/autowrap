@@ -40,3 +40,8 @@ configuration "csharp" {
     targetPath "lib/csharp"
     dependency "autowrap:csharp" path="../../"
 }
+
+configuration "emitCSharp" {
+    targetType "executable"
+    dependency "autowrap:csharp" path="../../"
+}

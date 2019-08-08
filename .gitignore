@@ -13,3 +13,6 @@ bin
 *.lst
 *.exe
 .vscode/
+examples/simple/simple
+examples/simple/Simple.cs
+obj

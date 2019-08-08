@@ -19,7 +19,7 @@ enum string methodSetup = "        thread_attachThis();
 
 // Wrap global functions from multiple modules
 public string wrapDLang(Modules...)() if(allSatisfy!(isModule, Modules)) {
-    import autowrap.csharp.common : isDateTimeType;
+    import autowrap.csharp.common : isDateTimeType, verifySupported;
     import autowrap.reflection : AllAggregates;
 
     import std.algorithm.iteration : map;
@@ -66,7 +66,7 @@ public string wrapDLang(Modules...)() if(allSatisfy!(isModule, Modules)) {
 private enum AdjParamName(string paramName) = paramName ~ "_param";
 
 private string generateConstructors(T)(ref string[] imports) {
-    import autowrap.csharp.common : getDLangInterfaceName, getDLangInterfaceType;
+    import autowrap.csharp.common : getDLangInterfaceName, getDLangInterfaceType, verifySupported;
 
     import std.algorithm.comparison : among;
     import std.meta : Filter, staticMap;
@@ -134,7 +134,8 @@ private string generateConstructors(T)(ref string[] imports) {
 }
 
 private string generateMethods(T)(ref string[] imports) {
-    import autowrap.csharp.common : isDateTimeType, isDateTimeArrayType, getDLangInterfaceName, getDLangInterfaceType;
+    import autowrap.csharp.common : isDateTimeType, isDateTimeArrayType, getDLangInterfaceName, getDLangInterfaceType,
+                                    verifySupported;
 
     import std.algorithm.comparison : among;
     import std.meta : AliasSeq, Filter, staticMap;
@@ -152,9 +153,7 @@ private string generateMethods(T)(ref string[] imports) {
         {
             foreach(oc, mo; __traits(getOverloads, T, m))
             {
-                enum isMethod = isFunction!mo;
-
-                static if(isMethod && __traits(getProtection, mo).among("export", "public"))
+                static if(isFunction!mo && __traits(getProtection, mo).among("export", "public"))
                 {
                     const string interfaceName = getDLangInterfaceName(fqn, m);
 
@@ -227,7 +226,7 @@ private string generateMethods(T)(ref string[] imports) {
 }
 
 private string generateFields(T)(ref string[] imports) {
-    import autowrap.csharp.common : getDLangInterfaceName, getDLangInterfaceType;
+    import autowrap.csharp.common : getDLangInterfaceName, getDLangInterfaceType, verifySupported;
 
     import std.traits : fullyQualifiedName, Fields, FieldNameTuple;
 
@@ -239,11 +238,11 @@ private string generateFields(T)(ref string[] imports) {
         alias fieldNames = FieldNameTuple!T;
         static foreach(fc; 0 .. FieldTypes.length)
         {{
-            alias fn = fieldNames[fc];
-            static if (is(typeof(__traits(getMember, T, fn))))
+            alias FT = FieldTypes[fc];
+            static if(verifySupported!FT)
             {
-                alias FT = FieldTypes[fc];
-                static if(verifySupported!FT)
+                alias fn = fieldNames[fc];
+                static if (is(typeof(__traits(getMember, T, fn))))
                 {
                     addImport!FT(imports);
 
@@ -261,7 +260,7 @@ private string generateFields(T)(ref string[] imports) {
 }
 
 private string generateFunctions(Modules...)(ref string[] imports) if(allSatisfy!(isModule, Modules)) {
-    import autowrap.csharp.common : getDLangInterfaceName, getDLangInterfaceType;
+    import autowrap.csharp.common : getDLangInterfaceName, getDLangInterfaceType, verifySupported;
     import autowrap.reflection: AllFunctions;
 
     import std.meta : AliasSeq, Filter, staticMap;
@@ -428,6 +427,7 @@ private void addImport(T)(ref string[] imports)
 {
     import std.algorithm.searching : canFind;
     import std.traits : isBuiltinType, isDynamicArray, moduleName;
+    import autowrap.csharp.common : isSupportedType;
 
     static assert(isSupportedType!T, "missing check for supported type");
 
@@ -438,60 +438,5 @@ private void addImport(T)(ref string[] imports)
         enum mod = moduleName!T;
         if(!mod.empty && !imports.canFind(mod))
             imports ~= mod;
-    }
-}
-
-private template verifySupported(T)
-{
-    static if(isSupportedType!T)
-        enum verifySupported = true;
-    else
-    {
-        pragma(msg, T.stringof ~ " is not currently supported by autowrap's C#");
-        enum verifySupported = false;
-    }
-}
-
-private template isSupportedType(T)
-{
-    import std.traits : isBoolean, isDynamicArray, isIntegral, isSomeChar, TemplateOf, Unqual;
-
-    static if(isIntegral!T || isBoolean!T || isSomeChar!T ||
-              is(Unqual!T == float) || is(Unqual!T == double) || is(T == void))
-    {
-        enum isSupportedType = true;
-    }
-    else static if(isDynamicArray!T)
-    {
-        alias E = ElementType!T;
-        enum isSupportedType = is(E == string) || is(E == wstring) || is(E == dstring) ||
-                               !isDynamicArray!E && isSupportedType!E;
-    }
-    else static if(is(T == struct) || is(T == class) || is(T == interface))
-        enum isSupportedType = !is(typeof(TemplateOf!T));
-    else
-        enum isSupportedType = false;
-}
-
-// Unfortunately, these aren't actually tested yet, because dub test doesn't work
-// for the csharp folder, and the top level one does not run them.
-unittest
-{
-    import std.meta : AiasSeq;
-    import std.typecons : Tuple;
-
-    static struct S {}
-    static class C {}
-
-    foreach(T; AliasSeq!(byte, ubyte, const ubyte, immutable ubyte, short, ushort, int, uint, long, ulong,
-                         float, double, bool, char, wchar, dchar, string, wstring, dstring, S, S[], C, int[],
-                         string[], wstring[], dstring[], void))
-    {
-        static assert(isSupportedType!T, T.stringof);
-    }
-    foreach(T; AliasSeq!(int*, int*[], int[][], int[][][], int[int], cfloat, cdouble, creal, ifloat, idouble, ireal,
-                         Tuple!int, Tuple(string, string)))
-    {
-        static assert(isSupportedType!T, T.stringof);
     }
 }

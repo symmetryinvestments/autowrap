@@ -18,9 +18,9 @@ version(Have_autowrap_csharp) {
     mixin(
         wrapCSharp(
             modules,
-            OutputFileName("simple.cs"),
+            OutputFileName("Simple.cs"),
             autowrap.csharp.LibraryName("simple"),
-            RootNamespace("Autowrap.CSharp.Tests.simple")
+            RootNamespace("Autowrap.CSharp.Examples.Simple")
         )
     );
 }
