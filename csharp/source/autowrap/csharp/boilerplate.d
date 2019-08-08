@@ -164,6 +164,52 @@ if (isDateTimeType!T) {
     return value.map!(fromDatetime!T).array;
 }
 
+extern(C) void rt_moduleTlsCtor();
+extern(C) void rt_moduleTlsDtor();
+
+struct AttachThread
+{
+    static create() nothrow
+    {
+        import core.thread : Thread, thread_attachThis;
+
+        typeof(this) retval;
+
+        retval.notAttached = Thread.getThis() is null;
+
+        if(retval.notAttached)
+        {
+            try
+            {
+                thread_attachThis();
+                rt_moduleTlsCtor();
+            }
+            catch(Exception)
+                assert(0, "An Exception shouldn't be possible here, but it happened anyway.");
+        }
+
+        return retval;
+    }
+
+    ~this() nothrow
+    {
+        import core.thread : thread_detachThis;
+
+        if(notAttached)
+        {
+            try
+            {
+                thread_detachThis();
+                rt_moduleTlsDtor();
+            }
+            catch(Exception)
+                assert(0, "An Exception shouldn't be possible here, but it happened anyway.");
+        }
+    }
+
+    private bool notAttached = false;
+}
+
 public string wrapCSharp(in Modules modules, OutputFileName outputFile, LibraryName libraryName, RootNamespace rootNamespace) @safe pure {
     import std.format : format;
     import std.algorithm: map;
@@ -185,7 +231,9 @@ public string wrapCSharp(in Modules modules, OutputFileName outputFile, LibraryN
         extern(C) export string autowrap_csharp_createString(wchar* str) nothrow {
             import std.string : fromStringz;
             import std.utf : toUTF8;
-            import autowrap.csharp.boilerplate : pinPointer;
+            import autowrap.csharp.boilerplate : AttachThread, pinPointer;
+
+            auto attachThread = AttachThread.create();
             string temp = toUTF8(str.fromStringz());
             pinPointer(cast(void*)temp.ptr);
             return temp;
@@ -195,6 +243,8 @@ public string wrapCSharp(in Modules modules, OutputFileName outputFile, LibraryN
             import std.string : fromStringz;
             import std.utf : toUTF16;
             import autowrap.csharp.boilerplate : pinPointer;
+
+            auto attachThread = AttachThread.create();
             wstring temp = toUTF16(str.fromStringz());
             pinPointer(cast(void*)temp.ptr);
             return temp;
@@ -204,6 +254,8 @@ public string wrapCSharp(in Modules modules, OutputFileName outputFile, LibraryN
             import std.string : fromStringz;
             import std.utf : toUTF32;
             import autowrap.csharp.boilerplate : pinPointer;
+
+            auto attachThread = AttachThread.create();
             dstring temp = toUTF32(str.fromStringz());
             pinPointer(cast(void*)temp.ptr);
             return temp;

@@ -148,8 +148,6 @@ namespace Autowrap {
             } else {
                 throw new DllNotFoundException($"The required native assembly is unavailable for the current operating system and process architecture.");
             }
-
-            DRuntimeInitialize();
         }
 
         internal static string SliceToString(slice str, DStringType type) {

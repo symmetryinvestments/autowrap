@@ -15,12 +15,12 @@ namespace Autowrap.CSharp.Examples.Simple.Tests
     [TestClass]
     public class TestSimple
     {
-        public TestSimple()
+        // Each [TestMethod] method has a corresponding test in python in test_simple.py
+
+        static TestSimple()
         {
             SharedFunctions.DRuntimeInitialize();
         }
-
-        // Each [TestMethod] method has a corresponding test in python in test_simple.py
 
         [TestMethod]
         public void TestAdder()

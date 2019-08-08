@@ -11,13 +11,7 @@ import std.range.primitives;
 import autowrap.csharp.boilerplate;
 import autowrap.reflection : isModule, PrimordialType;
 
-enum string methodSetup = "        thread_attachThis();
-        rt_moduleTlsCtor();
-        scope(exit)
-        {
-            thread_detachThis();
-            rt_moduleTlsDtor();
-        }";
+enum string methodSetup = "        auto attachThread = AttachThread.create();";
 
 
 // Wrap global functions from multiple modules
@@ -52,9 +46,7 @@ public string wrapDLang(Modules...)() if(allSatisfy!(isModule, Modules)) {
 
     ret ~= generateFunctions!Modules(imports);
 
-    string top = "import core.thread : thread_attachThis, thread_detachThis;" ~ newline;
-    top ~= "extern(C) void rt_moduleTlsCtor();" ~ newline;
-    top ~= "extern(C) void rt_moduleTlsDtor();" ~ newline;
+    string top = "import autowrap.csharp.boilerplate : AttachThread;" ~ newline;
 
     foreach(i; sort(imports))
         top ~= format("import %s;%s", i, newline);
