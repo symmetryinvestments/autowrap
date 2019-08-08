@@ -8,12 +8,17 @@ all: test
 test: test_simple_pyd test_simple_pynih test_simple_cs test_pyd_pyd test_numpy test_issues
 
 clean:
-	@rm -f examples/*/*.so examples/simple/lib/*/*.so examples/simple/simple examples/simple/Simple.cs
-	@rm -rf tests/*/bin tests/*/obj
+	@cd csharp && dub clean -q
+	@cd excel && dub clean -q
+	@cd pynih && dub clean -q
+	@cd python && dub clean -q
+	@cd reflection && dub clean -q
 	@cd examples/issues && dub clean -q
 	@cd examples/numpy && dub clean -q
 	@cd examples/pyd && dub clean -q
 	@cd examples/simple && dub clean -q
+	@rm -f examples/*/*.so examples/pyd/lib/pyd/*.so examples/simple/lib/*/*.so examples/simple/simple examples/simple/Simple.cs
+	@rm -rf tests/*/bin tests/*/obj
 
 test_simple_pyd: tests/test_simple.py examples/simple/lib/pyd/simple.so
 	PYTHONPATH=$(PWD)/examples/simple/lib/pyd pytest -s -vv $<
