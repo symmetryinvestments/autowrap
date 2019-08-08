@@ -54,8 +54,9 @@ struct PythonType(T) {
             PyErr_SetString, PyExc_TypeError,
             PyNumberMethods, PySequenceMethods;
         import autowrap.reflection: UnaryOperators, BinaryOperators, functionName;
-        import std.traits: arity, hasMember;
+        import std.traits: arity, hasMember, TemplateOf;
         import std.meta: Filter;
+        static import std.typecons;
 
         if(_pyType != _pyType.init) return;
 
@@ -71,7 +72,14 @@ struct PythonType(T) {
             _pyType.tp_repr = &_py_repr;
             _pyType.tp_init = &_py_init;
 
-            static if(hasMember!(T, "opCmp") && &T.opCmp !is &Object.opCmp) {
+            // special-case std.typecons.Typedef
+            // see: https://issues.dlang.org/show_bug.cgi?id=20117
+            static if(
+                hasMember!(T, "opCmp")
+                && !__traits(isSame, TemplateOf!T, std.typecons.Typedef)
+                && &T.opCmp !is &Object.opCmp
+                )
+            {
                 _pyType.tp_richcompare = &PythonOpCmp!T._py_cmp;
             }
 
