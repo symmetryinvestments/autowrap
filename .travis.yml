@@ -1,6 +1,9 @@
-language: d
+language: python
 sudo: required
 dist: bionic
+
+python:
+  - "3.7"
 
 matrix:
   include:
@@ -37,6 +40,7 @@ env:
     - PATH=/opt/python/3.7.1/bin:$PATH
 
 script:
+  - echo $DC
   - python -VV
   - ls /usr/include/python3.7
   - ls /usr/include/python3.7m
