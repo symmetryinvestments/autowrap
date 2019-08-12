@@ -11,10 +11,10 @@ addons:
       - libclang-3.9-dev
 
 install:
-  # - pushd /tmp
-  # - curl -fsS https://dlang.org/install.sh | bash -s ${DC}
-  # - popd
-  # - source ~/dlang/${DC}/activate
+  - pushd /tmp
+  - curl -fsS https://dlang.org/install.sh | bash -s ${DC}
+  - popd
+  - source ~/dlang/${DC}/activate
   # - pip install pytest numpy
   # - wget -q https://packages.microsoft.com/config/ubuntu/18.04/packages-microsoft-prod.deb
   # - sudo dpkg -i packages-microsoft-prod.deb
