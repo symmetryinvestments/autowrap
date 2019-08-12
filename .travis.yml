@@ -1,5 +1,5 @@
 language: python
-#sudo: required
+sudo: required
 dist: bionic
 
 python:
@@ -16,26 +16,25 @@ install:
   - popd
   - source ~/dlang/${DC}/activate
   - pip install pytest numpy
-  # - wget -q https://packages.microsoft.com/config/ubuntu/18.04/packages-microsoft-prod.deb
-  # - sudo dpkg -i packages-microsoft-prod.deb
-  # - sudo apt-get install apt-transport-https
-  # - sudo apt-get update
-  # - sudo apt-get install dotnet-sdk-2.1
+  - wget -q https://packages.microsoft.com/config/ubuntu/18.04/packages-microsoft-prod.deb
+  - sudo dpkg -i packages-microsoft-prod.deb
+  - sudo apt-get install apt-transport-https
+  - sudo apt-get update
+  - sudo apt-get install dotnet-sdk-2.1
 
 env:
   global:
     - PYTHON_INCLUDE_DIR=~/virtualenv/python3.7/include/python3.7m
-    #- PATH=/opt/python/3.7.1/bin:$PATH
   matrix:
     - DC=dmd-2.085.0
 
 script:
   - pynih/ci.sh
-  # - DUB_CONFIGURATION=python37 make
-  # - dub run pyd:setup && source pyd_set_env_vars.sh
-  # - DUB_CONFIGURATION=env make
-  # - dub test --build=unittest-cov --compiler=${DC}
-  # - csharp/tests/test.sh
+  - DUB_CONFIGURATION=python37 make
+  - dub run pyd:setup && source pyd_set_env_vars.sh
+  - DUB_CONFIGURATION=env make
+  - dub test --build=unittest-cov --compiler=${DC}
+  - csharp/tests/test.sh
 
 after_success:
  - bash <(curl -s https://codecov.io/bash)

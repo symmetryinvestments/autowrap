@@ -34,23 +34,3 @@ configuration "unittest" {
     dependency ":pynih" version="*"
     dependency "unit-threaded" version="*"
 }
-
-configuration "unittest-travis" {
-    targetType "executable"
-    targetPath "bin"
-    targetName "ut"
-
-    mainSourceFile "tests/main.d"
-    sourcePaths "python/source" "reflection/source" "tests/ut"
-    importPaths "python/source" "tests/ut"
-    versions "XllDummyGetter"
-    versions "unitUnthreaded"  # GIL
-    versions "TestingAutowrap"
-
-    libs "python2.7"
-
-    subConfiguration ":python" "python27"
-    dependency ":reflection" version="*"
-    dependency ":pynih" version="*"
-    dependency "unit-threaded" version="*"
-}
