@@ -5,13 +5,13 @@ dist: bionic
 python:
   - "3.7"
 
-matrix:
-  include:
-#    - d: dmd-nightly
-    - d: dmd-2.085.0
-#    - d: dmd-2.084.1
-  # allow_failures:
-  #   - d: dmd-nightly
+# matrix:
+#   include:
+# #    - d: dmd-nightly
+#     - d: dmd-2.085.0
+# #    - d: dmd-2.084.1
+#   # allow_failures:
+#   #   - d: dmd-nightly
 
 addons:
   apt:
@@ -25,8 +25,6 @@ before_install:
   - apt-cache search python3
 
 install:
-  - virtualenv autowrapenv
-  - source autowrapenv/bin/activate
   - pip install pytest numpy
   - wget -q https://packages.microsoft.com/config/ubuntu/18.04/packages-microsoft-prod.deb
   - sudo dpkg -i packages-microsoft-prod.deb
@@ -38,15 +36,17 @@ env:
   global:
     - PYTHON_INCLUDE_DIR=/usr/include/python3.7m
     - PATH=/opt/python/3.7.1/bin:$PATH
+  matrix:
+    - DC=dmd-2.085.0
 
 script:
   - echo $DC
   - python -VV
-  - ls /usr/include/python3.7
-  - ls /usr/include/python3.7m
-  - ls /opt/python/3.7.1
-  - ls /opt/python/3.7.1/include
-  - ls ~/virtualenv/python37/include
+  # - ls /usr/include/python3.7
+  # - ls /usr/include/python3.7m
+  # - ls /opt/python/3.7.1
+  # - ls /opt/python/3.7.1/include
+  - ls ~/virtualenv/python3.7/include
   # - pynih/ci.sh
   # - DUB_CONFIGURATION=python27 make
   # - dub run pyd:setup && source pyd_set_env_vars.sh
