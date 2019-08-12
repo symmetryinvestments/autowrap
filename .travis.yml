@@ -4,11 +4,11 @@ dist: bionic
 
 matrix:
   include:
-    - d: dmd-nightly
+#    - d: dmd-nightly
     - d: dmd-2.085.0
-    - d: dmd-2.084.1
-  allow_failures:
-    - d: dmd-nightly
+#    - d: dmd-2.084.1
+  # allow_failures:
+  #   - d: dmd-nightly
 
 addons:
   apt:
@@ -16,7 +16,8 @@ addons:
       - ubuntu-toolchain-r-test
     packages:
       - libclang-3.9-dev
-      - libpython-dev
+      - libpython3.7-dev
+      - python3.7
 
 install:
   - virtualenv autowrapenv
@@ -39,12 +40,12 @@ script:
   - ls /usr/include/python3.7m
   - ls /opt/python/3.7.1
   - ls /opt/python/3.7.1/include
-  - pynih/ci.sh
-  - DUB_CONFIGURATION=python27 make
-  - dub run pyd:setup && source pyd_set_env_vars.sh
-  - DUB_CONFIGURATION=env make
-  - dub run -c unittest-travis --build=unittest-cov
-  - csharp/tests/test.sh
+  # - pynih/ci.sh
+  # - DUB_CONFIGURATION=python27 make
+  # - dub run pyd:setup && source pyd_set_env_vars.sh
+  # - DUB_CONFIGURATION=env make
+  # - dub run -c unittest-travis --build=unittest-cov
+  # - csharp/tests/test.sh
 
 after_success:
  - bash <(curl -s https://codecov.io/bash)
