@@ -28,7 +28,7 @@ install:
   - virtualenv autowrapenv
   - source autowrapenv/bin/activate
   - pip install pytest numpy
-  - wget -q https://packages.microsoft.com/config/ubuntu/16.04/packages-microsoft-prod.deb
+  - wget -q https://packages.microsoft.com/config/ubuntu/18.04/packages-microsoft-prod.deb
   - sudo dpkg -i packages-microsoft-prod.deb
   - sudo apt-get install apt-transport-https
   - sudo apt-get update
@@ -46,6 +46,7 @@ script:
   - ls /usr/include/python3.7m
   - ls /opt/python/3.7.1
   - ls /opt/python/3.7.1/include
+  - ls ~/virtualenv/python37/include
   # - pynih/ci.sh
   # - DUB_CONFIGURATION=python27 make
   # - dub run pyd:setup && source pyd_set_env_vars.sh
