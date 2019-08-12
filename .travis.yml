@@ -12,7 +12,7 @@ addons:
 
 install:
   - cd /tmp && curl -fsS https://dlang.org/install.sh | bash -s ${DC}
-  - ~/dlang/${DC}/activate
+  - source ~/dlang/${DC}/activate
   - pip install pytest numpy
   # - wget -q https://packages.microsoft.com/config/ubuntu/18.04/packages-microsoft-prod.deb
   # - sudo dpkg -i packages-microsoft-prod.deb
@@ -29,10 +29,10 @@ env:
 
 script:
   - pynih/ci.sh
-  # - DUB_CONFIGURATION=python27 make
+  # - DUB_CONFIGURATION=python37 make
   # - dub run pyd:setup && source pyd_set_env_vars.sh
   # - DUB_CONFIGURATION=env make
-  # - dub run -c unittest-travis --build=unittest-cov
+  # - dub test --build=unittest-cov --compiler=${DC}
   # - csharp/tests/test.sh
 
 after_success:
