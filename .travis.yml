@@ -26,17 +26,12 @@ env:
   global:
     - PYTHON_INCLUDE_DIR=~/virtualenv/python3.7/include/python3.7m
     - PYTHON_LIB_DIR=/opt/python/3.7.1/lib
-    - PATH=/opt/python/3.7.1/lib:$PATH
-    - LD_RUN_PATH=/opt/python/3.7.1/lib:$LD_RUN_PATH
-    #- LD_LIBRARY_PATH=/opt/python/3.7.1/lib:$LD_LIBRARY_PATH
+    - PATH=$PYTHON_LIB_DIR:$PATH
+    - LD_RUN_PATH=$PYTHON_LIB_DIR:$LD_RUN_PATH
   matrix:
     - DC=dmd-2.085.0
 
 script:
-  - ls /opt/python/3.7.1/lib
-  - ls ~/virtualenv/python3.7/lib
-  - echo $LD_LIBRARY_PATH
-  - ls -l /opt/python/3.7.1/lib
   - pynih/ci.sh
   # - DUB_CONFIGURATION=python37 make
   # - dub run pyd:setup && source pyd_set_env_vars.sh
