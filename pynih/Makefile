@@ -1,6 +1,6 @@
 .PHONY: test
 
-dpp_version = 0.2.1
+dpp_version = 0.3.1
 dpp_pkg_dir = $(HOME)/.dub/packages/dpp-$(dpp_version)
 dpp_lock = $(dpp_pkg_dir)/dpp.lock
 dpp_dir = $(dpp_pkg_dir)/dpp
