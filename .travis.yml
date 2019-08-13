@@ -1,42 +1,42 @@
-language: d
+language: python
 sudo: required
-dist: xenial
+dist: bionic
 
-matrix:
-  include:
-    - d: dmd-nightly
-    - d: dmd-2.085.0
-    - d: dmd-2.084.1
-  allow_failures:
-    - d: dmd-nightly
+python:
+  - "3.7"
 
 addons:
   apt:
-    sources:
-      - ubuntu-toolchain-r-test
     packages:
       - libclang-3.9-dev
-      - libpython-dev
 
 install:
-  - virtualenv autowrapenv
-  - source autowrapenv/bin/activate
+  - pushd /tmp
+  - curl -fsS https://dlang.org/install.sh | bash -s ${DC}
+  - popd
+  - source ~/dlang/${DC}/activate
   - pip install pytest numpy
-  - wget -q https://packages.microsoft.com/config/ubuntu/16.04/packages-microsoft-prod.deb
+  - wget -q https://packages.microsoft.com/config/ubuntu/18.04/packages-microsoft-prod.deb
   - sudo dpkg -i packages-microsoft-prod.deb
   - sudo apt-get install apt-transport-https
   - sudo apt-get update
   - sudo apt-get install dotnet-sdk-2.1
 
 env:
-  - PYTHON_INCLUDE_DIR=/usr/include/python2.7
+  global:
+    - PYTHON_INCLUDE_DIR=~/virtualenv/python3.7/include/python3.7m
+    - PYTHON_LIB_DIR=/opt/python/3.7.1/lib
+    - PATH=$PYTHON_LIB_DIR:$PATH
+    - LD_RUN_PATH=$PYTHON_LIB_DIR:$LD_RUN_PATH
+  matrix:
+    - DC=dmd-2.085.0
 
 script:
   - pynih/ci.sh
-  - DUB_CONFIGURATION=python27 make
+  - DUB_CONFIGURATION=python37 make
   - dub run pyd:setup && source pyd_set_env_vars.sh
   - DUB_CONFIGURATION=env make
-  - dub run -c unittest-travis --build=unittest-cov
+  - dub test --build=unittest-cov --compiler=${DC}
   - csharp/tests/test.sh
 
 after_success:

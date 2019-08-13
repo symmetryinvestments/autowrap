@@ -3,6 +3,7 @@ targetType "dynamicLibrary"
 
 configuration "python37" {
     targetPath "lib/pyd"
+    lflags "-L$PYTHON_LIB_DIR"
     dependency "autowrap:python" path="../../"
     subConfiguration "autowrap:python" "python37"
 }
@@ -33,6 +34,7 @@ configuration "env" {
 
 configuration "pynih" {
     targetPath "lib/pynih"
+    lflags "-L$PYTHON_LIB_DIR"
     dependency "autowrap:pynih" path="../../"
 }
 
