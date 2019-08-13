@@ -8,7 +8,7 @@ python:
 addons:
   apt:
     packages:
-      - libclang-3.9-dev
+      - libclang-6.0-dev
 
 install:
   - pushd /tmp
