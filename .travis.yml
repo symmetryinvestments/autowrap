@@ -27,6 +27,7 @@ env:
     - PYTHON_INCLUDE_DIR=~/virtualenv/python3.7/include/python3.7m
     - PYTHON_LIB_DIR=/opt/python/3.7.1/lib
     - PATH=/opt/python/3.7.1/lib:$PATH
+    - LD_RUN_PATH=/opt/python/3.7.1/lib:$LD_RUN_PATH
     #- LD_LIBRARY_PATH=/opt/python/3.7.1/lib:$LD_LIBRARY_PATH
   matrix:
     - DC=dmd-2.085.0
