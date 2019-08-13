@@ -29,6 +29,7 @@ configuration "unittest" {
     versions "TestingAutowrap"
 
     libs "python3.7m"
+    lflags "-L$PYTHON_LIB_DIR"
 
     dependency ":reflection" version="*"
     dependency ":pynih" version="*"
