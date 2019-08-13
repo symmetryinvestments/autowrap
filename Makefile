@@ -1,5 +1,9 @@
 # Makefile to drive the tests
 
+ifndef PYTHON_LIB_DIR
+$(error PYTHON_LIB_DIR is not set)
+endif
+
 DUB_CONFIGURATION ?= python37
 
 .PHONY: clean test test_simple_pyd test_simple_pynih test_simple_cs test_pyd_pyd test_issues test_numpy examples/simple/lib/pyd/libsimple.so examples/simple/lib/pynih/libsimple.so examples/issues/libissues.so examples/pyd/libpydtests.so examples/numpy/libnumpy.so examples/pyd/lib/pyd/libpydtests.so examples/pyd/lib/pynih/libpydtests.so
