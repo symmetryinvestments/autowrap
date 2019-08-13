@@ -6,9 +6,7 @@ dpp_lock = $(dpp_pkg_dir)/dpp.lock
 dpp_dir = $(dpp_pkg_dir)/dpp
 dpp = $(dpp_dir)/bin/d++
 
-ifndef PYTHON_INCLUDE_DIR
-$(error PYTHON_INCLUDE_DIR is not set)
-endif
+PYTHON_INCLUDE_DIR = $(shell python -c 'from distutils.sysconfig import get_python_inc; print(get_python_inc())')
 
 test: contract/contract.so
 	PYTHONPATH=$(PWD)/contract pytest -s -vv contract/tests
