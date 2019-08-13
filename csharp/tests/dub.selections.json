@@ -2,8 +2,6 @@
 	"fileVersion": 1,
 	"versions": {
 		"autowrap": {"path":"../../"},
-		"pyd": "0.10.5",
-		"scriptlike": "0.10.3",
-		"unit-threaded": "0.9.3"
+		"scriptlike": "0.10.3"
 	}
 }

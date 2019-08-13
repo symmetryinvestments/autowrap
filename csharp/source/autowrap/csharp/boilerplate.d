@@ -18,10 +18,35 @@ import core.time;
 import core.memory;
 import std.conv;
 import std.datetime : DateTime, SysTime, Date, TimeOfDay, SimpleTimeZone, LocalTime;
-import std.meta : Unqual;
+import std.traits : Unqual;
 import std.string;
 import std.traits;
 import std.utf;
+
+private void pinInternalPointers(T)(ref T value) @trusted nothrow
+    if(is(T == struct))
+{
+    import std.traits : Fields, isPointer, isDynamicArray, isStaticArray;
+
+    static foreach(i, Field; Fields!T)
+    {
+        static assert(!isPointer!T, "If we're now supporting pointers, this code needs to be updated");
+        static assert(!isStaticArray!T, "If we're now supporting static arrays, this code needs to be updated");
+
+        static if(is(Field == struct))
+            pinInternalPointers(value.tupleof[i]);
+        else static if(isDynamicArray!Field)
+        {
+            if(value.tupleof[i] !is null)
+                pinPointer(cast(void*)value.tupleof[i].ptr);
+        }
+        else static if(is(Field == class) || is(Field == interface))
+        {
+            if(value.tupleof[i] !is null)
+                pinPointer(cast(void*)value.tupleof[i]);
+        }
+    }
+}
 
 extern(C) export struct returnValue(T) {
     T value;
@@ -29,12 +54,18 @@ extern(C) export struct returnValue(T) {
 
     this(T value) nothrow {
         this.value = value;
-        static if (isArray!(T) || is(T == class) || is(T == interface)) {
-            if (this.value !is null) {
-                pinPointer(cast(void*)this.error.ptr);
-            }
+        static if (isDynamicArray!T)
+        {
+            if (this.value !is null)
+                pinPointer(cast(void*)this.value.ptr);
         }
-        this.error = null;
+        else static if (is(T == class) || is(T == interface))
+        {
+            if (this.value !is null)
+                pinPointer(cast(void*)this.value);
+        }
+        else static if (is(T == struct))
+            pinInternalPointers(value);
     }
 
     this(Exception error) nothrow {
@@ -133,6 +164,52 @@ if (isDateTimeType!T) {
     return value.map!(fromDatetime!T).array;
 }
 
+extern(C) void rt_moduleTlsCtor();
+extern(C) void rt_moduleTlsDtor();
+
+struct AttachThread
+{
+    static create() nothrow
+    {
+        import core.thread : Thread, thread_attachThis;
+
+        typeof(this) retval;
+
+        retval.notAttached = Thread.getThis() is null;
+
+        if(retval.notAttached)
+        {
+            try
+            {
+                thread_attachThis();
+                rt_moduleTlsCtor();
+            }
+            catch(Exception)
+                assert(0, "An Exception shouldn't be possible here, but it happened anyway.");
+        }
+
+        return retval;
+    }
+
+    ~this() nothrow
+    {
+        import core.thread : thread_detachThis;
+
+        if(notAttached)
+        {
+            try
+            {
+                thread_detachThis();
+                rt_moduleTlsDtor();
+            }
+            catch(Exception)
+                assert(0, "An Exception shouldn't be possible here, but it happened anyway.");
+        }
+    }
+
+    private bool notAttached = false;
+}
+
 public string wrapCSharp(in Modules modules, OutputFileName outputFile, LibraryName libraryName, RootNamespace rootNamespace) @safe pure {
     import std.format : format;
     import std.algorithm: map;
@@ -145,38 +222,47 @@ public string wrapCSharp(in Modules modules, OutputFileName outputFile, LibraryN
     const modulesList = modules.value.map!(a => a.toString).join(", ");
 
     return q{
-        import core.memory : GC;
-        import std.conv : to;
-        import std.utf : toUTF8, toUTF16, toUTF32;
-        import std.typecons;
-        import std.string : fromStringz;
-        import autowrap.csharp.boilerplate;
-        import autowrap.csharp.dlang : wrapDLang;
-
         extern(C) export void autowrap_csharp_release(void* ptr) nothrow {
+            import core.memory : GC;
             GC.clrAttr(ptr, GC.BlkAttr.NO_MOVE);
             GC.removeRoot(ptr);
         }
 
         extern(C) export string autowrap_csharp_createString(wchar* str) nothrow {
-            string temp = toUTF8(to!wstring(str.fromStringz()));
+            import std.string : fromStringz;
+            import std.utf : toUTF8;
+            import autowrap.csharp.boilerplate : AttachThread, pinPointer;
+
+            auto attachThread = AttachThread.create();
+            string temp = toUTF8(str.fromStringz());
             pinPointer(cast(void*)temp.ptr);
             return temp;
         }
 
         extern(C) export wstring autowrap_csharp_createWString(wchar* str) nothrow {
-            wstring temp = toUTF16(to!wstring(str.fromStringz()));
+            import std.string : fromStringz;
+            import std.utf : toUTF16;
+            import autowrap.csharp.boilerplate : pinPointer;
+
+            auto attachThread = AttachThread.create();
+            wstring temp = toUTF16(str.fromStringz());
             pinPointer(cast(void*)temp.ptr);
             return temp;
         }
 
         extern(C) export dstring autowrap_csharp_createDString(wchar* str) nothrow {
-            dstring temp = toUTF32(to!wstring(str.fromStringz()));
+            import std.string : fromStringz;
+            import std.utf : toUTF32;
+            import autowrap.csharp.boilerplate : pinPointer;
+
+            auto attachThread = AttachThread.create();
+            dstring temp = toUTF32(str.fromStringz());
             pinPointer(cast(void*)temp.ptr);
             return temp;
         }
 
-        mixin(wrapDLang!(%1$s));
+        static import autowrap.csharp.dlang;
+        mixin(autowrap.csharp.dlang.wrapDLang!(%1$s));
 
         //Insert DllMain for Windows only.
         version(Windows) {
@@ -184,7 +270,9 @@ public string wrapCSharp(in Modules modules, OutputFileName outputFile, LibraryN
         }
 
         void main() {
-            import std.stdio;
+            import std.stdio : File;
+            import autowrap.csharp.common : LibraryName, RootNamespace;
+            import autowrap.csharp.csharp : generateCSharp;
             string generated = generateCSharp!(%1$s)(LibraryName("%3$s"), RootNamespace("%4$s"));
             auto f = File("%5$s", "w");
             f.writeln(generated);

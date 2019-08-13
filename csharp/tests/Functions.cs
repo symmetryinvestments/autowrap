@@ -58,7 +58,7 @@ namespace Autowrap.CSharp.Tests
         [TestMethod]
         public void TestDLangExceptions() {
             var errorResult = Test.Functions.TestErrorMessage(false);
-            Assert.AreEqual("No Error Thrown", errorResult, "Unexpected Result from TestErrorMessage.");
+            Assert.AreEqual("No Exception Thrown", errorResult, "Unexpected Result from TestErrorMessage.");
             Assert.ThrowsException<DLangException>(() => Test.Functions.TestErrorMessage(true));
         }
 
