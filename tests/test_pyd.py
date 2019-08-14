@@ -232,6 +232,7 @@ def test_class_wrap_bizzy():
     assert ~bizzy == 44
 
     assert bizzy > 1
+    assert 1 < bizzy
     assert len(bizzy) == 401
 
     assert bizzy[0] == 0.0

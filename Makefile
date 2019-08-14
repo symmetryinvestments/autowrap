@@ -29,7 +29,7 @@ test_simple_pyd: tests/test_simple.py examples/simple/lib/pyd/simple.so
 examples/simple/lib/pyd/simple.so: examples/simple/lib/pyd/libsimple.so
 	@cp $^ $@
 
-examples/simple/lib/pyd/libsimple.so: examples/simple/dub.sdl examples/simple/dub.selections.json
+examples/simple/lib/pyd/libsimple.so:
 	@cd examples/simple && dub build -q -c $(DUB_CONFIGURATION)
 
 example/simple/dub.selections.json:
@@ -61,7 +61,7 @@ pynih/source/python/raw.d: pynih/Makefile pynih/source/python/raw.dpp
 examples/simple/lib/pynih/simple.so: examples/simple/lib/pynih/libsimple.so
 	@cp $^ $@
 
-examples/simple/lib/pynih/libsimple.so: examples/simple/dub.sdl examples/simple/dub.selections.json
+examples/simple/lib/pynih/libsimple.so:
 	@cd examples/simple && dub build -q -c pynih
 
 test_issues: tests/test_issues.py examples/issues/issues.so
@@ -70,7 +70,7 @@ test_issues: tests/test_issues.py examples/issues/issues.so
 examples/issues/issues.so: examples/issues/libissues.so
 	@cp $^ $@
 
-examples/issues/libissues.so: examples/issues/dub.sdl examples/issues/dub.selections.json
+examples/issues/libissues.so:
 	@cd examples/issues && dub build -q -c $(DUB_CONFIGURATION)
 
 examples/issues/dub.selections.json:
@@ -82,7 +82,7 @@ test_pyd_pyd: tests/test_pyd.py examples/pyd/lib/pyd/pyd.so
 examples/pyd/lib/pyd/pyd.so: examples/pyd/lib/pyd/libpydtests.so
 	@cp $^ $@
 
-examples/pyd/lib/pyd/libpydtests.so: examples/pyd/dub.sdl examples/pyd/dub.selections.json
+examples/pyd/lib/pyd/libpydtests.so:
 	@cd examples/pyd && dub build -q -c $(DUB_CONFIGURATION)
 
 test_pyd_pynih: tests/test_pyd.py examples/pyd/lib/pynih/pyd.so
@@ -91,7 +91,7 @@ test_pyd_pynih: tests/test_pyd.py examples/pyd/lib/pynih/pyd.so
 examples/pyd/lib/pynih/pyd.so: examples/pyd/lib/pynih/libpydtests.so
 	@cp $^ $@
 
-examples/pyd/lib/pynih/libpydtests.so: examples/pyd/dub.sdl examples/pyd/dub.selections.json pynih/source/python/raw.d
+examples/pyd/lib/pynih/libpydtests.so:
 	@cd examples/pyd && dub build -q -c pynih
 
 test_numpy: tests/test_numpy.py examples/numpy/numpytests.so
@@ -100,7 +100,7 @@ test_numpy: tests/test_numpy.py examples/numpy/numpytests.so
 examples/numpy/numpytests.so: examples/numpy/libnumpy.so
 	@cp $^ $@
 
-examples/numpy/libnumpy.so: examples/numpy/dub.sdl examples/numpy/dub.selections.json
+examples/numpy/libnumpy.so:
 	@cd examples/numpy && dub build -q -c $(DUB_CONFIGURATION)
 
 examples/numpy/dub.selections.json:

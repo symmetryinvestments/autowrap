@@ -86,7 +86,6 @@ struct Foo {
 }
 
 export auto createTypedefFoo(int x, int y) {
-    import templates;
     import std.typecons: Typedef;
     return Typedef!Foo(Foo(x, y));
 }

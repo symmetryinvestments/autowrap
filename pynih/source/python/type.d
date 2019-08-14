@@ -54,8 +54,9 @@ struct PythonType(T) {
             PyErr_SetString, PyExc_TypeError,
             PyNumberMethods, PySequenceMethods;
         import autowrap.reflection: UnaryOperators, BinaryOperators, functionName;
-        import std.traits: arity;
+        import std.traits: arity, hasMember, TemplateOf;
         import std.meta: Filter;
+        static import std.typecons;
 
         if(_pyType != _pyType.init) return;
 
@@ -71,14 +72,27 @@ struct PythonType(T) {
             _pyType.tp_repr = &_py_repr;
             _pyType.tp_init = &_py_init;
 
+            // special-case std.typecons.Typedef
+            // see: https://issues.dlang.org/show_bug.cgi?id=20117
+            static if(
+                hasMember!(T, "opCmp")
+                && !__traits(isSame, TemplateOf!T, std.typecons.Typedef)
+                && &T.opCmp !is &Object.opCmp
+                )
+            {
+                _pyType.tp_richcompare = &PythonOpCmp!T._py_cmp;
+            }
+
+            enum isPythonableUnary(string op) = op == "+" || op == "-" || op == "~";
+            enum unaryOperators = Filter!(isPythonableUnary, UnaryOperators!T);
             alias binaryOperators = BinaryOperators!T;
-            static if(binaryOperators.length > 0) {
+
+            static if(unaryOperators.length > 0 || binaryOperators.length > 0) {
                 _pyType.tp_as_number = new PyNumberMethods;
                 _pyType.tp_as_sequence = new PySequenceMethods;
             }
 
-            enum isPythonableUnary(string op) = op == "+" || op == "-" || op == "~";
-            static foreach(op; Filter!(isPythonableUnary, UnaryOperators!T)) {
+            static foreach(op; unaryOperators) {
                 mixin(`_pyType.`, dlangUnOpToPythonSlot(op), ` = &PythonUnaryOperator!(T, op)._py_un_op;`);
             }
 
@@ -731,7 +745,7 @@ PyObject* pythonCallable(T)(T callable) {
    Reserves space for a callable to be stored in a PyObject struct so that it
    can later be called.
  */
-struct PythonCallable(T) if(isCallable!T) {
+private struct PythonCallable(T) if(isCallable!T) {
     import python.raw: PyObjectHead;
 
     // Every python object must have this
@@ -751,8 +765,8 @@ struct PythonCallable(T) if(isCallable!T) {
 }
 
 
-template PythonUnaryOperator(T, string op) {
-    static extern(C) PyObject* _py_un_op(PyObject* self) {
+private template PythonUnaryOperator(T, string op) {
+    static extern(C) PyObject* _py_un_op(PyObject* self) nothrow {
         return noThrowable!({
             import python.conv.python_to_d: to;
             import python.conv.d_to_python: toPython;
@@ -766,7 +780,7 @@ template PythonUnaryOperator(T, string op) {
 }
 
 
-template PythonBinaryOperator(T, BinaryOperator operator) {
+private template PythonBinaryOperator(T, BinaryOperator operator) {
 
     static extern(C) int _py_in_func(PyObject* lhs, PyObject* rhs)
         nothrow
@@ -850,6 +864,40 @@ template PythonBinaryOperator(T, BinaryOperator operator) {
                 throw new Exception("Neither lhs or rhs were of type " ~ T.stringof);
             }
         });
+    }
+}
+
+
+private template PythonOpCmp(T) {
+    static extern(C) PyObject* _py_cmp(PyObject* lhs, PyObject* rhs, int opId) nothrow {
+        import python.raw: Py_LT, Py_LE, Py_EQ, Py_NE, Py_GT, Py_GE;
+        import std.conv: text;
+        import std.traits: Unqual, Parameters;
+
+        return noThrowable!({
+
+            import python.conv.python_to_d: to;
+            import python.conv.d_to_python: toPython;
+
+            alias parameters = Parameters!(T.opCmp);
+            static assert(parameters.length == 1, T.stringof ~ ".opCmp must have exactly one parameter");
+
+            const cmp = lhs.to!(Unqual!T).opCmp(rhs.to!(Unqual!(parameters[0])));
+
+            const dRes = {
+                switch(opId) {
+                    default: throw new Exception(text("Unknown opId for opCmp: ", opId));
+                    case Py_LT: return cmp < 0;
+                    case Py_LE: return cmp <= 0;
+                    case Py_EQ: return cmp == 0;
+                    case Py_NE: return cmp !=0;
+                    case Py_GT: return cmp > 0;
+                    case Py_GE: return cmp >=0;
+                }
+            }();
+
+            return dRes.toPython;
+       });
     }
 }
 
