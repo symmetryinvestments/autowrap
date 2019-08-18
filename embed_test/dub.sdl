@@ -1,0 +1,8 @@
+name "embed_test"
+description "A minimal D application."
+authors "laeeth"
+copyright "Copyright © 2019, laeeth"
+license "proprietary"
+dependency "autowrap:pynih" path="../"
+libs "python3.7m"
+targetType "executable"

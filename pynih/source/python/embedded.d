@@ -65,10 +65,8 @@ final class InterpContext
 		import std.string : toStringz;
         enforce(pyIsInitialized(), "python not initialized");
         locals = PyDict_New();
-        // locals = new PyObject(PyDict_New());
-		auto builtInString = PyObject_Bytes(cast(PyObject*) "__builtins__".toStringz());
-		enforce(PyObject_SetItem(globals,builtInString,PyEval_GetBuiltins())!=-1);
-        //globals = py(["__builtins__": new PyObject(PyEval_GetBuiltins())]);
+		globals = PyDict_New();
+		PyDict_SetItemString(globals, "__builtins__",PyEval_GetBuiltins());
     }
 
     void pushDummyFrame()
@@ -100,7 +98,7 @@ final class InterpContext
 		Returns:
 			the result of expression
      */
-    T py_eval(T = PyObject)( string pythonExpression, string file = __FILE__, size_t line = __LINE__)
+    T py_eval(T = PyObject*)( string pythonExpression, string file = __FILE__, size_t line = __LINE__)
 	{
 		import std.string : toStringz;
         auto pres = PyRun_StringFlags(
@@ -108,11 +106,12 @@ final class InterpContext
                 Py_eval_input,
                 cast(PyObject*) globals,
                 cast(PyObject*) locals,
-                &flags);
+                null); //&flags);
         if(pres) {
-            auto res = new PyObject(pres);
-            return res.to_d!T();
+            return pres;
         }else{
+			import std.stdio;
+			stderr.writefln("file: %s, line: %s",file,line);
             //handle_exception(file,line);
             assert(0);
         }
@@ -122,7 +121,7 @@ final class InterpContext
 Params:
 python = python statements
      */
-    void evalStatements(string pythonStatements, string file = __FILE__, size_t line = __LINE__)
+    auto evalStatements(string pythonStatements, string file = __FILE__, size_t line = __LINE__)
 	{
         import std.string: outdent, toStringz;
 
@@ -133,7 +132,9 @@ python = python statements
                 cast(PyObject*) locals,
                 &flags);
         if(pres) {
-            pyDecRef(pres);
+			auto ret = pres.toString();
+			pyDecRef(pres);
+			return ret;
         }else{
             //handle_exception(file,line);
 			assert(0);
@@ -186,8 +187,8 @@ ReturnType!func_t py_def(func_t)(string pythonFunction, string pythonModule, Par
         scope(exit) pyDecRef(locals_ptr);
         if("__builtins__" !in globals)
 		{
-            auto builtins = new PyObject(PyEval_GetBuiltins());
-            globals["__builtins__"] = builtins;
+			globals = PyDict_New();
+			PyDict_SetItemString(globals, "__builtins__",PyEval_GetBuiltins());
         }
         auto pres = PyRun_String(
                     pythonFunction.toStringz,
@@ -220,29 +221,33 @@ Params:
 python = a python expression
 pythonModule = context in which to run expression. either a python module name, or "".
  +/
-T evalExpression(T = PyObject)(string pythonExpression, string pythonModule= "", string file = __FILE__, size_t line = __LINE__)
+T evalExpression(T = PyObject*)(string pythonExpression, string pythonModule= "", string file = __FILE__, size_t line = __LINE__)
 {
 	import std.string : toStringz;
     enforce(pyIsInitialized(), "python not initialized");
-    PyObject locals = null;
-    PyObject* locals_ptr = null;
-    locals = (pythonModule == "") ? py((string[string]).init) :  py_import(pythonModule).getdict();
-	locals_ptr = pyIncRef(locals.ptr);
-    if ("__builtins__" !in locals) {
-        auto builtins = new PyObject(PyEval_GetBuiltins());
-        locals["__builtins__"] = builtins;
-    }
-    auto result = PyRun_String( pythonExpression.toStringz, Py_eval_input, locals_ptr, locals_ptr);
-	scope(exit) Py_XDECREF(locals_ptr);
-    if(pres)
+    PyObject* locals = null;
+	// FIXME
+	pythonModule="";
+    locals = (pythonModule == "") ? PyDict_New() :  pyImportModule(pythonModule); // .getdict();
+	pyIncRef(locals);
+    //if ("__builtins__" !in locals) {
+		PyDict_SetItemString(locals, "__builtins__",PyEval_GetBuiltins());
+    //}
+    auto result = PyRun_StringFlags( pythonExpression.toStringz, Py_eval_input, locals, locals,null);
+	scope(exit) Py_DecRef(locals);
+	return result;
+	/+
+	//scope(exit) Py_XDecRef(locals);
+    if(result)
 	{
-        auto res = new PyObject(result);
-        return res.to_d!T();
+        //auto res = new PyObject(result);
+		assert(0);
+        // return res.to_d!T();
     }else
 	{
-        handle_exception(file,line);
+        // handle_exception(file,line);
         assert(0);
-    }
+    } +/
 }
 
 /++
@@ -251,20 +256,19 @@ Params:
 python = python statements
 modl = context in which to run expression. either a python module name, or "".
  +/
-void evalStatements(string pythonStatements, string module_ = "",string file = __FILE__, size_t line = __LINE__)
+auto evalStatements(string pythonStatements, string module_ = "",string file = __FILE__, size_t line = __LINE__)
 {
 	import std.string : toStringz;
-    debug assert(pyIsInitialized(), "python not initialized");
+    enforce(pyIsInitialized(), "python not initialized");
     PyObject* locals;
-    PyObject* locals_ptr;
+    //PyObject* locals_ptr;
     if (module_ == "") {
-        //locals = py((string[string]).init);
+        locals = PyDict_New();
     }else {
-        // locals = py_import(module_).getdict();
-        // locals = pyImportModule(module_).getdict();
+        //locals = pyImportModule(module_).getdict();
     }
     pyIncRef(locals);
-	locals_ptr = locals;
+	//locals_ptr = locals;
 	// locals_ptr = pyIncRef(locals); // locals.ptr);
     //if("__builtins__" !in locals) {
         //auto builtins = new PyObject(PyEval_GetBuiltins());
@@ -272,14 +276,81 @@ void evalStatements(string pythonStatements, string module_ = "",string file = _
     //}
     auto pres = PyRun_StringFlags(
             outdent(pythonStatements).toStringz,
-            Py_file_input, locals_ptr, locals_ptr,null);
-    scope(exit) pyDecRef(locals_ptr);
+            Py_file_input, locals, locals,null);
+	return pres; 
+	/+
+    scope(exit) pyDecRef(locals);
     if(pres) {
         pyDecRef(pres);
     }else{
         //handle_exception(file,line);
 		assert(0);
-    }
+    } +/
 }
 alias py_stmts = evalStatements;
- 
+
+void evalSimpleString(string s)
+{
+	import std.string : toStringz;
+	PyRun_SimpleStringFlags(s.toStringz,null);
+}
+void initializePython()
+{
+	Py_Initialize();
+}
+
+string toString(PyObject* o)
+{
+	import std.string : fromStringz;
+	char* s;
+	PyArg_Parse(o, "s",&s);
+	return s.fromStringz.idup;
+}
+
+PyObject* getMember(PyObject* parent, string memberName)
+{
+	import std.string: toStringz;
+	return PyObject_GetAttrString(parent,memberName.toStringz);
+}
+
+PyObject* getModuleMember(string moduleName, string memberName)
+{
+	auto pmod = pyImportModule(moduleName);
+	auto ret = getMember(pmod,memberName);
+	Py_DecRef(pmod);
+	return ret;
+}
+
+PyObject* callObject(PyObject* o, PyObject* args)
+{
+	return null; // PyEval_CallObject(o,args);
+}
+
+PyObject* construct(string moduleName, string className)
+{
+	auto pythonClass = getModuleMember(moduleName, className);
+	auto pythonArgs = Py_BuildValue("()");
+	auto result = callObject(pythonClass,pythonArgs);
+	Py_DecRef(pythonClass);
+	Py_DecRef(pythonArgs);
+	return result;
+}
+
+PyObject* pyBuildValue(Args...)(string formatString, Args args)
+{
+	import std.string : toStringz;
+	return Py_BuildValue(formatString.toStringz,args);
+}
+
+auto pyParseArgs(Args...)(PyObject* o, string formatString)
+{
+	import std.string : toStringz;
+	import std.typecons: Tuple, tuple;
+	import std.algorithm : map;
+	import std.array : array;
+	Tuple!Args args;
+	auto argsPtr = args.map!(arg => &arg).array;
+	PyArg_Parse(formatString,argsPtr);
+	return args;
+}
+
