@@ -23,7 +23,6 @@ contract/libcontract.so: contract/dub.sdl contract/dub.selections.json contract/
 source/python/raw.d: source/python/raw.dpp $(dpp)
 	$(dpp) --preprocess-only --include-path $(PYTHON_INCLUDE_DIR) source/python/raw.dpp
 
-
 $(dpp): $(dpp_lock)
 	cd $(dpp_dir) && dub build -q
 

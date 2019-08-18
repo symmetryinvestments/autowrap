@@ -62,8 +62,12 @@ final class InterpContext
       */
     this()
 	{
+		import std.string : toStringz;
         enforce(pyIsInitialized(), "python not initialized");
+        locals = PyDict_New();
         // locals = new PyObject(PyDict_New());
+		auto builtInString = PyObject_Bytes(cast(PyObject*) "__builtins__".toStringz());
+		enforce(PyObject_SetItem(globals,builtInString,PyEval_GetBuiltins())!=-1);
         //globals = py(["__builtins__": new PyObject(PyEval_GetBuiltins())]);
     }
 
