@@ -8,7 +8,8 @@ module python.raw;
 #include "datetime.h"
 #include "structmember.h"
 #include "moduleobject.h"
-
+#include "frameobject.h"
+#include "pythonrun.h"
 
 enum isPython3 = is(PyModuleDef);
 enum isPython2 = !isPython3;

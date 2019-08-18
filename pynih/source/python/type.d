@@ -147,8 +147,7 @@ struct PythonType(T) {
 
         alias AggMember(string memberName) = Alias!(__traits(getMember, T, memberName));
         alias memberNames = __traits(allMembers, T);
-        enum isPublic(string memberName) =
-            __traits(getProtection, __traits(getMember, T, memberName)) == "public";
+        enum isPublic(string memberName) = (__traits(getProtection, __traits(getMember, T, memberName)) == "public");
         alias publicMemberNames = Filter!(isPublic, memberNames);
         alias members = staticMap!(AggMember, publicMemberNames);
         alias memberFunctions = Filter!(isFunction, members);
