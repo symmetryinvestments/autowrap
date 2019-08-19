@@ -79,4 +79,4 @@ test_script:
  - echo %DC%
  - echo %PATH%
  - '%DC% --version'
- - dub test
+ - dub run -b unittest -c unittest-no-pynih
