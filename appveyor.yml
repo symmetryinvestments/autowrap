@@ -47,6 +47,7 @@ install:
             }
         }
   - ps: SetUpDCompiler
+  - C:\Python37-x64\Scripts\pip install pytest numpy
 
 before_build:
   - ps: if($env:arch -eq "x86"){
