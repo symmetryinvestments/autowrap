@@ -21,7 +21,7 @@ configuration "unittest" {
     targetName "ut"
 
     mainSourceFile "tests/main.d"
-    excludedSourceFiles "pynih/source/autowrap/python/package.d"
+    excludedSourceFiles "pynih/source/autowrap/pynih/package.d"
     sourcePaths "python/source" "reflection/source" "tests/ut"
     importPaths "python/source" "tests/ut"
     versions "XllDummyGetter"
