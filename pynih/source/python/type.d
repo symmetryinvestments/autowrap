@@ -932,15 +932,10 @@ private template PythonSubscript(T) {
                         return self.to!(Unqual!T).opIndex(key.to!(parameters[0])).toPython;
                     else
                         throw new Exception("Don't know how to handle opIndex with more than one parameter");
-                }
-            }
-
-            static if(hasMember!(T, "opSlice")) {
-                if(pySliceCheck(key)) {
-                    throw new Exception("Not implemented slice yet");
                 } else
-                    return null;
-            }
+                    throw new Exception(T.stringof ~ " failed pyIndexCheck");
+            } else
+                throw new Exception(T.stringof ~ " has no opIndex");
         }
 
         return noThrowable!impl;
