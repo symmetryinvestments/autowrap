@@ -32,6 +32,6 @@ configuration "unittest" {
     lflags "-L$PYTHON_LIB_DIR"
 
     dependency ":reflection" version="*"
-    dependency ":pynih" version="*"
+    dependency ":pynih" version="*" platform="posix"
     dependency "unit-threaded" version="*"
 }
