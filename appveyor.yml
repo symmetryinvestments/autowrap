@@ -1,12 +1,13 @@
 platform: x64
 environment:
- matrix:
-  - DC: dmd
-    DVersion: 2.085.1
-    arch: x64
-  - DC: dmd
-    DVersion: 2.085.1
-    arch: x86
+  PYTHON_LIB_DIR: C:\\Python37-x64
+  matrix:
+    - DC: dmd
+      DVersion: 2.085.1
+      arch: x64
+    - DC: dmd
+      DVersion: 2.085.1
+      arch: x86
 
 skip_tags: true
 
