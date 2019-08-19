@@ -147,6 +147,10 @@ bool pyIndexCheck(PyObject* obj) @nogc nothrow {
     return cast(bool) PyIndex_Check(obj);
 }
 
+bool pySliceCheck(PyObject* obj) @nogc nothrow {
+    return cast(bool) PySlice_Check(obj);
+}
+
 
 // Demacroify
 auto pyTrue() {

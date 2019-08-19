@@ -83,7 +83,12 @@ struct PythonType(T) {
                 _pyType.tp_richcompare = &PythonOpCmp!T._py_cmp;
             }
 
-            static if(hasMember!(T, "opIndex") || hasMember!(T, "opSlice")) {
+            static if(hasMember!(T, "opSlice")) {
+                _pyType.tp_iter = &PythonIter!T._py_iter;
+                _pyType.tp_iternext = &PythonIter!T._py_iter_next;
+            }
+
+            static if(hasMember!(T, "opIndex")) {
                 if(_pyType.tp_as_mapping is null)
                     _pyType.tp_as_mapping = new PyMappingMethods;
                 _pyType.tp_as_mapping.mp_subscript = &PythonSubscript!T._py_index;
@@ -203,6 +208,7 @@ struct PythonType(T) {
         alias memberNames = AliasSeq!(__traits(allMembers, T));
         enum ispublic(string name) = isPublic!(T, name);
         alias publicMemberNames = Filter!(ispublic, memberNames);
+
         enum isRegular(string name) =
             name != "this"
             && name != "toHash"
@@ -211,8 +217,8 @@ struct PythonType(T) {
             && name != "__ctor"
             ;
         alias regularMemberNames = Filter!(isRegular, publicMemberNames);
-        alias Member(string name) = Alias!(__traits(getMember, T, name));
-        alias members = staticMap!(Member, regularMemberNames);
+        alias overloads(string name) = AliasSeq!(__traits(getOverloads, T, name));
+        alias members = staticMap!(overloads, regularMemberNames);
         alias memberFunctions = Filter!(templateNot!isProperty, Filter!(isSomeFunction, members));
 
         // +1 due to sentinel
@@ -661,6 +667,10 @@ struct PythonClass(T) if(isUserAggregate!T) {
         mixin(`PyObject* `, fieldName, `;`);
     }
 
+    static if(hasIterator!T) {
+        PyObject* iterator;
+    }
+
     // The function pointer for PyGetSetDef.get
     private static extern(C) PyObject* get(int FieldIndex)
                                           (PyObject* self_, void* closure = null)
@@ -909,26 +919,97 @@ private template PythonOpCmp(T) {
 
 private template PythonSubscript(T) {
     static extern(C) PyObject* _py_index(PyObject* self, PyObject* key) nothrow {
-        import python.raw: pyIndexCheck;
+        import python.raw: pyIndexCheck, pySliceCheck;
         import python.conv.python_to_d: to;
         import python.conv.d_to_python: toPython;
-        import std.traits: Parameters, Unqual;
+        import std.traits: Parameters, Unqual, hasMember;
 
         PyObject* impl() {
-            if(pyIndexCheck(obj)) {
-                alias parameters = Parameters!(T.opIndex);
-                static if(Parameters.length == 1)
-                    return self.to!(Unqual!T).opIndex(key.to!(parameters[0])).toPython;
-                else
-                    throw new Exception("Don't know how to handle opIndex with more than one parameter");
-            } else
-                throw new Exception("Can only handle index for now");
+            static if(hasMember!(T, "opIndex")) {
+                if(pyIndexCheck(self)) {
+                    alias parameters = Parameters!(T.opIndex);
+                    static if(parameters.length == 1)
+                        return self.to!(Unqual!T).opIndex(key.to!(parameters[0])).toPython;
+                    else
+                        throw new Exception("Don't know how to handle opIndex with more than one parameter");
+                }
+            }
+
+            static if(hasMember!(T, "opSlice")) {
+                if(pySliceCheck(key)) {
+                    throw new Exception("Not implemented slice yet");
+                } else
+                    return null;
+            }
         }
 
         return noThrowable!impl;
     }
 }
 
+
+private template PythonIter(T) {
+
+    static extern(C) PyObject* _py_iter(PyObject* self_) nothrow {
+        import python.raw: pyIncRef, pyDecRef;
+        import python.conv.d_to_python: toPython;
+
+        auto impl() {
+            auto self = cast(PythonClass!T*) self_;
+            pyDecRef(self.iterator);
+            self.iterator = size_t(0).toPython;
+
+            pyIncRef(self_);
+            return self_;
+        }
+
+        return noThrowable!impl;
+    }
+
+    static extern(C) PyObject* _py_iter_next(PyObject* self_) nothrow {
+        import python.raw: PyErr_SetNone, PyExc_StopIteration, pyDecRef;
+        import python.conv.python_to_d: to;
+        import python.conv.d_to_python: toPython;
+        import std.traits: ReturnType;
+        import std.array: array;
+        import std.conv: text;
+        import core.exception: RangeError;
+
+        PyObject* impl() {
+            static if(__traits(compiles, T.init.opSlice.array[0])) {
+                auto self = cast(PythonClass!T*) self_;
+                auto dObj = self_.to!T;
+                const index = self.iterator.to!size_t;
+
+                ReturnType!(T.opSlice) elt;
+
+                try
+                    elt = dObj.opSlice.array[index];
+                catch(RangeError _) {
+                    PyErr_SetNone(PyExc_StopIteration);
+                    return null;
+                }
+
+                pyDecRef(self.iterator);
+                self.iterator = (index + 1).toPython;
+
+                return elt.toPython;
+            } else {
+                PyErr_SetNone(PyExc_StopIteration);
+                return null;
+            }
+
+        }
+
+        return noThrowable!impl;
+    }
+}
+
+
+template hasIterator(T) {
+    import std.traits: hasMember;
+    enum hasIterator = hasMember!(T, "opSlice"); // FIXME
+}
 
 private bool isInstanceOf(T)(PyObject* obj) {
     import python.raw: PyObject_IsInstance;
