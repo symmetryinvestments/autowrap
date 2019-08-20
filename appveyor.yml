@@ -1,12 +1,13 @@
 platform: x64
 environment:
- matrix:
-  - DC: dmd
-    DVersion: 2.085.1
-    arch: x64
-  - DC: dmd
-    DVersion: 2.085.1
-    arch: x86
+  PYTHON_LIB_DIR: C:\\Python37-x64
+  matrix:
+    - DC: dmd
+      DVersion: 2.085.1
+      arch: x64
+    - DC: dmd
+      DVersion: 2.085.1
+      arch: x86
 
 skip_tags: true
 
@@ -47,6 +48,7 @@ install:
             }
         }
   - ps: SetUpDCompiler
+  - C:\Python37-x64\Scripts\pip install pytest numpy
 
 before_build:
   - ps: if($env:arch -eq "x86"){
@@ -77,4 +79,4 @@ test_script:
  - echo %DC%
  - echo %PATH%
  - '%DC% --version'
- - dub test
+ - dub run -b unittest -c unittest-no-pynih

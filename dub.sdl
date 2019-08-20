@@ -21,7 +21,7 @@ configuration "unittest" {
     targetName "ut"
 
     mainSourceFile "tests/main.d"
-    excludedSourceFiles "pynih/source/autowrap/python/package.d"
+    excludedSourceFiles "pynih/source/autowrap/pynih/package.d"
     sourcePaths "python/source" "reflection/source" "tests/ut"
     importPaths "python/source" "tests/ut"
     versions "XllDummyGetter"
@@ -33,5 +33,27 @@ configuration "unittest" {
 
     dependency ":reflection" version="*"
     dependency ":pynih" version="*"
+    dependency "unit-threaded" version="*"
+}
+
+
+configuration "unittest-no-pynih" {
+    targetType "executable"
+    targetPath "bin"
+    targetName "ut"
+
+    mainSourceFile "tests/main.d"
+    sourcePaths "python/source" "reflection/source" "tests/ut"
+    excludedSourceFiles "tests/ut/pynih/python/conv.d" "tests/ut/pynih/python/util.d"
+    importPaths "python/source" "tests/ut"
+    versions "XllDummyGetter"
+    versions "unitUnthreaded"  # GIL
+    versions "TestingAutowrap"
+
+    libs "python3.7m"
+    lflags "-L$PYTHON_LIB_DIR"
+    versions "NoPynih"
+
+    dependency ":reflection" version="*"
     dependency "unit-threaded" version="*"
 }
