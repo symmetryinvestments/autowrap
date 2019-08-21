@@ -3,8 +3,8 @@ description "Autowrap C# Tests"
 authors "Adam Wilson"
 copyright "Copyright © 2018, Symmetry Investments LP"
 license "BSD 3-clause"
-
-dependency "autowrap:csharp" path="../../"
+//dflags "-mixin=gen.d"
+dependency "autowrap:csharp" version="*"
 
 configuration "buildSharedLib" {
     targetType "dynamicLibrary"
