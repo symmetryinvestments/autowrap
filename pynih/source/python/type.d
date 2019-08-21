@@ -927,11 +927,14 @@ private template PythonSubscript(T) {
         PyObject* impl() {
             static if(hasMember!(T, "opIndex")) {
                 if(pyIndexCheck(self)) {
-                    alias parameters = Parameters!(T.opIndex);
-                    static if(parameters.length == 1)
-                        return self.to!(Unqual!T).opIndex(key.to!(parameters[0])).toPython;
-                    else
-                        throw new Exception("Don't know how to handle opIndex with more than one parameter");
+                    static if(__traits(compiles, Parameters!(T.opIndex))) {
+                        alias parameters = Parameters!(T.opIndex);
+                        static if(parameters.length == 1)
+                            return self.to!(Unqual!T).opIndex(key.to!(parameters[0])).toPython;
+                        else
+                            throw new Exception("Don't know how to handle opIndex with more than one parameter");
+                    } else
+                        throw new Exception("Cannot determine parameters of " ~ T.stringof, ".opIndex");
                 } else
                     throw new Exception(T.stringof ~ " failed pyIndexCheck");
             } else
