@@ -79,7 +79,8 @@ PyObject* toPython(T)(T value) if(is(Unqual!T == Date)) {
 
 PyObject* toPython(T)(T value) if(isSomeString!T) {
     import python.raw: pyUnicodeFromStringAndSize;
-    return pyUnicodeFromStringAndSize(value.ptr, value.length);
+    import std.conv: to;
+    return pyUnicodeFromStringAndSize(value.to!string.ptr, value.length);
 }
 
 
