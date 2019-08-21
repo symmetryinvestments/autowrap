@@ -85,7 +85,6 @@ struct PythonType(T) {
 
             static if(hasMember!(T, "opSlice")) {
                 _pyType.tp_iter = &PythonIter!T._py_iter;
-                _pyType.tp_iternext = &PythonIter!T._py_iter_next;
             }
 
             static if(hasMember!(T, "opIndex")) {
@@ -667,10 +666,6 @@ struct PythonClass(T) if(isUserAggregate!T) {
         mixin(`PyObject* `, fieldName, `;`);
     }
 
-    static if(hasIterator!T) {
-        PyObject* iterator;
-    }
-
     // The function pointer for PyGetSetDef.get
     private static extern(C) PyObject* get(int FieldIndex)
                                           (PyObject* self_, void* closure = null)
@@ -946,68 +941,33 @@ private template PythonSubscript(T) {
 }
 
 
+/**
+   Implement a Python iterator for D type T.
+   We get a D slice from it, convert it to a Python list,
+   then return its iterator.
+ */
 private template PythonIter(T) {
 
-    static extern(C) PyObject* _py_iter(PyObject* self_) nothrow {
-        import python.raw: pyIncRef, pyDecRef;
+    static extern(C) PyObject* _py_iter(PyObject* self) nothrow {
+        import python.raw: PyObject_GetIter;
         import python.conv.d_to_python: toPython;
-
-        auto impl() {
-            auto self = cast(PythonClass!T*) self_;
-            pyDecRef(self.iterator);
-            self.iterator = size_t(0).toPython;
-
-            pyIncRef(self_);
-            return self_;
-        }
-
-        return noThrowable!impl;
-    }
-
-    static extern(C) PyObject* _py_iter_next(PyObject* self_) nothrow {
-        import python.raw: PyErr_SetNone, PyExc_StopIteration, pyDecRef;
         import python.conv.python_to_d: to;
-        import python.conv.d_to_python: toPython;
-        import std.traits: ReturnType;
-        import std.array: array;
-        import std.conv: text;
-        import core.exception: RangeError;
+        import std.array;
 
         PyObject* impl() {
             static if(__traits(compiles, T.init.opSlice.array[0])) {
-                auto self = cast(PythonClass!T*) self_;
-                auto dObj = self_.to!T;
-                const index = self.iterator.to!size_t;
-
-                ReturnType!(T.opSlice) elt;
-
-                try
-                    elt = dObj.opSlice.array[index];
-                catch(RangeError _) {
-                    PyErr_SetNone(PyExc_StopIteration);
-                    return null;
-                }
-
-                pyDecRef(self.iterator);
-                self.iterator = (index + 1).toPython;
-
-                return elt.toPython;
+                auto dObj = self.to!T;
+                auto list = dObj.opSlice.array.toPython;
+                return PyObject_GetIter(list);
             } else {
-                PyErr_SetNone(PyExc_StopIteration);
-                return null;
+                throw new Exception("Cannot get an array from " ~ T.stringof ~ ".opSlice");
             }
-
         }
 
         return noThrowable!impl;
     }
 }
 
-
-template hasIterator(T) {
-    import std.traits: hasMember;
-    enum hasIterator = hasMember!(T, "opSlice"); // FIXME
-}
 
 private bool isInstanceOf(T)(PyObject* obj) {
     import python.raw: PyObject_IsInstance;
