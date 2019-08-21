@@ -34,9 +34,9 @@ env:
 
 script:
   - pynih/ci.sh
-  - DUB_CONFIGURATION=python37 make
+  - DUB_CONFIGURATION=python37 make test_python
   - dub run pyd:setup && source pyd_set_env_vars.sh
-  - DUB_CONFIGURATION=env make
+  - DUB_CONFIGURATION=env make test_python
   - dub test --build=unittest-cov --compiler=${DC}
   # - csharp/tests/test.sh  # disabled for now due to broken Microsoft repo
 
