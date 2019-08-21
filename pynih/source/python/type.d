@@ -914,14 +914,14 @@ private template PythonOpCmp(T) {
 
 private template PythonSubscript(T) {
     static extern(C) PyObject* _py_index(PyObject* self, PyObject* key) nothrow {
-        import python.raw: pyIndexCheck, pySliceCheck;
+        import python.raw: pyIndexCheck, pySliceCheck, PyObject_Repr;
         import python.conv.python_to_d: to;
         import python.conv.d_to_python: toPython;
         import std.traits: Parameters, Unqual, hasMember;
 
         PyObject* impl() {
             static if(hasMember!(T, "opIndex")) {
-                if(pyIndexCheck(self)) {
+                if(pyIndexCheck(key)) {
                     static if(__traits(compiles, Parameters!(T.opIndex))) {
                         alias parameters = Parameters!(T.opIndex);
                         static if(parameters.length == 1)
@@ -931,7 +931,7 @@ private template PythonSubscript(T) {
                     } else
                         throw new Exception("Cannot determine parameters of " ~ T.stringof, ".opIndex");
                 } else
-                    throw new Exception(T.stringof ~ " failed pyIndexCheck");
+                    throw new Exception(T.stringof ~ " failed pyIndexCheck for key '" ~ PyObject_Repr(key).to!string ~ "'");
             } else
                 throw new Exception(T.stringof ~ " has no opIndex");
         }
