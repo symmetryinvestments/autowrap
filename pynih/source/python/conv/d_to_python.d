@@ -4,7 +4,8 @@ module python.conv.d_to_python;
 import python.raw: PyObject;
 import python.type: isUserAggregate, isTuple, isNonRangeUDT;
 import std.traits: Unqual, isIntegral, isFloatingPoint, isAggregateType, isArray,
-    isStaticArray, isAssociativeArray, isPointer, PointerTarget, isSomeChar, isCallable;
+    isStaticArray, isAssociativeArray, isPointer, PointerTarget, isSomeChar,
+    isCallable, isSomeString;
 import std.range: isInputRange;
 import std.datetime: Date, DateTime;
 
@@ -21,7 +22,7 @@ PyObject* toPython(T)(T value) @trusted if(isFloatingPoint!T) {
 }
 
 
-PyObject* toPython(T)(T value) if(isInputRange!T && !is(T == string) && !isStaticArray!T) {
+PyObject* toPython(T)(T value) if(isInputRange!T && !isSomeString!T && !isStaticArray!T) {
     import python.raw: PyList_New, PyList_SetItem, PyList_Append;
     import std.range: isForwardRange, enumerate;
 
@@ -31,7 +32,6 @@ PyObject* toPython(T)(T value) if(isInputRange!T && !is(T == string) && !isStati
     } else static if(isForwardRange!T){
         import std.range: walkLength;
         import std.array: save;
-        static assert(isForwardRange!T);
         const length = walkLength(value.save);
         enum append = false;
     } else {
@@ -77,7 +77,7 @@ PyObject* toPython(T)(T value) if(is(Unqual!T == Date)) {
 }
 
 
-PyObject* toPython(T)(T value) if(is(T == string)) {
+PyObject* toPython(T)(T value) if(isSomeString!T) {
     import python.raw: pyUnicodeFromStringAndSize;
     return pyUnicodeFromStringAndSize(value.ptr, value.length);
 }

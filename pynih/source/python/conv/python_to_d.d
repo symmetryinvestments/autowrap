@@ -112,9 +112,9 @@ T to(T)(PyObject* value) if(isArray!T && !isSomeString!T)
 
 
 T to(T)(PyObject* value) if(isSomeString!T) {
+
     import python.raw: pyUnicodeGetSize, pyUnicodeCheck,
         pyBytesAsString, pyObjectUnicode, pyUnicodeAsUtf8String, Py_ssize_t;
-    import std.range: ElementEncodingType;
     import std.conv: to;
 
     value = pyObjectUnicode(value);
