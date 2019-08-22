@@ -87,7 +87,9 @@ struct PythonType(T) {
                 _pyType.tp_iter = &PythonIter!T._py_iter;
             }
 
-            static if(hasMember!(T, "opIndex")) {
+            // In Python, both D's opIndex and opSlice are dealt with by one function,
+            // in opSlice's case when the type is indexed by a Python slice
+            static if(hasMember!(T, "opIndex") || hasMember!(T, "opSlice")) {
                 if(_pyType.tp_as_mapping is null)
                     _pyType.tp_as_mapping = new PyMappingMethods;
                 _pyType.tp_as_mapping.mp_subscript = &PythonSubscript!T._py_index;
@@ -913,25 +915,56 @@ private template PythonOpCmp(T) {
 
 
 private template PythonSubscript(T) {
+
     static extern(C) PyObject* _py_index(PyObject* self, PyObject* key) nothrow {
-        import python.raw: pyIndexCheck, pySliceCheck;
+        import python.raw: pyIndexCheck, pySliceCheck, PyObject_Repr, PyObject_Length,
+            Py_ssize_t, PySlice_GetIndices;
         import python.conv.python_to_d: to;
         import python.conv.d_to_python: toPython;
         import std.traits: Parameters, Unqual, hasMember;
+        import std.meta: Filter;
 
         PyObject* impl() {
             static if(hasMember!(T, "opIndex")) {
-                if(pyIndexCheck(self)) {
+                if(pyIndexCheck(key)) {
                     static if(__traits(compiles, Parameters!(T.opIndex))) {
                         alias parameters = Parameters!(T.opIndex);
                         static if(parameters.length == 1)
                             return self.to!(Unqual!T).opIndex(key.to!(parameters[0])).toPython;
                         else
                             throw new Exception("Don't know how to handle opIndex with more than one parameter");
-                    } else
-                        throw new Exception("Cannot determine parameters of " ~ T.stringof, ".opIndex");
+                    }
+                } else if(pySliceCheck(key)) {
+
+                    enum hasTwoParams(alias F) = Parameters!F.length == 2;
+                    alias twoParamOpSlices = Filter!(hasTwoParams, __traits(getOverloads, T, "opSlice"));
+
+                    static if(twoParamOpSlices.length > 0) {
+
+                        static assert(twoParamOpSlices.length == 1);
+                        alias opSlice = twoParamOpSlices[0];
+
+                        const len = PyObject_Length(self);
+                        Py_ssize_t start, stop, step;
+                        const indicesRet = PySlice_GetIndices(key, len, &start, &stop, &step);
+
+                        if(indicesRet < 0)
+                            throw new Exception("Could not get slice indices for key '" ~ PyObject_Repr(key).to!string ~ "'");
+
+                        if(step != 1)
+                            throw new Exception("Slice steps other than 1 not supported in D: " ~ PyObject_Repr(key).to!string);
+
+                        auto dObj = self.to!T;
+                        return dObj.opSlice(start, stop).toPython;
+
+                    } else {
+                        throw new Exception(T.stringof ~ " cannot be sliced by " ~ PyObject_Repr(key).to!string);
+                    }
+
+                    assert(0, "Error in slicing " ~ T.stringof ~ " with " ~ PyObject_Repr(key).to!string);
                 } else
-                    throw new Exception(T.stringof ~ " failed pyIndexCheck");
+                    throw new Exception(T.stringof ~ " failed pyIndexCheck and pySliceCheck for key '" ~ PyObject_Repr(key).to!string ~ "'");
+                assert(0);
             } else
                 throw new Exception(T.stringof ~ " has no opIndex");
         }
