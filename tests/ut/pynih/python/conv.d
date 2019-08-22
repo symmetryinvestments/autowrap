@@ -76,6 +76,13 @@ unittest {
 }
 
 
+@("array.slice.char")
+unittest {
+    auto chars = ['a', 'b', 'c'];
+    backAndForth(chars);
+}
+
+
 @("aa.int.string")
 unittest {
     backAndForth([1: "foo", 2: "bar"]);

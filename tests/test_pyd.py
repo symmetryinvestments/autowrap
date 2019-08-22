@@ -127,11 +127,11 @@ def test_testdll():
     S = TestDllStruct
     s = S()
     assert s.i == 0
-    # assert s.s == ''
-    # s.i = 42
-    # s.s = 'hello'
-    # assert s.i == 42
-    # assert s.s == 'hello'
+    assert s.s == ''
+    s.i = 42
+    s.s = 'hello'
+    assert s.i == 42
+    assert s.s == 'hello'
 
 
 def test_def():
