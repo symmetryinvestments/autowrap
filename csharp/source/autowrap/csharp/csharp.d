@@ -194,6 +194,7 @@ private void generateConstructors(T)(string libraryName) if (is(T == class) || i
                 static if(Filter!(verifySupported, ParamTypes).length != ParamTypes.length)
                     continue;
 
+                else
                 static foreach(nda; 0 .. numDefaultArgs!c + 1)
                 {{
                     enum numParams = ParamTypes.length - nda;
@@ -301,8 +302,8 @@ private void generateMethods(T)(string libraryName)
                         alias ParamTypes = Parameters!mo;
                         alias Types = AliasSeq!(RT, ParamTypes);
 
-                        static if(Filter!(verifySupported, Types).length != Types.length)
-                            continue;
+                        static if(Filter!(verifySupported, Types).length != Types.length) {}
+                            //continue;
                         else
                         {
                             enum numParams = ParamTypes.length - nda;
@@ -1042,9 +1043,12 @@ private template GetterPropertyType(T, string memberName)
     import std.traits : fullyQualifiedName;
 
     alias GetterPropertyType = staticMap!(GetterType, __traits(getOverloads, T, memberName));
-    static assert(GetterPropertyType.length <= 1,
-                  "It should not be possible to have multiple getters with the same name. " ~
+    /+static if(GetterPropertyType.length > 1)
+    {
+                  pragma(msg,"It should not be possible to have multiple getters with the same name. " ~
                   fullyQualifiedName!T ~ "." ~ memberName);
+        alias GetterPropertyType = AliasSeq!();
+    }+/
 
     static template GetterType(alias func)
     {

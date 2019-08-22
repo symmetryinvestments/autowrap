@@ -171,12 +171,17 @@ private template AggregateDefinitionsInModule(Module module_) {
 
     alias Member(string memberName) = Symbol!(dmodule, memberName);
     alias members = staticMap!(Member, __traits(allMembers, dmodule));
-    alias aggregates = Filter!(isUserAggregate, members);
+    alias aggregatesTemp = Filter!(isUserAggregate, members);
+    alias aggregates = Filter!(isNotException, aggregatesTemp);
     alias recursives = staticMap!(RecursiveAggregates, aggregates);
     alias all = AliasSeq!(aggregates, recursives);
     alias AggregateDefinitionsInModule = NoDuplicates!all;
 }
 
+template isNotException(T) {
+    import std.exception;
+    enum isNotException =!is(T:Exception);
+}
 
 // All return and parameter types of the functions in the given modules
 private template FunctionTypesInModules(Modules...) if(allSatisfy!(isModule, Modules)) {
@@ -229,7 +234,7 @@ private template RecursiveAggregates(T) {
 // So instead, we ping-pong between identical templates.
 private template RecursiveAggregateHelper(T) {
     mixin RecursiveAggregateImpl!(T, RecursiveAggregates);
-    alias RecursiveAggregateHelper = RecursiveAggregateImpl;
+    alias RecursiveAggregateHelper = T;
 }
 
 /**

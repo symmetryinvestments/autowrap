@@ -83,60 +83,61 @@ private string generateConstructors(T)(ref string[] imports)
                 alias paramNames = staticMap!(AdjParamName, ParameterIdentifierTuple!c);
                 alias ParamTypes = Parameters!c;
 
-                static if(Filter!(verifySupported, ParamTypes).length != ParamTypes.length)
-                    continue;
-                addImports!ParamTypes(imports);
+                static if (!(Filter!(verifySupported, ParamTypes).length != ParamTypes.length))
+                {
+                    addImports!ParamTypes(imports);
 
-                static foreach(nda; 0 .. numDefaultArgs!c + 1)
-                {{
-                    enum numParams = ParamTypes.length - nda;
-                    enum interfaceName = format("%s%s_%s", getDLangInterfaceName(fqn, "__ctor"), i, numParams);
+                    static foreach(nda; 0 .. numDefaultArgs!c + 1)
+                    {{
+                        enum numParams = ParamTypes.length - nda;
+                        enum interfaceName = format("%s%s_%s", getDLangInterfaceName(fqn, "__ctor"), i, numParams);
 
-                    string exp = "extern(C) export ";
-                    exp ~= mixin(interp!"returnValue!(${fqn}) ${interfaceName}(");
+                        string exp = "extern(C) export ";
+                        exp ~= mixin(interp!"returnValue!(${fqn}) ${interfaceName}(");
 
-                    static foreach(pc; 0 .. paramNames.length - nda)
-                        exp ~= mixin(interp!"${getDLangInterfaceType!(ParamTypes[pc])} ${paramNames[pc]}, ");
-
-                    if (numParams != 0)
-                        exp = exp[0 .. $ - 2];
-
-                    exp ~= ") nothrow {" ~ newline;
-                    exp ~= "    try {" ~ newline;
-                    exp ~= methodSetup ~ newline;
-                    if (is(T == class))
-                    {
-                        exp ~= mixin(interp!"        ${fqn} __temp__ = new ${fqn}(");
-
-                        static foreach(pc; 0 .. numParams)
-                            exp ~= mixin(interp!"${paramNames[pc]}, ");
+                        static foreach(pc; 0 .. paramNames.length - nda)
+                            exp ~= mixin(interp!"${getDLangInterfaceType!(ParamTypes[pc])} ${paramNames[pc]}, ");
 
                         if (numParams != 0)
                             exp = exp[0 .. $ - 2];
 
-                        exp ~= ");" ~ newline;
-                        exp ~= "        pinPointer(cast(void*)__temp__);" ~ newline;
-                        exp ~= mixin(interp!"        return returnValue!(${fqn})(__temp__);${newline}");
-                    }
-                    else if (is(T == struct))
-                    {
-                        exp ~= mixin(interp!"        return returnValue!(${fqn})(${fqn}(");
+                        exp ~= ") nothrow {" ~ newline;
+                        exp ~= "    try {" ~ newline;
+                        exp ~= methodSetup ~ newline;
+                        if (is(T == class))
+                        {
+                            exp ~= mixin(interp!"        ${fqn} __temp__ = new ${fqn}(");
 
-                        foreach(pn; paramNames)
-                            exp ~= mixin(interp!"${pn}, ");
+                            static foreach(pc; 0 .. numParams)
+                                exp ~= mixin(interp!"${paramNames[pc]}, ");
 
-                        if (numParams != 0)
-                            exp = exp[0 .. $ - 2];
+                            if (numParams != 0)
+                                exp = exp[0 .. $ - 2];
 
-                        exp ~= "));" ~ newline;
-                    }
+                            exp ~= ");" ~ newline;
+                            exp ~= "        pinPointer(cast(void*)__temp__);" ~ newline;
+                            exp ~= mixin(interp!"        return returnValue!(${fqn})(__temp__);${newline}");
+                        }
+                        else if (is(T == struct))
+                        {
+                            exp ~= mixin(interp!"        return returnValue!(${fqn})(${fqn}(");
 
-                    exp ~= "    } catch (Exception __ex__) {" ~ newline;
-                    exp ~= mixin(interp!"        return returnValue!(${fqn})(__ex__);${newline}");
-                    exp ~= "    }" ~ newline;
-                    exp ~= "}" ~ newline;
-                    ret ~= exp;
-                }}
+                            foreach(pn; paramNames)
+                                exp ~= mixin(interp!"${pn}, ");
+
+                            if (numParams != 0)
+                                exp = exp[0 .. $ - 2];
+
+                            exp ~= "));" ~ newline;
+                        }
+
+                        exp ~= "    } catch (Exception __ex__) {" ~ newline;
+                        exp ~= mixin(interp!"        return returnValue!(${fqn})(__ex__);${newline}");
+                        exp ~= "    }" ~ newline;
+                        exp ~= "}" ~ newline;
+                        ret ~= exp;
+                    }}
+                }
             }
         }
     }
@@ -152,7 +153,7 @@ private string generateMethods(T)(ref string[] imports)
     import std.algorithm.comparison : among;
     import std.format : format;
     import std.meta : AliasSeq, Filter, staticMap;
-    import std.traits : isFunction, fullyQualifiedName, ReturnType, Parameters, ParameterIdentifierTuple;
+    import std.traits : isFunction, fullyQualifiedName, ReturnType, Parameters, ParameterIdentifierTuple, ParameterStorageClassTuple;
 
     string ret;
     alias fqn = getDLangInterfaceType!T;
@@ -171,8 +172,14 @@ private string generateMethods(T)(ref string[] imports)
                     alias ParamTypes = Parameters!mo;
                     alias paramNames = staticMap!(AdjParamName, ParameterIdentifierTuple!mo);
                     alias Types = AliasSeq!(RT, ParamTypes);
+                    alias StorageClasses = ParameterStorageClassTuple!mo;
 
-                    static if(Filter!(verifySupported, Types).length != Types.length)
+                    static if (StorageClasses.length == 0)
+                        enum bool IsOkay = true;
+                    else
+                        enum bool IsOkay = notOut!(StorageClasses)();
+                        
+                    static if(Filter!(verifySupported, Types).length != Types.length || !IsOkay)
                         continue;
                     else
                     {
@@ -451,7 +458,10 @@ private string generateReturn(T)(string name) {
 private void addImports(T...)(ref string[] imports)
 {
     foreach(U; T)
-        addImport!U(imports);
+    {
+        static if(__traits(compiles,addImport!U(imports)))
+            addImport!U(imports);
+    }
 }
 
 private void addImport(T)(ref string[] imports)
@@ -460,7 +470,11 @@ private void addImport(T)(ref string[] imports)
     import std.traits : isBuiltinType, isDynamicArray, moduleName;
     import autowrap.csharp.common : isSupportedType;
 
-    static assert(isSupportedType!T, "missing check for supported type");
+    static if (!isSupportedType!T)
+    {
+        pragma(msg, "missing check for supported type: " ~T.stringof);
+        return;
+    }
 
     static if(isDynamicArray!T)
         addImport!(ElementType!T)(imports);
@@ -483,3 +497,23 @@ private string getDLangInterfaceType(T)() {
         return fullyQualifiedName!T;
     }
 }
+
+import std.traits: ParameterStorageClass;
+
+bool notOut(ParameterStorageClasses...)()
+{
+    import std.traits : ParameterStorageClass;
+    static if(is(typeof(ParameterStorageClasses)== ParameterStorageClass))
+        return (ParameterStorageClasses!=ParameterStorageClass.out_);
+    else
+    {
+        bool ret = true;
+        static foreach(c;ParameterStorageClasses)
+        {
+            static if (c==ParameterStorageClass.out_)
+                ret = false;
+        }
+        return ret;
+    }
+}
+
