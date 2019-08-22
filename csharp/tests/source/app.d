@@ -14,4 +14,4 @@ mixin(
     )
 );
 
-pragma(msg, wrapDLang!(Module("test"))); //Uncomment this to see generated D interface code.
+// pragma(msg, wrapDLang!(Module("test"))); //Uncomment this to see generated D interface code.
