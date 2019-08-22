@@ -250,6 +250,7 @@ private string generateFields(T)(ref string[] imports) {
     import autowrap.csharp.common : getDLangInterfaceName, verifySupported;
 
     import std.traits : fullyQualifiedName, Fields, FieldNameTuple;
+    import std.algorithm: among;
 
     string ret;
     alias fqn = getDLangInterfaceType!T;
@@ -260,7 +261,7 @@ private string generateFields(T)(ref string[] imports) {
         static foreach(fc; 0 .. FieldTypes.length)
         {{
             alias FT = FieldTypes[fc];
-            static if(verifySupported!FT)
+            static if(verifySupported!FT && __traits(getProtection, __traits(getMember,T,fieldNames[fc])).among("export", "public"))
             {
                 alias fn = fieldNames[fc];
                 static if (is(typeof(__traits(getMember, T, fn))))
