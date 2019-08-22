@@ -131,10 +131,10 @@ unittest
 package template isSupportedType(T)
 {
     import std.range.primitives : ElementType;
-    import std.traits : isBoolean, isDynamicArray, isIntegral, isSomeChar, TemplateOf, Unqual;
+    import std.traits : isBoolean, isDynamicArray, isStaticArray,isIntegral, isSomeChar, TemplateOf, Unqual, isPointer;
 
     static if(isIntegral!T || isBoolean!T || isSomeChar!T ||
-              is(Unqual!T == float) || is(Unqual!T == double) || is(T == void))
+              is(Unqual!T == float) || is(Unqual!T == double) || is(T == void) || isPointer!T || is(Unqual!T==byte) || is(Unqual!T==ubyte))
     {
         enum isSupportedType = true;
     }
@@ -144,6 +144,13 @@ package template isSupportedType(T)
         enum isSupportedType = is(E == string) || is(E == wstring) || is(E == dstring) ||
                                !isDynamicArray!E && isSupportedType!E;
     }
+    else static if (isStaticArray!T)
+    {
+        alias E = ElementType!T;
+        enum isSupportedType = is(E == string) || is(E == wstring) || is(E == dstring) ||
+                               !isDynamicArray!E && isSupportedType!E;
+    }
+
     else static if(is(T == struct) || is(T == class) || is(T == interface))
         enum isSupportedType = !is(typeof(TemplateOf!T));
     else
