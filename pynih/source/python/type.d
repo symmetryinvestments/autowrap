@@ -95,6 +95,13 @@ struct PythonType(T) {
                 _pyType.tp_as_mapping.mp_subscript = &PythonSubscript!T._py_index;
             }
 
+            static if(hasMember!(T, "opIndexAssign")) {
+                if(_pyType.tp_as_mapping is null)
+                    _pyType.tp_as_mapping = new PyMappingMethods;
+
+                _pyType.tp_as_mapping.mp_ass_subscript = &PythonIndexAssign!T._py_index_assign;
+            }
+
             enum isPythonableUnary(string op) = op == "+" || op == "-" || op == "~";
             enum unaryOperators = Filter!(isPythonableUnary, UnaryOperators!T);
             alias binaryOperators = BinaryOperators!T;
@@ -541,24 +548,34 @@ struct PythonMethod(T, alias F) {
             // The member function could have side-effects, we need to copy the changes
             // back to the Python object.
             static if(!(functionAttributes!F & FunctionAttribute.const_)) {
-                auto newSelf = {
-                    return self is null ? self : toPython(dAggregate);
-                }();
-                scope(exit) {
-                    if(self !is null) pyDecRef(newSelf);
-                }
-                auto pyClassSelf = cast(PythonClass!T*) self;
-                auto pyClassNewSelf = cast(PythonClass!T*) newSelf;
-
-                static foreach(i; 0 .. PythonClass!T.fieldNames.length) {
-                    if(self !is null)
-                        pyClassSelf.set!i(self, pyClassNewSelf.get!i(newSelf));
-                }
+                mutateSelf(self, dAggregate);
             }
 
             return ret;
         });
     }
+}
+
+
+private void mutateSelf(T)(PyObject* self, auto ref T dAggregate) {
+
+    import python.conv.d_to_python: toPython;
+    import python.raw: pyDecRef;
+
+    auto newSelf = {
+        return self is null ? self : toPython(dAggregate);
+    }();
+    scope(exit) {
+        if(self !is null) pyDecRef(newSelf);
+    }
+    auto pyClassSelf = cast(PythonClass!T*) self;
+    auto pyClassNewSelf = cast(PythonClass!T*) newSelf;
+
+    static foreach(i; 0 .. PythonClass!T.fieldNames.length) {
+        if(self !is null)
+            pyClassSelf.set!i(self, pyClassNewSelf.get!i(newSelf));
+    }
+
 }
 
 
@@ -1079,6 +1096,72 @@ private template PythonIter(T) {
     }
 }
 
+
+private template PythonIndexAssign(T) {
+
+    static extern(C) int _py_index_assign(PyObject* self, PyObject* key, PyObject* val) nothrow {
+
+        import python.conv.python_to_d: to;
+        import python.conv.d_to_python: toPython;
+        import python.raw: pyIndexCheck, pySliceCheck, PyObject_Repr, PyObject_Length, PySlice_GetIndices, Py_ssize_t;
+        import std.traits: Parameters, Unqual;
+        import std.conv: to;
+        import std.meta: Filter, AliasSeq;
+
+        int impl() {
+            if(pyIndexCheck(key)) {
+                static if(__traits(compiles, Parameters!(T.opIndexAssign))) {
+                    alias parameters = Parameters!(T.opIndexAssign);
+                    static if(parameters.length == 2) {
+                        auto dObj = self.to!(Unqual!T);
+                        dObj.opIndexAssign(val.to!(parameters[0]), key.to!(parameters[1]));
+                        mutateSelf(self, dObj);
+                        return 0;
+                    } else
+                        //throw new Exception("Don't know how to handle opIndex with more than one parameter");
+                        return -1;
+                } else
+                    return -1;
+            } else if(pySliceCheck(key)) {
+
+                enum hasThreeParams(alias F) = Parameters!F.length == 3;
+                alias threeParamOps = Filter!(hasThreeParams,
+                                              AliasSeq!(
+                                                  __traits(getOverloads, T, "opIndexAssign"),
+                                                  __traits(getOverloads, T, "opSliceAssign"),
+                                              )
+                );
+
+                static if(threeParamOps.length > 0) {
+
+                    static assert(threeParamOps.length == 1);
+                    alias opIndexAssign = threeParamOps[0];
+                    alias parameters = Parameters!opIndexAssign;
+
+                    const len = PyObject_Length(self);
+                    Py_ssize_t start, stop, step;
+                    const indicesRet = PySlice_GetIndices(key, len, &start, &stop, &step);
+
+                    if(indicesRet < 0)
+                        return -1;
+
+                    if(step != 1)
+                        return -1;
+
+                    auto dObj = self.to!(Unqual!T);
+                    mixin(`dObj.`, __traits(identifier, opIndexAssign), `(val.to!(parameters[0]), start, stop);`);
+                    mutateSelf(self, dObj);
+                    return 0;
+                } else {
+                    return -1;
+                }
+            } else
+                return -1;
+        }
+
+        return noThrowable!impl;
+    }
+}
 
 private bool isInstanceOf(T)(PyObject* obj) {
     import python.raw: PyObject_IsInstance;
