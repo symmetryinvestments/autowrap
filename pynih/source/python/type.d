@@ -156,6 +156,9 @@ struct PythonType(T) {
                 mixin(`_pyType.`, slot, ` = &PythonAssignOperator!(T, assignOp).`, cFuncName, `;`);
             }}
 
+            static if(isCallable!T) {
+                _pyType.tp_call = &PythonCallable!T._py_call;
+            }
 
         } else static if(isCallable!T) {
             _pyType.tp_basicsize = PythonCallable!T.sizeof;
@@ -522,7 +525,7 @@ struct PythonMethod(T, alias F) {
         return noThrowable!({
             import python.raw: pyDecRef;
             import python.conv: toPython, to;
-            import std.traits: Parameters, FunctionAttribute, functionAttributes, Unqual, hasFunctionAttributes;
+            import std.traits: Parameters, Unqual, hasFunctionAttributes, functionAttributes, FunctionAttribute;
 
             static if(!__traits(isStaticFunction, F))
                 assert(self !is null,
@@ -547,7 +550,7 @@ struct PythonMethod(T, alias F) {
 
             // The member function could have side-effects, we need to copy the changes
             // back to the Python object.
-            static if(!(functionAttributes!F & FunctionAttribute.const_)) {
+            static if(!isConstMemberFunction!F) {
                 mutateSelf(self, dAggregate);
             }
 
@@ -824,27 +827,59 @@ PyObject* pythonCallable(T)(T callable) {
 }
 
 
-/**
-   Reserves space for a callable to be stored in a PyObject struct so that it
-   can later be called.
- */
 private struct PythonCallable(T) if(isCallable!T) {
-    import python.raw: PyObjectHead;
 
-    // Every python object must have this
-    mixin PyObjectHead;
+    import std.traits: hasMember;
 
-    private T _callable;
+    static if(hasMember!(T, "opCall")) {
+        private static extern(C) PyObject* _py_call(PyObject* self, PyObject* args, PyObject* kwargs) nothrow {
 
-    private static extern(C) PyObject* _py_call(PyObject* self_, PyObject* args, PyObject* kwargs)
-        nothrow
-        in(self_ !is null)
-    {
-        import std.traits: Parameters, ReturnType;
-        auto self = cast(PythonCallable!T*) self_;
-        assert(self._callable !is null, "Cannot have null callable");
-        return noThrowable!(() => callDlangFunction!((Parameters!T args) => self._callable(args), T)(self_, args, kwargs));
+            import python.conv.python_to_d: to;
+            import std.traits: Unqual, Parameters;
+
+            PyObject* impl() {
+                auto dObj = self.to!(Unqual!T);
+
+                auto ret = callDlangFunction!((Parameters!(T.opCall) args) => dObj.opCall(args))(self, args, kwargs);
+
+                static if(!isConstMemberFunction!(T.opCall)) {
+                    mutateSelf(self, dObj);
+                }
+
+                return ret;
+            }
+
+            return noThrowable!impl;
+        }
+    } else {
+        /**
+           Reserves space for a callable to be stored in a PyObject struct so that it
+           can later be called.
+        */
+
+        import python.raw: PyObjectHead;
+
+        // Every python object must have this
+        mixin PyObjectHead;
+
+        private T _callable;
+
+        private static extern(C) PyObject* _py_call(PyObject* self_, PyObject* args, PyObject* kwargs)
+            nothrow
+            in(self_ !is null)
+            do
+        {
+            import std.traits: Parameters, ReturnType;
+            auto self = cast(PythonCallable!T*) self_;
+            assert(self._callable !is null, "Cannot have null callable");
+            return noThrowable!(() => callDlangFunction!((Parameters!T args) => self._callable(args), T)(self_, args, kwargs));
+        }
     }
+}
+
+private bool isConstMemberFunction(alias F)() {
+    import std.traits: functionAttributes, FunctionAttribute;
+    return cast(bool) (functionAttributes!F & FunctionAttribute.const_);
 }
 
 
