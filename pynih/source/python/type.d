@@ -53,7 +53,7 @@ struct PythonType(T) {
         import python.raw: PyType_GenericNew, PyType_Ready, TypeFlags,
             PyErr_SetString, PyExc_TypeError,
             PyNumberMethods, PySequenceMethods;
-        import autowrap.reflection: UnaryOperators, BinaryOperators, functionName;
+        import autowrap.reflection: UnaryOperators, BinaryOperators, AssignOperators, functionName;
         import std.traits: arity, hasMember, TemplateOf;
         import std.meta: Filter;
         static import std.typecons;
@@ -98,8 +98,9 @@ struct PythonType(T) {
             enum isPythonableUnary(string op) = op == "+" || op == "-" || op == "~";
             enum unaryOperators = Filter!(isPythonableUnary, UnaryOperators!T);
             alias binaryOperators = BinaryOperators!T;
+            alias assignOperators = AssignOperators!T;
 
-            static if(unaryOperators.length > 0 || binaryOperators.length > 0) {
+            static if(unaryOperators.length > 0 || binaryOperators.length > 0 || assignOperators.length > 0) {
                 _pyType.tp_as_number = new PyNumberMethods;
                 _pyType.tp_as_sequence = new PySequenceMethods;
             }
@@ -129,6 +130,23 @@ struct PythonType(T) {
 
                 // set the C function that implements this operator
                 mixin(`_pyType.`, slot, ` = &PythonBinaryOperator!(T, binOp).`, cFuncName, `;`);
+            }}
+
+            static foreach(assignOp; assignOperators) {{
+                enum slot = dlangAssignOpToPythonSlot(assignOp);
+                                // some of them differ in arity
+                enum slotArity = arity!(mixin(`typeof(PyTypeObject.`, slot, `)`));
+
+                // get the function name in PythonAssignOperator
+                static if(slotArity == 2)
+                    enum cFuncName = "_py_bin_func";
+                else static if(slotArity == 3)
+                    enum cFuncName = "_py_ter_func";
+                else
+                    static assert("Do not know how to deal with slot " ~ slot);
+
+                // set the C function that implements this operator
+                mixin(`_pyType.`, slot, ` = &PythonAssignOperator!(T, assignOp).`, cFuncName, `;`);
             }}
 
 
@@ -366,26 +384,61 @@ private string dlangUnOpToPythonSlot(string op) {
     return opToSlot[op];
 }
 
+
 // From a D operator (e.g. `+`) to a Python function pointer member name
 private string dlangBinOpToPythonSlot(string op) {
     enum opToSlot = [
-        "+": "tp_as_number.nb_add",
-        "-": "tp_as_number.nb_subtract",
-        "*": "tp_as_number.nb_multiply",
-        "/": "tp_as_number.nb_divide",
-        "%": "tp_as_number.nb_remainder",
-        "^^": "tp_as_number.nb_power",
-        "&": "tp_as_number.nb_and",
-        "|": "tp_as_number.nb_or",
-        "^": "tp_as_number.nb_xor",
-        "<<": "tp_as_number.nb_lshift",
-        ">>": "tp_as_number.nb_rshift",
-        "~": "tp_as_sequence.sq_concat",
-        "in": "tp_as_sequence.sq_contains",
+        "+":   "tp_as_number.nb_add",
+        "+=":  "tp_as_number.nb_inplace_add",
+        "-":   "tp_as_number.nb_subtract",
+        "-=":  "tp_as_number.nb_inplace_subtract",
+        "*":   "tp_as_number.nb_multiply",
+        "*=":  "tp_as_number.nb_inplace_multiply",
+        "/":   "tp_as_number.nb_divide",
+        "/=":  "tp_as_number.nb_inplace_divide",
+        "%":   "tp_as_number.nb_remainder",
+        "%=":  "tp_as_number.nb_inplace_remainder",
+        "^^":  "tp_as_number.nb_power",
+        "^^=": "tp_as_number.nb_inplace_power",
+        "&":   "tp_as_number.nb_and",
+        "&=":  "tp_as_number.nb_inplace_and",
+        "|":   "tp_as_number.nb_or",
+        "|=":  "tp_as_number.nb_inplace_or",
+        "^":   "tp_as_number.nb_xor",
+        "^=":  "tp_as_number.nb_inplace_xor",
+        "<<":  "tp_as_number.nb_lshift",
+        "<<=": "tp_as_number.nb_inplace_lshift",
+        ">>":  "tp_as_number.nb_rshift",
+        ">>=": "tp_as_number.nb_inplace_rshift",
+        "~":   "tp_as_sequence.sq_concat",
+        "~=":  "tp_as_sequence.sq_concat",
+        "in":  "tp_as_sequence.sq_contains",
     ];
     if(op !in opToSlot) throw new Exception("Unknown binary operator " ~ op);
     return opToSlot[op];
 }
+
+
+// From a D operator (e.g. `+`) to a Python function pointer member name
+private string dlangAssignOpToPythonSlot(string op) {
+    enum opToSlot = [
+        "+":  "tp_as_number.nb_inplace_add",
+        "-":  "tp_as_number.nb_inplace_subtract",
+        "*":  "tp_as_number.nb_inplace_multiply",
+        "/":  "tp_as_number.nb_inplace_divide",
+        "%":  "tp_as_number.nb_inplace_remainder",
+        "^^": "tp_as_number.nb_inplace_power",
+        "&":  "tp_as_number.nb_inplace_and",
+        "|":  "tp_as_number.nb_inplace_or",
+        "^":  "tp_as_number.nb_inplace_xor",
+        "<<": "tp_as_number.nb_inplace_lshift",
+        ">>": "tp_as_number.nb_inplace_rshift",
+        "~":  "tp_as_sequence.sq_concat",
+    ];
+    if(op !in opToSlot) throw new Exception("Unknown assignment operator " ~ op);
+    return opToSlot[op];
+}
+
 
 private auto pythonArgsToDArgs(bool isVariadic, P...)(PyObject* args, PyObject* kwargs)
     if(allSatisfy!(isParameter, P))
@@ -877,6 +930,31 @@ private template PythonBinaryOperator(T, BinaryOperator operator) {
                 throw new Exception("Neither lhs or rhs were of type " ~ T.stringof);
             }
         });
+    }
+}
+
+private template PythonAssignOperator(T, string op) {
+
+    static extern(C) PyObject* _py_bin_func(PyObject* lhs, PyObject* rhs) nothrow {
+        return _py_ter_func(lhs, rhs, null);
+    }
+
+    // Should only be for `^^` because in Python the function is ternary
+    static extern(C) PyObject* _py_ter_func(PyObject* lhs, PyObject* rhs, PyObject* extra) nothrow {
+        import python.conv.python_to_d: to;
+        import python.conv.d_to_python: toPython;
+        import std.traits: Parameters;
+
+        PyObject* impl() {
+            alias parameters = Parameters!(T.opOpAssign!op);
+            static assert(parameters.length == 1, "Assignment operators must take one parameter");
+
+            auto dObj = lhs.to!T;
+            dObj.opOpAssign!op(rhs.to!(parameters[0]));
+            return dObj.toPython;
+        }
+
+        return noThrowable!impl;
     }
 }
 
