@@ -500,7 +500,7 @@ template BinaryOperators(T) {
     import std.traits: hasMember;
 
     // See https://dlang.org/spec/operatoroverloading.html#binary
-    alias overloadable = AliasSeq!(
+    private alias overloadable = AliasSeq!(
         "+", "-",  "*",  "/",  "%", "^^",  "&",
         "|", "^", "<<", ">>", ">>>", "~", "in",
     );
@@ -533,7 +533,37 @@ template BinaryOperators(T) {
         alias BinaryOperators = AliasSeq!();
 }
 
+///
+@("BinaryOperators")
+@safe pure unittest {
 
+    static struct Number {
+        int i;
+        Number opBinary(string op)(Number other) if(op == "+") {
+            return Number(i + other.i);
+        }
+        Number opBinary(string op)(Number other) if(op == "-") {
+            return Number(i - other.i);
+        }
+        Number opBinaryRight(string op)(int other) if(op == "+") {
+            return Number(i + other);
+        }
+    }
+
+    static assert(
+        [BinaryOperators!Number] ==
+        [
+            BinaryOperator("+", BinOpDir.left | BinOpDir.right),
+            BinaryOperator("-", BinOpDir.left),
+        ]
+    );
+}
+
+
+/**
+   Tests if T has a template function named `funcName`
+   with a string template parameter `op`.
+ */
 private auto probeOperator(T, string funcName, string op)() {
     import std.traits: Parameters;
 
@@ -566,31 +596,6 @@ string functionName(BinOpDir dir) {
 }
 
 
-@("BinaryOperators")
-@safe pure unittest {
-
-    static struct Number {
-        int i;
-        Number opBinary(string op)(Number other) if(op == "+") {
-            return Number(i + other.i);
-        }
-        Number opBinary(string op)(Number other) if(op == "-") {
-            return Number(i - other.i);
-        }
-        Number opBinaryRight(string op)(int other) if(op == "+") {
-            return Number(i + other);
-        }
-    }
-
-    static assert(
-        [BinaryOperators!Number] ==
-        [
-            BinaryOperator("+", BinOpDir.left | BinOpDir.right),
-            BinaryOperator("-", BinOpDir.left),
-        ]
-    );
-}
-
 
 template UnaryOperators(T) {
     import std.meta: AliasSeq, Filter;
@@ -610,4 +615,39 @@ template UnaryOperators(T) {
     }
 
     static assert([UnaryOperators!Struct] == ["+", "~"]);
+}
+
+
+template AssignOperators(T) {
+    import std.meta: AliasSeq, Filter;
+
+    // See https://dlang.org/spec/operatoroverloading.html#op-assign
+    private alias overloadable = AliasSeq!(
+        "+", "-",  "*",  "/",  "%", "^^",  "&",
+        "|", "^", "<<", ">>", ">>>", "~",
+    );
+
+    private enum hasOperator(string op) = is(typeof(probeOperator!(T, "opOpAssign", op)));
+    alias AssignOperators = Filter!(hasOperator, overloadable);
+}
+
+
+///
+@("AssignOperators")
+@safe pure unittest {
+
+    static struct Number {
+        int i;
+        Number opOpAssign(string op)(Number other) if(op == "+") {
+            return Number(i + other.i);
+        }
+        Number opOpAssign(string op)(Number other) if(op == "-") {
+            return Number(i - other.i);
+        }
+        Number opOpAssignRight(string op)(int other) if(op == "+") {
+            return Number(i + other);
+        }
+    }
+
+    static assert([AssignOperators!Number] == ["+", "-"]);
 }
