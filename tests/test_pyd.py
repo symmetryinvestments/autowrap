@@ -138,10 +138,13 @@ def test_def():
     from pyd import def_a, def_a2, def_a3, def_a4, def_t1_int, def_t2_int
     import pytest
 
-    with pytest.raises(RuntimeError) as ex:
-        def_a(1.0)
-    assert "Couldn't convert Python type 'float' to D type 'int'" in \
-        str(ex.value)
+    if is_pyd:
+        with pytest.raises(RuntimeError) as ex:
+            def_a(1.0)
+        assert "Couldn't convert Python type 'float' to D type 'int'" in \
+            str(ex.value)
+    else:
+        assert def_a(1.0) == 10
 
     assert def_a(42) == 10
     assert def_a(24) == 10
