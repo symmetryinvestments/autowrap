@@ -114,6 +114,10 @@ bool pyUnicodeCheck(PyObject* obj) @nogc nothrow {
     return PyUnicode_Check(obj);
 }
 
+bool pyNumberCheck(PyObject* obj) @nogc nothrow {
+    return cast(bool) PyNumber_Check(obj);
+}
+
 bool pyIntCheck(PyObject* obj) @nogc nothrow {
     static if(isPython3)
         return pyLongCheck(obj);
@@ -149,6 +153,14 @@ bool pyIndexCheck(PyObject* obj) @nogc nothrow {
 
 bool pySliceCheck(PyObject* obj) @nogc nothrow {
     return cast(bool) PySlice_Check(obj);
+}
+
+bool pySequenceCheck(PyObject* obj) @nogc nothrow {
+    return cast(bool) PySequence_Check(obj);
+}
+
+bool pyMappingCheck(PyObject* obj) @nogc nothrow {
+    return cast(bool) PyMapping_Check(obj);
 }
 
 
