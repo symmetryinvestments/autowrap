@@ -139,7 +139,7 @@ def test_def():
     import pytest
 
     with pytest.raises(RuntimeError) as ex:
-        assert def_a(1.0) == 20
+        def_a(1.0)
     assert "Couldn't convert Python type 'float' to D type 'int'" in \
         str(ex.value)
 
