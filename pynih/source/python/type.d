@@ -533,39 +533,7 @@ struct PythonMethod(T, alias F) {
                                                PyObject* kwargs)
         nothrow
     {
-        return noThrowable!({
-            import python.conv: toPython, to;
-            import std.traits: Parameters, Unqual, hasFunctionAttributes, functionAttributes, FunctionAttribute;
-
-            static if(!__traits(isStaticFunction, F))
-                assert(self !is null,
-                       "Cannot call PythonMethod!" ~ __traits(identifier, F) ~ " on null self");
-
-            static if(functionAttributes!F & FunctionAttribute.const_)
-                alias Aggregate = const T;
-            else static if(functionAttributes!F & FunctionAttribute.immutable_)
-                alias Aggregate = immutable T;
-            else
-                alias Aggregate = Unqual!T;
-
-            auto dAggregate = {
-                // could be null for static member functions
-                return self is null ? Aggregate.init : self.to!Aggregate;
-            }();
-
-            // Not sure how else to take `dAggregate` and `F` and call the member
-            // function other than a mixin
-            mixin(`auto ret = callDlangFunctionOld!((Parameters!F args) => dAggregate.`,
-                  __traits(identifier, F), `(args), F)(self, args, kwargs);`);
-
-            // The member function could have side-effects, we need to copy the changes
-            // back to the Python object.
-            static if(!isConstMemberFunction!F) {
-                mutateSelf(self, dAggregate);
-            }
-
-            return ret;
-        });
+        return noThrowable!(callDlangFunctionNew!(T, F))(self, args, kwargs);
     }
 }
 
@@ -707,13 +675,6 @@ private PyObject* callDlangFunctionNew(T, alias F)(PyObject* self, PyObject* arg
             assert(self !is null,
                    "Cannot call PythonMethod!" ~ identifier ~ " on null self");
 
-        const numArgs = args is null ? 0 : PyTuple_Size(args);
-        if(!isVariadic)
-            enforce(numArgs >= numRequired
-                    && numArgs <= Parameters!overload.length,
-                    text("Received ", numArgs, " parameters but ",
-                         identifier, " takes ", Parameters!overload.length));
-
         static if(functionAttributes!overload & FunctionAttribute.const_)
             alias Aggregate = const T;
         else static if(functionAttributes!overload & FunctionAttribute.immutable_)
@@ -727,6 +688,14 @@ private PyObject* callDlangFunctionNew(T, alias F)(PyObject* self, PyObject* arg
         }
 
         try {
+            const numArgs = args is null ? 0 : PyTuple_Size(args);
+            if(!isVariadic)
+                enforce!ArgumentConversionException(
+                    numArgs >= numRequired
+                    && numArgs <= Parameters!overload.length,
+                    text("Received ", numArgs, " parameters but ",
+                         identifier, " takes ", Parameters!overload.length));
+
             auto dArgs = pythonArgsToDArgs!(isVariadic, FunctionParameters!overload)(args, kwargs);
             mixin(`auto ret = callDlangFunction!((Parameters!overload dArgs) => `, parent, `.`, identifier, `(dArgs))(dArgs);`);
 
@@ -735,7 +704,9 @@ private PyObject* callDlangFunctionNew(T, alias F)(PyObject* self, PyObject* arg
             }
 
             return ret;
-        } catch(ArgumentConversionException _) {}
+        } catch(ArgumentConversionException _) {
+            // only using this to weed out incompatible overloads
+        }
     }}
 
     throw new Exception("Could not find suitable overload for `" ~ identifier ~ "`");
