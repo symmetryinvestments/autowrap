@@ -573,8 +573,9 @@ private PyObject* callDlangFunction(T, alias F)(PyObject* self, PyObject* args, 
     } else
         static assert(false, __FUNCTION__ ~ " does not know how to handle " ~ T.stringof);
 
-
-    static if(isMethod || is(T == void))
+    static if(is(T == void))
+        enum callMixin = `auto ret = callDlangFunction!F(dArgs);`;
+    else static if(isMethod)
         enum callMixin = `auto ret = callDlangFunction!((Parameters!overload dArgs) => ` ~ parent ~ `.` ~ identifier ~ `(dArgs))(dArgs);`;
     else static if(isCtor) {
         static if(is(T == class))
@@ -586,9 +587,17 @@ private PyObject* callDlangFunction(T, alias F)(PyObject* self, PyObject* args, 
     else
         static assert(false);
 
-    static if(__traits(compiles, __traits(getOverloads, Parent, identifier)))
-        alias overloads = __traits(getOverloads, Parent, identifier);
-    else
+    static if(__traits(compiles, __traits(getOverloads, Parent, identifier))) {
+        alias candidates = __traits(getOverloads, Parent, identifier);
+        // Deal with possible template instantiation functions.
+        // If it's a free function (T is void), then there must be at least
+        // one overload. The only reason for there to not be one is because
+        // it's a function template.
+        static if(is(T == void) && candidates.length == 0)
+            alias overloads = AliasSeq!F;
+        else
+            alias overloads = candidates;
+    } else
         alias overloads = AliasSeq!F;
 
     static foreach(overload; overloads) {{
