@@ -120,8 +120,12 @@ T to(T)(PyObject* value) if(isSomeString!T) {
     value = pyObjectUnicode(value);
 
     const length = pyUnicodeGetSize(value);
+    if(length == 0) return T.init;
 
-    auto ptr = pyBytesAsString(pyUnicodeAsUtf8String(value));
+    auto str = pyUnicodeAsUtf8String(value);
+    if(str is null) throw new Exception("Tried to convert a non-string Python value to D string");
+
+    auto ptr = pyBytesAsString(str);
     assert(length == 0 || ptr !is null);
 
     auto slice = ptr[0 .. length];
