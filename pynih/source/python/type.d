@@ -317,10 +317,9 @@ struct PythonType(T) {
     static if(isUserAggregate!T)
     private static extern(C) PyObject* _py_new(PyTypeObject *type, PyObject* args, PyObject* kwargs) nothrow {
         return noThrowable!({
-            import autowrap.reflection: FunctionParameters, Parameter;
-            import python.conv: toPython, to;
-            import python.raw: PyTuple_Size, PyTuple_GetItem;
-            import std.traits: hasMember, Unqual;
+            import python.conv: toPython;
+            import python.raw: PyTuple_Size;
+            import std.traits: hasMember;
             import std.meta: AliasSeq;
 
             const numArgs = PyTuple_Size(args);
@@ -335,63 +334,58 @@ struct PythonType(T) {
                 alias constructors = AliasSeq!();
 
             static if(constructors.length == 0) {
-                alias parameter(FieldType) = Parameter!(
-                    FieldType,
-                    "",
-                    void,
-                );
-                alias parameters = staticMap!(parameter, fieldTypes);
-                return pythonConstructor!(T, false /*is variadic*/, parameters)(args, kwargs);
+                return pythonConstructorImplicit(args, kwargs);
             } else {
-                import autowrap.reflection: NumRequiredParameters;
-                import python.raw: PyErr_SetString, PyExc_TypeError;
-                import std.traits: Parameters, variadicFunctionStyle, Variadic;
-
-                static foreach(constructor; constructors) {{
-
-                    enum isVariadic = variadicFunctionStyle!constructor == Variadic.typesafe;
-
-                    if(Parameters!constructor.length == numArgs) {
-                        return pythonConstructor!(T, isVariadic, FunctionParameters!constructor)(args, kwargs);
-                    } else if(numArgs >= NumRequiredParameters!constructor
-                              && numArgs <= Parameters!constructor.length)
-                    {
-                        return pythonConstructor!(T, isVariadic, FunctionParameters!constructor)(args, kwargs);
-                    }
-                }}
-
-                PyErr_SetString(PyExc_TypeError, "Could not find a suitable constructor");
-                return null;
+                static foreach(constructor; constructors) {
+                    try
+                        return pythonConstructorExplicit!constructor(args, kwargs);
+                    catch(ArgsException _) {}
+                }
+                throw new Exception("Could not find a suitable constructor");
             }
 
         });
     }
 
-    // Creates a python object from the given arguments by converting them to D
-    // types, calling the D constructor and converting the result to a Python
-    // object.
     static if(isUserAggregate!T)
-    private static auto pythonConstructor(T, bool isVariadic, P...)(PyObject* args, PyObject* kwargs) {
-        import python.conv: toPython;
-        import std.traits: hasMember;
+    private static auto pythonConstructorImplicit()(PyObject* args, PyObject* kwargs) {
 
-        auto dArgs = pythonArgsToDArgs!(isVariadic, P)(args, kwargs);
+        import python.raw: PyTuple_Size;
 
         static if(is(T == class)) {
-            static if(hasMember!(T, "__ctor")) {
-                // When immutable dmd prints an odd error message about not being
-                // able to modify dobj
-                static if(is(T == immutable))
-                    auto dobj = new T(dArgs.expand);
-                else
-                    scope dobj = new T(dArgs.expand);
-            } else
-                T dobj;
-        } else
-            auto dobj = T(dArgs.expand);
+            auto impl(fieldTypes fields) {
+                if(PyTuple_Size(args) != 0)
+                    throw new Exception(T.stringof ~ " has no constructor therefore can't construct one from arguments");
+                return T.init;
+            }
+        } else {
+            auto impl(fieldTypes fields) {
+                return T(fields);
+            }
+        }
 
-        return toPython(dobj);
+        return callDlangFunctionOld!impl(null /*self*/, args, kwargs);
     }
+
+
+    static if(isUserAggregate!T)
+    private static auto pythonConstructorExplicit(alias F)(PyObject* args, PyObject* kwargs) {
+
+        import std.traits: Parameters;
+
+        static if(is(T == class)) {
+            auto impl(Parameters!F args) {
+                return new T(args);
+            }
+        } else {
+            auto impl(Parameters!F args) {
+                return T(args);
+            }
+        }
+
+        return callDlangFunctionOld!(impl, F)(null /*self*/, args, kwargs);
+    }
+
 }
 
 
@@ -638,7 +632,7 @@ private PyObject* callDlangFunctionOld(alias callable, A...)
 
     const numArgs = args is null ? 0 : PyTuple_Size(args);
     if(!isVariadic)
-        enforce(numArgs >= numRequired
+        enforce!ArgsException(numArgs >= numRequired
                 && numArgs <= Parameters!originalFunction.length,
                 text("Received ", numArgs, " parameters but ",
                      identifier, " takes ", Parameters!originalFunction.length));
@@ -651,6 +645,11 @@ private PyObject* callDlangFunctionOld(alias callable, A...)
 
     auto dArgs = pythonArgsToDArgs!(isVariadic, FunctionParameters!originalFunction)(args, kwargs);
     return callDlangFunction!callable(dArgs);
+}
+
+class ArgsException: Exception {
+    import std.exception: basicExceptionCtors;
+    mixin basicExceptionCtors;
 }
 
 private PyObject* callDlangFunctionNew(T, alias F)(PyObject* self, PyObject* args, PyObject *kwargs) {
