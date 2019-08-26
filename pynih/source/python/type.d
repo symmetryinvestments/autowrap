@@ -597,7 +597,7 @@ private void mutateSelf(T)(PyObject* self, auto ref T dAggregate) {
  */
 struct PythonFunction(alias F) {
     static extern(C) PyObject* _py_function_impl(PyObject* self, PyObject* args, PyObject* kwargs) nothrow {
-        return noThrowable!(() => callDlangFunctionNew!(void, F)(self, args, kwargs));
+        return noThrowable!(callDlangFunctionNew!(void, F))(self, args, kwargs);
     }
 }
 
@@ -946,7 +946,7 @@ private struct PythonCallable(T) if(isCallable!T) {
             import std.traits: Parameters, ReturnType;
             auto self = cast(PythonCallable!T*) self_;
             assert(self._callable !is null, "Cannot have null callable");
-            return noThrowable!(() => callDlangFunctionOld!((Parameters!T args) => self._callable(args), T)(self_, args, kwargs));
+            return noThrowable!(callDlangFunctionOld!((Parameters!T args) => self._callable(args), T))(self_, args, kwargs);
         }
     }
 }
