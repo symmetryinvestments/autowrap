@@ -161,6 +161,15 @@ struct PythonType(T) {
                 _pyType.tp_call = &PythonCallable!T._py_call;
             }
 
+            // inheritance
+            static if(is(T Bases == super)) {
+                enum isSuperClass(U) = is(U == class) && !is(U == Object);
+                alias supers = Filter!(isSuperClass, Bases);
+                static if(supers.length == 1) {
+                    _pyType.tp_base = PythonType!(supers[0]).pyType;
+                }
+            }
+
         } else static if(isCallable!T) {
             _pyType.tp_basicsize = PythonCallable!T.sizeof;
             _pyType.tp_call = &PythonCallable!T._py_call;
