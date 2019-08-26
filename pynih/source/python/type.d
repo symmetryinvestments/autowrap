@@ -341,35 +341,28 @@ struct PythonType(T) {
 
         import python.raw: PyTuple_Size;
 
-        static if(is(T == class)) {
-            auto impl(fieldTypes fields) {
+        T impl(fieldTypes fields = fieldTypes.init) {
+            static if(is(T == class)) {
                 if(PyTuple_Size(args) != 0)
                     throw new Exception(T.stringof ~ " has no constructor therefore can't construct one from arguments");
                 return T.init;
-            }
-        } else {
-            auto impl(fieldTypes fields = fieldTypes.init) {
+            } else
                 return T(fields);
-            }
         }
 
         return callDlangFunctionOld!impl(null /*self*/, args, kwargs);
     }
-
 
     static if(isUserAggregate!T)
     private static auto pythonConstructorExplicit(alias F)(PyObject* args, PyObject* kwargs) {
 
         import std.traits: Parameters;
 
-        static if(is(T == class)) {
-            auto impl(Parameters!F args) {
+        auto impl(Parameters!F args) {
+            static if(is(T == class))
                 return new T(args);
-            }
-        } else {
-            auto impl(Parameters!F args) {
+            else
                 return T(args);
-            }
         }
 
         return callDlangFunctionOld!(impl, F)(null /*self*/, args, kwargs);
