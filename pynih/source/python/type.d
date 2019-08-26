@@ -6,7 +6,8 @@ module python.type;
 
 import autowrap.reflection: isParameter, BinaryOperator;
 import python.raw: PyObject;
-import std.traits: Unqual, isArray, isIntegral, isBoolean, isFloatingPoint, isAggregateType, isCallable;
+import std.traits: Unqual, isArray, isIntegral, isBoolean, isFloatingPoint,
+    isAggregateType, isCallable, isAssociativeArray;
 import std.datetime: DateTime, Date;
 import std.typecons: Tuple;
 import std.range.primitives: isInputRange;
@@ -623,17 +624,18 @@ private auto callDlangFunction(alias F)
 // Takes two functions due to how we're calling methods.
 // One is the original function to reflect on, the other
 // is the closure that's actually going to be called.
-private auto callDlangFunction(alias callable, A...)
-                              (PyObject* self, PyObject* args, PyObject* kwargs)
+private PyObject* callDlangFunction(alias callable, A...)
+                                   (PyObject* self, PyObject* args, PyObject* kwargs)
     if(A.length == 1 && isCallable!(A[0]))
 {
     import autowrap.reflection: FunctionParameters, NumDefaultParameters, NumRequiredParameters;
     import python.raw: PyTuple_Size;
     import python.conv: toPython;
-    import std.traits: Parameters, variadicFunctionStyle, Variadic;
+    import std.traits: Parameters, variadicFunctionStyle, Variadic, ReturnType;
     import std.conv: text;
     import std.string: toStringz;
     import std.exception: enforce;
+    import std.meta: AliasSeq, allSatisfy;
 
     alias originalFunction = A[0];
 
@@ -653,12 +655,30 @@ private auto callDlangFunction(alias callable, A...)
                 text("Received ", numArgs, " parameters but ",
                      identifier, " takes ", Parameters!originalFunction.length));
 
-    auto dArgs = pythonArgsToDArgs!(isVariadic, FunctionParameters!originalFunction)(args, kwargs);
-    return callDlangFunction!callable(dArgs);
+    alias Overloads(alias F) = __traits(getOverloads, __traits(parent, F), identifier);
+    static if(__traits(compiles, Overloads!originalFunction))
+        alias overloads = __traits(getOverloads, __traits(parent, originalFunction), identifier);
+    else
+        alias overloads = AliasSeq!(callable);
+
+    static if(overloads.length == 1) {
+        auto dArgs = pythonArgsToDArgs!(isVariadic, FunctionParameters!originalFunction)(args, kwargs);
+        return callDlangFunction!callable(dArgs);
+    } else {
+
+        static foreach(overload; overloads) {{
+            try {
+                auto dArgs = pythonArgsToDArgs!(isVariadic, FunctionParameters!originalFunction)(args, kwargs);
+                return callDlangFunction!callable(dArgs);
+            } catch(Exception _) {}
+        }}
+
+        throw new Exception("The arguments passed in matched none of the overloads of " ~ identifier);
+    }
 }
 
 
-private auto callDlangFunction(alias F, A)(auto ref A argTuple) {
+private PyObject* callDlangFunction(alias F, A)(auto ref A argTuple) {
     import python.raw: pyIncRef, pyNone;
     import python.conv: toPython;
     import std.traits: ReturnType;
@@ -1205,9 +1225,9 @@ private bool isInstanceOf(T)(PyObject* obj) {
 
 
 private bool checkPythonType(T)(PyObject* value) if(isArray!T) {
-    import python.raw: pyListCheck;
-    const ret = pyListCheck(value);
-    if(!ret) setPyErrTypeString!"list";
+    import python.raw: pySequenceCheck;
+    const ret = pySequenceCheck(value);
+    if(!ret) setPyErrTypeString!"sequence";
     return ret;
 }
 
@@ -1240,6 +1260,14 @@ private bool checkPythonType(T)(PyObject* value) if(is(T == Date)) {
     import python.raw: pyDateCheck;
     const ret = pyDateCheck(value);
     if(!ret) setPyErrTypeString!"Date";
+    return ret;
+}
+
+
+private bool checkPythonType(T)(PyObject* value) if(isAssociativeArray!T) {
+    import python.raw: pyMappingCheck;
+    const ret = pyMappingCheck(object);
+    if(!ret) setPyErrTypeString!"dict";
     return ret;
 }
 
