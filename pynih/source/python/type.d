@@ -1085,7 +1085,7 @@ private template PythonSubscript(T) {
                             throw new Exception("Slice steps other than 1 not supported in D: " ~ PyObject_Repr(key).to!string);
 
                         auto dObj = self.to!T;
-                        return dObj.opSlice(start, stop).toPython;
+                        return dObj[start .. stop].toPython;
 
                     } else {
                         throw new Exception(T.stringof ~ " cannot be sliced by " ~ PyObject_Repr(key).to!string);
@@ -1118,12 +1118,12 @@ private template PythonIter(T) {
         import std.array;
 
         PyObject* impl() {
-            static if(__traits(compiles, T.init.opSlice.array[0])) {
+            static if(__traits(compiles, T.init[].array[0])) {
                 auto dObj = self.to!T;
-                auto list = dObj.opSlice.array.toPython;
+                auto list = dObj[].array.toPython;
                 return PyObject_GetIter(list);
             } else {
-                throw new Exception("Cannot get an array from " ~ T.stringof ~ ".opSlice");
+                throw new Exception("Cannot get an array from " ~ T.stringof ~ "[]");
             }
         }
 
