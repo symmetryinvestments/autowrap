@@ -320,43 +320,24 @@ struct PythonType(T) {
             import python.conv: toPython;
             import python.raw: PyTuple_Size;
             import std.traits: hasMember;
-            import std.meta: AliasSeq;
 
-            const numArgs = PyTuple_Size(args);
-
-            if(numArgs == 0) {
-                return toPython(userAggregateInit!T);
-            }
+            if(PyTuple_Size(args) == 0) return toPython(userAggregateInit!T);
 
             static if(hasMember!(T, "__ctor"))
-                alias constructors = AliasSeq!(__traits(getOverloads, T, "__ctor"));
-            else
-                alias constructors = AliasSeq!();
-
-            static if(constructors.length == 0) {
-                return pythonConstructorImplicit(args, kwargs);
-            } else {
                 return callDlangFunction!(T, __traits(getMember, T, "__ctor"))(null /*self*/, args, kwargs);
+            else { // allow implicit constructors to work in Python
+                T impl(fieldTypes fields = fieldTypes.init) {
+                    static if(is(T == class)) {
+                        if(PyTuple_Size(args) != 0)
+                            throw new Exception(T.stringof ~ " has no constructor therefore can't construct one from arguments");
+                        return T.init;
+                    } else
+                        return T(fields);
+                }
+
+                return callDlangFunction!(typeof(impl), impl)(null /*self*/, args, kwargs);
             }
-
         });
-    }
-
-    static if(isUserAggregate!T)
-    private static auto pythonConstructorImplicit()(PyObject* args, PyObject* kwargs) {
-
-        import python.raw: PyTuple_Size;
-
-        T impl(fieldTypes fields = fieldTypes.init) {
-            static if(is(T == class)) {
-                if(PyTuple_Size(args) != 0)
-                    throw new Exception(T.stringof ~ " has no constructor therefore can't construct one from arguments");
-                return T.init;
-            } else
-                return T(fields);
-        }
-
-        return callDlangFunction!(typeof(impl), impl)(null /*self*/, args, kwargs);
     }
 }
 
