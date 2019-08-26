@@ -63,6 +63,8 @@ struct PythonType(T) {
 
         _pyType.tp_name = T.stringof;
         _pyType.tp_flags = TypeFlags.Default;
+        static if(is(T == class) || is(T == interface))
+            _pyType.tp_flags |= TypeFlags.BaseType;
 
         // FIXME: types are that user aggregates *and* callables
         static if(isUserAggregate!T) {
