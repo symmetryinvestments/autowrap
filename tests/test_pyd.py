@@ -144,20 +144,24 @@ def test_def():
         assert "Couldn't convert Python type 'float' to D type 'int'" in \
             str(ex.value)
     else:
-        assert def_a(1.0) == 10
+        assert def_a(1) == 10
+        assert def_a(1.0) == 20
 
     assert def_a(42) == 10
     assert def_a(24) == 10
 
     assert def_a2(4, 2.1) == 214
     assert def_a2(4) == 454
-    assert def_a2(i=4) == 454
+    if is_pyd:
+        assert def_a2(i=4) == 454
 
     # def_a3 accepts a variadic number of ints
     assert def_a3(4) == 46
-    assert def_a3(i=4) == 46
+    if is_pyd:
+        assert def_a3(i=4) == 46
     assert def_a3(4, 3) == 49
-    assert def_a3(i=[4, 3]) == 49
+    if is_pyd:
+        assert def_a3(i=[4, 3]) == 49
 
     assert def_a4('hi', 2, s3='zi') == "<'hi', 2, 'friedman', 4, 'zi'>"
 
