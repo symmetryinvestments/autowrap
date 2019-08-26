@@ -228,9 +228,9 @@ struct PythonType(T) {
             getsets[i].name = cast(typeof(PyGetSetDef.name)) __traits(identifier, property);
 
             static foreach(overload; __traits(getOverloads, T, __traits(identifier, property))) {
-                static if(is(ReturnType!overload == void))
+                static if(is(ReturnType!overload == void))  // setter
                     getsets[i].set = &PythonClass!T.propertySet!(overload);
-                else
+                else  // getter
                     getsets[i].get = &PythonClass!T.propertyGet!(overload);
             }
         }}
@@ -336,12 +336,7 @@ struct PythonType(T) {
             static if(constructors.length == 0) {
                 return pythonConstructorImplicit(args, kwargs);
             } else {
-                static foreach(constructor; constructors) {
-                    try
-                        return pythonConstructorExplicit!constructor(args, kwargs);
-                    catch(ArgsException _) {}
-                }
-                throw new Exception("Could not find a suitable constructor");
+                return callDlangFunction!(T, __traits(getMember, T, "__ctor"))(null /*self*/, args, kwargs);
             }
 
         });
@@ -361,24 +356,8 @@ struct PythonType(T) {
                 return T(fields);
         }
 
-        return callDlangFunctionNew!(typeof(impl), impl)(null /*self*/, args, kwargs);
+        return callDlangFunction!(typeof(impl), impl)(null /*self*/, args, kwargs);
     }
-
-    static if(isUserAggregate!T)
-    private static auto pythonConstructorExplicit(alias F)(PyObject* args, PyObject* kwargs) {
-
-        import std.traits: Parameters;
-
-        auto impl(Parameters!F args) {
-            static if(is(T == class))
-                return new T(args);
-            else
-                return T(args);
-        }
-
-        return callDlangFunctionOld!(impl, F)(null /*self*/, args, kwargs);
-    }
-
 }
 
 
@@ -531,7 +510,7 @@ struct PythonMethod(T, alias F) {
                                                PyObject* kwargs)
         nothrow
     {
-        return noThrowable!(callDlangFunctionNew!(T, F))(self, args, kwargs);
+        return noThrowable!(callDlangFunction!(T, F))(self, args, kwargs);
     }
 }
 
@@ -563,7 +542,7 @@ private void mutateSelf(T)(PyObject* self, auto ref T dAggregate) {
  */
 struct PythonFunction(alias F) {
     static extern(C) PyObject* _py_function_impl(PyObject* self, PyObject* args, PyObject* kwargs) nothrow {
-        return noThrowable!(callDlangFunctionNew!(void, F))(self, args, kwargs);
+        return noThrowable!(callDlangFunction!(void, F))(self, args, kwargs);
     }
 }
 
@@ -589,63 +568,13 @@ private auto noThrowable(alias F, A...)(auto ref A args) {
     }
 }
 
-// simple, regular version for functions
-private auto callDlangFunctionOld(alias F)
-                                 (PyObject* self, PyObject* args, PyObject* kwargs)
-{
-    return callDlangFunctionOld!(F, F)(self, args, kwargs);
-}
-
-// Takes two functions due to how we're calling methods.
-// One is the original function to reflect on, the other
-// is the closure that's actually going to be called.
-private PyObject* callDlangFunctionOld(alias callable, A...)
-                                      (PyObject* self, PyObject* args, PyObject* kwargs)
-    if(A.length == 1 && isCallable!(A[0]))
-{
-    import autowrap.reflection: FunctionParameters, NumDefaultParameters, NumRequiredParameters;
-    import python.raw: PyTuple_Size;
-    import python.conv: toPython;
-    import std.traits: Parameters, variadicFunctionStyle, Variadic, ReturnType;
-    import std.conv: text;
-    import std.string: toStringz;
-    import std.exception: enforce;
-    import std.meta: AliasSeq, allSatisfy;
-
-    alias originalFunction = A[0];
-
-    enum numDefaults = NumDefaultParameters!originalFunction;
-    enum numRequired = NumRequiredParameters!originalFunction;
-    enum isVariadic = variadicFunctionStyle!originalFunction == Variadic.typesafe;
-
-    static if(__traits(compiles, __traits(identifier, originalFunction)))
-        enum identifier = __traits(identifier, originalFunction);
-    else
-        enum identifier = "anonymous";
-
-    const numArgs = args is null ? 0 : PyTuple_Size(args);
-    if(!isVariadic)
-        enforce!ArgsException(numArgs >= numRequired
-                && numArgs <= Parameters!originalFunction.length,
-                text("Received ", numArgs, " parameters but ",
-                     identifier, " takes ", Parameters!originalFunction.length));
-
-    alias Overloads(alias F) = __traits(getOverloads, __traits(parent, F), identifier);
-    static if(__traits(compiles, Overloads!originalFunction))
-        alias overloads = __traits(getOverloads, __traits(parent, originalFunction), identifier);
-    else
-        alias overloads = AliasSeq!(callable);
-
-    auto dArgs = pythonArgsToDArgs!(isVariadic, FunctionParameters!originalFunction)(args, kwargs);
-    return callDlangFunction!callable(dArgs);
-}
 
 class ArgsException: Exception {
     import std.exception: basicExceptionCtors;
     mixin basicExceptionCtors;
 }
 
-private PyObject* callDlangFunctionNew(T, alias F)(PyObject* self, PyObject* args, PyObject *kwargs) {
+private PyObject* callDlangFunction(T, alias F)(PyObject* self, PyObject* args, PyObject *kwargs) {
 
     import autowrap.reflection: FunctionParameters, NumDefaultParameters, NumRequiredParameters;
     import python.raw: PyTuple_Size;
@@ -656,24 +585,33 @@ private PyObject* callDlangFunctionNew(T, alias F)(PyObject* self, PyObject* arg
     import std.exception: enforce;
     import std.meta: AliasSeq;
 
+    enum identifier = __traits(identifier, F);
+    enum isCtor = isUserAggregate!T && identifier == "__ctor";
+    enum isMethod = isUserAggregate!T && identifier != "__ctor";
+
     static if(is(T == void)) { // regular function
         enum parent = moduleName!F;
         mixin(`static import `, parent, `;`);
         mixin(`alias Parent = `, parent, `;`);
-    } else static if(isUserAggregate!T) {
+    } else static if(isMethod) {
         enum parent =  "dAggregate";
         alias Parent = T;
     } else static if(isCallable!T) {
-        alias Parent = __traits(parent, F);
-        // nothing to do here yet
+        // nothing to do here
+    } else static if(isCtor) {
+        alias Parent = T;
     } else
         static assert(false, __FUNCTION__ ~ " does not know how to handle " ~ T.stringof);
 
-    enum identifier = __traits(identifier, F);
 
-    static if(isUserAggregate!T || is(T == void))
+    static if(isMethod || is(T == void))
         enum callMixin = `auto ret = callDlangFunction!((Parameters!overload dArgs) => ` ~ parent ~ `.` ~ identifier ~ `(dArgs))(dArgs);`;
-    else static if(isCallable!T && !isUserAggregate!T)
+    else static if(isCtor) {
+        static if(is(T == class))
+            enum callMixin = `auto ret = callDlangFunction!((Parameters!overload dArgs) => new T(dArgs))(dArgs);`;
+        else
+            enum callMixin = `auto ret = callDlangFunction!((Parameters!overload dArgs) => T(dArgs))(dArgs);`;
+    } else static if(isCallable!T && !isUserAggregate!T)
         enum callMixin = `auto ret = callDlangFunction!F(dArgs);`;
     else
         static assert(false);
@@ -681,7 +619,7 @@ private PyObject* callDlangFunctionNew(T, alias F)(PyObject* self, PyObject* arg
     static if(__traits(compiles, __traits(getOverloads, Parent, identifier)))
         alias overloads = __traits(getOverloads, Parent, identifier);
     else
-        alias overloads = AliasSeq!(F);
+        alias overloads = AliasSeq!F;
 
     static foreach(overload; overloads) {{
         enum numDefaults = NumDefaultParameters!overload;
@@ -689,7 +627,7 @@ private PyObject* callDlangFunctionNew(T, alias F)(PyObject* self, PyObject* arg
         enum isVariadic = variadicFunctionStyle!overload == Variadic.typesafe;
         enum isMemberFunction = !__traits(isStaticFunction, overload) && !is(T == void);
 
-        static if(isMemberFunction)
+        static if(isUserAggregate!T && isMemberFunction && !isCtor)
             assert(self !is null,
                    "Cannot call PythonMethod!" ~ identifier ~ " on null self");
 
@@ -935,7 +873,7 @@ private struct PythonCallable(T) if(isCallable!T) {
             import std.traits: Parameters, ReturnType;
             auto self = cast(PythonCallable!T*) self_;
             assert(self._callable !is null, "Cannot have null callable");
-            return noThrowable!(callDlangFunctionNew!(T, (Parameters!T args) => self._callable(args)))(self_, args, kwargs);
+            return noThrowable!(callDlangFunction!(T, (Parameters!T args) => self._callable(args)))(self_, args, kwargs);
         }
     }
 }
