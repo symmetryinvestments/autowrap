@@ -271,32 +271,39 @@ def test_class_wrap_bizzy2():
     bizzy = Bizzy2(4, 5)
     assert bizzy.jj() == [4, 5]
 
-    bizzy = Bizzy2(i=4)
-    assert bizzy.jj() == [4]
+    if is_pyd:
+        bizzy = Bizzy2(i=4)
+        assert bizzy.jj() == [4]
 
-    bizzy = Bizzy2(i=[4, 5])
-    assert bizzy.jj() == [4, 5]
+        bizzy = Bizzy2(i=[4, 5])
+        assert bizzy.jj() == [4, 5]
 
     assert Bizzy2.a(7, 32.1) == 6427
-    assert Bizzy2.a(i=7, d=32.1) == 6427
-    assert Bizzy2.a(d=32.1, i=7) == 6427
+    if is_pyd:
+        assert Bizzy2.a(i=7, d=32.1) == 6427
+        assert Bizzy2.a(d=32.1, i=7) == 6427
 
     assert Bizzy2.b(7, 32.1) == 32173
-    assert Bizzy2.b(d=32.1, i=7) == 32173
-    assert Bizzy2.b(i=7, d=32.1) == 32173
+    if is_pyd:
+        assert Bizzy2.b(d=32.1, i=7) == 32173
+        assert Bizzy2.b(i=7, d=32.1) == 32173
     assert Bizzy2.b(7) == 3273
-    assert Bizzy2.b(i=7) == 3273
+    if is_pyd:
+        assert Bizzy2.b(i=7) == 3273
 
     assert Bizzy2.c(7) == 7
-    assert Bizzy2.c(i=7) == 7
-    assert Bizzy2.c(i=[7]) == 7
+    if is_pyd:
+        assert Bizzy2.c(i=7) == 7
+        assert Bizzy2.c(i=[7]) == 7
+        assert Bizzy2.c(i=[7, 5, 6]) == 657
     assert Bizzy2.c(7, 5, 6) == 657
-    assert Bizzy2.c(i=[7, 5, 6]) == 657
 
-    assert Bizzy2.d(i=7, k='foobiz') == "<7, 101, 'foobiz'>"
-    with pytest.raises(RuntimeError) as ex:
-        Bizzy2.d(i=7, s='foobiz')
-    assert "Bizzy2.d() got an unexpected keyword argument 's'" in str(ex.value)
+    if is_pyd:
+        assert Bizzy2.d(i=7, k='foobiz') == "<7, 101, 'foobiz'>"
+        with pytest.raises(RuntimeError) as ex:
+            Bizzy2.d(i=7, s='foobiz')
+        assert "Bizzy2.d() got an unexpected keyword argument 's'" \
+            in str(ex.value)
 
 
 def test_class_wrap_bizzy3():
