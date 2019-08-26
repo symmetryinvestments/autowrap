@@ -361,7 +361,7 @@ struct PythonType(T) {
                 return T(fields);
         }
 
-        return callDlangFunctionOld!impl(null /*self*/, args, kwargs);
+        return callDlangFunctionNew!(typeof(impl), impl)(null /*self*/, args, kwargs);
     }
 
     static if(isUserAggregate!T)
@@ -650,21 +650,38 @@ private PyObject* callDlangFunctionNew(T, alias F)(PyObject* self, PyObject* arg
     import autowrap.reflection: FunctionParameters, NumDefaultParameters, NumRequiredParameters;
     import python.raw: PyTuple_Size;
     import python.conv: toPython, to;
-    import std.traits: Parameters, variadicFunctionStyle, Variadic, ReturnType, functionAttributes, FunctionAttribute, moduleName;
+    import std.traits: Parameters, variadicFunctionStyle, Variadic, ReturnType,
+        functionAttributes, FunctionAttribute, moduleName, isCallable;
     import std.conv: text;
     import std.exception: enforce;
+    import std.meta: AliasSeq;
 
     static if(is(T == void)) { // regular function
         enum parent = moduleName!F;
         mixin(`static import `, parent, `;`);
         mixin(`alias Parent = `, parent, `;`);
-    } else {
+    } else static if(isUserAggregate!T) {
         enum parent =  "dAggregate";
         alias Parent = T;
-    }
+    } else static if(isCallable!T) {
+        alias Parent = __traits(parent, F);
+        // nothing to do here yet
+    } else
+        static assert(false, __FUNCTION__ ~ " does not know how to handle " ~ T.stringof);
 
     enum identifier = __traits(identifier, F);
-    alias overloads = __traits(getOverloads, Parent, identifier);
+
+    static if(isUserAggregate!T || is(T == void))
+        enum callMixin = `auto ret = callDlangFunction!((Parameters!overload dArgs) => ` ~ parent ~ `.` ~ identifier ~ `(dArgs))(dArgs);`;
+    else static if(isCallable!T && !isUserAggregate!T)
+        enum callMixin = `auto ret = callDlangFunction!F(dArgs);`;
+    else
+        static assert(false);
+
+    static if(__traits(compiles, __traits(getOverloads, Parent, identifier)))
+        alias overloads = __traits(getOverloads, Parent, identifier);
+    else
+        alias overloads = AliasSeq!(F);
 
     static foreach(overload; overloads) {{
         enum numDefaults = NumDefaultParameters!overload;
@@ -683,7 +700,7 @@ private PyObject* callDlangFunctionNew(T, alias F)(PyObject* self, PyObject* arg
         else
             alias Aggregate = Unqual!T;
 
-        static if(!is(T == void)) { // member function, static or not
+        static if(isUserAggregate!T) { // member function, static or not
             // self could be null for static member functions
             auto dAggregate = self is null ? Aggregate.init : self.to!Aggregate;
         }
@@ -698,9 +715,9 @@ private PyObject* callDlangFunctionNew(T, alias F)(PyObject* self, PyObject* arg
                          identifier, " takes ", Parameters!overload.length));
 
             auto dArgs = pythonArgsToDArgs!(isVariadic, FunctionParameters!overload)(args, kwargs);
-            mixin(`auto ret = callDlangFunction!((Parameters!overload dArgs) => `, parent, `.`, identifier, `(dArgs))(dArgs);`);
+            mixin(callMixin);
 
-            static if(isMemberFunction && !isConstMemberFunction!overload) {
+            static if(isUserAggregate!T && isMemberFunction && !isConstMemberFunction!overload) {
                 mutateSelf(self, dAggregate);
             }
 
@@ -918,7 +935,7 @@ private struct PythonCallable(T) if(isCallable!T) {
             import std.traits: Parameters, ReturnType;
             auto self = cast(PythonCallable!T*) self_;
             assert(self._callable !is null, "Cannot have null callable");
-            return noThrowable!(callDlangFunctionOld!((Parameters!T args) => self._callable(args), T))(self_, args, kwargs);
+            return noThrowable!(callDlangFunctionNew!(T, (Parameters!T args) => self._callable(args)))(self_, args, kwargs);
         }
     }
 }
