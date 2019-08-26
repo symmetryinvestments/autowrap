@@ -348,7 +348,7 @@ struct PythonType(T) {
                 return T.init;
             }
         } else {
-            auto impl(fieldTypes fields) {
+            auto impl(fieldTypes fields = fieldTypes.init) {
                 return T(fields);
             }
         }
