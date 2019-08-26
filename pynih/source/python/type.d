@@ -655,14 +655,12 @@ private PyObject* callDlangFunctionOld(alias callable, A...)
 
 private PyObject* callDlangFunctionNew(T, alias F)(PyObject* self, PyObject* args, PyObject *kwargs) {
 
-    import autowrap.reflection: FunctionParameters, NumDefaultParameters, NumRequiredParameters, isProperty;
-    import python.raw: PyTuple_Size, PyErr_Occurred, PyExc_TypeError, PyErr_Clear;
+    import autowrap.reflection: FunctionParameters, NumDefaultParameters, NumRequiredParameters;
+    import python.raw: PyTuple_Size;
     import python.conv: toPython, to;
     import std.traits: Parameters, variadicFunctionStyle, Variadic, ReturnType, functionAttributes, FunctionAttribute, moduleName;
     import std.conv: text;
-    import std.string: toStringz;
     import std.exception: enforce;
-    import std.meta: AliasSeq, allSatisfy, Filter, templateNot;
 
     static if(is(T == void)) { // regular function
         enum parent = moduleName!F;
