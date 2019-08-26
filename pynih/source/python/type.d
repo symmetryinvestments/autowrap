@@ -923,23 +923,7 @@ private struct PythonCallable(T) if(isCallable!T) {
 
     static if(hasMember!(T, "opCall")) {
         private static extern(C) PyObject* _py_call(PyObject* self, PyObject* args, PyObject* kwargs) nothrow {
-
-            import python.conv.python_to_d: to;
-            import std.traits: Unqual, Parameters;
-
-            PyObject* impl() {
-                auto dObj = self.to!(Unqual!T);
-
-                auto ret = callDlangFunctionOld!((Parameters!(T.opCall) args) => dObj.opCall(args))(self, args, kwargs);
-
-                static if(!isConstMemberFunction!(T.opCall)) {
-                    mutateSelf(self, dObj);
-                }
-
-                return ret;
-            }
-
-            return noThrowable!impl;
+            return PythonMethod!(T, T.opCall)._py_method_impl(self, args, kwargs);
         }
     } else {
         /**
