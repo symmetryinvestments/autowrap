@@ -351,3 +351,13 @@ def test_class_wrap_bizzy5():
     assert boozy.a() == "<1, 2, 'hi'>"
     boozy = Bizzy5(1, s='ten')
     assert boozy.a() == "<1, 1, 'ten'>"
+
+
+def test_overloads():
+    from pyd import overload
+
+    assert overload('foobar') == 6
+    assert overload('quux') == 4
+    if is_pynih:  # pyd can only wrap the first one
+        assert overload(3) == -3
+        assert overload(-2) == 2
