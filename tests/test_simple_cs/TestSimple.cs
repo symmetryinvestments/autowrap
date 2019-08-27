@@ -71,15 +71,19 @@ namespace Autowrap.CSharp.Examples.Simple.Tests
         }
 
         [TestMethod]
-        public void TestCreateDatetime()
+        public void TestCreateDateTime()
         {
-            // TODO: The way that autowrap's C# handles std.datetime is error-prone and needs to be changed
+            var d = Api.Functions.CreateDateTime(2017, 1, 2);
+            Assert.AreEqual(d.Year, 2017);
+            Assert.AreEqual(d.Month, 1);
+            Assert.AreEqual(d.Day, 2);
         }
 
         [TestMethod]
-        public void TestCreateDatetimeArray()
+        public void TestCreateDateTimeArray()
         {
-            // TODO: The way that autowrap's C# handles std.datetime is error-prone and needs to be changed
+            // TODO: Aside from arrays of strings, arrays of arrays are not yet supported,
+            //       and points returns DateTime[][]
         }
 
         [TestMethod]
@@ -93,7 +97,6 @@ namespace Autowrap.CSharp.Examples.Simple.Tests
         public void TestTupleofDateTimes()
         {
             // TODO: Templated type support still needs to be added to autowrap's C#
-            // TODO: The way that autowrap's C# handles std.datetime is error-prone and needs to be changed
         }
 
         [TestMethod]
@@ -111,7 +114,10 @@ namespace Autowrap.CSharp.Examples.Simple.Tests
         [TestMethod]
         public void TestCreateDate()
         {
-            // TODO: The way that autowrap's C# handles std.datetime is error-prone and needs to be changed
+            var d = Api.Functions.CreateDate(2017, 1, 2);
+            Assert.AreEqual(d.Year, 2017);
+            Assert.AreEqual(d.Month, 1);
+            Assert.AreEqual(d.Day, 2);
         }
 
         [TestMethod]
@@ -155,7 +161,8 @@ namespace Autowrap.CSharp.Examples.Simple.Tests
         [TestMethod]
         public void TestTheYear()
         {
-            // TODO: The way that autowrap's C# handles std.datetime is error-prone and needs to be changed
+            Assert.AreEqual(Api.Functions.TheYear(new DateTime(2017, 1, 1)), 2017);
+            Assert.AreEqual(Api.Functions.TheYear(new DateTime(2018, 2, 3)), 2018);
         }
 
         [TestMethod]

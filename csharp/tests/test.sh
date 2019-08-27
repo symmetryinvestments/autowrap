@@ -5,6 +5,7 @@ CWD=$PWD
 
 cd $DIR
 
+rm -f Wrapper.cs libcsharp-tests.so libcsharp-tests.x64.so
 dub build --arch=x86_64 --force
 cp libcsharp-tests.so libcsharp-tests.x64.so
 dub run --config=emitCSharp
