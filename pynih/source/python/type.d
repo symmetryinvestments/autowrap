@@ -6,7 +6,8 @@ module python.type;
 
 import autowrap.reflection: isParameter, BinaryOperator;
 import python.raw: PyObject;
-import std.traits: Unqual, isArray, isIntegral, isBoolean, isFloatingPoint, isAggregateType, isCallable;
+import std.traits: Unqual, isArray, isIntegral, isBoolean, isFloatingPoint,
+    isAggregateType, isCallable, isAssociativeArray, isSomeFunction;
 import std.datetime: DateTime, Date;
 import std.typecons: Tuple;
 import std.range.primitives: isInputRange;
@@ -216,9 +217,9 @@ struct PythonType(T) {
             getsets[i].name = cast(typeof(PyGetSetDef.name)) __traits(identifier, property);
 
             static foreach(overload; __traits(getOverloads, T, __traits(identifier, property))) {
-                static if(is(ReturnType!overload == void))
+                static if(is(ReturnType!overload == void))  // setter
                     getsets[i].set = &PythonClass!T.propertySet!(overload);
-                else
+                else  // getter
                     getsets[i].get = &PythonClass!T.propertyGet!(overload);
             }
         }}
@@ -305,80 +306,27 @@ struct PythonType(T) {
     static if(isUserAggregate!T)
     private static extern(C) PyObject* _py_new(PyTypeObject *type, PyObject* args, PyObject* kwargs) nothrow {
         return noThrowable!({
-            import autowrap.reflection: FunctionParameters, Parameter;
-            import python.conv: toPython, to;
-            import python.raw: PyTuple_Size, PyTuple_GetItem;
-            import std.traits: hasMember, Unqual;
-            import std.meta: AliasSeq;
+            import python.conv: toPython;
+            import python.raw: PyTuple_Size;
+            import std.traits: hasMember;
 
-            const numArgs = PyTuple_Size(args);
-
-            if(numArgs == 0) {
-                return toPython(userAggregateInit!T);
-            }
+            if(PyTuple_Size(args) == 0) return toPython(userAggregateInit!T);
 
             static if(hasMember!(T, "__ctor"))
-                alias constructors = AliasSeq!(__traits(getOverloads, T, "__ctor"));
-            else
-                alias constructors = AliasSeq!();
+                return callDlangFunction!(T, __traits(getMember, T, "__ctor"))(null /*self*/, args, kwargs);
+            else { // allow implicit constructors to work in Python
+                T impl(fieldTypes fields = fieldTypes.init) {
+                    static if(is(T == class)) {
+                        if(PyTuple_Size(args) != 0)
+                            throw new Exception(T.stringof ~ " has no constructor therefore can't construct one from arguments");
+                        return T.init;
+                    } else
+                        return T(fields);
+                }
 
-            static if(constructors.length == 0) {
-                alias parameter(FieldType) = Parameter!(
-                    FieldType,
-                    "",
-                    void,
-                );
-                alias parameters = staticMap!(parameter, fieldTypes);
-                return pythonConstructor!(T, false /*is variadic*/, parameters)(args, kwargs);
-            } else {
-                import autowrap.reflection: NumRequiredParameters;
-                import python.raw: PyErr_SetString, PyExc_TypeError;
-                import std.traits: Parameters, variadicFunctionStyle, Variadic;
-
-                static foreach(constructor; constructors) {{
-
-                    enum isVariadic = variadicFunctionStyle!constructor == Variadic.typesafe;
-
-                    if(Parameters!constructor.length == numArgs) {
-                        return pythonConstructor!(T, isVariadic, FunctionParameters!constructor)(args, kwargs);
-                    } else if(numArgs >= NumRequiredParameters!constructor
-                              && numArgs <= Parameters!constructor.length)
-                    {
-                        return pythonConstructor!(T, isVariadic, FunctionParameters!constructor)(args, kwargs);
-                    }
-                }}
-
-                PyErr_SetString(PyExc_TypeError, "Could not find a suitable constructor");
-                return null;
+                return callDlangFunction!(typeof(impl), impl)(null /*self*/, args, kwargs);
             }
-
         });
-    }
-
-    // Creates a python object from the given arguments by converting them to D
-    // types, calling the D constructor and converting the result to a Python
-    // object.
-    static if(isUserAggregate!T)
-    private static auto pythonConstructor(T, bool isVariadic, P...)(PyObject* args, PyObject* kwargs) {
-        import python.conv: toPython;
-        import std.traits: hasMember;
-
-        auto dArgs = pythonArgsToDArgs!(isVariadic, P)(args, kwargs);
-
-        static if(is(T == class)) {
-            static if(hasMember!(T, "__ctor")) {
-                // When immutable dmd prints an odd error message about not being
-                // able to modify dobj
-                static if(is(T == immutable))
-                    auto dobj = new T(dArgs.expand);
-                else
-                    scope dobj = new T(dArgs.expand);
-            } else
-                T dobj;
-        } else
-            auto dobj = T(dArgs.expand);
-
-        return toPython(dobj);
     }
 }
 
@@ -475,6 +423,16 @@ private auto pythonArgsToDArgs(bool isVariadic, P...)(PyObject* args, PyObject* 
 
     MutableTuple dArgs;
 
+    void positional(size_t i, T)() {
+        auto item = PyTuple_GetItem(args, i);
+        if(!checkPythonType!T(item)) {
+            import python.raw: PyErr_Clear;
+            PyErr_Clear;
+            throw new ArgumentConversionException("Can't convert to " ~ T.stringof);
+        }
+        dArgs[i] = item.to!T;
+    }
+
     int pythonArgIndex = 0;
     static foreach(i; 0 .. P.length) {
 
@@ -486,11 +444,11 @@ private auto pythonArgsToDArgs(bool isVariadic, P...)(PyObject* args, PyObject* 
             // ith parameter is required
             enforce(i < argsLength,
                     text(__FUNCTION__, ": not enough Python arguments"));
-            dArgs[i] = PyTuple_GetItem(args, i).to!(typeof(dArgs[i]));
+            positional!(i, typeof(dArgs[i]));
         } else {
 
             if(i < argsLength) {  // regular case
-                dArgs[i] = PyTuple_GetItem(args, i).to!(P[i].Type);
+                positional!(i, P[i].Type);
             } else {
                 // Here it gets tricky. The user could have supplied it in
                 // args positionally or via kwargs
@@ -522,40 +480,7 @@ struct PythonMethod(T, alias F) {
                                                PyObject* kwargs)
         nothrow
     {
-        return noThrowable!({
-            import python.raw: pyDecRef;
-            import python.conv: toPython, to;
-            import std.traits: Parameters, Unqual, hasFunctionAttributes, functionAttributes, FunctionAttribute;
-
-            static if(!__traits(isStaticFunction, F))
-                assert(self !is null,
-                       "Cannot call PythonMethod!" ~ __traits(identifier, F) ~ " on null self");
-
-            static if(functionAttributes!F & FunctionAttribute.const_)
-                alias Aggregate = const T;
-            else static if(functionAttributes!F & FunctionAttribute.immutable_)
-                alias Aggregate = immutable T;
-            else
-                alias Aggregate = Unqual!T;
-
-            auto dAggregate = {
-                // could be null for static member functions
-                return self is null ? Aggregate.init : self.to!Aggregate;
-            }();
-
-            // Not sure how else to take `dAggregate` and `F` and call the member
-            // function other than a mixin
-            mixin(`auto ret = callDlangFunction!((Parameters!F args) => dAggregate.`,
-                  __traits(identifier, F), `(args), F)(self, args, kwargs);`);
-
-            // The member function could have side-effects, we need to copy the changes
-            // back to the Python object.
-            static if(!isConstMemberFunction!F) {
-                mutateSelf(self, dAggregate);
-            }
-
-            return ret;
-        });
+        return noThrowable!(callDlangFunction!(T, F))(self, args, kwargs);
     }
 }
 
@@ -587,7 +512,7 @@ private void mutateSelf(T)(PyObject* self, auto ref T dAggregate) {
  */
 struct PythonFunction(alias F) {
     static extern(C) PyObject* _py_function_impl(PyObject* self, PyObject* args, PyObject* kwargs) nothrow {
-        return noThrowable!(() => callDlangFunction!F(self, args, kwargs));
+        return noThrowable!(callDlangFunction!(void, F))(self, args, kwargs);
     }
 }
 
@@ -613,52 +538,123 @@ private auto noThrowable(alias F, A...)(auto ref A args) {
     }
 }
 
-// simple, regular version for functions
-private auto callDlangFunction(alias F)
-                              (PyObject* self, PyObject* args, PyObject* kwargs)
-{
-    return callDlangFunction!(F, F)(self, args, kwargs);
+
+class ArgsException: Exception {
+    import std.exception: basicExceptionCtors;
+    mixin basicExceptionCtors;
 }
 
-// Takes two functions due to how we're calling methods.
-// One is the original function to reflect on, the other
-// is the closure that's actually going to be called.
-private auto callDlangFunction(alias callable, A...)
-                              (PyObject* self, PyObject* args, PyObject* kwargs)
-    if(A.length == 1 && isCallable!(A[0]))
-{
+private PyObject* callDlangFunction(T, alias F)(PyObject* self, PyObject* args, PyObject *kwargs) {
+
     import autowrap.reflection: FunctionParameters, NumDefaultParameters, NumRequiredParameters;
     import python.raw: PyTuple_Size;
-    import python.conv: toPython;
-    import std.traits: Parameters, variadicFunctionStyle, Variadic;
+    import python.conv: toPython, to;
+    import std.traits: Parameters, variadicFunctionStyle, Variadic, ReturnType,
+        functionAttributes, FunctionAttribute, moduleName, isCallable;
     import std.conv: text;
-    import std.string: toStringz;
     import std.exception: enforce;
+    import std.meta: AliasSeq;
 
-    alias originalFunction = A[0];
+    enum identifier = __traits(identifier, F);
+    enum isCtor = isUserAggregate!T && identifier == "__ctor";
+    enum isMethod = isUserAggregate!T && identifier != "__ctor";
 
-    enum numDefaults = NumDefaultParameters!originalFunction;
-    enum numRequired = NumRequiredParameters!originalFunction;
-    enum isVariadic = variadicFunctionStyle!originalFunction == Variadic.typesafe;
+    static if(is(T == void)) { // regular function
+        enum parent = moduleName!F;
+        mixin(`static import `, parent, `;`);
+        mixin(`alias Parent = `, parent, `;`);
+    } else static if(isMethod) {
+        enum parent =  "dAggregate";
+        alias Parent = T;
+    } else static if(isCallable!T) {
+        // nothing to do here
+    } else static if(isCtor) {
+        alias Parent = T;
+    } else
+        static assert(false, __FUNCTION__ ~ " does not know how to handle " ~ T.stringof);
 
-    static if(__traits(compiles, __traits(identifier, originalFunction)))
-        enum identifier = __traits(identifier, originalFunction);
+    static if(is(T == void))
+        enum callMixin = `auto ret = callDlangFunction!F(dArgs);`;
+    else static if(isMethod)
+        enum callMixin = `auto ret = callDlangFunction!((Parameters!overload dArgs) => ` ~ parent ~ `.` ~ identifier ~ `(dArgs))(dArgs);`;
+    else static if(isCtor) {
+        static if(is(T == class))
+            enum callMixin = `auto ret = callDlangFunction!((Parameters!overload dArgs) => new T(dArgs))(dArgs);`;
+        else
+            enum callMixin = `auto ret = callDlangFunction!((Parameters!overload dArgs) => T(dArgs))(dArgs);`;
+    } else static if(isCallable!T && !isUserAggregate!T)
+        enum callMixin = `auto ret = callDlangFunction!F(dArgs);`;
     else
-        enum identifier = "anonymous";
+        static assert(false);
 
-    const numArgs = args is null ? 0 : PyTuple_Size(args);
-    if(!isVariadic)
-        enforce(numArgs >= numRequired
-                && numArgs <= Parameters!originalFunction.length,
-                text("Received ", numArgs, " parameters but ",
-                     identifier, " takes ", Parameters!originalFunction.length));
+    static if(__traits(compiles, __traits(getOverloads, Parent, identifier))) {
+        alias candidates = __traits(getOverloads, Parent, identifier);
+        // Deal with possible template instantiation functions.
+        // If it's a free function (T is void), then there must be at least
+        // one overload. The only reason for there to not be one is because
+        // it's a function template.
+        static if(is(T == void) && candidates.length == 0)
+            alias overloads = AliasSeq!F;
+        else
+            alias overloads = candidates;
+    } else
+        alias overloads = AliasSeq!F;
 
-    auto dArgs = pythonArgsToDArgs!(isVariadic, FunctionParameters!originalFunction)(args, kwargs);
-    return callDlangFunction!callable(dArgs);
+    static foreach(overload; overloads) {{
+        enum numDefaults = NumDefaultParameters!overload;
+        enum numRequired = NumRequiredParameters!overload;
+        enum isVariadic = variadicFunctionStyle!overload == Variadic.typesafe;
+        enum isMemberFunction = !__traits(isStaticFunction, overload) && !is(T == void);
+
+        static if(isUserAggregate!T && isMemberFunction && !isCtor)
+            assert(self !is null,
+                   "Cannot call PythonMethod!" ~ identifier ~ " on null self");
+
+        static if(functionAttributes!overload & FunctionAttribute.const_)
+            alias Aggregate = const T;
+        else static if(functionAttributes!overload & FunctionAttribute.immutable_)
+            alias Aggregate = immutable T;
+        else
+            alias Aggregate = Unqual!T;
+
+        static if(isUserAggregate!T) { // member function, static or not
+            // self could be null for static member functions
+            auto dAggregate = self is null ? Aggregate.init : self.to!Aggregate;
+        }
+
+        try {
+            const numArgs = args is null ? 0 : PyTuple_Size(args);
+            if(!isVariadic)
+                enforce!ArgumentConversionException(
+                    numArgs >= numRequired
+                    && numArgs <= Parameters!overload.length,
+                    text("Received ", numArgs, " parameters but ",
+                         identifier, " takes ", Parameters!overload.length));
+
+            auto dArgs = pythonArgsToDArgs!(isVariadic, FunctionParameters!overload)(args, kwargs);
+            mixin(callMixin);
+
+            static if(isUserAggregate!T && isMemberFunction && !isConstMemberFunction!overload) {
+                mutateSelf(self, dAggregate);
+            }
+
+            return ret;
+        } catch(ArgumentConversionException _) {
+            // only using this to weed out incompatible overloads
+        }
+    }}
+
+    throw new Exception("Could not find suitable overload for `" ~ identifier ~ "`");
 }
 
 
-private auto callDlangFunction(alias F, A)(auto ref A argTuple) {
+class ArgumentConversionException: Exception {
+    import std.exception: basicExceptionCtors;
+    mixin basicExceptionCtors;
+}
+
+
+private PyObject* callDlangFunction(alias F, A)(auto ref A argTuple) {
     import python.raw: pyIncRef, pyNone;
     import python.conv: toPython;
     import std.traits: ReturnType;
@@ -833,23 +829,7 @@ private struct PythonCallable(T) if(isCallable!T) {
 
     static if(hasMember!(T, "opCall")) {
         private static extern(C) PyObject* _py_call(PyObject* self, PyObject* args, PyObject* kwargs) nothrow {
-
-            import python.conv.python_to_d: to;
-            import std.traits: Unqual, Parameters;
-
-            PyObject* impl() {
-                auto dObj = self.to!(Unqual!T);
-
-                auto ret = callDlangFunction!((Parameters!(T.opCall) args) => dObj.opCall(args))(self, args, kwargs);
-
-                static if(!isConstMemberFunction!(T.opCall)) {
-                    mutateSelf(self, dObj);
-                }
-
-                return ret;
-            }
-
-            return noThrowable!impl;
+            return PythonMethod!(T, T.opCall)._py_method_impl(self, args, kwargs);
         }
     } else {
         /**
@@ -872,7 +852,7 @@ private struct PythonCallable(T) if(isCallable!T) {
             import std.traits: Parameters, ReturnType;
             auto self = cast(PythonCallable!T*) self_;
             assert(self._callable !is null, "Cannot have null callable");
-            return noThrowable!(() => callDlangFunction!((Parameters!T args) => self._callable(args), T)(self_, args, kwargs));
+            return noThrowable!(callDlangFunction!(T, (Parameters!T args) => self._callable(args)))(self_, args, kwargs);
         }
     }
 }
@@ -1205,9 +1185,9 @@ private bool isInstanceOf(T)(PyObject* obj) {
 
 
 private bool checkPythonType(T)(PyObject* value) if(isArray!T) {
-    import python.raw: pyListCheck;
-    const ret = pyListCheck(value);
-    if(!ret) setPyErrTypeString!"list";
+    import python.raw: pySequenceCheck;
+    const ret = pySequenceCheck(value);
+    if(!ret) setPyErrTypeString!"sequence";
     return ret;
 }
 
@@ -1240,6 +1220,27 @@ private bool checkPythonType(T)(PyObject* value) if(is(T == Date)) {
     import python.raw: pyDateCheck;
     const ret = pyDateCheck(value);
     if(!ret) setPyErrTypeString!"Date";
+    return ret;
+}
+
+
+private bool checkPythonType(T)(PyObject* value) if(isAssociativeArray!T) {
+    import python.raw: pyMappingCheck;
+    const ret = pyMappingCheck(value);
+    if(!ret) setPyErrTypeString!"dict";
+    return ret;
+}
+
+
+private bool checkPythonType(T)(PyObject* value) if(isUserAggregate!T) {
+    return true;  // FIXMME
+}
+
+
+private bool checkPythonType(T)(PyObject* value) if(isSomeFunction!T) {
+    import python.raw: pyCallableCheck;
+    const ret = pyCallableCheck(value);
+    if(!ret) setPyErrTypeString!"callable";
     return ret;
 }
 

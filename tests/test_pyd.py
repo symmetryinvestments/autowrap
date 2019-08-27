@@ -138,23 +138,30 @@ def test_def():
     from pyd import def_a, def_a2, def_a3, def_a4, def_t1_int, def_t2_int
     import pytest
 
-    with pytest.raises(RuntimeError) as ex:
+    if is_pyd:
+        with pytest.raises(RuntimeError) as ex:
+            def_a(1.0)
+        assert "Couldn't convert Python type 'float' to D type 'int'" in \
+            str(ex.value)
+    else:
+        assert def_a(1) == 10
         assert def_a(1.0) == 20
-    assert "Couldn't convert Python type 'float' to D type 'int'" in \
-        str(ex.value)
 
     assert def_a(42) == 10
     assert def_a(24) == 10
 
     assert def_a2(4, 2.1) == 214
     assert def_a2(4) == 454
-    assert def_a2(i=4) == 454
+    if is_pyd:
+        assert def_a2(i=4) == 454
 
     # def_a3 accepts a variadic number of ints
     assert def_a3(4) == 46
-    assert def_a3(i=4) == 46
+    if is_pyd:
+        assert def_a3(i=4) == 46
     assert def_a3(4, 3) == 49
-    assert def_a3(i=[4, 3]) == 49
+    if is_pyd:
+        assert def_a3(i=[4, 3]) == 49
 
     assert def_a4('hi', 2, s3='zi') == "<'hi', 2, 'friedman', 4, 'zi'>"
 
@@ -264,32 +271,39 @@ def test_class_wrap_bizzy2():
     bizzy = Bizzy2(4, 5)
     assert bizzy.jj() == [4, 5]
 
-    bizzy = Bizzy2(i=4)
-    assert bizzy.jj() == [4]
+    if is_pyd:
+        bizzy = Bizzy2(i=4)
+        assert bizzy.jj() == [4]
 
-    bizzy = Bizzy2(i=[4, 5])
-    assert bizzy.jj() == [4, 5]
+        bizzy = Bizzy2(i=[4, 5])
+        assert bizzy.jj() == [4, 5]
 
     assert Bizzy2.a(7, 32.1) == 6427
-    assert Bizzy2.a(i=7, d=32.1) == 6427
-    assert Bizzy2.a(d=32.1, i=7) == 6427
+    if is_pyd:
+        assert Bizzy2.a(i=7, d=32.1) == 6427
+        assert Bizzy2.a(d=32.1, i=7) == 6427
 
     assert Bizzy2.b(7, 32.1) == 32173
-    assert Bizzy2.b(d=32.1, i=7) == 32173
-    assert Bizzy2.b(i=7, d=32.1) == 32173
+    if is_pyd:
+        assert Bizzy2.b(d=32.1, i=7) == 32173
+        assert Bizzy2.b(i=7, d=32.1) == 32173
     assert Bizzy2.b(7) == 3273
-    assert Bizzy2.b(i=7) == 3273
+    if is_pyd:
+        assert Bizzy2.b(i=7) == 3273
 
     assert Bizzy2.c(7) == 7
-    assert Bizzy2.c(i=7) == 7
-    assert Bizzy2.c(i=[7]) == 7
+    if is_pyd:
+        assert Bizzy2.c(i=7) == 7
+        assert Bizzy2.c(i=[7]) == 7
+        assert Bizzy2.c(i=[7, 5, 6]) == 657
     assert Bizzy2.c(7, 5, 6) == 657
-    assert Bizzy2.c(i=[7, 5, 6]) == 657
 
-    assert Bizzy2.d(i=7, k='foobiz') == "<7, 101, 'foobiz'>"
-    with pytest.raises(RuntimeError) as ex:
-        Bizzy2.d(i=7, s='foobiz')
-    assert "Bizzy2.d() got an unexpected keyword argument 's'" in str(ex.value)
+    if is_pyd:
+        assert Bizzy2.d(i=7, k='foobiz') == "<7, 101, 'foobiz'>"
+        with pytest.raises(RuntimeError) as ex:
+            Bizzy2.d(i=7, s='foobiz')
+        assert "Bizzy2.d() got an unexpected keyword argument 's'" \
+            in str(ex.value)
 
 
 def test_class_wrap_bizzy3():
@@ -344,3 +358,13 @@ def test_class_wrap_bizzy5():
     assert boozy.a() == "<1, 2, 'hi'>"
     boozy = Bizzy5(1, s='ten')
     assert boozy.a() == "<1, 1, 'ten'>"
+
+
+def test_overloads():
+    from pyd import overload
+
+    assert overload('foobar') == 6
+    assert overload('quux') == 4
+    if is_pynih:  # pyd can only wrap the first one
+        assert overload(3) == -3
+        assert overload(-2) == 2

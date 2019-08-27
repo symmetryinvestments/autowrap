@@ -43,3 +43,13 @@ auto def_t1_int(int i) {
 auto def_t2_int(int i) {
     return def_t2!int.f(i);
 }
+
+
+long overload(string s) {
+    return s.length;
+}
+
+
+long overload(int i) {
+    return -i;
+}

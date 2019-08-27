@@ -12,8 +12,10 @@ def test_method_overloads():
 
 def test_struct_no_ctor():
     from simple import NoCtor
-    _ = NoCtor(42, 33.3, "foobar")
-    _
+    s = NoCtor(42, 33.3, "foobar")
+    assert s.i == 42
+    assert s.d == 33.3
+    assert s.s == 'foobar'
 
 
 def test_property_getter_setter_const():
