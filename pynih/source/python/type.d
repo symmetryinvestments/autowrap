@@ -30,11 +30,19 @@ package enum isNonRangeUDT(T) = isUserAggregate!T && !isInputRange!T;
  */
 struct PythonType(T) {
     import python.raw: PyTypeObject, PySequenceMethods, PyMappingMethods;
-    import std.traits: FieldNameTuple, Fields;
-    import std.meta: Alias, staticMap;
+    import std.traits: FieldNameTuple, Fields, Unqual, fullyQualifiedName, BaseClassesTuple;
+    import std.meta: Alias, AliasSeq, staticMap;
 
-    alias fieldNames = FieldNameTuple!T;
-    alias fieldTypes = Fields!T;
+    static if(is(T == struct)) {
+        alias fieldNames = FieldNameTuple!T;
+        alias fieldTypes = Fields!T;
+    } else static if(is(T == class) || is(T == interface)) {
+        // recurse over base classes to get all fields
+        alias fieldNames = AliasSeq!(FieldNameTuple!T, staticMap!(FieldNameTuple, BaseClassesTuple!T));
+        private alias fieldType(string name) = typeof(__traits(getMember, T, name));
+        alias fieldTypes = staticMap!(fieldType, fieldNames);
+    }
+
     enum hasLength = is(typeof({ size_t len = T.init.length; }));
 
     static PyTypeObject _pyType;
@@ -61,8 +69,12 @@ struct PythonType(T) {
 
         if(_pyType != _pyType.init) return;
 
-        _pyType.tp_name = T.stringof;
+        // This allows tp_name to do its usual Python job and allos us to
+        // construct a D class from its runtime Python type.
+        _pyType.tp_name = fullyQualifiedName!(Unqual!T).ptr;
         _pyType.tp_flags = TypeFlags.Default;
+        static if(is(T == class) || is(T == interface))
+            _pyType.tp_flags |= TypeFlags.BaseType;
 
         // FIXME: types are that user aggregates *and* callables
         static if(isUserAggregate!T) {
@@ -161,6 +173,15 @@ struct PythonType(T) {
                 _pyType.tp_call = &PythonCallable!T._py_call;
             }
 
+            // inheritance
+            static if(is(T Bases == super)) {
+                enum isSuperClass(U) = is(U == class) && !is(U == Object);
+                alias supers = Filter!(isSuperClass, Bases);
+                static if(supers.length == 1) {
+                    _pyType.tp_base = PythonType!(supers[0]).pyType;
+                }
+            }
+
         } else static if(isCallable!T) {
             _pyType.tp_basicsize = PythonCallable!T.sizeof;
             _pyType.tp_call = &PythonCallable!T._py_call;
@@ -186,14 +207,25 @@ struct PythonType(T) {
         import std.meta: staticMap, Filter, Alias;
         import std.traits: isFunction, ReturnType;
 
-        alias AggMember(string memberName) = Alias!(__traits(getMember, T, memberName));
-        alias memberNames = __traits(allMembers, T);
-        enum isPublic(string memberName) =
-            __traits(getProtection, __traits(getMember, T, memberName)) == "public";
-        alias publicMemberNames = Filter!(isPublic, memberNames);
-        alias members = staticMap!(AggMember, publicMemberNames);
-        alias memberFunctions = Filter!(isFunction, members);
-        alias properties = Properties!memberFunctions;
+        static if(is(T == struct)) {
+            enum isPublic(string memberName) =
+                __traits(getProtection, __traits(getMember, T, memberName)) == "public";
+            alias publicMemberNames = Filter!(isPublic, __traits(allMembers, T));
+            alias AggMember(string memberName) = Alias!(__traits(getMember, T, memberName));
+            alias members = staticMap!(AggMember, publicMemberNames);
+            alias publicMemberFunctions = Filter!(isFunction, members);
+        } else {
+            import std.traits: MemberFunctionsTuple;
+            enum isFunctionName(string name) = isFunction!(__traits(getMember, T, name));
+            alias functionNames = Filter!(isFunctionName, __traits(allMembers, T));
+            alias memberFunctionsTuple(string name) = MemberFunctionsTuple!(T, name);
+            alias memberFunctions = staticMap!(memberFunctionsTuple, functionNames);
+            enum isPublic(alias T) = __traits(getProtection, T) == "public";
+            alias publicMemberFunctions = Filter!(isPublic, memberFunctions);
+        }
+
+        alias properties = Properties!publicMemberFunctions;
+
 
         // +1 due to the sentinel
         static PyGetSetDef[fieldNames.length + properties.length + 1] getsets;
@@ -705,7 +737,12 @@ private template isPublic(T, string memberName) {
         enum isPublic = false;
 }
 
-
+/**
+   OOP types register factory functions here, indexed by the fully qualified
+   name of the type. This allows us to construct D class types from the
+   runtime types of Python values.
+ */
+Object delegate(PyObject*)[string] gFactory;
 
 /**
    A Python class that mirrors the D type `T`.
@@ -735,6 +772,26 @@ struct PythonClass(T) if(isUserAggregate!T) {
     // Generate a python object field for every field in T
     static foreach(fieldName; fieldNames) {
         mixin(`PyObject* `, fieldName, `;`);
+    }
+
+    static if(is(T == class)) {
+        static this() {
+            import std.traits: fullyQualifiedName;
+
+            gFactory[fullyQualifiedName!(Unqual!T)] = (PyObject* value) {
+                import python.conv.python_to_d: to;
+
+                auto pyclass = cast(PythonClass!T*) value;
+                auto ret = userAggregateInit!(Unqual!T);
+
+                static foreach(fieldName; fieldNames) {{
+                    alias Field = typeof(__traits(getMember, ret, fieldName));
+                    __traits(getMember, ret, fieldName) = __traits(getMember, pyclass, fieldName).to!Field;
+                }}
+
+                return cast(Object) ret;
+            };
+        }
     }
 
     // The function pointer for PyGetSetDef.get

@@ -135,3 +135,38 @@ unittest {
 
     backAndForth(new Class(42));
 }
+
+
+@("udt.class.baseref")
+unittest {
+    import std.conv: text;
+    import std.string: fromStringz;
+
+    static class Base {
+        int i;
+        this() {}
+        this(int i) { this.i = i; }
+        int twice() @safe @nogc pure nothrow const { return i * 2; }
+        override string toString() @safe pure const {
+            import std.conv: text;
+            return text("Base(", i, ")");
+        }
+    }
+
+    static class Child: Base {
+        this() {}
+        this(int i) { super(i); }
+        override string toString() @safe pure const {
+            import std.conv: text;
+            return text("Child(", i, ")");
+        }
+    }
+
+
+    auto child = new Child(42);
+    child.toString.should == "Child(42)";
+    auto python = child.toPython;
+    auto back = python.to!Base;
+    assert(typeid(back) == typeid(Child), text("Expected Child but got ", typeid(back)));
+    back.toString.should == "Child(42)";
+}
