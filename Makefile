@@ -3,7 +3,7 @@
 export PYTHON_LIB_DIR ?= /usr/lib
 DUB_CONFIGURATION ?= python37
 
-.PHONY: clean test test_python test_cs test_simple_pyd test_simple_pynih test_simple_cs test_pyd_pyd test_issues_pyd test_numpy examples/simple/lib/pyd/libsimple.so examples/simple/lib/pynih/libsimple.so examples/issues/lib/pyd/libissues.so examples/numpy/libnumpy.so examples/pyd/lib/pyd/libpydtests.so examples/pyd/lib/pynih/libpydtests.so
+.PHONY: clean test test_python test_cs test_simple_pyd test_simple_pynih test_simple_cs test_pyd_pyd test_issues_pyd test_issues_pynih test_numpy examples/simple/lib/pyd/libsimple.so examples/simple/lib/pynih/libsimple.so examples/issues/lib/pyd/libissues.so examples/issues/lib/pynih/libissues.so examples/numpy/libnumpy.so examples/pyd/lib/pyd/libpydtests.so examples/pyd/lib/pynih/libpydtests.so
 
 all: test
 test: test_python test_cs
@@ -72,6 +72,16 @@ examples/issues/lib/pyd/issues.so: examples/issues/lib/pyd/libissues.so
 
 examples/issues/lib/pyd/libissues.so:
 	@cd examples/issues && dub build -q -c $(DUB_CONFIGURATION)
+
+test_issues_pynih: tests/test_issues.py examples/issues/lib/pynih/issues.so
+	PYTHONPATH=$(PWD)/examples/issues/lib/pynih pytest -s -vv $<
+
+examples/issues/lib/pynih/issues.so: examples/issues/lib/pynih/libissues.so
+	@cp $^ $@
+
+examples/issues/lib/pynih/libissues.so:
+	@cd examples/issues && dub build -q -c pynih
+
 
 examples/issues/dub.selections.json:
 	@cd examples/issues && dub upgrade -q

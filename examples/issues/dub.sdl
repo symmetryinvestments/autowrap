@@ -32,3 +32,9 @@ configuration "env" {
     dependency "autowrap:python" path="../../"
     subConfiguration "autowrap:python" "env"
 }
+
+configuration "pynih" {
+    targetPath "lib/pynih"
+    lflags "-L$PYTHON_LIB_DIR"
+    dependency "autowrap:pynih" path="../../"
+}
