@@ -85,9 +85,13 @@ def test_issue_47():
     from issues import uncopiable_ptr
     import pytest
 
-    with pytest.raises(RuntimeError):
-        assert uncopiable_ptr(33.3).d == 33.3
-        assert uncopiable_ptr(44.4).d == 44.4
+    if is_pyd:
+        with pytest.raises(RuntimeError):
+            assert uncopiable_ptr(33.3).x == 33.3
+            assert uncopiable_ptr(44.4).x == 44.4
+    else:
+        assert uncopiable_ptr(33.3).x == 33.3
+        assert uncopiable_ptr(44.4).x == 44.4
 
 
 def test_issue_50():

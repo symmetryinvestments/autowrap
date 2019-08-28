@@ -53,14 +53,15 @@ PyObject* toPython(T)(T value) if(isInputRange!T && !isSomeString!T && !isStatic
 }
 
 
-PyObject* toPython(T)(T value) if(isNonRangeUDT!T) {
+PyObject* toPython(T)(auto ref T value) if(isNonRangeUDT!T) {
     import python.type: pythonClass;
     return pythonClass(value);
 }
 
 
-PyObject* toPython(T)(T value) if(isPointer!T && isNonRangeUDT!(PointerTarget!T)) {
-    return toPython(*value);
+PyObject* toPython(T)(T value) if(isPointer!T && isUserAggregate!(PointerTarget!T)) {
+    import python.type: pythonClass;
+    return pythonClass(value);
 }
 
 

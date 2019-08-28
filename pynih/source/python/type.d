@@ -711,15 +711,23 @@ PyObject* pythonClass(T)(auto ref T dobj) {
 
     import python.conv: toPython;
     import python.raw: pyObjectNew;
+    import std.traits: isPointer, PointerTarget;
 
-    static if(is(T == class)) {
+    static if(is(T == class) || isPointer!T) {
         if(dobj is null)
-            throw new Exception("Cannot create Python class from null D class");
+            throw new Exception("Cannot create Python class from null D object");
     }
 
-    auto ret = pyObjectNew!(PythonClass!T)(PythonType!T.pyType);
+    static if(isPointer!T)
+        alias Type = PointerTarget!T;
+    else
+        alias Type = T;
 
-    static foreach(fieldName; PythonType!T.fieldNames) {
+    auto _type = PythonType!Type.pyType;
+
+    auto ret = pyObjectNew!(PythonClass!Type)(PythonType!Type.pyType);
+
+    static foreach(fieldName; PythonType!Type.fieldNames) {
         static if(isPublic!(T, fieldName))
             mixin(`ret.`, fieldName, ` = dobj.`, fieldName, `.toPython;`);
     }
