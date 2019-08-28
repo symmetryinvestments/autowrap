@@ -1,3 +1,9 @@
+import os
+
+is_pyd = os.environ.get('PYD')
+is_pynih = os.environ.get('PYNIH')
+
+
 def test_issue_39():
     from issues import StaticMemberFunctions
     s = StaticMemberFunctions()
@@ -20,9 +26,10 @@ def test_issue_42_takes_in():
     from issues import IssueString, takes_in_string
     import pytest
 
-    # pyd can't convert to const
-    with pytest.raises(RuntimeError):
-        takes_in_string(IssueString())
+    if is_pyd:
+        # pyd can't convert to const
+        with pytest.raises(RuntimeError):
+            takes_in_string(IssueString())
 
 
 def test_issue_42_takes_scope():
@@ -39,29 +46,33 @@ def test_issue_42_takes_ref_const():
     from issues import IssueString, takes_ref_const_string
     import pytest
 
-    # pyd can't convert to const
-    with pytest.raises(RuntimeError):
-        takes_ref_const_string(IssueString())
+    if is_pyd:
+        # pyd can't convert to const
+        with pytest.raises(RuntimeError):
+            takes_ref_const_string(IssueString())
 
 
 def test_issue_42_returns_ref_const():
     from issues import returns_ref_const_string
     import pytest
 
-    # pyd can't convert from const(issues.IssueString*)
-    with pytest.raises(RuntimeError):
-        s = returns_ref_const_string()
-        assert s.value == 'quux'
+    if is_pyd:
+        # pyd can't convert from const(issues.IssueString*)
+        with pytest.raises(RuntimeError):
+            s = returns_ref_const_string()
+            assert s.value == 'quux'
 
 
 def test_issue_42_returns_const():
     from issues import returns_const_string
     import pytest
 
-    # pyd can't convert from const(issues.IssueString*)
-    with pytest.raises(RuntimeError):
-        s = returns_const_string()
-        assert s.value == 'toto'
+    if is_pyd:
+        # pyd can't convert from const(issues.IssueString*)
+        with pytest.raises(RuntimeError):
+            returns_const_string()
+    else:
+        assert returns_const_string().value == 'toto'
 
 
 def test_issue_44():
@@ -89,6 +100,9 @@ def test_issue_54():
     import pytest
 
     c = Issue54(10)
-    # FIXME
-    with pytest.raises(AttributeError):
+    if is_pyd:
+        # FIXME
+        with pytest.raises(AttributeError):
+            assert c.i == 10
+    else:
         assert c.i == 10

@@ -65,7 +65,7 @@ examples/simple/lib/pynih/libsimple.so:
 	@cd examples/simple && dub build -q -c pynih
 
 test_issues_pyd: tests/test_issues.py examples/issues/lib/pyd/issues.so
-	PYTHONPATH=$(PWD)/examples/issues/lib/pyd pytest -s -vv $<
+	PYTHONPATH=$(PWD)/examples/issues/lib/pyd PYD=1 pytest -s -vv $<
 
 examples/issues/lib/pyd/issues.so: examples/issues/lib/pyd/libissues.so
 	@cp $^ $@
@@ -74,7 +74,7 @@ examples/issues/lib/pyd/libissues.so:
 	@cd examples/issues && dub build -q -c $(DUB_CONFIGURATION)
 
 test_issues_pynih: tests/test_issues.py examples/issues/lib/pynih/issues.so
-	PYTHONPATH=$(PWD)/examples/issues/lib/pynih pytest -s -vv $<
+	PYTHONPATH=$(PWD)/examples/issues/lib/pynih PYNIH=1 pytest -s -vv $<
 
 examples/issues/lib/pynih/issues.so: examples/issues/lib/pynih/libissues.so
 	@cp $^ $@

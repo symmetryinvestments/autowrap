@@ -80,7 +80,7 @@ export ref const(IssueString) returnsRefConstString() {
 
 
 export const(IssueString) returnsConstString() {
-    return const IssueString("quux");
+    return const IssueString("toto");
 }
 
 
