@@ -27,18 +27,34 @@ T to(T)(PyObject* value) @trusted if(isFloatingPoint!T) {
 }
 
 
-T to(T)(PyObject* value) @trusted if(isUserAggregate!T) {
-    import python.type: PythonClass, userAggregateInit;
+T to(T)(PyObject* value) @trusted if(isUserAggregate!T && is(T == struct)) {
+    import python.type: PythonClass;
+    import std.traits: Unqual;
 
     auto pyclass = cast(PythonClass!T*) value;
-    auto ret = userAggregateInit!(Unqual!T);
+    Unqual!T ret;
 
-    static foreach(i; 0 .. T.tupleof.length) {
+    static foreach(i; 0 .. typeof(ret).tupleof.length) {
         ret.tupleof[i] = pyclass.getField!i.to!(typeof(T.tupleof[i]));
     }
 
     // might need to be cast to `const` or `immutable`
     return cast(T) ret;
+}
+
+
+T to(T)(PyObject* value) @trusted if(isUserAggregate!T && !is(T == struct)) {
+    import python.type: PythonClass, userAggregateInit, gFactory;
+    import std.traits: Unqual;
+    import std.string: fromStringz;
+    import std.conv: text;
+
+    auto pyclass = cast(PythonClass!T*) value;
+    const runtimeType = value.ob_type.tp_name.fromStringz.text;
+    auto creator = runtimeType in gFactory;
+    return creator
+        ? cast(T) (*creator)(value)
+        : userAggregateInit!T;
 }
 
 
