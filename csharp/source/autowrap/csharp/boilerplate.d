@@ -17,7 +17,6 @@ import autowrap.csharp;
 import core.time;
 import core.memory;
 import std.conv;
-import std.datetime : DateTime, SysTime, Date, TimeOfDay, SimpleTimeZone, LocalTime;
 import std.traits : Unqual;
 import std.string;
 import std.traits;
@@ -92,76 +91,135 @@ extern(C) export struct returnVoid {
     }
 }
 
-extern(C) export struct datetime {
-    long ticks;
-    long offset;
+// Used for core.time.Duration
+extern(C) export struct Marshalled_Duration {
 
-    public this(Duration value) {
-        this.ticks = value.total!"hnsecs";
-        this.offset = 0;
+    import core.time : dur, Duration;
+
+    long hnsecs;
+
+    this(Duration d)
+    {
+        hnsecs = d.total!"hnsecs";
     }
 
-    public this(DateTime value) {
-        this.ticks = SysTime(value).stdTime;
-        this.offset = 0;
+    Duration opCast() { return dur!"hnsecs"(hnsecs); }
+}
+
+// Used for Date, DateTime, and TimeOfDay from std.datetime.date.
+// Unfortunately, C# doesn't really have a clean way of representing any of
+// them. So, barring the use of a 3rd party library like Noda, the two options
+// are to either use C#'s DateTime or create new types. Laeeth wanted the D
+// date/time types to marshall to the standard C# date/time types. So, the
+// current solution is to convert std.datetime.DateTime to a C# DateTime with
+// UTC as its DateTimeKind so that the value doesn't risk changing based on
+// time zone issues. std.datetime.Date will be converted to a C# DateTime with
+// DateTimeKind.UTC and midnight for the time. std.datetime.TimeOfDay will be
+// converted to a C# Datetime with DateTimeKind.Utc and January 1st, 1 A.D. as
+// its date. When converting from C# to D, C#'s DateTime's properties will be
+// used to get the values out so that the values will match whatever
+// DateTimeKind the Datetime is using. std.datetime.Date will then ignore the
+// hour, minute, and second values, and std.datetime.TimeOfDay will then ignore
+// the year, month, and day values.
+// The marshalled type does not need to keep track of whether a DateTime, Date,
+// or TimeOfDay is intended, because the generated D code using it knows which
+// D date/time type it's working with and will generate the correct conversion
+// code.
+extern(C) export struct Marshalled_std_datetime_date {
+
+    import std.datetime.date : Date, DateTime, TimeOfDay;
+
+    // = 1 so that the result is a valid C# DateTime when the D type is Date
+    short year = 1;
+    ubyte month = 1;
+    ubyte day = 1;
+    ubyte hour;
+    ubyte minute;
+    ubyte second;
+
+    this(DateTime dt)
+    {
+        year = dt.year;
+        month = dt.month;
+        day = dt.day;
+        hour = dt.hour;
+        minute = dt.minute;
+        second = dt.second;
     }
 
-    public this(Date value) {
-        this.ticks = SysTime(value).stdTime;
-        this.offset = 0;
+    this(Date d)
+    {
+        year = d.year;
+        month = d.month;
+        day = d.day;
     }
 
-    public this(TimeOfDay value) {
-        import core.time : Duration, hours, minutes, seconds;
-        Duration t = hours(value.hour) + minutes(value.minute) + seconds(value.second);
-        this.ticks = t.total!"hnsecs";
-        this.offset = 0;
+    this(TimeOfDay tod)
+    {
+        hour = tod.hour;
+        minute = tod.minute;
+        second = tod.second;
     }
 
-    public this(SysTime value) {
-        this.ticks = value.stdTime;
-        this.offset = value.utcOffset.total!"hnsecs";
+    DateTime opCast(T)()
+        if(is(Unqual!T == DateTime))
+    {
+        return DateTime(year, month, day, hour, minute, second);
     }
+
+    Date opCast(T)()
+        if(is(Unqual!T == Date))
+    {
+        return Date(year, month, day);
+    }
+
+    TimeOfDay opCast(T)()
+        if(is(Unqual!T == TimeOfDay))
+    {
+        return TimeOfDay(hour, minute, second);
+    }
+}
+
+// Used for std.datetime.systime.SysTime. It will be converted to C#'s
+// DateTimeOffset. Unfortunately, DateTimeOffset does not have a way to
+// uniquely distinguish UTC or local time in the way that SysTime does.
+// Essentially, it's the equivalent of a SysTime which always uses a
+// SimpleTimeZone for its timezone property. The current solution is to treat
+// an offset of 0 as always being UTC (since odds are that that's what it is,
+// and it requires less memory allocation that way), but since assuming that
+// a UTC offset that matches the local time is intended to be treated as local
+// time could cause problems, it unfortunately is treated as just another
+// SimpleTimeZone rather than LocalTime.
+extern(C) export struct Marshalled_std_datetime_systime {
+
+    import core.time : hnsecs;
+    import std.datetime.systime : SysTime;
+
+    long ticks; // SysTime's stdTime is equivalent to C#'s Ticks
+    long utcOffset; // in hnsecs
+
+    this(SysTime st)
+    {
+        ticks = st.stdTime;
+        utcOffset = st.utcOffset.total!"hnsecs";
+    }
+
+    SysTime opCast() {
+        import std.datetime.timezone : SimpleTimeZone, UTC;
+        return SysTime(ticks, utcOffset == 0 ? UTC() : new immutable SimpleTimeZone(hnsecs(utcOffset)));
+    }
+}
+
+public auto mapArray(alias pred, T)(T[] arr)
+{
+    import std.algorithm.iteration : map;
+    import std.array : array;
+    return arr.map!pred.array;
 }
 
 public void pinPointer(void* ptr) nothrow {
     GC.setAttr(ptr, GC.BlkAttr.NO_MOVE);
     GC.addRoot(ptr);
-}
-
-public datetime toDatetime(T)(T value)
-if (isDateTimeType!T) {
-    return datetime(value);
-}
-
-public datetime[] toDatetime1DArray(T)(T[] value)
-if (isDateTimeType!T) {
-    import std.algorithm : map;
-    import std.array : array;
-    return value.map!datetime.array;
-}
-
-public T fromDatetime(T)(datetime value) if (is(Unqual!T == SysTime)) {
-    return SysTime(value.ticks, cast(immutable)new SimpleTimeZone(hnsecs(value.offset)));
-}
-
-public T fromDatetime(T)(datetime value) if (is(Unqual!T == DateTime)) {
-    return cast(T)SysTime(value.ticks, LocalTime());
-}
-
-public T fromDatetime(T)(datetime value) if (is(Unqual!T == Date) || is(Unqual!T == TimeOfDay)) {
-    return cast(T)SysTime(value.ticks, cast(immutable)new SimpleTimeZone(hnsecs(0)));
-}
-
-public T fromDatetime(T)(datetime value) if (is(Unqual!T == Duration)) {
-    return hnsecs(value.ticks);
-}
-
-public T[] fromDatetime1DArray(T)(datetime[] value)
-if (isDateTimeType!T) {
-    import std.algorithm : map;
-    import std.array : array;
-    return value.map!(fromDatetime!T).array;
 }
 
 extern(C) void rt_moduleTlsCtor();

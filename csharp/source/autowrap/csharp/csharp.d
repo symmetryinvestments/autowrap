@@ -737,11 +737,11 @@ private string getDLangInterfaceType(T, Parent...)()
         case stringTypeString: return "slice";
         case wstringTypeString: return "slice";
         case dstringTypeString: return "slice";
-        case sysTimeTypeString: return "datetime";
-        case dateTimeTypeString: return "datetime";
-        case timeOfDayTypeString: return "datetime";
-        case dateTypeString: return "datetime";
-        case durationTypeString: return "datetime";
+        case sysTimeTypeString: return "Marshalled_std_datetime_systime";
+        case dateTimeTypeString: return "Marshalled_std_datetime_date";
+        case timeOfDayTypeString: return "Marshalled_std_datetime_date";
+        case dateTypeString: return "Marshalled_std_datetime_date";
+        case durationTypeString: return "Marshalled_Duration";
         case boolTypeString: return "bool";
 
         //Types that can be marshalled by default
@@ -853,15 +853,15 @@ private string getCSharpMethodInterfaceName(string aggName, string funcName) {
     import std.string : split;
     import std.string : replace;
 
-    if (aggName == "DateTime" || aggName == "DateTimeOffset" || aggName == "TimeSpan") {
+    if (aggName == "DateTime" || aggName == "DateTimeOffset" || aggName == "TimeSpan")
         aggName = "Datetime";
-    }
 
-    string name = string.init;
-    if (aggName !is null && aggName != string.init) {
+    string name;
+    if (aggName !is null && aggName != string.init)
         name ~= camelToPascalCase(aggName) ~ "_";
-    }
+
     name ~= camelToPascalCase(funcName);
+
     return name.replace(".", "_");
 }
 

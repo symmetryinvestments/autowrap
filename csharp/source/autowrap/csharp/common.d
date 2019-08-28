@@ -1,11 +1,11 @@
 module autowrap.csharp.common;
 
-public import std.datetime : DateTime, SysTime, Date, TimeOfDay, Duration, TimeZone;
+public import std.datetime : DateTime, SysTime, Date, TimeOfDay, Duration;
 public import std.range.primitives;
 public import std.traits : Unqual;
 
-public enum isDateTimeType(T) = is(T == Unqual!Date) || is(T == Unqual!DateTime) || is(T == Unqual!SysTime) || is(T == Unqual!TimeOfDay) || is(T == Unqual!Duration) || is(T == Unqual!TimeZone);
-public enum isDateTimeArrayType(T) = is(T == Unqual!(Date[])) || is(T == Unqual!(DateTime[])) || is(T == Unqual!(SysTime[])) || is(T == Unqual!(TimeOfDay[])) || is(T == Unqual!(Duration[])) || is(T == Unqual!(TimeZone[]));
+public enum isDateTimeType(T) = is(T == Unqual!Date) || is(T == Unqual!DateTime) || is(T == Unqual!SysTime) || is(T == Unqual!TimeOfDay) || is(T == Unqual!Duration);
+public enum isDateTimeArrayType(T) = is(T == Unqual!(Date[])) || is(T == Unqual!(DateTime[])) || is(T == Unqual!(SysTime[])) || is(T == Unqual!(TimeOfDay[])) || is(T == Unqual!(Duration[]));
 
 enum string[] excludedMethods = ["toHash", "opEquals", "opCmp", "factory", "__ctor"];
 
@@ -54,9 +54,14 @@ package string getDLangSliceInterfaceName(string fqn, string funcName) {
 
     string name = "autowrap_csharp_slice_";
 
-    if (fqn.among("core.time.Duration", "std.datetime.systime.SysTime", "std.datetime.date.DateTime", "autowrap.csharp.dlang.datetime")) {
-        fqn = "Autowrap_Csharp_Boilerplate_Datetime";
+    if (fqn.among("core.time.Duration", "autowrap.csharp.dlang.Marshalled_Duration"))
+        fqn = "Autowrap_Csharp_Boilerplate_Marshalled_Duration";
+    else if (fqn.among("std.datetime.date.DateTime", "std.datetime.date.Date", "std.datetime.date.TimeOfDay",
+                  "autowrap.csharp.dlang.Marshalled_std_datetime_date")) {
+        fqn = "Autowrap_Csharp_Boilerplate_Marshalled_std_datetime_date";
     }
+    else if (fqn == "std.datetime.systime.SysTime")
+        fqn = "Autowrap_Csharp_Boilerplate_Marshalled_std_datetime_systime";
 
     name ~= fqn.split(".").map!camelToPascalCase.join("_");
     name ~= camelToPascalCase(funcName);
@@ -131,7 +136,7 @@ unittest
 package template isSupportedType(T)
 {
     import std.range.primitives : ElementType;
-    import std.traits : isBoolean, isDynamicArray, isIntegral, isSomeChar, TemplateOf, Unqual;
+    import std.traits : isBoolean, isDynamicArray, isIntegral, isSomeChar, Unqual;
 
     static if(isIntegral!T || isBoolean!T || isSomeChar!T ||
               is(Unqual!T == float) || is(Unqual!T == double) || is(T == void))
@@ -145,7 +150,11 @@ package template isSupportedType(T)
                                !isDynamicArray!E && isSupportedType!E;
     }
     else static if(is(T == struct) || is(T == class) || is(T == interface))
-        enum isSupportedType = !is(typeof(TemplateOf!T));
+    {
+        import std.datetime.timezone : TimeZone;
+        import std.traits : TemplateOf;
+        enum isSupportedType = !is(typeof(TemplateOf!T)) && !is(Unqual!T == TimeZone);
+    }
     else
         enum isSupportedType = false;
 }

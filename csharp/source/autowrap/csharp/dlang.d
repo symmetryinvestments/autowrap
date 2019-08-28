@@ -2,7 +2,6 @@ module autowrap.csharp.dlang;
 
 import scriptlike : interp, _interp_text;
 
-import core.time : Duration;
 import std.datetime : Date, DateTime, SysTime, TimeOfDay, TimeZone;
 import std.ascii : newline;
 import std.meta : allSatisfy;
@@ -29,7 +28,9 @@ public string wrapDLang(Modules...)() if(allSatisfy!(isModule, Modules)) {
     string ret;
     string[] imports = [Modules].map!(a => a.name)().array();
 
-    static foreach(T; AliasSeq!(string, wstring, dstring, bool, byte, ubyte, short, ushort, int, uint, long, ulong, float, double, datetime)) {
+    static foreach(T; AliasSeq!(string, wstring, dstring,
+                                bool, byte, ubyte, short, ushort, int, uint, long, ulong, float, double,
+                                Marshalled_Duration, Marshalled_std_datetime_date, Marshalled_std_datetime_systime)) {
         ret ~= generateSliceMethods!T(imports);
     }
 
@@ -419,33 +420,49 @@ private string generateMethodErrorHandling(string insideCode, string returnType)
 }
 
 private string generateParameter(T)(string name) {
+
     import autowrap.csharp.common : isDateTimeType, isDateTimeArrayType;
-    import std.datetime : DateTime, Date, TimeOfDay, SysTime, Duration;
+    import std.format : format;
     import std.traits : fullyQualifiedName;
 
     alias fqn = fullyQualifiedName!(PrimordialType!T);
-    static if (isDateTimeType!T) {
-        return mixin(interp!"fromDatetime!(${fqn})(${name})");
-    } else static if (isDateTimeArrayType!T) {
-        return mixin(interp!"fromDatetime1DArray!(${fqn})(${name})");
-    } else {
+
+    static if (isDateTimeType!T)
+        return format!"cast(%s)%s"(fqn, name);
+    else static if (isDateTimeArrayType!T)
+        return format!"mapArray!(a => cast(%s)a)(%s)"(fqn, name);
+    else
         return name;
-    }
 }
 
 private string generateReturn(T)(string name) {
-    import autowrap.csharp.common : isDateTimeType, isDateTimeArrayType;
-    import std.datetime : DateTime, Date, TimeOfDay, SysTime, Duration;
-    import std.traits : fullyQualifiedName;
 
-    alias fqn = fullyQualifiedName!(PrimordialType!T);
-    static if (isDateTimeType!T) {
-        return mixin(interp!"toDatetime!(${fqn})(${name})");
-    } else static if (isDateTimeArrayType!T) {
-        return mixin(interp!"toDatetime1DArray!(${fqn})(${name})");
-    } else {
+    import autowrap.csharp.boilerplate : Marshalled_Duration, Marshalled_std_datetime_date, Marshalled_std_datetime_systime;
+    import core.time : Duration;
+    import std.datetime.date : Date, DateTime, TimeOfDay;
+    import std.datetime.systime : SysTime;
+    import std.format : format;
+    import std.traits : fullyQualifiedName, Unqual;
+
+    alias U = Unqual!T;
+
+    // FIXME This code really should be reworked so that there's no need to
+    // check for arrays of date/time types but rather it's part of the general
+    // array handling.
+    static if(is(U == Duration))
+        return format!"Marshalled_Duration(%s)"(name);
+    else static if(is(U == DateTime) || is(U == Date) || is(U == TimeOfDay))
+        return format!"Marshalled_std_datetime_date(%s)"(name);
+    else static if(is(U == SysTime))
+        return format!"Marshalled_std_datetime_systime(%s)"(name);
+    else static if(is(U == Duration[]))
+        return format!"mapArray!(a => Marshalled_Duration(a))(%s)"(name);
+    else static if(is(U == DateTime[]) || is(U == Date[]) || is(U == TimeOfDay[]))
+        return format!"mapArray!(a => Marshalled_std_datetime_date(a))(%s)"(name);
+    else static if(is(U == SysTime[]))
+        return format!"mapArray!(a => Marshalled_std_datetime_systime(a))(%s)"(name);
+    else
         return name;
-    }
 }
 
 private void addImports(T...)(ref string[] imports)
@@ -473,13 +490,29 @@ private void addImport(T)(ref string[] imports)
 }
 
 private string getDLangInterfaceType(T)() {
-    import autowrap.csharp.common : isDateTimeArrayType, isDateTimeType;
-    import std.traits : fullyQualifiedName;
-    if (isDateTimeType!T) {
-        return "datetime";
-    } else if (isDateTimeArrayType!T) {
-        return "datetime[]";
-    } else {
+
+    import core.time : Duration;
+    import std.datetime.date : Date, DateTime, TimeOfDay;
+    import std.datetime.systime : SysTime;
+    import std.traits : fullyQualifiedName, Unqual;
+
+    alias U = Unqual!T;
+
+    // FIXME This code really should be reworked so that there's no need to
+    // check for arrays of date/time types, but rather it's part of the general
+    // array handling.
+    static if(is(U == Duration))
+        return "Marshalled_Duration";
+    else static if(is(U == DateTime) || is(U == Date) || is(U == TimeOfDay))
+        return "Marshalled_std_datetime_date";
+    else static if(is(U == SysTime))
+        return "Marshalled_std_datetime_systime";
+    else static if(is(U == Duration[]))
+        return "Marshalled_Duration[]";
+    else static if(is(U == DateTime[]) || is(U == Date[]) || is(U == TimeOfDay[]))
+        return "Marshalled_std_datetime_date[]";
+    else static if(is(U == SysTime[]))
+        return "Marshalled_std_datetime_systime[]";
+    else
         return fullyQualifiedName!T;
-    }
 }

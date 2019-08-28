@@ -87,32 +87,139 @@ namespace Autowrap {
 
     [GeneratedCodeAttribute("Autowrap", "1.0.0.0")]
     [StructLayout(LayoutKind.Sequential)]
-    internal struct datetime {
-        public datetime(long ticks, long offset) {
-            this._ticks = ticks;
-            this._offset = offset;
+    internal struct Marshalled_Duration {
+
+        public Marshalled_Duration(long hnsecs)
+        {
+            _hnsecs = hnsecs;
         }
-        public static implicit operator datetime(DateTime ret) { return new datetime(ret.Ticks, 0L); }
-        public static implicit operator datetime(DateTimeOffset ret) { return new datetime(ret.Ticks, ret.Offset.Ticks); }
-        public static implicit operator datetime(TimeSpan ret) { return new datetime(ret.Ticks, 0L); }
-        public static implicit operator DateTime(datetime ret) { return new DateTime(ret._ticks, DateTimeKind.Local); }
-        public static implicit operator DateTimeOffset(datetime ret) { return new DateTimeOffset(ret._ticks, new TimeSpan(ret._offset)); }
-        public static implicit operator TimeSpan(datetime ret) { return new TimeSpan(ret._ticks); }
-        private long _ticks;
-        private long _offset;
+
+        public static implicit operator Marshalled_Duration(TimeSpan val)
+        {
+            return new Marshalled_Duration(val.Ticks);
+        }
+
+        public static implicit operator TimeSpan(Marshalled_Duration val)
+        {
+            return TimeSpan.FromTicks(val._hnsecs);
+        }
+
+        private long _hnsecs;
     }
 
     [GeneratedCodeAttribute("Autowrap", "1.0.0.0")]
     [StructLayout(LayoutKind.Sequential)]
-    internal struct return_datetime_error {
+    internal struct return_Marshalled_Duration_error {
+
         private void EnsureValid() {
             var errStr = SharedFunctions.SliceToString(_error, DStringType._wstring);
-            if (!string.IsNullOrEmpty(errStr)) throw new DLangException(errStr);
+            if (!string.IsNullOrEmpty(errStr))
+                throw new DLangException(errStr);
         }
-        public static implicit operator DateTime(return_datetime_error ret) { ret.EnsureValid(); return ret._value; }
-        public static implicit operator DateTimeOffset(return_datetime_error ret) { ret.EnsureValid(); return ret._value; }
-        public static implicit operator TimeSpan(return_datetime_error ret) { ret.EnsureValid(); return ret._value; }
-        private datetime _value;
+
+        public static implicit operator TimeSpan(return_Marshalled_Duration_error ret)
+        {
+            ret.EnsureValid(); return ret._value;
+        }
+
+        private Marshalled_Duration _value;
+        private slice _error;
+    }
+
+    [GeneratedCodeAttribute("Autowrap", "1.0.0.0")]
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct Marshalled_std_datetime_date {
+
+        public Marshalled_std_datetime_date(DateTime dt)
+        {
+            _year = (short)dt.Year;
+            _month = (byte)dt.Month;
+            _day = (byte)dt.Day;
+            _hour = (byte)dt.Hour;
+            _minute = (byte)dt.Minute;
+            _second = (byte)dt.Second;
+        }
+
+        public static implicit operator Marshalled_std_datetime_date(DateTime val)
+        {
+            return new Marshalled_std_datetime_date(val);
+        }
+
+        public static implicit operator DateTime(Marshalled_std_datetime_date val)
+        {
+            return new DateTime(val._year, val._month, val._day,
+                                val._hour, val._minute, val._second,
+                                DateTimeKind.Utc);
+        }
+
+        short _year;
+        byte _month;
+        byte _day;
+        byte _hour;
+        byte _minute;
+        byte _second;
+    }
+
+    [GeneratedCodeAttribute("Autowrap", "1.0.0.0")]
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct return_Marshalled_std_datetime_date_error {
+
+        private void EnsureValid() {
+            var errStr = SharedFunctions.SliceToString(_error, DStringType._wstring);
+            if (!string.IsNullOrEmpty(errStr))
+                throw new DLangException(errStr);
+        }
+
+        public static implicit operator DateTime(return_Marshalled_std_datetime_date_error ret)
+        {
+            ret.EnsureValid(); return ret._value;
+        }
+
+        private Marshalled_std_datetime_date _value;
+        private slice _error;
+    }
+
+    [GeneratedCodeAttribute("Autowrap", "1.0.0.0")]
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct Marshalled_std_datetime_systime {
+
+        public Marshalled_std_datetime_systime(DateTimeOffset dto)
+        {
+            _ticks = dto.Ticks;
+            _utcOffset = dto.Offset.Ticks;
+        }
+
+        public static implicit operator Marshalled_std_datetime_systime(DateTimeOffset val)
+        {
+            return new Marshalled_std_datetime_systime(val);
+        }
+
+        public static implicit operator DateTimeOffset(Marshalled_std_datetime_systime val)
+        {
+            return new DateTimeOffset(val._ticks, TimeSpan.FromTicks(val._utcOffset));
+        }
+
+        private long _ticks;
+        private long _utcOffset;
+    }
+
+    [GeneratedCodeAttribute("Autowrap", "1.0.0.0")]
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct return_Marshalled_std_datetime_systime_error {
+
+        private void EnsureValid() {
+            var errStr = SharedFunctions.SliceToString(_error, DStringType._wstring);
+            if (!string.IsNullOrEmpty(errStr))
+                throw new DLangException(errStr);
+        }
+
+        public static implicit operator DateTimeOffset(return_Marshalled_std_datetime_systime_error ret)
+        {
+            ret.EnsureValid();
+            return ret._value;
+        }
+
+        private Marshalled_std_datetime_systime _value;
         private slice _error;
     }
 

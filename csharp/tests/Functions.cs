@@ -8,7 +8,7 @@ namespace Autowrap.CSharp.Tests
     [TestClass]
     public class Functions
     {
-        public Functions() {
+        static Functions() {
             SharedFunctions.DRuntimeInitialize();
         }
 
