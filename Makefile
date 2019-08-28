@@ -7,7 +7,7 @@ DUB_CONFIGURATION ?= python37
 
 all: test
 test: test_python test_cs
-test_python: test_simple_pyd test_simple_pynih test_pyd_pyd test_pyd_pynih test_numpy test_issues_pyd
+test_python: test_simple_pyd test_simple_pynih test_pyd_pyd test_pyd_pynih test_issues_pyd test_issues_pynih test_numpy
 test_cs: test_simple_cs
 
 clean:
