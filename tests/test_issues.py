@@ -76,9 +76,15 @@ def test_issue_42_returns_const():
 
 
 def test_issue_44():
-    from issues import string_ptr
-    assert string_ptr('foo').value == 'foo'
-    assert string_ptr('bar').value == 'bar'
+    import pytest
+
+    if is_pynih:
+        with pytest.raises(ImportError):
+            from issues import string_ptr
+    else:
+        from issues import string_ptr
+        assert string_ptr('foo').value == 'foo'
+        assert string_ptr('bar').value == 'bar'
 
 
 def test_issue_47():

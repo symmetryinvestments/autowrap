@@ -25,6 +25,7 @@ export auto uncopiablePtr(double d = 33.3) {
 
 // FIXME - Can't spell out the name of an inner struct in the mixin
 // that calls createPythonModule
+// See https://github.com/symmetryinvestments/autowrap/issues/130
 version(Have_autowrap_pynih) { }
 else {
     export auto stringPtr(string s) {
