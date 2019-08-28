@@ -28,7 +28,8 @@ def test_int_double_struct():
     assert s.d == 22.2
 
     if is_python_3:
-        assert str(type(s)) == u"<class 'SimpleStruct'>"
+        assert str(type(s)) == \
+            u"<class 'contract.pyclass.pyclass_int_double_struct.SimpleStruct'>"
     else:
         assert str(type(s)) == u"<type 'SimpleStruct'>"
 
@@ -46,7 +47,8 @@ def test_string_list_struct():
     assert s.strings == [u'quux', u'toto']
 
     if is_python_3:
-        assert str(type(s)) == u"<class 'StringsStruct'>"
+        assert str(type(s)) == \
+            u"<class 'contract.pyclass.pyclass_string_list_struct.StringsStruct'>"
     else:
         assert str(type(s)) == u"<type 'StringsStruct'>"
 
@@ -64,7 +66,8 @@ def test_twice_struct():
     assert s.twice() == 8
 
     if is_python_3:
-        assert str(type(s)) == u"<class 'TwiceStruct'>"
+        assert str(type(s)) == \
+            u"<class 'contract.pyclass.pyclass_twice_struct.TwiceStruct'>"
     else:
         assert str(type(s)) == u"<type 'TwiceStruct'>"
 
@@ -84,7 +87,8 @@ def test_thrice_struct():
     assert s.quadruple() == pytest.approx(44.4, 0.1)
 
     if is_python_3:
-        assert str(type(s)) == u"<class 'ThriceStruct'>"
+        assert str(type(s)) == \
+            u"<class 'contract.pyclass.pyclass_thrice_struct.ThriceStruct'>"
     else:
         assert str(type(s)) == u"<type 'ThriceStruct'>"
 
