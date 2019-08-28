@@ -22,11 +22,17 @@ export auto uncopiablePtr(double d = 33.3) {
 }
 
 
-export auto stringPtr(string s) {
-    static struct StringPtrRetStruct {
-        string value;
+
+// FIXME - Can't spell out the name of an inner struct in the mixin
+// that calls createPythonModule
+version(Have_autowrap_pynih) { }
+else {
+    export auto stringPtr(string s) {
+        static struct StringPtrRetStruct {
+            string value;
+        }
+        return new StringPtrRetStruct(s);
     }
-    return new StringPtrRetStruct(s);
 }
 
 

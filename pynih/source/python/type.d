@@ -276,7 +276,7 @@ struct PythonType(T) {
             && name != "toHash"
             && name != "factory"
             && !name.startsWith("op")
-            && name != "__ctor"
+            && !name.startsWith("__")
             ;
         alias regularMemberNames = Filter!(isRegular, publicMemberNames);
         alias overloads(string name) = AliasSeq!(__traits(getOverloads, T, name));
