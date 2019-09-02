@@ -3,11 +3,11 @@
 export PYTHON_LIB_DIR ?= /usr/lib
 DUB_CONFIGURATION ?= python37
 
-.PHONY: clean test test_python test_cs test_simple_pyd test_simple_pynih test_simple_cs test_pyd_pyd test_issues test_numpy examples/simple/lib/pyd/libsimple.so examples/simple/lib/pynih/libsimple.so examples/issues/libissues.so examples/numpy/libnumpy.so examples/pyd/lib/pyd/libpydtests.so examples/pyd/lib/pynih/libpydtests.so
+.PHONY: clean test test_python test_cs test_simple_pyd test_simple_pynih test_simple_cs test_pyd_pyd test_issues_pyd test_issues_pynih test_numpy examples/simple/lib/pyd/libsimple.so examples/simple/lib/pynih/libsimple.so examples/issues/lib/pyd/libissues.so examples/issues/lib/pynih/libissues.so examples/numpy/libnumpy.so examples/pyd/lib/pyd/libpydtests.so examples/pyd/lib/pynih/libpydtests.so
 
 all: test
 test: test_python test_cs
-test_python: test_simple_pyd test_simple_pynih test_pyd_pyd test_pyd_pynih test_numpy test_issues
+test_python: test_simple_pyd test_simple_pynih test_pyd_pyd test_pyd_pynih test_issues_pyd test_issues_pynih test_numpy
 test_cs: test_simple_cs
 
 clean:
@@ -64,14 +64,24 @@ examples/simple/lib/pynih/simple.so: examples/simple/lib/pynih/libsimple.so
 examples/simple/lib/pynih/libsimple.so:
 	@cd examples/simple && dub build -q -c pynih
 
-test_issues: tests/test_issues.py examples/issues/issues.so
-	PYTHONPATH=$(PWD)/examples/issues pytest -s -vv $<
+test_issues_pyd: tests/test_issues.py examples/issues/lib/pyd/issues.so
+	PYTHONPATH=$(PWD)/examples/issues/lib/pyd PYD=1 pytest -s -vv $<
 
-examples/issues/issues.so: examples/issues/libissues.so
+examples/issues/lib/pyd/issues.so: examples/issues/lib/pyd/libissues.so
 	@cp $^ $@
 
-examples/issues/libissues.so:
+examples/issues/lib/pyd/libissues.so:
 	@cd examples/issues && dub build -q -c $(DUB_CONFIGURATION)
+
+test_issues_pynih: tests/test_issues.py examples/issues/lib/pynih/issues.so
+	PYTHONPATH=$(PWD)/examples/issues/lib/pynih PYNIH=1 pytest -s -vv $<
+
+examples/issues/lib/pynih/issues.so: examples/issues/lib/pynih/libissues.so
+	@cp $^ $@
+
+examples/issues/lib/pynih/libissues.so:
+	@cd examples/issues && dub build -q -c pynih
+
 
 examples/issues/dub.selections.json:
 	@cd examples/issues && dub upgrade -q

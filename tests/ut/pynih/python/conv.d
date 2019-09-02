@@ -170,3 +170,14 @@ unittest {
     assert(typeid(back) == typeid(Child), text("Expected Child but got ", typeid(back)));
     back.toString.should == "Child(42)";
 }
+
+
+@("udt.struct.ptr.uncopiable")
+unittest {
+    static struct Uncopiable {
+        @disable this(this);
+        int i;
+    }
+    const value = new Uncopiable(42);
+    const back = value.toPython.to!(typeof(value));
+}

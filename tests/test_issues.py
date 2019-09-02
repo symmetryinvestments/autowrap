@@ -1,3 +1,9 @@
+import os
+
+is_pyd = os.environ.get('PYD')
+is_pynih = os.environ.get('PYNIH')
+
+
 def test_issue_39():
     from issues import StaticMemberFunctions
     s = StaticMemberFunctions()
@@ -20,9 +26,10 @@ def test_issue_42_takes_in():
     from issues import IssueString, takes_in_string
     import pytest
 
-    # pyd can't convert to const
-    with pytest.raises(RuntimeError):
-        takes_in_string(IssueString())
+    if is_pyd:
+        # pyd can't convert to const
+        with pytest.raises(RuntimeError):
+            takes_in_string(IssueString())
 
 
 def test_issue_42_takes_scope():
@@ -39,44 +46,58 @@ def test_issue_42_takes_ref_const():
     from issues import IssueString, takes_ref_const_string
     import pytest
 
-    # pyd can't convert to const
-    with pytest.raises(RuntimeError):
-        takes_ref_const_string(IssueString())
+    if is_pyd:
+        # pyd can't convert to const
+        with pytest.raises(RuntimeError):
+            takes_ref_const_string(IssueString())
 
 
 def test_issue_42_returns_ref_const():
     from issues import returns_ref_const_string
     import pytest
 
-    # pyd can't convert from const(issues.IssueString*)
-    with pytest.raises(RuntimeError):
-        s = returns_ref_const_string()
-        assert s.value == 'quux'
+    if is_pyd:
+        # pyd can't convert from const(issues.IssueString*)
+        with pytest.raises(RuntimeError):
+            s = returns_ref_const_string()
+            assert s.value == 'quux'
 
 
 def test_issue_42_returns_const():
     from issues import returns_const_string
     import pytest
 
-    # pyd can't convert from const(issues.IssueString*)
-    with pytest.raises(RuntimeError):
-        s = returns_const_string()
-        assert s.value == 'toto'
+    if is_pyd:
+        # pyd can't convert from const(issues.IssueString*)
+        with pytest.raises(RuntimeError):
+            returns_const_string()
+    else:
+        assert returns_const_string().value == 'toto'
 
 
 def test_issue_44():
-    from issues import string_ptr
-    assert string_ptr('foo').value == 'foo'
-    assert string_ptr('bar').value == 'bar'
+    import pytest
+
+    if is_pynih:
+        with pytest.raises(ImportError):
+            from issues import string_ptr
+    else:
+        from issues import string_ptr
+        assert string_ptr('foo').value == 'foo'
+        assert string_ptr('bar').value == 'bar'
 
 
 def test_issue_47():
     from issues import uncopiable_ptr
     import pytest
 
-    with pytest.raises(RuntimeError):
-        assert uncopiable_ptr(33.3).d == 33.3
-        assert uncopiable_ptr(44.4).d == 44.4
+    if is_pyd:
+        with pytest.raises(RuntimeError):
+            assert uncopiable_ptr(33.3).x == 33.3
+            assert uncopiable_ptr(44.4).x == 44.4
+    else:
+        assert uncopiable_ptr(33.3).x == 33.3
+        assert uncopiable_ptr(44.4).x == 44.4
 
 
 def test_issue_50():
@@ -89,6 +110,9 @@ def test_issue_54():
     import pytest
 
     c = Issue54(10)
-    # FIXME
-    with pytest.raises(AttributeError):
+    if is_pyd:
+        # FIXME
+        with pytest.raises(AttributeError):
+            assert c.i == 10
+    else:
         assert c.i == 10

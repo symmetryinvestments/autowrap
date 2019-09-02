@@ -53,15 +53,27 @@ string wrapDlang(
 string createPythonModuleMixin(LibraryName libraryName, Modules modules)
                               ()
 {
+    import python.type: PythonFunction;
     import autowrap.reflection: AllAggregates, AllFunctions;
     import std.format: format;
     import std.algorithm: map;
     import std.array: join;
+    import std.meta: Filter, templateNot;
+    import std.traits: fullyQualifiedName;
 
     if(!__ctfe) return null;
 
     alias aggregates = AllAggregates!modules;
-    alias functions = AllFunctions!modules;
+    template isWrappableFunction(alias functionSymbol) {
+        enum isWrappableFunction = __traits(compiles, &PythonFunction!(functionSymbol.symbol)._py_function_impl);
+    }
+    alias allFunctions = AllFunctions!modules;
+    alias functions = Filter!(isWrappableFunction, allFunctions);
+    alias nonWrappableFunctions = Filter!(templateNot!isWrappableFunction, allFunctions);
+
+    static foreach(nonWrappableFunction; nonWrappableFunctions) {
+        pragma(msg, "autowrap WARNING: Could not wrap function ", fullyQualifiedName!nonWrappableFunction);
+    }
 
     return q{
         import python: ModuleInitRet;

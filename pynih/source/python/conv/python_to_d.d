@@ -27,19 +27,33 @@ T to(T)(PyObject* value) @trusted if(isFloatingPoint!T) {
 }
 
 
-T to(T)(PyObject* value) @trusted if(isUserAggregate!T && is(T == struct)) {
-    import python.type: PythonClass;
-    import std.traits: Unqual;
+// Returns T if T is copyable, T* otherwise
+auto to(T)(PyObject* value) @trusted if(isUserAggregate!T && is(T == struct)) {
+    import std.traits: Unqual, isCopyable;
 
-    auto pyclass = cast(PythonClass!T*) value;
-    Unqual!T ret;
-
-    static foreach(i; 0 .. typeof(ret).tupleof.length) {
-        ret.tupleof[i] = pyclass.getField!i.to!(typeof(T.tupleof[i]));
+    static if(isCopyable!T) {
+        alias RetType = T;
+        Unqual!T ret;
+        toStructImpl(value, &ret);
+    } else {
+        alias RetType = T*;
+        auto ret = new Unqual!T;
+        toStructImpl(value, ret);
     }
 
     // might need to be cast to `const` or `immutable`
-    return cast(T) ret;
+    return cast(RetType) ret;
+}
+
+
+private void toStructImpl(T)(PyObject* value, T* ret) {
+    import python.type: PythonClass;
+
+    auto pyclass = cast(PythonClass!T*) value;
+
+    static foreach(i; 0 .. typeof(*ret).tupleof.length) {
+        (*ret).tupleof[i] = pyclass.getField!i.to!(typeof(T.tupleof[i]));
+    }
 }
 
 
@@ -59,8 +73,9 @@ T to(T)(PyObject* value) @trusted if(isUserAggregate!T && !is(T == struct)) {
 
 
 T to(T)(PyObject* value) if(isPointer!T && isUserAggregate!(PointerTarget!T)) {
+    import std.traits: ReturnType;
     auto ret = new Unqual!(PointerTarget!T);
-    *ret = to!(PointerTarget!T)(value);
+    toStructImpl(value, ret);
     return ret;
 }
 
