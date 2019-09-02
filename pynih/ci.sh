@@ -14,4 +14,4 @@ if [ "$DC" = "ldc2" ]; then
 fi
 
 cd "$SCRIPT_DIR"
-make
+make -j`nproc`

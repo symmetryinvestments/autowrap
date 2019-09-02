@@ -6,6 +6,10 @@
 
 Wrap existing D code for use in other environments such as Python, Excel, and .NET.
 
+# Building
+
+To build and test all the code, run ci/test-all.sh
+
 # About
 
 There are projects already to make it possible to use D code

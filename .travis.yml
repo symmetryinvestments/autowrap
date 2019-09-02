@@ -33,12 +33,9 @@ env:
     - DC=dmd-2.085.0
 
 script:
-  - pynih/ci.sh
-  - DUB_CONFIGURATION=python37 make test_python
-  - dub run pyd:setup && source pyd_set_env_vars.sh
-  - DUB_CONFIGURATION=env make test_python
-  - dub test --build=unittest-cov --compiler=${DC}
-  # - csharp/tests/test.sh  # disabled for now due to broken Microsoft repo
+  # Normally this should be ci/test-all.sh but C# is broken due to
+  # not being able to install .NET core
+  - ci/test-python.sh
 
 after_success:
  - bash <(curl -s https://codecov.io/bash)
