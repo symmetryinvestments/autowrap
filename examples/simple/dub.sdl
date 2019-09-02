@@ -47,3 +47,27 @@ configuration "emitCSharp" {
     targetType "executable"
     dependency "autowrap:csharp" path="../../"
 }
+
+configuration "excel" {
+  preBuildCommands "dub run -c excel-def --nodeps -q -- simple.def"
+  sourceFiles "simple.def"
+  libs "xlcall32"
+  postBuildCommands "copy /y simple.dll simple.xll"
+  versions "WrapExcel"
+  dependency "excel-d" version="~>0.5.5"
+}
+
+configuration "excel-def" {
+  targetType "executable"
+  targetName "simple"
+  versions "excelDef" "WrapExcel"
+  dependency "excel-d" version="~>0.5.5"
+}
+
+configuration "excel-xll" {
+  sourceFiles "simple.def"
+  libs "xlcall32"
+  postBuildCommands "copy /y myxll.dll myxll.xll"
+  versions "WrapExcel"
+  dependency "excel-d" version="~>0.5.5"
+}

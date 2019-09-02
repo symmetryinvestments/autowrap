@@ -23,8 +23,16 @@ version(Have_autowrap_csharp) {
             RootNamespace("Autowrap.CSharp.Examples.Simple")
         )
     );
-}
-else {
+} else version(WrapExcel) {
+    import xlld:wrapAll;
+
+    mixin(
+        wrapAll!(
+            "prefix", "adder", "structs", "templates", "api","wrap_all"
+        ),
+    );
+
+  } else { // Python
     enum str = wrapDlang!(
         LibraryName("simple"),
         modules,
