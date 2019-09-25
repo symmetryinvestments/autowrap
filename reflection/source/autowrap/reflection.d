@@ -89,13 +89,14 @@ template Functions(alias module_, Flag!"alwaysExport" alwaysExport = No.alwaysEx
 
     template Function(string memberName) {
         static if(__traits(compiles, I!(__traits(getMember, module_, memberName)))) {
+
             alias member = I!(__traits(getMember, module_, memberName));
 
-            static if(isExportFunction!(member, alwaysExport)) {
+            static if(isExportFunction!(member, alwaysExport))
                 alias Function = FunctionSymbol!(memberName, module_, moduleName!member, member);
-            } else {
+            else
                 alias Function = void;
-            }
+
         } else {
             alias Function = void;
         }
@@ -375,10 +376,13 @@ package template isExportFunction(alias F, Flag!"alwaysExport" alwaysExport = No
 
 
 private template isExportSymbol(alias S, Flag!"alwaysExport" alwaysExport = No.alwaysExport) {
-    version(AutowrapAlwaysExport)
-        enum isExportSymbol = isPublicSymbol!S;
-    else
-        enum isExportSymbol = isPublicSymbol!S && (alwaysExport || __traits(getProtection, S) == "export");
+    static if(__traits(compiles, __traits(getProtection, S))) {
+        version(AutowrapAlwaysExport)
+            enum isExportSymbol = isPublicSymbol!S;
+        else
+            enum isExportSymbol = isPublicSymbol!S && (alwaysExport || __traits(getProtection, S) == "export");
+    } else
+        enum isExportSymbol = false;
 }
 
 private template isPublicSymbol(alias S) {

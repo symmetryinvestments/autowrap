@@ -28,11 +28,16 @@ version(Have_autowrap_csharp) {
 
     mixin(
         wrapAll!(
-            "prefix", "adder", "structs", "templates", "api","wrap_all"
+            "prefix",
+            "adder",
+            "structs",
+            "templates",
+            "api",
+            "wrap_all",
         ),
     );
 
-  } else { // Python
+} else { // Python
     enum str = wrapDlang!(
         LibraryName("simple"),
         modules,
