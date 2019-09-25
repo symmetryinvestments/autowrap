@@ -88,8 +88,9 @@ string createPythonModuleMixin(LibraryName libraryName, Modules modules)
             import python.boilerplate: Module, CFunctions, CFunction, Aggregates;
             import python.type: PythonFunction;
             import autowrap.pynih.wrap: createPythonModule;
-            %s
-            %s
+            %s  // explicit imports
+            %s  // aggregate imports
+            %s  // function imports
 
             mixin createPythonModule!(
                 Module("%s"),
@@ -101,8 +102,10 @@ string createPythonModuleMixin(LibraryName libraryName, Modules modules)
     }.format(
         pyInitFuncName,     // init function name
         libraryName.value,  // after init
-        `import ` ~ modules.value.map!(a => a.name).join(", ") ~ `;`, // import all modules
-        aggregateModuleImports!aggregates,
+        // import all modules referenced explicitly
+        `import ` ~ modules.value.map!(a => a.name).join(", ") ~ `;`,
+        aggregateModuleImports!aggregates,  // import all modules aggregates are found in
+        functionModuleImports!functions,  // import all modules functions are found in
         libraryName.value,  // Module
         functionNames!functions,
         aggregateNames!aggregates,
@@ -149,6 +152,24 @@ private string aggregateNames(aggregates...)() {
 
     return ret.join(", ");
 }
+
+
+private string functionModuleImports(functions...)() {
+    import std.meta: staticMap, NoDuplicates;
+    import std.array: join;
+    import std.traits: moduleName;
+
+    alias symbolOf(alias F) = F.symbol;
+    alias moduleNames = NoDuplicates!(staticMap!(moduleName, staticMap!(symbolOf, functions)));
+
+    string[] ret;
+    static foreach(name; moduleNames) {
+        ret ~= name;
+    }
+
+    return `import ` ~ ret.join(", ") ~ `;`;
+}
+
 
 private string functionNames(functions...)() {
     import std.meta: staticMap;
