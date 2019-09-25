@@ -4,4 +4,4 @@ authors "Atila Neves"
 license "BSD"
 targetType "sourceLibrary"
 
-dependency "excel-d" version=">=0.3.6"
+dependency "excel-d" version=">=0.5.5"
