@@ -123,18 +123,7 @@ private string pyInitFuncName() @safe pure nothrow {
 
 
 private string aggregateModuleImports(aggregates...)() {
-    import std.meta: staticMap, NoDuplicates;
-    import std.array: join;
-    import std.traits: moduleName;
-
-    alias aggModules = NoDuplicates!(staticMap!(moduleName, aggregates));
-
-    string[] ret;
-    static foreach(name; aggModules) {
-        ret ~= name;
-    }
-
-    return `import ` ~ ret.join(", ") ~ `;`;
+    return symbolModuleImports!aggregates;
 }
 
 private string aggregateNames(aggregates...)() {
@@ -153,23 +142,11 @@ private string aggregateNames(aggregates...)() {
     return ret.join(", ");
 }
 
-
 private string functionModuleImports(functions...)() {
-    import std.meta: staticMap, NoDuplicates;
-    import std.array: join;
-    import std.traits: moduleName;
-
+    import std.meta: staticMap;
     alias symbolOf(alias F) = F.symbol;
-    alias moduleNames = NoDuplicates!(staticMap!(moduleName, staticMap!(symbolOf, functions)));
-
-    string[] ret;
-    static foreach(name; moduleNames) {
-        ret ~= name;
-    }
-
-    return `import ` ~ ret.join(", ") ~ `;`;
+    return symbolModuleImports!(staticMap!(symbolOf, functions));
 }
-
 
 private string functionNames(functions...)() {
     import std.meta: staticMap;
@@ -189,6 +166,21 @@ private string functionNames(functions...)() {
     }
 
     return ret.join(", ");
+}
+
+private string symbolModuleImports(symbols...)() {
+    import std.meta: staticMap, NoDuplicates;
+    import std.array: join;
+    import std.traits: moduleName;
+
+    alias moduleNames = NoDuplicates!(staticMap!(moduleName, symbols));
+
+    string[] ret;
+    static foreach(name; moduleNames) {
+        ret ~= name;
+    }
+
+    return `import ` ~ ret.join(", ") ~ `;`;
 }
 
 
