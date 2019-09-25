@@ -31,6 +31,10 @@ env:
     - LD_RUN_PATH=$PYTHON_LIB_DIR:$LD_RUN_PATH
   matrix:
     - DC=dmd-2.085.0
+    - DC=dmd-2.085.1
+    - DC=dmd-2.086.1
+    - DC=dmd-2.087.1
+    - DC=dmd-2.088.0
 
 script:
   # Normally this should be ci/test-all.sh but C# is broken due to

@@ -5,6 +5,8 @@ set -euo pipefail
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 DC="${DC:-dmd}"
 
+echo "Testing with $DC compiler"
+
 
 "$SCRIPT_DIR"/../pynih/ci.sh
 
