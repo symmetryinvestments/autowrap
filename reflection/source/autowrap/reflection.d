@@ -93,7 +93,7 @@ template Functions(alias module_, Flag!"alwaysExport" alwaysExport = No.alwaysEx
             alias member = I!(__traits(getMember, module_, memberName));
 
             static if(isExportFunction!(member, alwaysExport))
-                alias Function = FunctionSymbol!(memberName, module_, moduleName!member, member);
+                alias Function = FunctionSymbol!(memberName, module_, member);
             else
                 alias Function = void;
 
@@ -110,10 +110,13 @@ template Functions(alias module_, Flag!"alwaysExport" alwaysExport = No.alwaysEx
     alias Functions = Filter!(notVoid, staticMap!(Function, __traits(allMembers, module_)));
 }
 
-template FunctionSymbol(string N, alias M, string MN, alias S) {
+template FunctionSymbol(string N, alias M, alias S) {
+
+    import std.traits: moduleName_ = moduleName;
+
     alias name = N;
     alias module_ = M;
-    alias moduleName = MN;
+    enum moduleName = moduleName_!module_;
     alias symbol = S;
 }
 
