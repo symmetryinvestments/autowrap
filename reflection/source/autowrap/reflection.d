@@ -84,36 +84,28 @@ template Functions(Module module_) {
 template Functions(alias module_, Flag!"alwaysExport" alwaysExport = No.alwaysExport)
     if(!is(typeof(module_) == string))
 {
+    import std.meta: staticMap, Filter;
 
-    import std.meta: Filter, staticMap;
-
-    template Function(string memberName) {
-        static if(__traits(compiles, I!(__traits(getMember, module_, memberName)))) {
-
-            alias member = I!(__traits(getMember, module_, memberName));
-
-            static if(isExportFunction!(member, alwaysExport))
-                alias Function = FunctionSymbol!(memberName, module_, moduleName!member, member);
-            else
-                alias Function = void;
-
-        } else {
-            alias Function = void;
-        }
+    private template isExport(string memberName) {
+        static if(__traits(compiles, I!(__traits(getMember, module_, memberName))))
+            enum isExport = isExportFunction!(__traits(getMember, module_, memberName), alwaysExport);
+        else
+            enum isExport = false;
     }
 
-    template notVoid(A...) if(A.length == 1) {
-        alias T = A[0];
-        enum notVoid = !is(T == void);
-    }
-
-    alias Functions = Filter!(notVoid, staticMap!(Function, __traits(allMembers, module_)));
+    alias exportFunctions = Filter!(isExport, __traits(allMembers, module_));
+    private alias Function(string memberName) =
+        FunctionSymbol!(memberName, module_, __traits(getMember, module_, memberName));
+    alias Functions = staticMap!(Function, exportFunctions);
 }
 
-template FunctionSymbol(string N, alias M, string MN, alias S) {
+template FunctionSymbol(string N, alias M, alias S) {
+
+    import std.traits: moduleName_ = moduleName;
+
     alias name = N;
     alias module_ = M;
-    alias moduleName = MN;
+    enum moduleName = moduleName_!module_;
     alias symbol = S;
 }
 
@@ -190,7 +182,6 @@ private template FunctionTypesInModules(Modules...) if(allSatisfy!(isModule, Mod
 private template FunctionTypesInModule(Module module_) {
 
     mixin(`import dmodule  = ` ~ module_.name ~ `;`);
-    import autowrap.reflection: isExportFunction;
     import std.traits: ReturnType, Parameters;
     import std.meta: Filter, staticMap, AliasSeq, NoDuplicates;
 
@@ -356,32 +347,25 @@ version(TestingAutowrap) {
 package template isExportFunction(alias F, Flag!"alwaysExport" alwaysExport = No.alwaysExport) {
     import std.traits: isFunction;
 
-    version(AutowrapAlwaysExport) {
-        static if(isFunction!F) {
+    static if(!isFunction!F)
+        enum isExportFunction = false;
+    else {
+        version(AutowrapAlwaysExport) {
             enum linkage = __traits(getLinkage, F);
             enum isExportFunction = linkage != "C" && linkage != "C++";
-        } else
-            enum isExportFunction = false;
-    } else version(AutowrapAlwaysExportC) {
-        static if(isFunction!F) {
+        } else version(AutowrapAlwaysExportC) {
             enum linkage = __traits(getLinkage, F);
             enum isExportFunction = linkage == "C" || linkage == "C++";
         } else
-            enum isExportFunction = false;
-
-    } else {
-        enum isExportFunction = isFunction!F && isExportSymbol!(F, alwaysExport);
+            enum isExportFunction = isExportSymbol!(F, alwaysExport);
     }
 }
 
 
 private template isExportSymbol(alias S, Flag!"alwaysExport" alwaysExport = No.alwaysExport) {
-    static if(__traits(compiles, __traits(getProtection, S))) {
-        version(AutowrapAlwaysExport)
-            enum isExportSymbol = isPublicSymbol!S;
-        else
-            enum isExportSymbol = isPublicSymbol!S && (alwaysExport || __traits(getProtection, S) == "export");
-    } else
+    static if(__traits(compiles, __traits(getProtection, S)))
+        enum isExportSymbol = isPublicSymbol!S && (alwaysExport || __traits(getProtection, S) == "export");
+    else
         enum isExportSymbol = false;
 }
 
