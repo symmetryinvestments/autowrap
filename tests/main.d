@@ -3,8 +3,8 @@ import unit_threaded.runner;
 
 version(NoPynih) {
    mixin runTestsMain!(
-        "autowrap.reflection",
         "autowrap.python.wrap",
+        "reflection",
         "issues",
     );
 } else {
@@ -23,8 +23,8 @@ version(NoPynih) {
     }
 
     mixin runTestsMain!(
-        "autowrap.reflection",
         "autowrap.python.wrap",
+        "reflection",
         "pynih.python.conv",
         "pynih.python.util",
         "issues",
