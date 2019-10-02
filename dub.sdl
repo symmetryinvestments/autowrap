@@ -5,6 +5,7 @@ license "BSD"
 targetType "none"
 
 
+subPackage "common"
 subPackage "reflection"
 subPackage "python"
 subPackage "pynih"
