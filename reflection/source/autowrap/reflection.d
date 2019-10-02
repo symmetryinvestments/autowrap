@@ -359,32 +359,25 @@ version(TestingAutowrap) {
 package template isExportFunction(alias F, Flag!"alwaysExport" alwaysExport = No.alwaysExport) {
     import std.traits: isFunction;
 
-    version(AutowrapAlwaysExport) {
-        static if(isFunction!F) {
+    static if(!isFunction!F)
+        enum isExportFunction = false;
+    else {
+        version(AutowrapAlwaysExport) {
             enum linkage = __traits(getLinkage, F);
             enum isExportFunction = linkage != "C" && linkage != "C++";
-        } else
-            enum isExportFunction = false;
-    } else version(AutowrapAlwaysExportC) {
-        static if(isFunction!F) {
+        } else version(AutowrapAlwaysExportC) {
             enum linkage = __traits(getLinkage, F);
             enum isExportFunction = linkage == "C" || linkage == "C++";
         } else
-            enum isExportFunction = false;
-
-    } else {
-        enum isExportFunction = isFunction!F && isExportSymbol!(F, alwaysExport);
+            enum isExportFunction = isExportSymbol!(F, alwaysExport);
     }
 }
 
 
 private template isExportSymbol(alias S, Flag!"alwaysExport" alwaysExport = No.alwaysExport) {
-    static if(__traits(compiles, __traits(getProtection, S))) {
-        version(AutowrapAlwaysExport)
-            enum isExportSymbol = isPublicSymbol!S;
-        else
-            enum isExportSymbol = isPublicSymbol!S && (alwaysExport || __traits(getProtection, S) == "export");
-    } else
+    static if(__traits(compiles, __traits(getProtection, S)))
+        enum isExportSymbol = isPublicSymbol!S && (alwaysExport || __traits(getProtection, S) == "export");
+    else
         enum isExportSymbol = false;
 }
 
