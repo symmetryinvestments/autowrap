@@ -5,6 +5,7 @@ license "BSD"
 targetType "none"
 
 
+subPackage "common"
 subPackage "reflection"
 subPackage "python"
 subPackage "pynih"
@@ -54,6 +55,7 @@ configuration "unittest-no-pynih" {
     lflags "-L$PYTHON_LIB_DIR"
     versions "NoPynih"
 
+    dependency ":common" version="*"
     dependency ":reflection" version="*"
     dependency "unit-threaded" version="*"
 }

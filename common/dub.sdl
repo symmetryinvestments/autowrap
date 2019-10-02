@@ -1,0 +1,5 @@
+name "common"
+description "Common functionality for autowrap"
+authors "Atila Neves"
+license "BSD"
+targetType "library"
