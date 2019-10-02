@@ -84,30 +84,19 @@ template Functions(Module module_) {
 template Functions(alias module_, Flag!"alwaysExport" alwaysExport = No.alwaysExport)
     if(!is(typeof(module_) == string))
 {
+    import std.meta: staticMap, Filter;
 
-    import std.meta: Filter, staticMap;
-
-    template Function(string memberName) {
-        static if(__traits(compiles, I!(__traits(getMember, module_, memberName)))) {
-
-            alias member = I!(__traits(getMember, module_, memberName));
-
-            static if(isExportFunction!(member, alwaysExport))
-                alias Function = FunctionSymbol!(memberName, module_, member);
-            else
-                alias Function = void;
-
-        } else {
-            alias Function = void;
-        }
+    private template isExport(string memberName) {
+        static if(__traits(compiles, I!(__traits(getMember, module_, memberName))))
+            enum isExport = isExportFunction!(__traits(getMember, module_, memberName), alwaysExport);
+        else
+            enum isExport = false;
     }
 
-    template notVoid(A...) if(A.length == 1) {
-        alias T = A[0];
-        enum notVoid = !is(T == void);
-    }
-
-    alias Functions = Filter!(notVoid, staticMap!(Function, __traits(allMembers, module_)));
+    alias exportFunctions = Filter!(isExport, __traits(allMembers, module_));
+    private alias Function(string memberName) =
+        FunctionSymbol!(memberName, module_, __traits(getMember, module_, memberName));
+    alias Functions = staticMap!(Function, exportFunctions);
 }
 
 template FunctionSymbol(string N, alias M, alias S) {
