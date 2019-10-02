@@ -193,7 +193,6 @@ private template FunctionTypesInModules(Modules...) if(allSatisfy!(isModule, Mod
 private template FunctionTypesInModule(Module module_) {
 
     mixin(`import dmodule  = ` ~ module_.name ~ `;`);
-    import autowrap.reflection: isExportFunction;
     import std.traits: ReturnType, Parameters;
     import std.meta: Filter, staticMap, AliasSeq, NoDuplicates;
 
