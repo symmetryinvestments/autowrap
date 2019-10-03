@@ -833,10 +833,9 @@ struct PythonClass(T) if(isUserAggregate!T) {
             return -1;
         }
 
-        // FIXME
-        // if(!checkPythonType!(fieldTypes[FieldIndex])(value)) {
-        //     return -1;
-        // }
+        if(!checkPythonType!(fieldTypes[FieldIndex])(value)) {
+            return -1;
+        }
 
         auto self = cast(PythonClass!T*) self_;
         auto tmp = self.getField!FieldIndex;
