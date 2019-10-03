@@ -19,4 +19,4 @@ source pyd_set_env_vars.sh
 set -u
 popd
 DUB_CONFIGURATION=env make -j`nproc` test_python
-dub test --build=unittest-cov --compiler="$DC"
+dub test -q --build=unittest-cov --compiler="$DC"

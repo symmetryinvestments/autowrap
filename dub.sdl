@@ -32,6 +32,7 @@ configuration "unittest" {
     libs "python3.7m"
     lflags "-L$PYTHON_LIB_DIR"
 
+    dependency ":common" version="*"
     dependency ":reflection" version="*"
     dependency ":pynih" version="*"
     dependency "unit-threaded" version="*"

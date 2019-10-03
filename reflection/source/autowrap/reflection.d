@@ -94,9 +94,9 @@ template Functions(alias module_, Flag!"alwaysExport" alwaysExport = No.alwaysEx
     }
 
     alias exportFunctions = Filter!(isExport, __traits(allMembers, module_));
-    private alias Function(string memberName) =
+    private alias toFunctionSymbol(string memberName) =
         FunctionSymbol!(memberName, module_, __traits(getMember, module_, memberName));
-    alias Functions = staticMap!(Function, exportFunctions);
+    alias Functions = staticMap!(toFunctionSymbol, exportFunctions);
 }
 
 template FunctionSymbol(string N, alias M, alias S) {
@@ -416,18 +416,6 @@ template isStatic(alias F) {
 }
 
 
-@("isStatic")
-@safe pure unittest {
-    static struct Struct {
-        int foo();
-        static int bar();
-    }
-
-    static assert(!isStatic!(Struct.foo));
-    static assert( isStatic!(Struct.bar));
-}
-
-
 // From a function symbol to an AliasSeq of `Parameter`
 template FunctionParameters(A...) if(A.length == 1 && isCallable!(A[0])) {
     import std.traits: Parameters, ParameterIdentifierTuple, ParameterDefaults;
@@ -521,32 +509,6 @@ template BinaryOperators(T) {
         alias BinaryOperators = AliasSeq!();
 }
 
-///
-@("BinaryOperators")
-@safe pure unittest {
-
-    static struct Number {
-        int i;
-        Number opBinary(string op)(Number other) if(op == "+") {
-            return Number(i + other.i);
-        }
-        Number opBinary(string op)(Number other) if(op == "-") {
-            return Number(i - other.i);
-        }
-        Number opBinaryRight(string op)(int other) if(op == "+") {
-            return Number(i + other);
-        }
-    }
-
-    static assert(
-        [BinaryOperators!Number] ==
-        [
-            BinaryOperator("+", BinOpDir.left | BinOpDir.right),
-            BinaryOperator("-", BinOpDir.left),
-        ]
-    );
-}
-
 
 /**
    Tests if T has a template function named `funcName`
@@ -560,7 +522,6 @@ private auto probeOperator(T, string funcName, string op)() {
 
     mixin(`return T.init.` ~ funcName ~ `!op(P.init);`);
 }
-
 
 
 struct BinaryOperator {
@@ -593,18 +554,6 @@ template UnaryOperators(T) {
     alias UnaryOperators = Filter!(hasOperator, overloadable);
 }
 
-///
-@("UnaryOperators")
-@safe pure unittest {
-
-    static struct Struct {
-        int opUnary(string op)() if(op == "+") { return 42; }
-        int opUnary(string op)() if(op == "~") { return 33; }
-    }
-
-    static assert([UnaryOperators!Struct] == ["+", "~"]);
-}
-
 
 template AssignOperators(T) {
     import std.meta: AliasSeq, Filter;
@@ -617,25 +566,4 @@ template AssignOperators(T) {
 
     private enum hasOperator(string op) = is(typeof(probeOperator!(T, "opOpAssign", op)));
     alias AssignOperators = Filter!(hasOperator, overloadable);
-}
-
-
-///
-@("AssignOperators")
-@safe pure unittest {
-
-    static struct Number {
-        int i;
-        Number opOpAssign(string op)(Number other) if(op == "+") {
-            return Number(i + other.i);
-        }
-        Number opOpAssign(string op)(Number other) if(op == "-") {
-            return Number(i - other.i);
-        }
-        Number opOpAssignRight(string op)(int other) if(op == "+") {
-            return Number(i + other);
-        }
-    }
-
-    static assert([AssignOperators!Number] == ["+", "-"]);
 }
