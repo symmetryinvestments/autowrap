@@ -16,6 +16,7 @@ private enum isString(alias T) = is(typeof(T) == string);
 
 ///  Wrap global functions from multiple modules
 void wrapAllFunctions(Modules...)() if(allSatisfy!(isModule, Modules)) {
+    import autowrap.common: toSnakeCase;
     import autowrap.reflection: AllFunctions;
     import pyd.pyd: def, PyName;
 
@@ -27,61 +28,6 @@ void wrapAllFunctions(Modules...)() if(allSatisfy!(isModule, Modules)) {
             // def!(function_.symbol, PyName!(toSnakeCase(function_.name)))();
         }
     }
-}
-
-
-/// Converts an identifier from camelCase or PascalCase to snake_case.
-string toSnakeCase(in string str) @safe pure {
-
-    import std.algorithm: all, map;
-    import std.ascii: isUpper;
-
-    if(str.all!isUpper) return str;
-
-    string ret;
-
-    string convert(in size_t index, in char c) {
-        import std.ascii: isLower, toLower;
-
-        const prefix = index == 0 ? "" : "_";
-        const isHump =
-            (index == 0 && c.isUpper) ||
-            (index > 0 && c.isUpper && str[index - 1].isLower);
-
-        return isHump ? prefix ~ c.toLower : "" ~ c;
-    }
-
-    foreach(i, c; str) {
-        ret ~= convert(i, c);
-    }
-
-    return ret;
-}
-
-
-@("toSnakeCase empty")
-@safe pure unittest {
-    static assert("".toSnakeCase == "");
-}
-
-@("toSnakeCase no caps")
-@safe pure unittest {
-    static assert("foo".toSnakeCase == "foo");
-}
-
-@("toSnakeCase camelCase")
-@safe pure unittest {
-    static assert("toSnakeCase".toSnakeCase == "to_snake_case");
-}
-
-@("toSnakeCase PascalCase")
-@safe pure unittest {
-    static assert("PascalCase".toSnakeCase == "pascal_case");
-}
-
-@("toSnakeCase ALLCAPS")
-@safe pure unittest {
-    static assert("ALLCAPS".toSnakeCase == "ALLCAPS");
 }
 
 

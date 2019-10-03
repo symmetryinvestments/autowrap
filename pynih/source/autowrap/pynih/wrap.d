@@ -149,6 +149,7 @@ private string functionModuleImports(functions...)() {
 }
 
 private string functionNames(functions...)() {
+    import autowrap.common: toSnakeCase;
     import std.meta: staticMap;
     import std.array: join;
     import std.traits: fullyQualifiedName, moduleName;
@@ -221,33 +222,4 @@ mixin template createPythonModule(python.boilerplate.Module module_, alias cfunc
         pyDateTimeImport;
         initModule!(module_, cfunctions, aggregates);
     }
-}
-
-
-// FIXME - put into common subpackage
-string toSnakeCase(in string str) @safe pure {
-
-    import std.algorithm: all, map;
-    import std.ascii: isUpper;
-
-    if(str.all!isUpper) return str;
-
-    string ret;
-
-    string convert(in size_t index, in char c) {
-        import std.ascii: isLower, toLower;
-
-        const prefix = index == 0 ? "" : "_";
-        const isHump =
-            (index == 0 && c.isUpper) ||
-            (index > 0 && c.isUpper && str[index - 1].isLower);
-
-        return isHump ? prefix ~ c.toLower : "" ~ c;
-    }
-
-    foreach(i, c; str) {
-        ret ~= convert(i, c);
-    }
-
-    return ret;
 }
