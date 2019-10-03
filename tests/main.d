@@ -1,13 +1,23 @@
 import unit_threaded.runner;
+import std.meta: AliasSeq;
+
+
+alias normalModules = AliasSeq!(
+    "common",
+    "reflection",
+    "issues",
+);
+
+alias pynihModules = AliasSeq!(
+    "pynih.python.conv",
+    "pynih.python.util",
+);
 
 
 version(NoPynih) {
-   mixin runTestsMain!(
-        "common",
-        "reflection",
-        "issues",
-    );
+    alias testModules = normalModules;
 } else {
+    alias testModules = AliasSeq!(normalModules, pynihModules);
 
     import python;
     export __gshared extern(C) PyDateTime_CAPI* PyDateTimeAPI;
@@ -21,12 +31,7 @@ version(NoPynih) {
     shared static ~this() {
         Py_Finalize;
     }
-
-    mixin runTestsMain!(
-        "common",
-        "reflection",
-        "issues",
-        "pynih.python.conv",
-        "pynih.python.util",
-    );
 }
+
+
+mixin runTestsMain!testModules;
