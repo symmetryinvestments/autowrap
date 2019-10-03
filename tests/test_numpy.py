@@ -137,12 +137,13 @@ def test_arange():
     with pytest.raises(AssertionError):
         assert append42(arange(3)) == [0, 1, 2, 42]
 
+
 def test_ndarray():
     from numpytests import matrix_inc1
     from numpy import ndarray
     from pytest import approx
 
-    nd = ndarray(shape=(2,2), dtype=float, order='F')
+    nd = ndarray(shape=(2, 2), dtype=float, order='F')
     nd[0, 0] = 1.1
     nd[0, 1] = 2.2
     nd[1, 0] = 3.3
