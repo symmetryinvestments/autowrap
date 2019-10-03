@@ -42,18 +42,14 @@ template Functions(Module module_) {
 template Functions(alias module_, Flag!"alwaysExport" alwaysExport = No.alwaysExport)
     if(!is(typeof(module_) == string))
 {
+    import mirror.meta: MirrorModule = Module;
     import std.meta: staticMap, Filter;
+    import std.traits: moduleName;
 
-    private template isExport(string memberName) {
-        static if(__traits(compiles, I!(__traits(getMember, module_, memberName))))
-            enum isExport = isExportFunction!(__traits(getMember, module_, memberName), alwaysExport);
-        else
-            enum isExport = false;
-    }
-
-    alias exportFunctions = Filter!(isExport, __traits(allMembers, module_));
-    private alias toFunctionSymbol(string memberName) =
-        FunctionSymbol!(memberName, module_, __traits(getMember, module_, memberName));
+    alias mod = MirrorModule!(moduleName!module_);
+    enum isExport(alias F) = isExportFunction!(F.symbol, alwaysExport);
+    alias exportFunctions = Filter!(isExport, mod.Functions);
+    alias toFunctionSymbol(alias F) = FunctionSymbol!(F.identifier, module_, F.symbol);
     alias Functions = staticMap!(toFunctionSymbol, exportFunctions);
 }
 

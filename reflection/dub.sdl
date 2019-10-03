@@ -5,3 +5,4 @@ license "BSD"
 targetType "library"
 
 dependency "autowrap:common" path="../common"
+dependency "mirror" version="*"
