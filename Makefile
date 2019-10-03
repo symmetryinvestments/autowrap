@@ -3,7 +3,7 @@
 export PYTHON_LIB_DIR ?= /usr/lib
 DUB_CONFIGURATION ?= python37
 
-.PHONY: clean test test_python test_cs test_simple_pyd test_simple_pynih test_simple_cs test_pyd_pyd test_issues_pyd test_issues_pynih test_numpy_pyd examples/simple/lib/pyd/libsimple.so examples/simple/lib/pynih/libsimple.so examples/issues/lib/pyd/libissues.so examples/issues/lib/pynih/libissues.so examples/numpy/lib/pydlibnumpy.so examples/pyd/lib/pyd/libpydtests.so examples/pyd/lib/pynih/libpydtests.so
+.PHONY: clean test test_python test_cs test_simple_pyd test_simple_pynih test_simple_cs test_pyd_pyd test_issues_pyd test_issues_pynih test_numpy_pyd test_numpy_pynih examples/simple/lib/pyd/libsimple.so examples/simple/lib/pynih/libsimple.so examples/issues/lib/pyd/libissues.so examples/issues/lib/pynih/libissues.so examples/numpy/lib/pyd/libnumpy.so examples/numpy/lib/pynih/libnumpy.so examples/pyd/lib/pyd/libpydtests.so examples/pyd/lib/pynih/libpydtests.so
 
 all: test
 test: test_python test_cs
@@ -112,6 +112,18 @@ examples/numpy/lib/pyd/numpytests.so: examples/numpy/lib/pyd/libnumpy.so
 
 examples/numpy/lib/pyd/libnumpy.so:
 	@cd examples/numpy && dub build -q -c $(DUB_CONFIGURATION)
+
+examples/numpy/dub.selections.json:
+	@cd examples/numpy && dub upgrade -q
+
+test_numpy_pynih: tests/test_numpy.py examples/numpy/lib/pynih/numpytests.so
+	PYTHONPATH=$(PWD)/examples/numpy/lib/pynih pytest -s -vv $<
+
+examples/numpy/lib/pynih/numpytests.so: examples/numpy/lib/pynih/libnumpy.so
+	@cp $^ $@
+
+examples/numpy/lib/pynih/libnumpy.so:
+	@cd examples/numpy && dub build -q -c pynih
 
 examples/numpy/dub.selections.json:
 	@cd examples/numpy && dub upgrade -q
