@@ -46,9 +46,9 @@ string wrapDlang(
     PostModuleInitCode postModuleInitCode = PostModuleInitCode())
     ()
 {
-    return !__ctfe
-        ? null
-        : wrapAll(libraryName, modules, preModuleInitCode, postModuleInitCode);
+    return __ctfe
+        ? wrapAll(libraryName, modules, preModuleInitCode, postModuleInitCode)
+        : null;
 }
 
 

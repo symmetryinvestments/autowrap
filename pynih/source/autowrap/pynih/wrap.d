@@ -5,9 +5,10 @@ module autowrap.pynih.wrap;
 
 
 public import std.typecons: Yes, No;
-public import autowrap.reflection: Modules, Module;
+public import autowrap.reflection: Modules, Module, isModule;
 static import python.boilerplate;
 import python.raw: isPython2, isPython3;
+import std.meta: allSatisfy;
 
 
 /**
@@ -41,160 +42,107 @@ string wrapDlang(
     LibraryName libraryName,
     Modules modules,
     PreModuleInitCode preModuleInitCode = PreModuleInitCode(),
-    PostModuleInitCode postModuleInitCode = PostModuleInitCode())
+    PostModuleInitCode postModuleInitCode = PostModuleInitCode(),
+    )
     ()
 {
-    return !__ctfe
-        ? null
-        : createPythonModuleMixin!(libraryName, modules);
+    return __ctfe
+        ? createPythonModuleMixin!(libraryName, modules)
+        : null;
 }
 
 
 string createPythonModuleMixin(LibraryName libraryName, Modules modules)
                               ()
 {
-    import python.type: PythonFunction;
-    import autowrap.reflection: AllAggregates, AllFunctions;
     import std.format: format;
     import std.algorithm: map;
     import std.array: join;
-    import std.meta: Filter, templateNot;
-    import std.traits: fullyQualifiedName;
 
     if(!__ctfe) return null;
 
-    alias aggregates = AllAggregates!modules;
-    template isWrappableFunction(alias functionSymbol) {
-        enum isWrappableFunction = __traits(compiles, &PythonFunction!(functionSymbol.symbol)._py_function_impl);
+    const modulesList = modules.value.map!(a => a.toString).join(", ");
+
+    return q{
+        import python.raw: PyDateTime_CAPI;
+
+        // This is declared as an extern C variable in python.bindings.
+        // We declare it here to avoid linker errors.
+        export __gshared extern(C) PyDateTime_CAPI* PyDateTimeAPI;
+
+        extern(C) export auto %s() { // -> ModuleInitRet
+            import autowrap.pynih.wrap: createPythonModule, LibraryName;
+            import autowrap.reflection: Module;
+            return createPythonModule!(
+                LibraryName("%s"),
+                %s
+            );
+        }
+    }.format(
+        pyInitFuncName(libraryName),  // extern(C) function name
+        libraryName.value,
+        modulesList,
+    );
+}
+
+
+private string pyInitFuncName(LibraryName libraryName) @safe pure nothrow {
+
+    string prefix() {
+        static if(isPython2)
+            return "init";
+        else static if(isPython3)
+            return "PyInit_";
+        else
+            static assert(false);
     }
+
+    return prefix ~ libraryName.value;
+}
+
+
+auto createPythonModule(LibraryName libraryName, modules...)()
+    if(allSatisfy!(isModule, modules))
+{
+    import autowrap.common: toSnakeCase;
+    import python.type: PythonFunction;
+    import python.boilerplate: Module, CFunctions, CFunction, Aggregates;
+    import autowrap.reflection: AllAggregates, AllFunctions;
+    import std.meta: Filter, templateNot, staticMap;
+    import std.traits: fullyQualifiedName;
+
     alias allFunctions = AllFunctions!modules;
-    alias functions = Filter!(isWrappableFunction, allFunctions);
+    enum isWrappableFunction(alias functionSymbol) =
+        __traits(compiles, &PythonFunction!(functionSymbol.symbol)._py_function_impl);
+    alias wrappableFunctions = Filter!(isWrappableFunction, allFunctions);
     alias nonWrappableFunctions = Filter!(templateNot!isWrappableFunction, allFunctions);
 
     static foreach(nonWrappableFunction; nonWrappableFunctions) {
         pragma(msg, "autowrap WARNING: Could not wrap function ", fullyQualifiedName!nonWrappableFunction);
     }
 
-    return q{
-        import python: ModuleInitRet;
-        import python.raw: PyDateTime_CAPI;
-        import python.type: PythonFunction;
-
-        // This is declared as an extern C variable in python.bindings.
-        // We declare it here to avoid linker errors.
-        export __gshared extern(C) PyDateTime_CAPI* PyDateTimeAPI;
-
-        extern(C) export ModuleInitRet %s%s() {
-            import python.boilerplate: Module, CFunctions, CFunction, Aggregates;
-            import python.type: PythonFunction;
-            import autowrap.pynih.wrap: createPythonModule;
-            %s  // explicit imports
-            %s  // aggregate imports
-            %s  // function imports
-
-            mixin createPythonModule!(
-                Module("%s"),
-                CFunctions!(%s),
-                Aggregates!(%s),
-            );
-            return _py_init_impl;
-        }
-    }.format(
-        pyInitFuncName,     // init function name
-        libraryName.value,  // after init
-        // import all modules referenced explicitly
-        `import ` ~ modules.value.map!(a => a.name).join(", ") ~ `;`,
-        aggregateModuleImports!aggregates,  // import all modules aggregates are found in
-        functionModuleImports!functions,  // import all modules functions are found in
-        libraryName.value,  // Module
-        functionNames!functions,
-        aggregateNames!aggregates,
+    alias toCFunction(alias functionSymbol) = CFunction!(
+        PythonFunction!(functionSymbol.symbol)._py_function_impl,
+        functionSymbol.name.toSnakeCase,
     );
-}
+    alias cfunctions = CFunctions!(staticMap!(toCFunction, wrappableFunctions));
 
-private string pyInitFuncName() @safe pure nothrow {
-    static if(isPython2)
-        return "init";
-    else static if(isPython3)
-        return "PyInit_";
-    else
-        static assert(false);
-}
+    alias allAggregates = AllAggregates!modules;
+    alias aggregates = Aggregates!allAggregates;
 
+    enum pythonModule = python.boilerplate.Module(libraryName.value);
 
-private string aggregateModuleImports(aggregates...)() {
-    return symbolModuleImports!aggregates;
-}
-
-private string aggregateNames(aggregates...)() {
-    import std.meta: staticMap;
-    import std.array: join;
-    import std.traits: fullyQualifiedName;
-
-    enum Name(T) = fullyQualifiedName!T;
-    alias names = staticMap!(Name, aggregates);
-
-    string[] ret;
-    static foreach(name; names) {
-        ret ~= name;
-    }
-
-    return ret.join(", ");
-}
-
-private string functionModuleImports(functions...)() {
-    import std.meta: staticMap;
-    alias symbolOf(alias F) = F.symbol;
-    return symbolModuleImports!(staticMap!(symbolOf, functions));
-}
-
-private string functionNames(functions...)() {
-    import autowrap.common: toSnakeCase;
-    import std.meta: staticMap;
-    import std.array: join;
-    import std.traits: fullyQualifiedName, moduleName;
-
-    enum FQN(alias functionSymbol) = fullyQualifiedName!(functionSymbol.symbol);
-    enum ImplName(alias functionSymbol) =
-        `CFunction!(PythonFunction!(` ~ FQN!functionSymbol ~ `)._py_function_impl, "` ~
-        functionSymbol.name.toSnakeCase ~
-        `")`;
-    alias names = staticMap!(ImplName, functions);
-
-    string[] ret;
-    static foreach(name; names) {
-        ret ~= name;
-    }
-
-    return ret.join(", ");
-}
-
-private string symbolModuleImports(symbols...)() {
-    import std.meta: staticMap, NoDuplicates;
-    import std.array: join;
-    import std.traits: moduleName;
-
-    alias moduleNames = NoDuplicates!(staticMap!(moduleName, symbols));
-
-    string[] ret;
-    static foreach(name; moduleNames) {
-        ret ~= name;
-    }
-
-    return `import ` ~ ret.join(", ") ~ `;`;
+    mixin createPythonModule!(pythonModule, cfunctions, aggregates);
+    return _py_init_impl;
 }
 
 
 mixin template createPythonModule(python.boilerplate.Module module_, alias cfunctions, alias aggregates)
     if(isPython3)
 {
-    import python: ModuleInitRet;
-    import std.format: format;
-
-    static extern(C) export ModuleInitRet _py_init_impl() {
+    static extern(C) export auto _py_init_impl() {  // -> ModuleInitRet
         import python.raw: pyDateTimeImport;
         import python.cooked: createModule;
-        import python.boilerplate: Module, CFunctions, Aggregates;
         import core.runtime: rt_init;
 
         rt_init;
@@ -208,13 +156,9 @@ mixin template createPythonModule(python.boilerplate.Module module_, alias cfunc
 mixin template createPythonModule(python.boilerplate.Module module_, alias cfunctions, alias aggregates)
     if(isPython2)
 {
-    import python: ModuleInitRet;
-    import std.format: format;
-
     static extern(C) export void _py_init_impl() {
         import python.raw: pyDateTimeImport;
         import python.cooked: initModule;
-        import python.boilerplate: Module, CFunctions, Aggregates;
         import core.runtime: rt_init;
 
         rt_init;
