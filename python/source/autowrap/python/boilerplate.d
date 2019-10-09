@@ -10,28 +10,9 @@
  */
 module autowrap.python.boilerplate;
 
+
+public import autowrap.types: LibraryName, PreModuleInitCode, PostModuleInitCode;
 import autowrap.reflection : Modules;
-
-/**
-   The name of the dynamic library, i.e. the file name with the .so/.dll extension
- */
-struct LibraryName {
-    string value;
-}
-
-/**
-   Code to be inserted before the call to module_init
- */
-struct PreModuleInitCode {
-    string value;
-}
-
-/**
-   Code to be inserted after the call to module_init
- */
-struct PostModuleInitCode {
-    string value;
-}
 
 
 /**

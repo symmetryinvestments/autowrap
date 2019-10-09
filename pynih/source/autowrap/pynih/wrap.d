@@ -6,31 +6,10 @@ module autowrap.pynih.wrap;
 
 public import std.typecons: Yes, No;
 public import autowrap.reflection: Modules, Module, isModule;
+public import autowrap.types: LibraryName, PreModuleInitCode, PostModuleInitCode;
 static import python.boilerplate;
 import python.raw: isPython2, isPython3;
 import std.meta: allSatisfy;
-
-
-/**
-   The name of the dynamic library, i.e. the file name with the .so/.dll extension
- */
-struct LibraryName {
-    string value;
-}
-
-/**
-   Not used. Included for compatibility with the pyd backend.
- */
-struct PreModuleInitCode {
-    string value;
-}
-
-/**
-   Not used. Included for compatibility with the pyd backend.
- */
-struct PostModuleInitCode {
-    string value;
-}
 
 
 /**

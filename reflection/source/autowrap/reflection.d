@@ -1,62 +1,14 @@
 module autowrap.reflection;
 
 
+public import autowrap.types: isModule, Modules, Module;
 import std.meta: allSatisfy;
 import std.traits: isArray, isCallable;
 import std.typecons: Flag, No;
 
 
-template isModule(alias T) {
-    import std.traits: Unqual;
-    enum isModule = is(Unqual!(typeof(T)) == Module);
-}
-
-
 private alias I(alias T) = T;
 private enum isString(alias T) = is(typeof(T) == string);
-
-
-/**
-   The list of modules to automatically wrap for consumption by other languages.
- */
-struct Modules {
-    import autowrap.reflection: Module;
-    import std.traits: Unqual;
-    import std.meta: allSatisfy;
-
-    Module[] value;
-
-    this(A...)(auto ref A modules) {
-
-        foreach(module_; modules) {
-            static if(is(Unqual!(typeof(module_)) == Module))
-                value ~= module_;
-            else static if(is(Unqual!(typeof(module_)) == string))
-                value ~= Module(module_);
-            else
-                static assert(false, "Modules must either be `string` or `Module`");
-        }
-    }
-}
-
-/**
-   A module to automatically wrap.
-   Usually not needed since a string will do, but is useful when trying to export
-   all functions from a module by using Module("mymodule", Yes.alwaysExport)
-   instead of "mymodule"
- */
-struct Module {
-    import std.typecons: Flag, No;
-
-    string name;
-    Flag!"alwaysExport" alwaysExport = No.alwaysExport;
-
-    string toString() @safe pure const {
-        import std.conv: text;
-        import std.string: capitalize;
-        return text(`Module("`, name, `", `, text(alwaysExport).capitalize, `.alwaysExport)`);
-    }
-}
 
 
 template AllFunctions(Modules modules) {
