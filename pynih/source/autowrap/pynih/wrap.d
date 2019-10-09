@@ -19,14 +19,14 @@ struct LibraryName {
 }
 
 /**
-   Code to be inserted before the call to module_init
+   Not used. Included for compatibility with the pyd backend.
  */
 struct PreModuleInitCode {
     string value;
 }
 
 /**
-   Code to be inserted after the call to module_init
+   Not used. Included for compatibility with the pyd backend.
  */
 struct PostModuleInitCode {
     string value;
