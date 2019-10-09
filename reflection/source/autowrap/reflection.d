@@ -48,7 +48,7 @@ template Functions(alias module_, Flag!"alwaysExport" alwaysExport = No.alwaysEx
 
     alias mod = MirrorModule!(moduleName!module_);
     enum isExport(alias F) = isExportFunction!(F.symbol, alwaysExport);
-    alias exportFunctions = Filter!(isExport, mod.Functions);
+    alias exportFunctions = Filter!(isExport, mod.FunctionsBySymbol);
     alias toFunctionSymbol(alias F) = FunctionSymbol!(F.identifier, module_, F.symbol);
     alias Functions = staticMap!(toFunctionSymbol, exportFunctions);
 }
