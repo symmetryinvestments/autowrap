@@ -2,13 +2,19 @@ module autowrap.reflection;
 
 
 import std.meta: allSatisfy;
-import std.traits: isArray, Unqual, moduleName, isCallable;
+import std.traits: isArray, isCallable;
 import std.typecons: Flag, No;
+
+
+template isModule(alias T) {
+    import std.traits: Unqual;
+    enum isModule = is(Unqual!(typeof(T)) == Module);
+}
 
 
 private alias I(alias T) = T;
 private enum isString(alias T) = is(typeof(T) == string);
-enum isModule(alias T) = is(Unqual!(typeof(T)) == Module);
+
 
 /**
    The list of modules to automatically wrap for consumption by other languages.
