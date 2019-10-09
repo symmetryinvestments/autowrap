@@ -100,3 +100,29 @@ import std.typecons: Yes;
 
     static assert([AssignOperators!Number] == ["+", "-"]);
 }
+
+
+@("isUserAggregate!DateTime")
+@safe pure unittest {
+    import std.datetime: DateTime;
+    static assert(!isUserAggregate!DateTime);
+}
+
+
+@("isUserAggregate!Tuple")
+@safe pure unittest {
+    import std.typecons: Tuple;
+    static assert(!isUserAggregate!(Tuple!(int, double)));
+}
+
+
+@("isPrimordialType")
+@safe pure unittest {
+    static assert(is(PrimordialType!int == int));
+    static assert(is(PrimordialType!(int[]) == int));
+    static assert(is(PrimordialType!(int[][]) == int));
+    static assert(is(PrimordialType!(double[][]) == double));
+    static assert(is(PrimordialType!(string[][]) == char));
+    static assert(is(PrimordialType!(int*) == int));
+    static assert(is(PrimordialType!(int**) == int));
+}

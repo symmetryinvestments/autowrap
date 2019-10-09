@@ -272,7 +272,7 @@ private template Type(T...) if(T.length == 1) {
 }
 
 // if a type is a struct or a class
-package template isUserAggregate(A...) if(A.length == 1) {
+template isUserAggregate(A...) if(A.length == 1) {
     import std.datetime;
     import std.traits: Unqual, isInstanceOf;
     import std.typecons: Tuple;
@@ -284,16 +284,6 @@ package template isUserAggregate(A...) if(A.length == 1) {
         (is(T == struct) || is(T == class));
 }
 
-
-version(TestingAutowrap) {
-    import std.datetime: DateTime;
-    static assert(!isUserAggregate!DateTime);
-}
-
-version(TestingAutowrap) {
-    import std.typecons: Tuple;
-    static assert(!isUserAggregate!(Tuple!(int, double)));
-}
 
 // Given a parent (module, struct, ...) and a memberName, alias the actual member,
 // or void if not possible
@@ -330,17 +320,6 @@ template PrimordialType(T) if(!isArray!T) {
             alias PrimordialType = Unqual!(PointerTarget!T);
     } else
         alias PrimordialType = Unqual!T;
-}
-
-
-version(TestingAutowrap) {
-    static assert(is(PrimordialType!int == int));
-    static assert(is(PrimordialType!(int[]) == int));
-    static assert(is(PrimordialType!(int[][]) == int));
-    static assert(is(PrimordialType!(double[][]) == double));
-    static assert(is(PrimordialType!(string[][]) == char));
-    static assert(is(PrimordialType!(int*) == int));
-    static assert(is(PrimordialType!(int**) == int));
 }
 
 
