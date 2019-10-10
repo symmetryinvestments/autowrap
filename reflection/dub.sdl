@@ -3,3 +3,5 @@ description "Reflect on modules to access functions and data types"
 authors "Atila Neves"
 license "BSD"
 targetType "library"
+
+dependency "autowrap:common" path="../common"
