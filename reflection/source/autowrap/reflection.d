@@ -166,7 +166,7 @@ private template FunctionTypesInModule(Module module_) {
 }
 
 
-private template RecursiveAggregates(T) {
+template RecursiveAggregates(T) {
     mixin RecursiveAggregateImpl!(T, RecursiveAggregateHelper);
     alias RecursiveAggregates = RecursiveAggregateImpl;
 }
@@ -250,30 +250,10 @@ package template Symbol(alias parent, string memberName) {
 
 
 // T -> T, T[] -> T, T[][] -> T, T* -> T
-template PrimordialType(T) if(isArray!T) {
-
-    import std.range.primitives: ElementEncodingType;
+template PrimordialType(T) {
+    import mirror.traits: FundamentalType;
     import std.traits: Unqual;
-
-    static if(isArray!(ElementEncodingType!T))
-        alias PrimordialType = PrimordialType!(ElementEncodingType!T);
-    else
-        alias PrimordialType = Unqual!(ElementEncodingType!T);
-}
-
-
-// T -> T, T[] -> T, T[][] -> T, T* -> T
-template PrimordialType(T) if(!isArray!T) {
-
-    import std.traits: isPointer, PointerTarget, Unqual;
-
-    static if(isPointer!T) {
-        static if(isPointer!(PointerTarget!T))
-            alias PrimordialType = PrimordialType!(PointerTarget!T);
-        else
-            alias PrimordialType = Unqual!(PointerTarget!T);
-    } else
-        alias PrimordialType = Unqual!T;
+    alias PrimordialType = Unqual!(FundamentalType!T);
 }
 
 

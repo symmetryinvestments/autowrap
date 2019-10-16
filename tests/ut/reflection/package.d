@@ -116,7 +116,7 @@ import std.typecons: Yes;
 }
 
 
-@("isPrimordialType")
+@("PrimordialType")
 @safe pure unittest {
     static assert(is(PrimordialType!int == int));
     static assert(is(PrimordialType!(int[]) == int));
@@ -125,4 +125,78 @@ import std.typecons: Yes;
     static assert(is(PrimordialType!(string[][]) == char));
     static assert(is(PrimordialType!(int*) == int));
     static assert(is(PrimordialType!(int**) == int));
+}
+
+
+@("RecursiveAggregates.scalar")
+@safe pure unittest {
+    static assert(is(RecursiveAggregates!int == int));
+    static assert(is(RecursiveAggregates!double == double));
+}
+
+
+@("RecursiveAggregates.nested")
+@safe pure unittest {
+    import std.meta: AliasSeq;
+
+    static struct Inner0 {
+        int i;
+        double d;
+    }
+
+    static struct Inner1 {
+        string s;
+    }
+
+    static struct Mid {
+        Inner0 inner0;
+        Inner1 inner1;
+    }
+
+    static struct Outer {
+        Mid mid;
+        byte b;
+    }
+
+    static assert(is(RecursiveAggregates!Outer == AliasSeq!(Mid, Inner0, Inner1, Inner0, Inner1)));
+}
+
+
+@("RecursiveAggregates.typedef")
+@safe pure unittest {
+    import std.typecons: Typedef;
+    import std.meta: AliasSeq;
+
+    alias Int = Typedef!int;
+    static assert(is(RecursiveAggregates!Int == int));
+
+    alias Double = Typedef!double;
+    static assert(is(RecursiveAggregates!Double == double));
+
+    static struct Inner {}
+    static struct Foo {
+        Inner inner;
+        int i;
+    }
+
+    static assert(is(RecursiveAggregates!Foo == AliasSeq!(Inner, Inner)));
+    alias TFoo = Typedef!Foo;
+    static assert(is(AliasSeq!(RecursiveAggregates!TFoo) == AliasSeq!Foo));
+}
+
+
+@("RecursiveAggregates.Date")
+@safe pure unittest {
+    import std.datetime: Date;
+    import std.meta: AliasSeq;
+
+    static struct Inner {
+        Date date;
+    }
+    static struct Foo {
+        Inner inner;
+        int i;
+    }
+
+    static assert(is(RecursiveAggregates!Foo == AliasSeq!(Inner, Date, Date)));
 }
