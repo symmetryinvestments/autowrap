@@ -2,7 +2,7 @@
 	"fileVersion": 1,
 	"versions": {
 		"autowrap": {"path":"../.."},
-		"mirror": "0.0.3",
+		"mirror": "0.0.4",
 		"pynih": {"path":".."},
 		"unit-threaded": "0.7.53"
 	}

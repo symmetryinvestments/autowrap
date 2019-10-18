@@ -114,12 +114,13 @@ private template AggregateDefinitionsInModules(Modules...) if(allSatisfy!(isModu
 private template AggregateDefinitionsInModule(Module module_) {
 
     mixin(`import dmodule  = ` ~ module_.name ~ `;`);
+    import mirror.traits: RecursiveFieldTypes;
     import std.meta: Filter, staticMap, NoDuplicates, AliasSeq;
 
     alias Member(string memberName) = Symbol!(dmodule, memberName);
     alias members = staticMap!(Member, __traits(allMembers, dmodule));
     alias aggregates = Filter!(isUserAggregate, members);
-    alias recursives = staticMap!(RecursiveAggregates, aggregates);
+    alias recursives = Filter!(isUserAggregate, staticMap!(RecursiveFieldTypes, aggregates));
     alias all = AliasSeq!(aggregates, recursives);
     alias AggregateDefinitionsInModule = NoDuplicates!all;
 }
@@ -234,6 +235,7 @@ template isUserAggregate(A...) if(A.length == 1) {
 
     enum isUserAggregate =
         !is(Unqual!T == DateTime) &&
+        !is(Unqual!T == TimeOfDay) &&
         !isInstanceOf!(Tuple, T) &&
         (is(T == struct) || is(T == class));
 }
