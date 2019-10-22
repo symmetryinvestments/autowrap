@@ -35,10 +35,10 @@ examples/simple/lib/pyd/libsimple.so:
 example/simple/dub.selections.json:
 	@cd examples/simple && dub upgrade -q
 
-test_simple_pynih_only: tests/test_simple_pynih_only.py examples/simple/lib/pynih/simple.so pynih/source/python/raw.d
+test_simple_pynih_only: tests/test_simple_pynih_only.py examples/simple/lib/pynih/simple.so
 	PYTHONPATH=$(PWD)/examples/simple/lib/pynih pytest -s -vv $<
 
-test_simple_pynih: tests/test_simple.py examples/simple/lib/pynih/simple.so pynih/source/python/raw.d
+test_simple_pynih: tests/test_simple.py examples/simple/lib/pynih/simple.so
 	PYTHONPATH=$(PWD)/examples/simple/lib/pynih pytest -s -vv $<
 
 test_simple_cs: examples/simple/lib/csharp/libsimple.x64.so examples/simple/Simple.cs
@@ -61,7 +61,7 @@ pynih/source/python/raw.d: pynih/Makefile pynih/source/python/raw.dpp
 examples/simple/lib/pynih/simple.so: examples/simple/lib/pynih/libsimple.so
 	@cp $^ $@
 
-examples/simple/lib/pynih/libsimple.so:
+examples/simple/lib/pynih/libsimple.so: pynih/source/python/raw.d
 	@cd examples/simple && dub build -q -c pynih
 
 test_issues_pyd: tests/test_issues.py examples/issues/lib/pyd/issues.so
@@ -79,7 +79,7 @@ test_issues_pynih: tests/test_issues.py examples/issues/lib/pynih/issues.so
 examples/issues/lib/pynih/issues.so: examples/issues/lib/pynih/libissues.so
 	@cp $^ $@
 
-examples/issues/lib/pynih/libissues.so:
+examples/issues/lib/pynih/libissues.so: pynih/source/python/raw.d
 	@cd examples/issues && dub build -q -c pynih
 
 
@@ -101,7 +101,7 @@ test_pyd_pynih: tests/test_pyd.py examples/pyd/lib/pynih/pyd.so
 examples/pyd/lib/pynih/pyd.so: examples/pyd/lib/pynih/libpydtests.so
 	@cp $^ $@
 
-examples/pyd/lib/pynih/libpydtests.so:
+examples/pyd/lib/pynih/libpydtests.so: pynih/source/python/raw.d
 	@cd examples/pyd && dub build -q -c pynih
 
 test_numpy_pyd: tests/test_numpy.py examples/numpy/lib/pyd/numpytests.so
@@ -122,7 +122,7 @@ test_numpy_pynih: tests/test_numpy.py examples/numpy/lib/pynih/numpytests.so
 examples/numpy/lib/pynih/numpytests.so: examples/numpy/lib/pynih/libnumpy.so
 	@cp $^ $@
 
-examples/numpy/lib/pynih/libnumpy.so:
+examples/numpy/lib/pynih/libnumpy.so: pynih/source/python/raw.d
 	@cd examples/numpy && dub build -q -c pynih
 
 examples/numpy/dub.selections.json:
