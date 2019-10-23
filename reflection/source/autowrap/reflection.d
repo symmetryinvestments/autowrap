@@ -50,9 +50,14 @@ template Functions(alias module_, Flag!"alwaysExport" alwaysExport = No.alwaysEx
     enum isExport(alias F) = isExportFunction!(F.symbol, alwaysExport);
     alias exportFunctions = Filter!(isExport, mod.FunctionsBySymbol);
     alias toFunctionSymbol(alias F) = FunctionSymbol!(F.identifier, module_, F.symbol);
+
     alias Functions = staticMap!(toFunctionSymbol, exportFunctions);
 }
 
+
+/**
+   A template carrying information about a function.
+ */
 template FunctionSymbol(string N, alias M, alias S) {
 
     import std.traits: moduleName_ = moduleName;
@@ -63,6 +68,7 @@ template FunctionSymbol(string N, alias M, alias S) {
     alias symbol = S;
 }
 
+
 template AllAggregates(Modules modules) {
     import std.algorithm: map;
     import std.array: join;
@@ -71,6 +77,7 @@ template AllAggregates(Modules modules) {
     enum modulesList = modules.value.map!(a => a.toString).join(", ");
     mixin(`alias AllAggregates = AllAggregates!(`, modulesList, `);`);
 }
+
 
 template AllAggregates(ModuleNames...) if(allSatisfy!(isString, ModuleNames)) {
     import std.meta: staticMap;
@@ -115,13 +122,14 @@ private template AggregateDefinitionsInModule(Module module_) {
 
     mixin(`import dmodule  = ` ~ module_.name ~ `;`);
     import mirror.traits: RecursiveFieldTypes;
+    import mirror.meta: MirrorModule = Module;
     import std.meta: Filter, staticMap, NoDuplicates, AliasSeq;
 
-    alias Member(string memberName) = Symbol!(dmodule, memberName);
-    alias members = staticMap!(Member, __traits(allMembers, dmodule));
-    alias aggregates = Filter!(isUserAggregate, members);
-    alias recursives = Filter!(isUserAggregate, staticMap!(RecursiveFieldTypes, aggregates));
-    alias all = AliasSeq!(aggregates, recursives);
+    alias mod = MirrorModule!(module_.name);
+    alias userAggregates = Filter!(isUserAggregate, mod.Aggregates);
+    alias recursives = Filter!(isUserAggregate, staticMap!(RecursiveFieldTypes, userAggregates));
+    alias all = AliasSeq!(userAggregates, recursives);
+
     alias AggregateDefinitionsInModule = NoDuplicates!all;
 }
 
