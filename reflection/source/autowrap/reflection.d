@@ -120,17 +120,13 @@ private template AggregateDefinitionsInModules(Modules...) if(allSatisfy!(isModu
 
 private template AggregateDefinitionsInModule(Module module_) {
 
-    mixin(`import dmodule  = ` ~ module_.name ~ `;`);
-    import mirror.traits: RecursiveFieldTypes;
     import mirror.meta: MirrorModule = Module;
-    import std.meta: Filter, staticMap, NoDuplicates, AliasSeq;
+    import std.meta: Filter;
 
     alias mod = MirrorModule!(module_.name);
-    alias userAggregates = Filter!(isUserAggregate, mod.Aggregates);
-    alias recursives = Filter!(isUserAggregate, staticMap!(RecursiveFieldTypes, userAggregates));
-    alias all = AliasSeq!(userAggregates, recursives);
+    alias userAggregates = Filter!(isUserAggregate, mod.AggregatesTree);
 
-    alias AggregateDefinitionsInModule = NoDuplicates!all;
+    alias AggregateDefinitionsInModule = userAggregates;
 }
 
 
@@ -144,95 +140,18 @@ private template FunctionTypesInModules(Modules...) if(allSatisfy!(isModule, Mod
 // All return and parameter types of the functions in the given module
 private template FunctionTypesInModule(Module module_) {
 
-    mixin(`import dmodule  = ` ~ module_.name ~ `;`);
-    import std.traits: ReturnType, Parameters;
-    import std.meta: Filter, staticMap, AliasSeq, NoDuplicates;
+    import mirror.meta: MirrorModule = Module;
+    import std.meta: Filter, staticMap, NoDuplicates;
 
-    alias Member(string memberName) = Symbol!(dmodule, memberName);
-    alias members = staticMap!(Member, __traits(allMembers, dmodule));
-    template isWantedExportFunction(T...) if(T.length == 1) {
-        import std.traits: isSomeFunction;
-        alias F = T[0];
-        static if(isSomeFunction!F)
-            enum isWantedExportFunction = isExportFunction!(F, module_.alwaysExport);
-        else
-            enum isWantedExportFunction = false;
-    }
-    alias functions = Filter!(isWantedExportFunction, members);
+    alias mod = MirrorModule!(module_.name);
 
-    // all return types of all functions
-    alias returns = NoDuplicates!(Filter!(isUserAggregate, staticMap!(PrimordialType, staticMap!(ReturnType, functions))));
-    // recurse on the types in `returns` to also wrap the aggregate types of the members
-    alias recursiveReturns = NoDuplicates!(staticMap!(RecursiveAggregates, returns));
-    // all of the parameters types of all of the functions
-    alias params = NoDuplicates!(Filter!(isUserAggregate, staticMap!(PrimordialType, staticMap!(Parameters, functions))));
-    // recurse on the types in `params` to also wrap the aggregate types of the members
-    alias recursiveParams = NoDuplicates!(staticMap!(RecursiveAggregates, returns));
-    // chain all types
-    alias functionTypes = AliasSeq!(returns, recursiveReturns, params, recursiveParams);
-
-    alias FunctionTypesInModule = NoDuplicates!(Filter!(isUserAggregate, functionTypes));
+    alias FunctionTypesInModule =
+        NoDuplicates!(
+            Filter!(isUserAggregate,
+                    staticMap!(PrimordialType,
+                               mod.AllFunctionReturnTypesTree, mod.AllFunctionParameterTypesTree)));
 }
 
-
-template RecursiveAggregates(T) {
-    mixin RecursiveAggregateImpl!(T, RecursiveAggregateHelper);
-    alias RecursiveAggregates = RecursiveAggregateImpl;
-}
-
-// Only exists because if RecursiveAggregate recurses using itself dmd complains.
-// So instead, we ping-pong between identical templates.
-private template RecursiveAggregateHelper(T) {
-    mixin RecursiveAggregateImpl!(T, RecursiveAggregates);
-    alias RecursiveAggregateHelper = RecursiveAggregateImpl;
-}
-
-/**
-   Only exists because if RecursiveAggregate recurses using itself dmd complains.
-   Instead there's a canonical implementation and we ping-pong between two
-   templates that mix this in.
- */
-private mixin template RecursiveAggregateImpl(T, alias Other) {
-    import std.meta: staticMap, Filter, AliasSeq, NoDuplicates;
-    import std.traits: isInstanceOf, Unqual;
-    import std.typecons: Typedef, TypedefType;
-    import std.datetime: Date;
-
-    static if(isInstanceOf!(Typedef, T)) {
-        alias RecursiveAggregateImpl = TypedefType!T;
-    } else static if (is(T == Date)) {
-        alias RecursiveAggregateImpl = Date;
-    } else static if(isUserAggregate!T) {
-        alias AggMember(string memberName) = Symbol!(T, memberName);
-        alias members = staticMap!(AggMember, __traits(allMembers, T));
-        enum isNotMe(U) = !is(Unqual!T == Unqual!U);
-
-        alias types = staticMap!(Type, members);
-        alias primordials = staticMap!(PrimordialType, types);
-        alias userAggregates = Filter!(isUserAggregate, primordials);
-        alias aggregates = NoDuplicates!(Filter!(isNotMe, userAggregates));
-
-        static if(aggregates.length == 0)
-            alias RecursiveAggregateImpl = T;
-        else
-            alias RecursiveAggregateImpl = AliasSeq!(aggregates, staticMap!(Other, aggregates));
-    } else
-        alias RecursiveAggregateImpl = T;
-}
-
-
-// must be a global template for staticMap
-private template Type(T...) if(T.length == 1) {
-    import std.traits: isSomeFunction;
-    import std.meta: AliasSeq;
-
-    static if(isSomeFunction!(T[0]))
-        alias Type = AliasSeq!();
-    else static if(is(T[0]))
-        alias Type = T[0];
-    else
-        alias Type = typeof(T[0]);
-}
 
 // if a type is a struct or a class
 template isUserAggregate(A...) if(A.length == 1) {
