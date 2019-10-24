@@ -11,8 +11,7 @@
 module autowrap.python.boilerplate;
 
 
-public import autowrap.types: LibraryName, PreModuleInitCode, PostModuleInitCode;
-import autowrap.reflection : Modules;
+public import autowrap.types: Modules, LibraryName, PreModuleInitCode, PostModuleInitCode;
 
 
 /**

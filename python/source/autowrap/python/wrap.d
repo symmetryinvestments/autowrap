@@ -6,7 +6,8 @@
  */
 module autowrap.python.wrap;
 
-import autowrap.reflection: isUserAggregate, isModule;
+import autowrap.types: isModule;
+import autowrap.reflection: isUserAggregate;
 import std.meta: allSatisfy;
 import std.traits: isArray;
 
