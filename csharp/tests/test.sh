@@ -6,8 +6,8 @@ CWD=$PWD
 cd $DIR
 
 rm -f Wrapper.cs libcsharp-tests.so libcsharp-tests.x64.so
-dub build --arch=x86_64 --force
+dub build -q --arch=x86_64
 cp libcsharp-tests.so libcsharp-tests.x64.so
-dub run --config=emitCSharp
+dub run -q --config=emitCSharp
 dotnet build
 dotnet test

@@ -10,17 +10,10 @@
  */
 module autowrap.csharp.boilerplate;
 
-import autowrap.common;
-import autowrap.reflection;
-import autowrap.csharp;
 
-import core.time;
-import core.memory;
-import std.conv;
-import std.traits : Unqual;
-import std.string;
-import std.traits;
-import std.utf;
+import autowrap.types: Modules;
+import autowrap.csharp.common: OutputFileName, LibraryName, RootNamespace;
+
 
 private void pinInternalPointers(T)(ref T value) @trusted nothrow
     if(is(T == struct))
@@ -48,6 +41,9 @@ private void pinInternalPointers(T)(ref T value) @trusted nothrow
 }
 
 extern(C) export struct returnValue(T) {
+
+    import std.traits: isDynamicArray;
+
     T value;
     wstring error;
 
@@ -68,6 +64,8 @@ extern(C) export struct returnValue(T) {
     }
 
     this(Exception error) nothrow {
+        import std.conv: to;
+
         this.value = T.init;
         try {
             this.error = to!wstring(error.toString());
@@ -79,6 +77,8 @@ extern(C) export struct returnValue(T) {
 }
 
 extern(C) export struct returnVoid {
+    import std.conv: to;
+
     wstring error = null;
 
     this(Exception error) nothrow {
@@ -128,6 +128,7 @@ extern(C) export struct Marshalled_Duration {
 extern(C) export struct Marshalled_std_datetime_date {
 
     import std.datetime.date : Date, DateTime, TimeOfDay;
+    import std.traits: Unqual;
 
     // = 1 so that the result is a valid C# DateTime when the D type is Date
     short year = 1;
@@ -218,6 +219,7 @@ public auto mapArray(alias pred, T)(T[] arr)
 }
 
 public void pinPointer(void* ptr) nothrow {
+    import core.memory: GC;
     GC.setAttr(ptr, GC.BlkAttr.NO_MOVE);
     GC.addRoot(ptr);
 }
@@ -272,7 +274,7 @@ public string wrapCSharp(in Modules modules, OutputFileName outputFile, LibraryN
     import std.format : format;
     import std.algorithm: map;
     import std.array: join;
-    import autowrap.common;
+    import autowrap.common: dllMainMixinStr;
     import autowrap.csharp.boilerplate;
 
     if(!__ctfe) return null;

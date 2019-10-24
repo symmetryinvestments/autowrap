@@ -5,8 +5,8 @@ module autowrap.pynih.wrap;
 
 
 public import std.typecons: Yes, No;
-public import autowrap.reflection: Modules, Module, isModule;
-public import autowrap.types: LibraryName, PreModuleInitCode, PostModuleInitCode;
+public import autowrap.types: Modules, Module, isModule,
+    LibraryName, PreModuleInitCode, PostModuleInitCode;
 static import python.boilerplate;
 import python.raw: isPython2, isPython3;
 import std.meta: allSatisfy;
@@ -51,7 +51,7 @@ string createPythonModuleMixin(LibraryName libraryName, Modules modules)
 
         extern(C) export auto %s() { // -> ModuleInitRet
             import autowrap.pynih.wrap: createPythonModule, LibraryName;
-            import autowrap.reflection: Module;
+            import autowrap.types: Module;
             return createPythonModule!(
                 LibraryName("%s"),
                 %s

@@ -8,7 +8,8 @@ import std.meta : allSatisfy;
 import std.range.primitives;
 
 import autowrap.csharp.boilerplate;
-import autowrap.reflection : isModule, PrimordialType;
+import autowrap.types : isModule;
+import autowrap.reflection: PrimordialType;
 
 enum string methodSetup = "        auto attachThread = AttachThread.create();";
 

@@ -3,7 +3,8 @@ module issues;
 
 @("24")
 @safe pure unittest {
-    import autowrap.reflection;
+    import autowrap.types: Module;
+    import autowrap.reflection: AllFunctions, AllAggregates;
     import std.typecons: Yes;
     import std.traits: fullyQualifiedName;
     import std.meta: staticMap, AliasSeq;
