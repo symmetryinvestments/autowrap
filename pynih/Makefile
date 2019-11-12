@@ -1,6 +1,6 @@
 .PHONY: test
 
-dpp_version = 0.3.2
+dpp_version = 0.3.4
 dpp_pkg_dir = $(HOME)/.dub/packages/dpp-$(dpp_version)
 dpp_lock = $(dpp_pkg_dir)/dpp.lock
 dpp_dir = $(dpp_pkg_dir)/dpp
@@ -25,7 +25,7 @@ source/python/raw.d: source/python/raw.dpp $(dpp)
 
 
 $(dpp): $(dpp_lock)
-	cd $(dpp_dir) && dub build -q
+	cd $(dpp_dir) && dub build -q --build=release
 
 $(dpp_lock):
 	dub fetch dpp --version=$(dpp_version)
