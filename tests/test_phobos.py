@@ -1,2 +1,2 @@
-def test_foo():
-    assert 1 == 2
+def test_protocol():
+    from phobos import Protocol
