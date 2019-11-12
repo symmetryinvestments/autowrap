@@ -850,8 +850,14 @@ struct PythonClass(T) if(isUserAggregate!T) {
             return -1;
         }
 
-        if(!checkPythonType!(fieldTypes[FieldIndex])(value)) {
-            return -1;
+        static if(__traits(compiles, checkPythonType!(fieldTypes[FieldIndex])(value))) {
+            if(!checkPythonType!(fieldTypes[FieldIndex])(value)) {
+                return -1;
+            }
+        } else {
+            pragma(msg, "WARNING: cannot check python type for field #", FieldIndex, " of ", T);
+            // uncomment below to see compilation failure
+            // checkPythonType!(fieldTypes[FieldIndex])(value);
         }
 
         auto self = cast(PythonClass!T*) self_;
