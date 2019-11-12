@@ -247,8 +247,8 @@ struct PythonType(T) {
         static foreach(i; 0 .. fieldNames.length) {
             getsets[i].name = cast(typeof(PyGetSetDef.name)) fieldNames[i];
             static if(__traits(getProtection, __traits(getMember, T, fieldNames[i])) == "public") {
-                getsets[i].get = &PythonClass!T.get!i;
-                getsets[i].set = &PythonClass!T.set!i;
+                getsets[i].get = &PythonClass!T._get_impl!i;
+                getsets[i].set = &PythonClass!T._set_impl!i;
             }
         }
 
@@ -557,7 +557,7 @@ private void mutateSelf(T)(PyObject* self, auto ref T dAggregate) {
 
     static foreach(i; 0 .. PythonClass!T.fieldNames.length) {
         if(self !is null)
-            pyClassSelf.set!i(self, pyClassNewSelf.get!i(newSelf));
+            pyClassSelf._set_impl!i(self, pyClassNewSelf._get_impl!i(newSelf));
     }
 
 }
@@ -827,8 +827,8 @@ struct PythonClass(T) if(isUserAggregate!T) {
     }
 
     // The function pointer for PyGetSetDef.get
-    private static extern(C) PyObject* get(int FieldIndex)
-                                          (PyObject* self_, void* closure = null)
+    private static extern(C) PyObject* _get_impl(int FieldIndex)
+                                                (PyObject* self_, void* closure = null)
         nothrow
         in(self_ !is null)
     {
@@ -844,8 +844,8 @@ struct PythonClass(T) if(isUserAggregate!T) {
     }
 
     // The function pointer for PyGetSetDef.set
-    static extern(C) int set(int FieldIndex)
-                            (PyObject* self_, PyObject* value, void* closure = null)
+    static extern(C) int _set_impl(int FieldIndex)
+                                  (PyObject* self_, PyObject* value, void* closure = null)
         nothrow
         in(self_ !is null)
     {
