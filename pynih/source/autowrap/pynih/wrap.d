@@ -20,8 +20,8 @@ import std.meta: allSatisfy;
 string wrapDlang(
     LibraryName libraryName,
     Modules modules,
-    PreModuleInitCode preModuleInitCode = PreModuleInitCode(),
-    PostModuleInitCode postModuleInitCode = PostModuleInitCode(),
+    PreModuleInitCode preModuleInitCode = PreModuleInitCode(),    // ignored in this backend
+    PostModuleInitCode postModuleInitCode = PostModuleInitCode(), // ignored in this backend
     )
     ()
 {

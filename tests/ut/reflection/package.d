@@ -116,7 +116,7 @@ import std.typecons: Yes;
 }
 
 
-@("isPrimordialType")
+@("PrimordialType")
 @safe pure unittest {
     static assert(is(PrimordialType!int == int));
     static assert(is(PrimordialType!(int[]) == int));
