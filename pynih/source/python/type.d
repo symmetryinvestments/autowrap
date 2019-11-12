@@ -211,8 +211,15 @@ struct PythonType(T) {
         import std.traits: isFunction, ReturnType;
 
         static if(is(T == struct)) {
-            enum isPublic(string memberName) =
-                __traits(getProtection, __traits(getMember, T, memberName)) == "public";
+
+            template isPublic(string memberName) {
+                alias member = __traits(getMember, T, memberName);
+                static if(__traits(compiles, __traits(getProtection, member)))
+                    enum isPublic = __traits(getProtection, member) == "public";
+                else
+                    enum isPublic = false;
+            }
+
             alias publicMemberNames = Filter!(isPublic, __traits(allMembers, T));
             alias AggMember(string memberName) = Alias!(__traits(getMember, T, memberName));
             alias members = staticMap!(AggMember, publicMemberNames);
