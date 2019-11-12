@@ -3,7 +3,7 @@
 export PYTHON_LIB_DIR ?= /usr/lib
 DUB_CONFIGURATION ?= python37
 
-.PHONY: clean test test_python test_cs test_simple_pyd test_simple_pynih test_simple_cs test_pyd_pyd test_issues_pyd test_issues_pynih test_numpy_pyd test_numpy_pynih examples/simple/lib/pyd/libsimple.so examples/simple/lib/pynih/libsimple.so examples/issues/lib/pyd/libissues.so examples/issues/lib/pynih/libissues.so examples/numpy/lib/pyd/libnumpy.so examples/numpy/lib/pynih/libnumpy.so examples/pyd/lib/pyd/libpydtests.so examples/pyd/lib/pynih/libpydtests.so
+.PHONY: clean test test_python test_cs test_simple_pyd test_simple_pynih test_simple_cs test_pyd_pyd test_issues_pyd test_issues_pynih test_numpy_pyd test_numpy_pynih examples/simple/lib/pyd/libsimple.so examples/simple/lib/pynih/libsimple.so examples/issues/lib/pyd/libissues.so examples/issues/lib/pynih/libissues.so examples/numpy/lib/pyd/libnumpy.so examples/numpy/lib/pynih/libnumpy.so examples/pyd/lib/pyd/libpydtests.so examples/pyd/lib/pynih/libpydtests.so examples/phobos/lib/pyd/libphobos.so examples/phobos/lib/pynih/libphobos.so
 
 all: test
 test: test_python test_cs
@@ -104,6 +104,7 @@ examples/pyd/lib/pynih/pyd.so: examples/pyd/lib/pynih/libpydtests.so
 examples/pyd/lib/pynih/libpydtests.so: pynih/source/python/raw.d
 	@cd examples/pyd && dub build -q -c pynih
 
+
 test_numpy_pyd: tests/test_numpy.py examples/numpy/lib/pyd/numpytests.so
 	PYTHONPATH=$(PWD)/examples/numpy/lib/pyd pytest -s -vv $<
 
@@ -125,5 +126,24 @@ examples/numpy/lib/pynih/numpytests.so: examples/numpy/lib/pynih/libnumpy.so
 examples/numpy/lib/pynih/libnumpy.so: pynih/source/python/raw.d
 	@cd examples/numpy && dub build -q -c pynih
 
-examples/numpy/dub.selections.json:
-	@cd examples/numpy && dub upgrade -q
+
+test_phobos_pyd: tests/test_phobos.py examples/phobos/lib/pyd/phobos.so
+	PYTHONPATH=$(PWD)/examples/phobos/lib/pyd pytest -s -vv $<
+
+examples/phobos/lib/pyd/phobos.so: examples/phobos/lib/pyd/libphobos.so
+	@cp $^ $@
+
+examples/phobos/lib/pyd/libphobos.so:
+	@cd examples/phobos && dub build -q -c $(DUB_CONFIGURATION)
+
+examples/phobos/dub.selections.json:
+	@cd examples/phobos && dub upgrade -q
+
+test_phobos_pynih: tests/test_phobos.py examples/phobos/lib/pynih/phobos.so
+	PYTHONPATH=$(PWD)/examples/phobos/lib/pynih pytest -s -vv $<
+
+examples/phobos/lib/pynih/phobos.so: examples/phobos/lib/pynih/libphobos.so
+	@cp $^ $@
+
+examples/phobos/lib/pynih/libphobos.so: pynih/source/python/raw.d
+	@cd examples/phobos && dub build -q -c pynih

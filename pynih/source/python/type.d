@@ -36,11 +36,14 @@ struct PythonType(T) {
     static if(is(T == struct)) {
         alias fieldNames = FieldNameTuple!T;
         alias fieldTypes = Fields!T;
-    } else static if(is(T == class) || is(T == interface)) {
+    } else static if(is(T == class)) {
         // recurse over base classes to get all fields
         alias fieldNames = AliasSeq!(FieldNameTuple!T, staticMap!(FieldNameTuple, BaseClassesTuple!T));
         private alias fieldType(string name) = typeof(__traits(getMember, T, name));
         alias fieldTypes = staticMap!(fieldType, fieldNames);
+    } else static if(is(T == interface)) {
+        alias fieldNames = AliasSeq!();
+        alias fieldTypes = AliasSeq!();
     }
 
     enum hasLength = is(typeof({ size_t len = T.init.length; }));
@@ -208,8 +211,15 @@ struct PythonType(T) {
         import std.traits: isFunction, ReturnType;
 
         static if(is(T == struct)) {
-            enum isPublic(string memberName) =
-                __traits(getProtection, __traits(getMember, T, memberName)) == "public";
+
+            template isPublic(string memberName) {
+                alias member = __traits(getMember, T, memberName);
+                static if(__traits(compiles, __traits(getProtection, member)))
+                    enum isPublic = __traits(getProtection, member) == "public";
+                else
+                    enum isPublic = false;
+            }
+
             alias publicMemberNames = Filter!(isPublic, __traits(allMembers, T));
             alias AggMember(string memberName) = Alias!(__traits(getMember, T, memberName));
             alias members = staticMap!(AggMember, publicMemberNames);
@@ -237,8 +247,8 @@ struct PythonType(T) {
         static foreach(i; 0 .. fieldNames.length) {
             getsets[i].name = cast(typeof(PyGetSetDef.name)) fieldNames[i];
             static if(__traits(getProtection, __traits(getMember, T, fieldNames[i])) == "public") {
-                getsets[i].get = &PythonClass!T.get!i;
-                getsets[i].set = &PythonClass!T.set!i;
+                getsets[i].get = &PythonClass!T._get_impl!i;
+                getsets[i].set = &PythonClass!T._set_impl!i;
             }
         }
 
@@ -295,8 +305,14 @@ struct PythonType(T) {
             else
                 enum flags = defaultMethodFlags;
 
-            methods[i] = pyMethodDef!(__traits(identifier, memberFunction), flags)
-                                     (&PythonMethod!(T, memberFunction)._py_method_impl);
+            static if(__traits(compiles, &PythonMethod!(T, memberFunction)._py_method_impl))
+                methods[i] = pyMethodDef!(__traits(identifier, memberFunction), flags)
+                                         (&PythonMethod!(T, memberFunction)._py_method_impl);
+            else {
+                pragma(msg, "WARNING: could not wrap D method `", T, ".", __traits(identifier, memberFunction), "`");
+                // uncomment to get the compiler error message to find out why not
+                // auto ptr = &PythonMethod!(T, memberFunction)._py_method_impl;
+            }
         }}
 
         return &methods[0];
@@ -344,16 +360,32 @@ struct PythonType(T) {
 
             if(PyTuple_Size(args) == 0) return toPython(userAggregateInit!T);
 
-            static if(hasMember!(T, "__ctor"))
-                return callDlangFunction!(T, __traits(getMember, T, "__ctor"))(null /*self*/, args, kwargs);
-            else { // allow implicit constructors to work in Python
+            static if(hasMember!(T, "__ctor")) {
+                static if(__traits(compiles, callDlangFunction!(T, __traits(getMember, T, "__ctor"))(null /*self*/, args, kwargs)))
+                    return callDlangFunction!(T, __traits(getMember, T, "__ctor"))(null /*self*/, args, kwargs);
+                else {
+                    pragma(msg, "WARNING: cannot wrap constructor for `", T, "`");
+                    // uncomment below to see the compilation error
+                    // return callDlangFunction!(T, __traits(getMember, T, "__ctor"))(null /*self*/, args, kwargs);
+                    return toPython(userAggregateInit!T);
+                }
+
+            } else { // allow implicit constructors to work in Python
                 T impl(fieldTypes fields = fieldTypes.init) {
                     static if(is(T == class)) {
                         if(PyTuple_Size(args) != 0)
                             throw new Exception(T.stringof ~ " has no constructor therefore can't construct one from arguments");
                         return T.init;
-                    } else
-                        return T(fields);
+                    } else {
+                        static if(__traits(compiles, T(fields)))
+                            return T(fields);
+                        else {
+                            pragma(msg, "WARNING: cannot use implicit constructor for `", T, "`");
+                            // uncomment below to see the compiler error
+                            // auto _t_tmp = T(fields);
+                            return T.init;
+                        }
+                    }
                 }
 
                 return callDlangFunction!(typeof(impl), impl)(null /*self*/, args, kwargs);
@@ -457,11 +489,19 @@ private auto pythonArgsToDArgs(bool isVariadic, P...)(PyObject* args, PyObject* 
 
     void positional(size_t i, T)() {
         auto item = PyTuple_GetItem(args, i);
-        if(!checkPythonType!T(item)) {
-            import python.raw: PyErr_Clear;
-            PyErr_Clear;
-            throw new ArgumentConversionException("Can't convert to " ~ T.stringof);
+
+        static if(__traits(compiles, checkPythonType!T(item))) {
+            if(!checkPythonType!T(item)) {
+                import python.raw: PyErr_Clear;
+                PyErr_Clear;
+                throw new ArgumentConversionException("Can't convert to " ~ T.stringof);
+            }
+        } else {
+            pragma(msg, "WARNING: cannot check python type for `", T, "`");
+            // uncomment to see the compilation error
+            // checkPythonType!T(item);
         }
+
         dArgs[i] = item.to!T;
     }
 
@@ -533,7 +573,7 @@ private void mutateSelf(T)(PyObject* self, auto ref T dAggregate) {
 
     static foreach(i; 0 .. PythonClass!T.fieldNames.length) {
         if(self !is null)
-            pyClassSelf.set!i(self, pyClassNewSelf.get!i(newSelf));
+            pyClassSelf._set_impl!i(self, pyClassNewSelf._get_impl!i(newSelf));
     }
 
 }
@@ -803,8 +843,8 @@ struct PythonClass(T) if(isUserAggregate!T) {
     }
 
     // The function pointer for PyGetSetDef.get
-    private static extern(C) PyObject* get(int FieldIndex)
-                                          (PyObject* self_, void* closure = null)
+    private static extern(C) PyObject* _get_impl(int FieldIndex)
+                                                (PyObject* self_, void* closure = null)
         nothrow
         in(self_ !is null)
     {
@@ -820,8 +860,8 @@ struct PythonClass(T) if(isUserAggregate!T) {
     }
 
     // The function pointer for PyGetSetDef.set
-    static extern(C) int set(int FieldIndex)
-                            (PyObject* self_, PyObject* value, void* closure = null)
+    static extern(C) int _set_impl(int FieldIndex)
+                                  (PyObject* self_, PyObject* value, void* closure = null)
         nothrow
         in(self_ !is null)
     {
@@ -833,8 +873,14 @@ struct PythonClass(T) if(isUserAggregate!T) {
             return -1;
         }
 
-        if(!checkPythonType!(fieldTypes[FieldIndex])(value)) {
-            return -1;
+        static if(__traits(compiles, checkPythonType!(fieldTypes[FieldIndex])(value))) {
+            if(!checkPythonType!(fieldTypes[FieldIndex])(value)) {
+                return -1;
+            }
+        } else {
+            pragma(msg, "WARNING: cannot check python type for field #", FieldIndex, " of ", T);
+            // uncomment below to see compilation failure
+            // checkPythonType!(fieldTypes[FieldIndex])(value);
         }
 
         auto self = cast(PythonClass!T*) self_;
