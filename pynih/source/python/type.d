@@ -353,9 +353,17 @@ struct PythonType(T) {
 
             if(PyTuple_Size(args) == 0) return toPython(userAggregateInit!T);
 
-            static if(hasMember!(T, "__ctor"))
-                return callDlangFunction!(T, __traits(getMember, T, "__ctor"))(null /*self*/, args, kwargs);
-            else { // allow implicit constructors to work in Python
+            static if(hasMember!(T, "__ctor")) {
+                static if(__traits(compiles, callDlangFunction!(T, __traits(getMember, T, "__ctor"))(null /*self*/, args, kwargs)))
+                    return callDlangFunction!(T, __traits(getMember, T, "__ctor"))(null /*self*/, args, kwargs);
+                else {
+                    pragma(msg, "WARNING: cannot wrap constructor for `", T, "`");
+                    // uncomment below to see the compilation error
+                    // return callDlangFunction!(T, __traits(getMember, T, "__ctor"))(null /*self*/, args, kwargs);
+                    return toPython(userAggregateInit!T);
+                }
+
+            } else { // allow implicit constructors to work in Python
                 T impl(fieldTypes fields = fieldTypes.init) {
                     static if(is(T == class)) {
                         if(PyTuple_Size(args) != 0)
