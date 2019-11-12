@@ -3,8 +3,10 @@
  */
 module python.cooked;
 
+
 import python.raw;
 import python.boilerplate: Module, CFunctions, Aggregates;
+
 
 /**
    Creates a Python3 module from the given C functions.
@@ -25,7 +27,6 @@ auto createModule(Module module_, alias cfunctions, alias aggregates)()
 
     return module_;
 }
-
 
 
 /**
