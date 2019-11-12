@@ -295,8 +295,14 @@ struct PythonType(T) {
             else
                 enum flags = defaultMethodFlags;
 
-            methods[i] = pyMethodDef!(__traits(identifier, memberFunction), flags)
-                                     (&PythonMethod!(T, memberFunction)._py_method_impl);
+            static if(__traits(compiles, &PythonMethod!(T, memberFunction)._py_method_impl))
+                methods[i] = pyMethodDef!(__traits(identifier, memberFunction), flags)
+                                         (&PythonMethod!(T, memberFunction)._py_method_impl);
+            else {
+                pragma(msg, "WARNING: could not wrap D method `", T, ".", __traits(identifier, memberFunction), "`");
+                // uncomment to get the compiler error message to find out why not
+                // auto ptr = &PythonMethod!(T, memberFunction)._py_method_impl;
+            }
         }}
 
         return &methods[0];
