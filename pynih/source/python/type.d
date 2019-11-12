@@ -376,8 +376,16 @@ struct PythonType(T) {
                         if(PyTuple_Size(args) != 0)
                             throw new Exception(T.stringof ~ " has no constructor therefore can't construct one from arguments");
                         return T.init;
-                    } else
-                        return T(fields);
+                    } else {
+                        static if(__traits(compiles, T(fields)))
+                            return T(fields);
+                        else {
+                            pragma(msg, "WARNING: cannot use implicit constructor for `", T, "`");
+                            // uncomment below to see the compiler error
+                            // auto _t_tmp = T(fields);
+                            return T.init;
+                        }
+                    }
                 }
 
                 return callDlangFunction!(typeof(impl), impl)(null /*self*/, args, kwargs);
