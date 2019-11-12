@@ -36,11 +36,14 @@ struct PythonType(T) {
     static if(is(T == struct)) {
         alias fieldNames = FieldNameTuple!T;
         alias fieldTypes = Fields!T;
-    } else static if(is(T == class) || is(T == interface)) {
+    } else static if(is(T == class)) {
         // recurse over base classes to get all fields
         alias fieldNames = AliasSeq!(FieldNameTuple!T, staticMap!(FieldNameTuple, BaseClassesTuple!T));
         private alias fieldType(string name) = typeof(__traits(getMember, T, name));
         alias fieldTypes = staticMap!(fieldType, fieldNames);
+    } else static if(is(T == interface)) {
+        alias fieldNames = AliasSeq!();
+        alias fieldTypes = AliasSeq!();
     }
 
     enum hasLength = is(typeof({ size_t len = T.init.length; }));
