@@ -481,11 +481,19 @@ private auto pythonArgsToDArgs(bool isVariadic, P...)(PyObject* args, PyObject* 
 
     void positional(size_t i, T)() {
         auto item = PyTuple_GetItem(args, i);
-        if(!checkPythonType!T(item)) {
-            import python.raw: PyErr_Clear;
-            PyErr_Clear;
-            throw new ArgumentConversionException("Can't convert to " ~ T.stringof);
+
+        static if(__traits(compiles, checkPythonType!T(item))) {
+            if(!checkPythonType!T(item)) {
+                import python.raw: PyErr_Clear;
+                PyErr_Clear;
+                throw new ArgumentConversionException("Can't convert to " ~ T.stringof);
+            }
+        } else {
+            pragma(msg, "WARNING: cannot check python type for `", T, "`");
+            // uncomment to see the compilation error
+            // checkPythonType!T(item);
         }
+
         dArgs[i] = item.to!T;
     }
 
