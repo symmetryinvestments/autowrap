@@ -605,11 +605,12 @@ private void generateFunctions(Modules...)(string libraryName)
 
     import std.format : format;
     import std.meta : AliasSeq, Filter;
-    import std.traits : isDynamicArray, fullyQualifiedName, ReturnType, Parameters, ParameterIdentifierTuple;
+    import std.traits : isDynamicArray, fullyQualifiedName, ReturnType,
+        Parameters, ParameterIdentifierTuple, moduleName;
 
     foreach(func; AllFunctions!Modules)
     {
-        foreach(oc, overload; __traits(getOverloads, func.module_, func.name))
+        foreach(oc, overload; __traits(getOverloads, func.parent, func.identifier))
         {
             alias RT = ReturnType!overload;
             alias ParamTypes = Parameters!overload;
@@ -622,8 +623,8 @@ private void generateFunctions(Modules...)(string libraryName)
                 static foreach(nda; 0 .. numDefaultArgs!overload + 1)
                 {{
                     enum numParams = ParamTypes.length - nda;
-                    enum interfaceName = format("%s%s_%s", getDLangInterfaceName(func.moduleName, null, func.name), oc, numParams);
-                    enum methodName = getCSharpMethodInterfaceName(null, func.name);
+                    enum interfaceName = format("%s%s_%s", getDLangInterfaceName(moduleName!(func.parent), null, func.identifier), oc, numParams);
+                    enum methodName = getCSharpMethodInterfaceName(null, func.identifier);
                     enum methodInterfaceName = format("dlang_%s", methodName);
 
                     enum returnTypeStr = getCSharpInterfaceType(fullyQualifiedName!RT);
@@ -706,7 +707,7 @@ private void generateFunctions(Modules...)(string libraryName)
 
                     funcStr ~= "        }" ~ newline;
 
-                    getNamespace(getCSharpName(func.moduleName)).functions ~= funcStr;
+                    getNamespace(getCSharpName(moduleName!(func.parent))).functions ~= funcStr;
                 }}
             }
         }
