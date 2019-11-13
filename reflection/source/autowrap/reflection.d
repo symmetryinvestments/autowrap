@@ -89,67 +89,23 @@ template AllAggregates(ModuleNames...) if(allSatisfy!(isString, ModuleNames)) {
 }
 
 template AllAggregates(Modules...) if(allSatisfy!(isModule, Modules)) {
+    import std.meta: Filter, NoDuplicates, staticMap;
+    import std.traits: isCopyable;
 
-    import std.meta: NoDuplicates, Filter;
-    import std.traits: isCopyable, Unqual;
-    import std.datetime: Date, DateTime;
-
-    // definitions
-    alias aggregates = AggregateDefinitionsInModules!Modules;
-
-    // return and parameter types
-    alias functionTypes = FunctionTypesInModules!Modules;
-
-    alias copyables = Filter!(isCopyable, NoDuplicates!(aggregates, functionTypes));
-
-    template notAlreadyWrapped(T) {
-        alias Type = Unqual!T;
-        enum notAlreadyWrapped = !is(Type == Date) && !is(Type == DateTime);
-    }
-
-    alias notWrapped = Filter!(notAlreadyWrapped, copyables);
-    alias public_ = Filter!(isPublicSymbol, notWrapped);
-
-    alias AllAggregates = public_;
+    alias AllAggregates = Filter!(isCopyable, NoDuplicates!(staticMap!(AllAggregatesInModule, Modules)));
 }
 
-private template AggregateDefinitionsInModules(Modules...) if(allSatisfy!(isModule, Modules)) {
-    import std.meta: staticMap;
-    alias AggregateDefinitionsInModules = staticMap!(AggregateDefinitionsInModule, Modules);
-}
 
-private template AggregateDefinitionsInModule(Module module_) {
-
+private template AllAggregatesInModule(Module module_) {
     import mirror.meta: MirrorModule = Module;
-    import std.meta: Filter;
-
-    alias mod = MirrorModule!(module_.name);
-    alias userAggregates = Filter!(isUserAggregate, mod.AggregatesTree);
-
-    alias AggregateDefinitionsInModule = userAggregates;
-}
-
-
-// All return and parameter types of the functions in the given modules
-private template FunctionTypesInModules(Modules...) if(allSatisfy!(isModule, Modules)) {
-    import std.meta: staticMap;
-    alias FunctionTypesInModules = staticMap!(FunctionTypesInModule, Modules);
-}
-
-
-// All return and parameter types of the functions in the given module
-private template FunctionTypesInModule(Module module_) {
-
-    import mirror.meta: MirrorModule = Module;
-    import std.meta: Filter, staticMap, NoDuplicates;
+    import std.meta: NoDuplicates, Filter, staticMap;
 
     alias mod = MirrorModule!(module_.name);
 
-    alias FunctionTypesInModule =
+    alias AllAggregatesInModule =
         NoDuplicates!(
             Filter!(isUserAggregate,
-                    staticMap!(PrimordialType,
-                               mod.AllFunctionReturnTypesTree, mod.AllFunctionParameterTypesTree)));
+                    staticMap!(PrimordialType, mod.AllAggregates)));
 }
 
 
@@ -162,6 +118,7 @@ template isUserAggregate(A...) if(A.length == 1) {
 
     enum isUserAggregate =
         !is(Unqual!T == DateTime) &&
+        !is(Unqual!T == Date) &&
         !is(Unqual!T == TimeOfDay) &&
         !isInstanceOf!(Tuple, T) &&
         (is(T == struct) || is(T == class));

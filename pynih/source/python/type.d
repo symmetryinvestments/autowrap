@@ -4,8 +4,8 @@
 module python.type;
 
 
-import autowrap.reflection: isParameter, BinaryOperator;
 import python.raw: PyObject;
+import mirror.traits: isParameter, BinaryOperator;
 import std.traits: Unqual, isArray, isIntegral, isBoolean, isFloatingPoint,
     isAggregateType, isCallable, isAssociativeArray, isSomeFunction;
 import std.datetime: DateTime, Date;
@@ -65,7 +65,7 @@ struct PythonType(T) {
         import python.raw: PyType_GenericNew, PyType_Ready, TypeFlags,
             PyErr_SetString, PyExc_TypeError,
             PyNumberMethods, PySequenceMethods;
-        import autowrap.reflection: UnaryOperators, BinaryOperators, AssignOperators, functionName;
+        import mirror.traits: UnaryOperators, BinaryOperators, AssignOperators, functionName;
         import std.traits: arity, hasMember, TemplateOf;
         import std.meta: Filter;
         static import std.typecons;
@@ -205,8 +205,8 @@ struct PythonType(T) {
 
     static if(isUserAggregate!T)
     private static auto getsetDefs() {
-        import autowrap.reflection: Properties;
         import python.raw: PyGetSetDef;
+        import mirror.traits: isProperty;
         import std.meta: staticMap, Filter, Alias;
         import std.traits: isFunction, ReturnType;
 
@@ -234,7 +234,7 @@ struct PythonType(T) {
             alias publicMemberFunctions = Filter!(isPublic, memberFunctions);
         }
 
-        alias properties = Properties!publicMemberFunctions;
+        alias properties = Filter!(isProperty, publicMemberFunctions);
 
 
         // +1 due to the sentinel
@@ -270,9 +270,9 @@ struct PythonType(T) {
     }
 
     private static auto methodDefs()() {
-        import autowrap.reflection: isProperty;
         import python.raw: PyMethodDef, MethodArgs;
         import python.cooked: pyMethodDef, defaultMethodFlags;
+        import mirror.traits: isProperty;
         import std.meta: AliasSeq, Alias, staticMap, Filter, templateNot;
         import std.traits: isSomeFunction;
         import std.algorithm: startsWith;
@@ -618,11 +618,11 @@ class ArgsException: Exception {
 
 private PyObject* callDlangFunction(T, alias F)(PyObject* self, PyObject* args, PyObject *kwargs) {
 
-    import autowrap.reflection: FunctionParameters, NumDefaultParameters, NumRequiredParameters;
     import python.raw: PyTuple_Size;
     import python.conv: toPython, to;
-    import std.traits: Parameters, variadicFunctionStyle, Variadic, ReturnType,
-        functionAttributes, FunctionAttribute, moduleName, isCallable;
+    import mirror.traits: Parameters, NumDefaultParameters, NumRequiredParameters;
+    import std.traits: variadicFunctionStyle, Variadic, functionAttributes,
+        FunctionAttribute, moduleName, isCallable, StdParameters = Parameters;
     import std.conv: text;
     import std.exception: enforce;
     import std.meta: AliasSeq;
@@ -648,12 +648,12 @@ private PyObject* callDlangFunction(T, alias F)(PyObject* self, PyObject* args, 
     static if(is(T == void))
         enum callMixin = `auto ret = callDlangFunction!F(dArgs);`;
     else static if(isMethod)
-        enum callMixin = `auto ret = callDlangFunction!((Parameters!overload dArgs) => ` ~ parent ~ `.` ~ identifier ~ `(dArgs))(dArgs);`;
+        enum callMixin = `auto ret = callDlangFunction!((StdParameters!overload dArgs) => ` ~ parent ~ `.` ~ identifier ~ `(dArgs))(dArgs);`;
     else static if(isCtor) {
         static if(is(T == class))
-            enum callMixin = `auto ret = callDlangFunction!((Parameters!overload dArgs) => new T(dArgs))(dArgs);`;
+            enum callMixin = `auto ret = callDlangFunction!((StdParameters!overload dArgs) => new T(dArgs))(dArgs);`;
         else
-            enum callMixin = `auto ret = callDlangFunction!((Parameters!overload dArgs) => T(dArgs))(dArgs);`;
+            enum callMixin = `auto ret = callDlangFunction!((StdParameters!overload dArgs) => T(dArgs))(dArgs);`;
     } else static if(isCallable!T && !isUserAggregate!T)
         enum callMixin = `auto ret = callDlangFunction!F(dArgs);`;
     else
@@ -703,7 +703,7 @@ private PyObject* callDlangFunction(T, alias F)(PyObject* self, PyObject* args, 
                     text("Received ", numArgs, " parameters but ",
                          identifier, " takes ", Parameters!overload.length));
 
-            auto dArgs = pythonArgsToDArgs!(isVariadic, FunctionParameters!overload)(args, kwargs);
+            auto dArgs = pythonArgsToDArgs!(isVariadic, Parameters!overload)(args, kwargs);
             mixin(callMixin);
 
             static if(isUserAggregate!T && isMemberFunction && !isConstMemberFunction!overload) {
@@ -1032,7 +1032,7 @@ private template PythonBinaryOperator(T, BinaryOperator operator) {
     static extern(C) PyObject* _py_ter_func(PyObject* lhs_, PyObject* rhs_, PyObject* extra) nothrow {
         import python.conv.python_to_d: to;
         import python.conv.d_to_python: toPython;
-        import autowrap.reflection: BinOpDir, functionName;
+        import mirror.traits: BinOpDir, functionName;
         import std.traits: Parameters;
         import std.exception: enforce;
         import std.conv: text;
@@ -1040,6 +1040,7 @@ private template PythonBinaryOperator(T, BinaryOperator operator) {
         return noThrowable!({
 
             PyObject* self, pArg;
+
             if(lhs_.isInstanceOf!T) {
                 self = lhs_;
                 pArg = rhs_;
@@ -1050,7 +1051,9 @@ private template PythonBinaryOperator(T, BinaryOperator operator) {
                 throw new Exception("Neither lhs or rhs were of type " ~ T.stringof);
 
             PyObject* impl(BinOpDir dir)() {
+
                 enum funcName = functionName(dir);
+
                 static if(operator.dirs & dir) {
                     mixin(`alias parameters = Parameters!(T.`, funcName, `!(operator.op));`);
                     static assert(parameters.length == 1, "Binary operators must take one parameter");
@@ -1059,18 +1062,16 @@ private template PythonBinaryOperator(T, BinaryOperator operator) {
                     auto this_ = self.to!T;
                     auto dArg  = pArg.to!Arg;
                     mixin(`return this_.`, funcName, `!(operator.op)(dArg).toPython;`);
-                } else {
+                } else
                     throw new Exception(text(T.stringof, " does not support ", funcName, " with self on ", dir));
-                }
             }
 
-            if(lhs_.isInstanceOf!T) {  // self is on the left hand side
+            if(lhs_.isInstanceOf!T)   // self is on the left hand side
                 return impl!(BinOpDir.left);
-            } else if(rhs_.isInstanceOf!T) {  // self is on the right hand side
+            else if(rhs_.isInstanceOf!T)   // self is on the right hand side
                 return impl!(BinOpDir.right);
-            } else {
+            else
                 throw new Exception("Neither lhs or rhs were of type " ~ T.stringof);
-            }
         });
     }
 }
