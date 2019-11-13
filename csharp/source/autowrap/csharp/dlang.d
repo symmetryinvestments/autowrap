@@ -292,13 +292,13 @@ private string generateFunctions(Modules...)(ref string[] imports)
     import std.format : format;
     import std.meta : AliasSeq, Filter, staticMap;
     import std.traits : fullyQualifiedName, hasMember, functionAttributes, FunctionAttribute,
-                        ReturnType, Parameters, ParameterIdentifierTuple;
+                        ReturnType, Parameters, ParameterIdentifierTuple, moduleName;
 
     string ret;
 
     foreach(func; AllFunctions!Modules)
     {
-        foreach(oc, overload; __traits(getOverloads, func.module_, func.name))
+        foreach(oc, overload; __traits(getOverloads, func.parent, func.identifier))
         {
             alias RT = ReturnType!overload;
             alias ParamTypes = Parameters!overload;
@@ -313,7 +313,7 @@ private string generateFunctions(Modules...)(ref string[] imports)
                 static foreach(nda; 0 .. numDefaultArgs!overload + 1)
                 {{
                     enum numParams = ParamTypes.length - nda;
-                    enum interfaceName = format("%s%s_%s", getDLangInterfaceName(func.moduleName, null, func.name), oc, numParams);
+                    enum interfaceName = format("%s%s_%s", getDLangInterfaceName(moduleName!(func.parent), null, func.identifier), oc, numParams);
                     alias returnTypeStr = getDLangInterfaceType!RT;
                     alias paramNames = staticMap!(AdjParamName, ParameterIdentifierTuple!overload);
 
@@ -337,9 +337,9 @@ private string generateFunctions(Modules...)(ref string[] imports)
                     funcStr ~= "        ";
 
                     if (!is(RT == void))
-                        funcStr ~= mixin(interp!"auto __return__ = ${func.name}(");
+                        funcStr ~= mixin(interp!"auto __return__ = ${func.identifier}(");
                     else
-                        funcStr ~= mixin(interp!"${func.name}(");
+                        funcStr ~= mixin(interp!"${func.identifier}(");
 
                     static foreach(pc; 0 .. numParams)
                         funcStr ~= mixin(interp!"${generateParameter!(ParamTypes[pc])(paramNames[pc])}, ");

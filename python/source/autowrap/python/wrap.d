@@ -22,11 +22,11 @@ void wrapAllFunctions(Modules...)() if(allSatisfy!(isModule, Modules)) {
     import pyd.pyd: def, PyName;
 
     static foreach(function_; AllFunctions!Modules) {
-        static if(__traits(compiles, def!(function_.symbol, PyName!(toSnakeCase(function_.name)))()))
-            def!(function_.symbol, PyName!(toSnakeCase(function_.name)))();
+        static if(__traits(compiles, def!(function_.symbol, PyName!(toSnakeCase(function_.identifier)))()))
+            def!(function_.symbol, PyName!(toSnakeCase(function_.identifier)))();
         else {
-            pragma(msg, "\nERROR! Autowrap could not wrap function `", function_.name, "` for Python\n");
-            // def!(function_.symbol, PyName!(toSnakeCase(function_.name)))();
+            pragma(msg, "\nERROR! Autowrap could not wrap function `", function_.identifier, "` for Python\n");
+            // def!(function_.symbol, PyName!(toSnakeCase(function_.identifier)))();
         }
     }
 }
@@ -60,30 +60,36 @@ void wrapAllAggregates(Modules...)() if(allSatisfy!(isModule, Modules)) {
  */
 auto wrapAggregate(T)() if(isUserAggregate!T) {
 
-    import autowrap.reflection: Symbol, PublicFieldNames, Properties, isProperty, isStatic;
     import autowrap.python.pyd.class_wrap: MemberFunction;
+    import mirror.traits: isProperty, isStaticMemberFunction, PublicFieldNames;
     import pyd.pyd: wrap_class, Member, Init, StaticDef, Repr, Property;
-    import std.meta: staticMap, Filter, templateNot;
+    import std.meta: staticMap, Filter, templateNot, AliasSeq;
     import std.algorithm: startsWith;
 
     alias AggMember(string memberName) = Symbol!(T, memberName);
     alias members = staticMap!(AggMember, __traits(allMembers, T));
     alias memberFunctions = Filter!(isMemberFunction, members);
-    alias staticMemberFunctions = Filter!(isStatic, memberFunctions);
-    alias nonStaticMemberFunctions = Filter!(templateNot!isStatic, memberFunctions);
+    alias staticMemberFunctions = Filter!(isStaticMemberFunction, memberFunctions);
+    alias nonStaticMemberFunctions = Filter!(templateNot!isStaticMemberFunction, memberFunctions);
     enum isOperator(alias F) = __traits(identifier, F).startsWith("op");
     alias regularMemberFunctions = Filter!(templateNot!isOperator, Filter!(templateNot!isProperty, nonStaticMemberFunctions));
+    alias properties = Filter!(isProperty, nonStaticMemberFunctions);
+    // FIXME - See #54
+    static if(is(T == class))
+        alias publicFieldNames = AliasSeq!();
+    else
+        alias publicFieldNames = PublicFieldNames!T;
 
     enum isToString(alias F) = __traits(identifier, F) == "toString";
 
     wrap_class!(
         T,
-        staticMap!(Member, PublicFieldNames!T),
+        staticMap!(Member, publicFieldNames),
         staticMap!(MemberFunction, regularMemberFunctions),
         staticMap!(StaticDef, staticMemberFunctions),
         staticMap!(InitTuple, ConstructorParamTuples!T),
         staticMap!(Repr, Filter!(isToString, memberFunctions)),
-        staticMap!(Property, Properties!nonStaticMemberFunctions),
+        staticMap!(Property, properties),
         OpUnaries!T,
         OpBinaries!T,
         OpBinaryRights!T,
@@ -97,6 +103,16 @@ auto wrapAggregate(T)() if(isUserAggregate!T) {
         OpSliceAssigns!T,
         OpCalls!T,
    );
+}
+
+
+// Given a parent (module, struct, ...) and a memberName, alias the actual member,
+// or void if not possible
+private template Symbol(alias parent, string memberName) {
+    static if(__traits(compiles, I!(__traits(getMember, parent, memberName))))
+        alias Symbol = I!(__traits(getMember, parent, memberName));
+    else
+        alias Symbol = void;
 }
 
 

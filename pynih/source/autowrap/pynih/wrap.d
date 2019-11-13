@@ -102,7 +102,7 @@ auto createPythonModule(LibraryName libraryName, modules...)()
 
     alias toCFunction(alias functionSymbol) = CFunction!(
         PythonFunction!(functionSymbol.symbol)._py_function_impl,
-        functionSymbol.name.toSnakeCase,
+        functionSymbol.identifier.toSnakeCase,
     );
     alias cfunctions = CFunctions!(staticMap!(toCFunction, wrappableFunctions));
 
