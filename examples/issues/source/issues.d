@@ -110,3 +110,20 @@ class Issue54 {
 export void takesString(String str) {
 
 }
+
+
+class Issue153 {
+
+    int i;
+
+    this(int i) @safe @nogc pure nothrow {
+        this.i = i;
+    }
+
+    void toString(scope void delegate(in char[]) sink) const {
+        import std.conv: text;
+        sink("Issue153(");
+        sink(i.text);
+        sink(")");
+    }
+}

@@ -116,3 +116,20 @@ def test_issue_54():
             assert c.i == 10
     else:
         assert c.i == 10
+
+
+def test_issue_153():
+    if is_pyd:
+        return  # FIXME
+
+    from issues import Issue153
+
+    txt = ""
+
+    def sink(chars):
+        nonlocal txt
+        txt += chars
+
+    c = Issue153(42)
+    c.toString(sink)
+    assert txt == "Issue153(42)"

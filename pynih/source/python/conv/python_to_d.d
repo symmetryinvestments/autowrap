@@ -242,7 +242,8 @@ T to(T)(PyObject* value) if(isDelegate!T)
         }
         auto pyArgs = dArgsTuple.toPython;
         auto pyResult = PyObject_CallObject(value, pyArgs);
-        return pyResult.to!(ReturnType!T);
+        static if(!is(ReturnType!T == void))
+            return pyResult.to!(ReturnType!T);
     };
 }
 
