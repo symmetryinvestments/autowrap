@@ -73,11 +73,20 @@ T to(T)(PyObject* value) @trusted if(isUserAggregate!T && !is(T == struct)) {
 
 
 T to(T)(PyObject* value) if(isPointer!T && isUserAggregate!(PointerTarget!T)) {
-    import std.traits: ReturnType;
     auto ret = new Unqual!(PointerTarget!T);
     toStructImpl(value, ret);
     return ret;
 }
+
+
+// FIXME - not sure why a separate implementation is needed for non user aggregates
+T to(T)(PyObject* value) if(isPointer!T && !isUserAggregate!(PointerTarget!T)) {
+    import std.traits: Unqual;
+    auto ret = new Unqual!(PointerTarget!T);
+    *ret = value.to!(Unqual!(PointerTarget!T));
+    return ret;
+}
+
 
 
 T to(T)(PyObject* value) if(is(Unqual!T == DateTime)) {

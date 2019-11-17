@@ -181,3 +181,27 @@ unittest {
     const value = new Uncopiable(42);
     const back = value.toPython.to!(typeof(value));
 }
+
+
+@("udt.struct.char")
+unittest {
+    static struct Char {
+        char c;
+    }
+    backAndForth(Char('a'));
+}
+
+
+@("udt.struct.charptr")
+unittest {
+    static struct CharPtr {
+        char* ptr;
+        bool opEquals(in CharPtr other) @safe @nogc pure nothrow const {
+            if(ptr  is null  && other.ptr  is null) return true;
+            if(ptr  is null  && other.ptr !is null) return false;
+            if(ptr !is null  && other.ptr  is null) return false;
+            return *ptr == *other.ptr;
+        }
+    }
+    backAndForth(CharPtr(new char('a')));
+}
