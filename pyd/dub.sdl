@@ -1,0 +1,37 @@
+name "pyd"
+description "Wrap existing D code for use in python using pyd"
+authors "Atila Neves"
+license "BSD"
+targetType "library"
+dependency "pyd" version=">=0.10.0 <0.12.0"
+dependency "autowrap:common" path="../common"
+dependency "autowrap:reflection" path="../reflection"
+versions "PydPythonExtension"
+
+configuration "env" {
+    subConfiguration "pyd" "env"
+}
+
+configuration "python37" {
+    subConfiguration "pyd" "python37"
+}
+
+configuration "python36" {
+    subConfiguration "pyd" "python36"
+}
+
+configuration "python35" {
+    subConfiguration "pyd" "python35"
+}
+
+configuration "python34" {
+    subConfiguration "pyd" "python34"
+}
+
+configuration "python33" {
+    subConfiguration "pyd" "python33"
+}
+
+configuration "python27" {
+    subConfiguration "pyd" "python27"
+}
