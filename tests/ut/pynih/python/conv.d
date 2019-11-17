@@ -181,3 +181,19 @@ unittest {
     const value = new Uncopiable(42);
     const back = value.toPython.to!(typeof(value));
 }
+
+
+@ShouldFail
+@("udt.struct.char")
+unittest {
+    import python.type;
+
+    static struct Char {
+        char c;
+    }
+    const c = Char('a');
+    const p = c.toPython;
+    const rp = cast(PythonClass!Char*)p;
+    rp.c.should.not == null;
+    //backAndForth(Char('a'));
+}
