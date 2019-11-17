@@ -1,37 +1,36 @@
 name "python"
-description "Wrap existing D code for use in python"
+description "The default backend for wrapping D code for Python"
 authors "Atila Neves"
 license "BSD"
-targetType "library"
-dependency "pyd" version=">=0.10.0 <0.12.0"
-dependency "autowrap:common" path="../common"
-dependency "autowrap:reflection" path="../reflection"
-versions "PydPythonExtension"
+targetType "none"
+
+dependency "autowrap:pyd" path="../pyd"
+
 
 configuration "env" {
-    subConfiguration "pyd" "env"
+    subConfiguration "autowrap:pyd" "env"
 }
 
 configuration "python37" {
-    subConfiguration "pyd" "python37"
+    subConfiguration "autowrap:pyd" "python37"
 }
 
 configuration "python36" {
-    subConfiguration "pyd" "python36"
+    subConfiguration "autowrap:pyd" "python36"
 }
 
 configuration "python35" {
-    subConfiguration "pyd" "python35"
+    subConfiguration "autowrap:pyd" "python35"
 }
 
 configuration "python34" {
-    subConfiguration "pyd" "python34"
+    subConfiguration "autowrap:pyd" "python34"
 }
 
 configuration "python33" {
-    subConfiguration "pyd" "python33"
+    subConfiguration "autowrap:pyd" "python33"
 }
 
 configuration "python27" {
-    subConfiguration "pyd" "python27"
+    subConfiguration "autowrap:pyd" "python27"
 }

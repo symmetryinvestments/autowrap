@@ -8,18 +8,6 @@ configuration "python37" {
     subConfiguration "autowrap:python" "python37"
 }
 
-configuration "python36" {
-    targetPath "lib/pyd"
-    dependency "autowrap:python" path="../../"
-    subConfiguration "autowrap:python" "python36"
-}
-
-configuration "python33" {
-    targetPath "lib/pyd"
-    dependency "autowrap:python" path="../../"
-    subConfiguration "autowrap:python" "python33"
-}
-
 configuration "python27" {
     targetPath "lib/pyd"
     dependency "autowrap:python" path="../../"
