@@ -123,7 +123,7 @@ PyObject* toPython(T)(T value) if(isTuple!T) {
 
 
 PyObject* toPython(T)(T value) if(isSomeChar!T) {
-    return null;  // FIXME
+    return [value].toPython;
 }
 
 
