@@ -190,3 +190,18 @@ unittest {
     }
     backAndForth(Char('a'));
 }
+
+
+@("udt.struct.charptr")
+unittest {
+    static struct CharPtr {
+        char* ptr;
+        bool opEquals(in CharPtr other) @safe @nogc pure nothrow const {
+            if(ptr  is null  && other.ptr  is null) return true;
+            if(ptr  is null  && other.ptr !is null) return false;
+            if(ptr !is null  && other.ptr  is null) return false;
+            return *ptr == *other.ptr;
+        }
+    }
+    backAndForth(CharPtr(new char('a')));
+}
