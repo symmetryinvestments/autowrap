@@ -9,17 +9,6 @@ public enum isDateTimeArrayType(T) = is(T == Unqual!(Date[])) || is(T == Unqual!
 
 enum string[] excludedMethods = ["toHash", "opEquals", "opCmp", "factory", "__ctor"];
 
-public struct LibraryName {
-    string value;
-}
-
-public struct RootNamespace {
-    string value;
-}
-
-public struct OutputFileName {
-    string value;
-}
 
 package string getDLangInterfaceName(string moduleName, string aggName, string funcName) {
     import std.algorithm : map;

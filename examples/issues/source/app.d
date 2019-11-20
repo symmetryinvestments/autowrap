@@ -1,9 +1,4 @@
-version(Have_autowrap_pynih)
-    import autowrap.pynih;
-else version(Have_autowrap_csharp)
-    import autowrap.csharp;
-else
-    import autowrap.python;
+import autowrap;
 
 
 enum str = wrapDlang!(

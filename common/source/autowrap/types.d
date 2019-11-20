@@ -73,3 +73,12 @@ struct PreModuleInitCode {
 struct PostModuleInitCode {
     string value;
 }
+
+
+struct RootNamespace {
+    string value;
+}
+
+struct OutputFileName {
+    string value;
+}

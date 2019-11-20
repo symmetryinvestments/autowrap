@@ -3,7 +3,7 @@
 export PYTHON_LIB_DIR ?= /usr/lib
 DUB_CONFIGURATION ?= python37
 
-.PHONY: clean test test_python test_python_pyd test_python_pynih test_cs test_simple_pyd test_simple_pynih test_simple_cs test_pyd_pyd test_issues_pyd test_issues_pynih test_numpy_pyd test_numpy_pynih examples/simple/lib/pyd/libsimple.so examples/simple/lib/pynih/libsimple.so examples/issues/lib/pyd/libissues.so examples/issues/lib/pynih/libissues.so examples/numpy/lib/pyd/libnumpy.so examples/numpy/lib/pynih/libnumpy.so examples/pyd/lib/pyd/libpydtests.so examples/pyd/lib/pynih/libpydtests.so examples/phobos/lib/pyd/libphobos.so examples/phobos/lib/pynih/libphobos.so
+.PHONY: clean test test_python test_python_pyd test_python_pynih test_cs test_simple_pyd test_simple_pynih test_simple_cs test_pyd_pyd test_issues_pyd test_issues_pynih test_numpy_pyd test_numpy_pynih examples/simple/lib/pyd/libsimple.so examples/simple/lib/pynih/libsimple.so examples/issues/lib/pyd/libissues.so examples/issues/lib/pynih/libissues.so examples/numpy/lib/pyd/libnumpy.so examples/numpy/lib/pynih/libnumpy.so examples/pyd/lib/pyd/libpydtests.so examples/pyd/lib/pynih/libpydtests.so examples/phobos/lib/pyd/libphobos.so examples/phobos/lib/pynih/libphobos.so examples/simple/lib/csharp/libsimple.so examples/simple/Simple.cs
 
 all: test
 test: test_python test_cs

@@ -1,9 +1,7 @@
-version(Have_autowrap_pynih)
-    import autowrap.pynih;
-else version(Have_autowrap_csharp)
+version(Have_autowrap_csharp)  // very weird dmd bug mixed with weirder C# mixin strings
     import autowrap.csharp;
 else
-    import autowrap.python;
+    import autowrap;
 
 
 immutable Modules modules = Modules(Module("prefix"),
@@ -14,34 +12,10 @@ immutable Modules modules = Modules(Module("prefix"),
                                     Module("wrap_all", Yes.alwaysExport));
 
 
-version(Have_autowrap_csharp) {
-    mixin(
-        wrapCSharp(
-            modules,
-            OutputFileName("Simple.cs"),
-            autowrap.csharp.LibraryName("simple"),
-            RootNamespace("Autowrap.CSharp.Examples.Simple")
-        )
+enum str = wrapDlang!(
+    LibraryName("simple"),
+    modules,
+    RootNamespace("Autowrap.CSharp.Examples.Simple"),
     );
-} else version(WrapExcel) {
-    import xlld:wrapAll;
-
-    mixin(
-        wrapAll!(
-            "prefix",
-            "adder",
-            "structs",
-            "templates",
-            "api",
-            "wrap_all",
-        ),
-    );
-
-} else { // Python
-    enum str = wrapDlang!(
-        LibraryName("simple"),
-        modules,
-    );
-    //pragma(msg,str);
-    mixin(str);
-}
+//pragma(msg,str);
+mixin(str);

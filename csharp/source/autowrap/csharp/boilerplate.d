@@ -11,8 +11,7 @@
 module autowrap.csharp.boilerplate;
 
 
-import autowrap.types: Modules;
-import autowrap.csharp.common: OutputFileName, LibraryName, RootNamespace;
+import autowrap.types: Modules, LibraryName, OutputFileName, RootNamespace;
 
 
 private void pinInternalPointers(T)(ref T value) @trusted nothrow
@@ -270,7 +269,13 @@ struct AttachThread
     private bool notAttached = false;
 }
 
-public string wrapCSharp(in Modules modules, OutputFileName outputFile, LibraryName libraryName, RootNamespace rootNamespace) @safe pure {
+public string wrapCSharp(
+    in Modules modules,
+    in OutputFileName outputFile,
+    in LibraryName libraryName,
+    in RootNamespace rootNamespace)
+    @safe pure
+{
     import std.format : format;
     import std.algorithm: map;
     import std.array: join;
@@ -331,7 +336,7 @@ public string wrapCSharp(in Modules modules, OutputFileName outputFile, LibraryN
 
         void main() {
             import std.stdio : File;
-            import autowrap.csharp.common : LibraryName, RootNamespace;
+            import autowrap.types: LibraryName, RootNamespace;
             import autowrap.csharp.csharp : generateCSharp;
             string generated = generateCSharp!(%1$s)(LibraryName("%3$s"), RootNamespace("%4$s"));
             auto f = File("%5$s", "w");

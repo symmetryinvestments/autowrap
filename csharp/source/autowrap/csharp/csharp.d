@@ -2,8 +2,7 @@ module autowrap.csharp.csharp;
 
 import scriptlike : interp, _interp_text;
 
-import autowrap.csharp.common : LibraryName, RootNamespace, OutputFileName;
-import autowrap.types : isModule, Modules;
+import autowrap.types : isModule, Modules, LibraryName, RootNamespace, OutputFileName;
 
 import std.ascii : newline;
 import std.meta: allSatisfy;

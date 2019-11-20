@@ -11,7 +11,8 @@
 module autowrap.python.boilerplate;
 
 
-public import autowrap.types: Modules, LibraryName, PreModuleInitCode, PostModuleInitCode;
+public import autowrap.types:
+    Modules, LibraryName, PreModuleInitCode, PostModuleInitCode, RootNamespace;
 
 
 /**
@@ -22,6 +23,7 @@ public import autowrap.types: Modules, LibraryName, PreModuleInitCode, PostModul
 string wrapDlang(
     LibraryName libraryName,
     Modules modules,
+    RootNamespace _ = RootNamespace(),  // ignored in this backend
     PreModuleInitCode preModuleInitCode = PreModuleInitCode(),
     PostModuleInitCode postModuleInitCode = PostModuleInitCode())
     ()
