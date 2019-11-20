@@ -1,4 +1,7 @@
-import autowrap;
+version(Have_autowrap_csharp)  // very weird dmd bug mixed with weirder C# mixin strings
+    import autowrap.csharp;
+else
+    import autowrap;
 
 
 immutable Modules modules = Modules(Module("prefix"),
