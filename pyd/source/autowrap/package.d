@@ -1,3 +1,3 @@
 module autowrap;
 
-public import autowrap.pyd;
+public import autowrap.python;
