@@ -11,8 +11,7 @@
 module autowrap.csharp.boilerplate;
 
 
-import autowrap.types: Modules, LibraryName;
-import autowrap.csharp.common: OutputFileName, RootNamespace;
+import autowrap.types: Modules, LibraryName, OutputFileName, RootNamespace;
 
 
 private void pinInternalPointers(T)(ref T value) @trusted nothrow
@@ -337,8 +336,7 @@ public string wrapCSharp(
 
         void main() {
             import std.stdio : File;
-            import autowrap.types: LibraryName;
-            import autowrap.csharp.common : RootNamespace;
+            import autowrap.types: LibraryName, RootNamespace;
             import autowrap.csharp.csharp : generateCSharp;
             string generated = generateCSharp!(%1$s)(LibraryName("%3$s"), RootNamespace("%4$s"));
             auto f = File("%5$s", "w");

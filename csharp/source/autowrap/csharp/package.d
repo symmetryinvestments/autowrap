@@ -4,7 +4,7 @@ public import autowrap.csharp.boilerplate;
 public import autowrap.csharp.csharp;
 public import autowrap.csharp.dlang;
 public import autowrap.csharp.common;
-public import autowrap.types : Modules, Module, LibraryName;
+public import autowrap.types : Modules, Module, LibraryName, RootNamespace, OutputFileName;
 public import std.typecons : Yes, No;
 
 
