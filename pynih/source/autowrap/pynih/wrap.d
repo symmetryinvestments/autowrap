@@ -6,7 +6,7 @@ module autowrap.pynih.wrap;
 
 public import std.typecons: Yes, No;
 public import autowrap.types: Modules, Module, isModule,
-    LibraryName, PreModuleInitCode, PostModuleInitCode;
+    LibraryName, PreModuleInitCode, PostModuleInitCode, RootNamespace;
 static import python.boilerplate;
 import python.raw: isPython2, isPython3;
 import std.meta: allSatisfy;
@@ -20,6 +20,7 @@ import std.meta: allSatisfy;
 string wrapDlang(
     LibraryName libraryName,
     Modules modules,
+    RootNamespace _, // ignored in this backend
     PreModuleInitCode preModuleInitCode = PreModuleInitCode(),    // ignored in this backend
     PostModuleInitCode postModuleInitCode = PostModuleInitCode(), // ignored in this backend
     )

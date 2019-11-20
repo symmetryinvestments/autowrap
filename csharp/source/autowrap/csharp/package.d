@@ -9,23 +9,28 @@ public import std.typecons : Yes, No;
 
 
 string wrapDlang(
-    in Modules modules,
-    in autowrap.types.LibraryName libraryName,
-    in RootNamespace rootNamespace,
-    )
+    autowrap.types.LibraryName libraryName,
+    Modules modules,
+    RootNamespace rootNamespace,
+    )()
     @safe pure
 {
     import std.string: capitalize;
-    return wrapDlang(modules, libraryName, rootNamespace, OutputFileName(libraryName.value.capitalize));
+    return wrapDlang!(
+        libraryName,
+        modules,
+        rootNamespace,
+        OutputFileName(libraryName.value.capitalize ~ ".cs")
+    );
 }
 
 
 string wrapDlang(
-    in Modules modules,
-    in autowrap.types.LibraryName libraryName,
-    in RootNamespace rootNamespace,
-    in OutputFileName outputFile,
-    )
+    autowrap.types.LibraryName libraryName,
+    Modules modules,
+    RootNamespace rootNamespace,
+    OutputFileName outputFile,
+    )()
     @safe pure
 {
     assert(__ctfe);

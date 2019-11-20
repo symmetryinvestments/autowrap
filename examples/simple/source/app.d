@@ -14,16 +14,7 @@ immutable Modules modules = Modules(Module("prefix"),
                                     Module("wrap_all", Yes.alwaysExport));
 
 
-version(Have_autowrap_csharp) {
-    mixin(
-        wrapCSharp(
-            modules,
-            OutputFileName("Simple.cs"),
-            autowrap.csharp.LibraryName("simple"),
-            RootNamespace("Autowrap.CSharp.Examples.Simple")
-        )
-    );
-} else version(WrapExcel) {
+version(WrapExcel) {
     import xlld:wrapAll;
 
     mixin(
@@ -37,10 +28,11 @@ version(Have_autowrap_csharp) {
         ),
     );
 
-} else { // Python
+} else {
     enum str = wrapDlang!(
         LibraryName("simple"),
         modules,
+        RootNamespace("Autowrap.CSharp.Examples.Simple"),
     );
     //pragma(msg,str);
     mixin(str);
