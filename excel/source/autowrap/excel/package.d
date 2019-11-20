@@ -8,7 +8,7 @@ public import autowrap.types: Modules, Module, isModule,
 string wrapDlang(
     autowrap.types.LibraryName libraryName,
     Modules modules,
-    RootNamespace _, // ignored in this backend
+    RootNamespace _ = RootNamespace(), // ignored in this backend
     PreModuleInitCode preModuleInitCode = PreModuleInitCode(),    // ignored in this backend
     PostModuleInitCode postModuleInitCode = PostModuleInitCode(), // ignored in this backend
     )()

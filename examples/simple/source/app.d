@@ -1,11 +1,4 @@
-version(Have_autowrap_pynih)
-    import autowrap.pynih;
-else version(Have_autowrap_csharp)
-    import autowrap.csharp;
-else version(Have_autowrap_pyd)
-    import autowrap.pyd;
-else version(Have_autowrap_excel)
-    import autowrap.excel;
+import autowrap;
 
 
 immutable Modules modules = Modules(Module("prefix"),
@@ -16,26 +9,10 @@ immutable Modules modules = Modules(Module("prefix"),
                                     Module("wrap_all", Yes.alwaysExport));
 
 
-version(WrapExcel) {
-    import xlld:wrapAll;
-
-    mixin(
-        wrapAll!(
-            "prefix",
-            "adder",
-            "structs",
-            "templates",
-            "api",
-            "wrap_all",
-        ),
+enum str = wrapDlang!(
+    LibraryName("simple"),
+    modules,
+    RootNamespace("Autowrap.CSharp.Examples.Simple"),
     );
-
-} else {
-    enum str = wrapDlang!(
-        LibraryName("simple"),
-        modules,
-        RootNamespace("Autowrap.CSharp.Examples.Simple"),
-    );
-    //pragma(msg,str);
-    mixin(str);
-}
+//pragma(msg,str);
+mixin(str);

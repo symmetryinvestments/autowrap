@@ -1,7 +1,4 @@
-version(Have_autowrap_pynih)
-    import autowrap.pynih;
-else
-    import autowrap.python;
+import autowrap;
 
 enum str = wrapDlang!(
     LibraryName("pyd"),
