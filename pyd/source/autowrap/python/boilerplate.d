@@ -23,7 +23,7 @@ public import autowrap.types:
 string wrapDlang(
     LibraryName libraryName,
     Modules modules,
-    RootNamespace _,  // ignored in this backend
+    RootNamespace _ = RootNamespace(),  // ignored in this backend
     PreModuleInitCode preModuleInitCode = PreModuleInitCode(),
     PostModuleInitCode postModuleInitCode = PostModuleInitCode())
     ()

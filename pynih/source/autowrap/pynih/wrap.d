@@ -20,7 +20,7 @@ import std.meta: allSatisfy;
 string wrapDlang(
     LibraryName libraryName,
     Modules modules,
-    RootNamespace _, // ignored in this backend
+    RootNamespace _ = RootNamespace(), // ignored in this backend
     PreModuleInitCode preModuleInitCode = PreModuleInitCode(),    // ignored in this backend
     PostModuleInitCode postModuleInitCode = PostModuleInitCode(), // ignored in this backend
     )
