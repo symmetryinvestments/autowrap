@@ -2,8 +2,10 @@ version(Have_autowrap_pynih)
     import autowrap.pynih;
 else version(Have_autowrap_csharp)
     import autowrap.csharp;
-else
-    import autowrap.python;
+else version(Have_autowrap_pyd)
+    import autowrap.pyd;
+else version(Have_autowrap_excel)
+    import autowrap.excel;
 
 
 immutable Modules modules = Modules(Module("prefix"),
