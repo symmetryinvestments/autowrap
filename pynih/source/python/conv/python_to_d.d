@@ -57,11 +57,14 @@ private void toStructImpl(T)(PyObject* value, T* ret) {
 }
 
 
-T to(T)(PyObject* value) @trusted if(isUserAggregate!T && !is(T == struct)) {
+T to(T)(PyObject* value) @trusted if(isUserAggregate!T && !is(T == struct))
+{
     import python.type: PythonClass, userAggregateInit, gFactory;
     import std.traits: Unqual;
     import std.string: fromStringz;
     import std.conv: text;
+
+    assert(value !is null, "Cannot convert null PyObject to `" ~ T.stringof ~ "`");
 
     auto pyclass = cast(PythonClass!T*) value;
     const runtimeType = value.ob_type.tp_name.fromStringz.text;
@@ -275,5 +278,25 @@ T to(T)(PyObject* value) if(isDelegate!T)
 
 T to(T)(PyObject* value) if(isFunctionPointer!T)
 {
-    throw new Exception("Can't convert Python functions to D function pointers yet");
+    import python.raw: PyObject_CallObject;
+    import python.conv.d_to_python: toPython;
+    import python.conv.python_to_d: to;
+    import std.traits: ReturnType, Parameters, Unqual;
+    import std.meta: staticMap;
+    import std.typecons: Tuple;
+
+    alias UnqualParams = staticMap!(Unqual, Parameters!T);
+
+    static _impl(UnqualParams dArgs) {
+        Tuple!UnqualParams dArgsTuple;
+        static foreach(i; 0 .. UnqualParams.length) {
+            dArgsTuple[i] = dArgs[i];
+        }
+        auto pyArgs = dArgsTuple.toPython;
+        auto pyResult = PyObject_CallObject(value, pyArgs);
+        static if(!is(ReturnType!T == void))
+            return pyResult.to!(ReturnType!T);
+    }
+
+    return &impl;
 }
