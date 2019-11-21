@@ -120,7 +120,16 @@ T to(T)(PyObject* value) if(isArray!T && !isSomeString!T)
     import std.exception: enforce;
     import std.conv: text;
 
-    Unqual!T ret;
+    alias ArrayType = Unqual!T;
+    alias ElementType = Unqual!(ElementEncodingType!T);
+
+    // deal with void[] here since otherwise we won't be able to iterate over it
+    static if(is(ElementType == void))
+        alias RetType = ubyte[];
+    else
+        alias RetType = ArrayType;
+
+    RetType ret;
 
     static if(__traits(compiles, ret.length = 1)) {
         const valueLength = {
@@ -144,7 +153,7 @@ T to(T)(PyObject* value) if(isArray!T && !isSomeString!T)
             else
                 assert(0);
         }();
-        elt = pythonItem.to!(ElementEncodingType!T);
+        elt = pythonItem.to!(typeof(elt));
     }
 
     return ret;
