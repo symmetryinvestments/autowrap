@@ -147,3 +147,26 @@ def test_issue_159():
         s = Socket()
         assert s.send([1, 2, 3]) == 3
         assert s.send([0, 1, 2, 3]) == 4
+
+
+def test_issue_161():
+    if is_pyd:  # FIXME
+        import pytest
+        with pytest.raises(ImportError):
+            from issues import Issue161
+    else:
+        from issues import Issue161
+
+        e = Issue161()
+        assert e.msg == ''
+
+        line = 42
+        next = None
+        err = -1
+
+        def errorFormatter(i):
+            return str(i) + 'oops'
+
+        import pytest
+        with pytest.raises(RuntimeError):
+            Issue161("msg", "file", line, next, err, errorFormatter)

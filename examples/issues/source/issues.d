@@ -141,7 +141,7 @@ class MyException: Exception {
     mixin basicExceptionCtors;
 }
 
-class MyChildException: MyException {
+class Issue161: MyException {
     int errorCode;
 
     this(string msg,
