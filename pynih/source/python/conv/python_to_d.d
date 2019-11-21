@@ -275,5 +275,5 @@ T to(T)(PyObject* value) if(isDelegate!T)
 
 T to(T)(PyObject* value) if(isFunctionPointer!T)
 {
-    throw new Exception("Can't handle function pointers yet");
+    throw new Exception("Can't convert Python functions to D function pointers yet");
 }
