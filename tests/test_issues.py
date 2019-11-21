@@ -119,20 +119,22 @@ def test_issue_54():
 
 
 def test_issue_153():
-    if is_pyd:
-        return  # FIXME
+    if is_pyd:  # FIXME
+        import pytest
+        with pytest.raises(ImportError):
+            from issues import Issue153
+    else:
+        from issues import Issue153
 
-    from issues import Issue153
+        txt = ""
 
-    txt = ""
+        def sink(chars):
+            nonlocal txt
+            txt += chars
 
-    def sink(chars):
-        nonlocal txt
-        txt += chars
-
-    c = Issue153(42)
-    c.toString(sink)
-    assert txt == "Issue153(42)"
+        c = Issue153(42)
+        c.toString(sink)
+        assert txt == "Issue153(42)"
 
 
 def test_issue_159():
