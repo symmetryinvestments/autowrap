@@ -252,8 +252,18 @@ T to(T)(PyObject* value) if(isSomeChar!T) {
 }
 
 
-T to(T)(PyObject* value) if(isDelegate!T)
+T to(T)(PyObject* value) if(isDelegate!T) {
+    return value.toDlangFunction!T;
+}
+
+T to(T)(PyObject* value) if(isFunctionPointer!T) {
+    return value.toDlangFunction!T;
+}
+
+
+private T toDlangFunction(T)(PyObject* value)
     in(pyCallableCheck(value))
+    do
 {
     import python.raw: PyObject_CallObject;
     import python.conv.d_to_python: toPython;
@@ -274,29 +284,4 @@ T to(T)(PyObject* value) if(isDelegate!T)
         static if(!is(ReturnType!T == void))
             return pyResult.to!(ReturnType!T);
     };
-}
-
-T to(T)(PyObject* value) if(isFunctionPointer!T)
-{
-    import python.raw: PyObject_CallObject;
-    import python.conv.d_to_python: toPython;
-    import python.conv.python_to_d: to;
-    import std.traits: ReturnType, Parameters, Unqual;
-    import std.meta: staticMap;
-    import std.typecons: Tuple;
-
-    alias UnqualParams = staticMap!(Unqual, Parameters!T);
-
-    static _impl(UnqualParams dArgs) {
-        Tuple!UnqualParams dArgsTuple;
-        static foreach(i; 0 .. UnqualParams.length) {
-            dArgsTuple[i] = dArgs[i];
-        }
-        auto pyArgs = dArgsTuple.toPython;
-        auto pyResult = PyObject_CallObject(value, pyArgs);
-        static if(!is(ReturnType!T == void))
-            return pyResult.to!(ReturnType!T);
-    }
-
-    return &impl;
 }
