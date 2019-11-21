@@ -127,3 +127,10 @@ class Issue153 {
         sink(")");
     }
 }
+
+
+struct Socket {
+    size_t send(const(void)[] bytes) {
+        return bytes.length;
+    }
+}
