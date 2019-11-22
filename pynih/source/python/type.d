@@ -352,7 +352,7 @@ struct PythonType(T) {
         return 0;
     }
 
-    static if(!isAbstract!T)
+    static if(isUserAggregate!T && !isAbstract!T)
     private static extern(C) PyObject* _py_new(PyTypeObject *type, PyObject* args, PyObject* kwargs) nothrow {
         return noThrowable!({
             import python.conv: toPython;

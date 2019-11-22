@@ -83,20 +83,11 @@ T to(T)(PyObject* value) if(isPointer!T && isUserAggregate!(PointerTarget!T)) {
 
 
 // FIXME - not sure why a separate implementation is needed for non user aggregates
-T to(T)(PyObject* value) if(isPointer!T && !isUserAggregate!(PointerTarget!T) && !isFunctionPointer!T) {
+T to(T)(PyObject* value) if(isPointer!T && !isUserAggregate!(PointerTarget!T) && !isFunctionPointer!T && !isDelegate!T) {
     import std.traits: Unqual;
     auto ret = new Unqual!(PointerTarget!T);
     *ret = value.to!(Unqual!(PointerTarget!T));
     return ret;
-}
-
-
-private template isFunctionPointer(T) {
-    import std.traits: isPointer, isSomeFunction, PointerTarget;
-    static if(isPointer!T)
-        enum isFunctionPointer = isSomeFunction!(PointerTarget!T);
-    else
-        enum isFunctionPointer = false;
 }
 
 
@@ -257,7 +248,7 @@ T to(T)(PyObject* value) if(isDelegate!T) {
 }
 
 T to(T)(PyObject* value) if(isFunctionPointer!T) {
-    return value.toDlangFunction!T;
+    throw new Exception("Conversion of Python functions to D function pointers not yet implemented");
 }
 
 

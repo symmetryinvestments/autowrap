@@ -150,8 +150,9 @@ def test_issue_159():
 
 
 def test_issue_161():
+    import pytest
+
     if is_pyd:  # FIXME
-        import pytest
         with pytest.raises(ImportError):
             from issues import Issue161
     else:
@@ -167,5 +168,8 @@ def test_issue_161():
         def errorFormatter(i):
             return str(i) + 'oops'
 
-        # FIXME - test the fields (it crashes now)
-        Issue161("msg", "file", line, next, err, errorFormatter)
+        # This fails because conversion to D function pointers isn't
+        # implemented
+        with pytest.raises(RuntimeError):
+            # FIXME - test the fields as well
+            Issue161("msg", "file", line, next, err, errorFormatter)
