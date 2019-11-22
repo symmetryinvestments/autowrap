@@ -2,7 +2,7 @@
 	"fileVersion": 1,
 	"versions": {
 		"autowrap": {"path":"../../"},
-		"mirror": "0.0.10",
+		"mirror": "0.1.1",
 		"scriptlike": "0.10.3",
 		"unit-threaded": "0.10.3"
 	}

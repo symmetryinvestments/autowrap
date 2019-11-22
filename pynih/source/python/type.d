@@ -84,7 +84,8 @@ struct PythonType(T) {
             _pyType.tp_basicsize = PythonClass!T.sizeof;
             _pyType.tp_getset = getsetDefs;
             _pyType.tp_methods = methodDefs;
-            _pyType.tp_new = &_py_new;
+            static if(!isAbstract!T)
+                _pyType.tp_new = &_py_new;
             _pyType.tp_repr = &_py_repr;
             _pyType.tp_init = &_py_init;
 
@@ -351,7 +352,7 @@ struct PythonType(T) {
         return 0;
     }
 
-    static if(isUserAggregate!T)
+    static if(isUserAggregate!T && !isAbstract!T)
     private static extern(C) PyObject* _py_new(PyTypeObject *type, PyObject* args, PyObject* kwargs) nothrow {
         return noThrowable!({
             import python.conv: toPython;
@@ -392,6 +393,12 @@ struct PythonType(T) {
             }
         });
     }
+}
+
+
+private template isAbstract(T) {
+    import std.traits: isAbstractClass;
+    enum isAbstract = is(T == interface) || isAbstractClass!T;
 }
 
 

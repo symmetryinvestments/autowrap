@@ -134,3 +134,66 @@ struct Socket {
         return bytes.length;
     }
 }
+
+
+class MyException: Exception {
+    import std.exception: basicExceptionCtors;
+    mixin basicExceptionCtors;
+}
+
+class Issue161: MyException {
+    int errorCode;
+
+    this(string msg,
+         string file = __FILE__,
+         size_t line = __LINE__,
+         Throwable next = null,
+         int err = _lasterr(),
+         string function(int) @trusted errorFormatter = &formatSocketError)
+    {
+        errorCode = err;
+
+        if (msg.length)
+            super(msg ~ ": " ~ errorFormatter(err), file, line, next);
+        else
+            super(errorFormatter(err), file, line, next);
+    }
+
+    this(string msg,
+         Throwable next,
+         string file = __FILE__,
+         size_t line = __LINE__,
+         int err = _lasterr(),
+         string function(int) @trusted errorFormatter = &formatSocketError)
+    {
+        this(msg, file, line, next, err, errorFormatter);
+    }
+
+    this(string msg,
+         int err,
+         string function(int) @trusted errorFormatter = &formatSocketError,
+         string file = __FILE__,
+         size_t line = __LINE__,
+         Throwable next = null)
+    {
+        this(msg, file, line, next, err, errorFormatter);
+    }
+}
+
+version(Windows) {
+    private int _lasterr() nothrow @nogc {
+        return WSAGetLastError();
+    }
+} else {
+    private int _lasterr() nothrow @nogc {
+        import core.stdc.errno;
+        // return errno;
+        return 42;
+    }
+}
+
+
+private string formatSocketError(int err) @trusted
+{
+    return "oops";
+}

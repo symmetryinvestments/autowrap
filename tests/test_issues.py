@@ -147,3 +147,29 @@ def test_issue_159():
         s = Socket()
         assert s.send([1, 2, 3]) == 3
         assert s.send([0, 1, 2, 3]) == 4
+
+
+def test_issue_161():
+    import pytest
+
+    if is_pyd:  # FIXME
+        with pytest.raises(ImportError):
+            from issues import Issue161
+    else:
+        from issues import Issue161
+
+        e0 = Issue161()
+        assert e0.msg == ""
+
+        line = 42
+        next = None
+        err = -1
+
+        def errorFormatter(i):
+            return str(i) + 'oops'
+
+        # This fails because conversion to D function pointers isn't
+        # implemented
+        with pytest.raises(RuntimeError):
+            # FIXME - test the fields as well
+            Issue161("msg", "file", line, next, err, errorFormatter)

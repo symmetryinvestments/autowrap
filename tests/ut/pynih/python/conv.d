@@ -205,3 +205,14 @@ unittest {
     }
     backAndForth(CharPtr(new char('a')));
 }
+
+
+@ShouldFail("D function pointers not yet supported")
+@("function")
+unittest {
+    static string fun(int i, double d) {
+        import std.conv: text;
+        return text("i: ", i, " d: ", d);
+    }
+    const back = (&fun).toPython.to!(typeof(&fun));
+}

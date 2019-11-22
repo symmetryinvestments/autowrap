@@ -57,11 +57,14 @@ private void toStructImpl(T)(PyObject* value, T* ret) {
 }
 
 
-T to(T)(PyObject* value) @trusted if(isUserAggregate!T && !is(T == struct)) {
+T to(T)(PyObject* value) @trusted if(isUserAggregate!T && !is(T == struct))
+{
     import python.type: PythonClass, userAggregateInit, gFactory;
     import std.traits: Unqual;
     import std.string: fromStringz;
     import std.conv: text;
+
+    assert(value !is null, "Cannot convert null PyObject to `" ~ T.stringof ~ "`");
 
     auto pyclass = cast(PythonClass!T*) value;
     const runtimeType = value.ob_type.tp_name.fromStringz.text;
@@ -80,13 +83,12 @@ T to(T)(PyObject* value) if(isPointer!T && isUserAggregate!(PointerTarget!T)) {
 
 
 // FIXME - not sure why a separate implementation is needed for non user aggregates
-T to(T)(PyObject* value) if(isPointer!T && !isUserAggregate!(PointerTarget!T)) {
+T to(T)(PyObject* value) if(isPointer!T && !isUserAggregate!(PointerTarget!T) && !isFunctionPointer!T && !isDelegate!T) {
     import std.traits: Unqual;
     auto ret = new Unqual!(PointerTarget!T);
     *ret = value.to!(Unqual!(PointerTarget!T));
     return ret;
 }
-
 
 
 T to(T)(PyObject* value) if(is(Unqual!T == DateTime)) {
@@ -241,8 +243,18 @@ T to(T)(PyObject* value) if(isSomeChar!T) {
 }
 
 
-T to(T)(PyObject* value) if(isDelegate!T)
+T to(T)(PyObject* value) if(isDelegate!T) {
+    return value.toDlangFunction!T;
+}
+
+T to(T)(PyObject* value) if(isFunctionPointer!T) {
+    throw new Exception("Conversion of Python functions to D function pointers not yet implemented");
+}
+
+
+private T toDlangFunction(T)(PyObject* value)
     in(pyCallableCheck(value))
+    do
 {
     import python.raw: PyObject_CallObject;
     import python.conv.d_to_python: toPython;
@@ -263,9 +275,4 @@ T to(T)(PyObject* value) if(isDelegate!T)
         static if(!is(ReturnType!T == void))
             return pyResult.to!(ReturnType!T);
     };
-}
-
-T to(T)(PyObject* value) if(isFunctionPointer!T)
-{
-    throw new Exception("Can't handle function pointers yet");
 }

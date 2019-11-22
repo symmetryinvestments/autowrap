@@ -97,9 +97,11 @@ auto createPythonModule(LibraryName libraryName, modules...)()
     alias wrappableFunctions = Filter!(isWrappableFunction, allFunctions);
     alias nonWrappableFunctions = Filter!(templateNot!isWrappableFunction, allFunctions);
 
-    static foreach(nonWrappableFunction; nonWrappableFunctions) {
+    static foreach(nonWrappableFunction; nonWrappableFunctions) {{
         pragma(msg, "autowrap WARNING: Could not wrap function ", fullyQualifiedName!nonWrappableFunction);
-    }
+        // uncomment to see the compiler error
+        // auto ptr = &PythonFunction!(nonWrappableFunction.symbol)._py_function_impl;
+    }}
 
     alias toCFunction(alias functionSymbol) = CFunction!(
         PythonFunction!(functionSymbol.symbol)._py_function_impl,

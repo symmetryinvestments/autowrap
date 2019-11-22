@@ -5,7 +5,7 @@ import python.raw: PyObject;
 import python.type: isUserAggregate, isTuple, isNonRangeUDT;
 import std.traits: Unqual, isIntegral, isFloatingPoint, isAggregateType, isArray,
     isStaticArray, isAssociativeArray, isPointer, isSomeChar,
-    isCallable, isSomeString;
+    isCallable, isSomeString, isFunctionPointer, isDelegate;
 import std.range: isInputRange;
 import std.datetime: Date, DateTime;
 
@@ -59,7 +59,7 @@ PyObject* toPython(T)(auto ref T value) if(isNonRangeUDT!T) {
 }
 
 
-PyObject* toPython(T)(T value) if(isPointer!T) {
+PyObject* toPython(T)(T value) if(isPointer!T && !isFunctionPointer!T && !isDelegate!T) {
     return toPython(*value);
 }
 
