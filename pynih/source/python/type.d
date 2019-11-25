@@ -357,11 +357,12 @@ struct PythonType(T) {
         return noThrowable!({
             import python.conv: toPython;
             import python.raw: PyTuple_Size;
+            import mirror.traits: isPrivate;
             import std.traits: hasMember, fullyQualifiedName;
 
             if(PyTuple_Size(args) == 0) return toPython(userAggregateInit!T);
 
-            static if(hasMember!(T, "__ctor")) {
+            static if(hasMember!(T, "__ctor") && !isPrivate!(__traits(getMember, T, "__ctor"))) {
                 static if(__traits(compiles, callDlangFunction!(T, __traits(getMember, T, "__ctor"))(null /*self*/, args, kwargs)))
                     return callDlangFunction!(T, __traits(getMember, T, "__ctor"))(null /*self*/, args, kwargs);
                 else {
