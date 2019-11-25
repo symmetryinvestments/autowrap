@@ -91,6 +91,7 @@ template isUserAggregate(A...) if(A.length == 1) {
     import std.datetime;
     import std.traits: Unqual, isInstanceOf;
     import std.typecons: Tuple;
+    import core.time: Duration;
 
     alias T = A[0];
 
@@ -98,6 +99,7 @@ template isUserAggregate(A...) if(A.length == 1) {
         !is(Unqual!T == DateTime) &&
         !is(Unqual!T == Date) &&
         !is(Unqual!T == TimeOfDay) &&
+        !is(Unqual!T == Duration) &&
         !isInstanceOf!(Tuple, T) &&
         (is(T == struct) || is(T == class));
 }

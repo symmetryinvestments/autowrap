@@ -191,3 +191,21 @@ def test_issues_164():
     i = Issue164()
     assert i.strlen(MethodParamString("foo")) == 3
     assert i.strlen(MethodParamString("quux")) == 4
+
+
+# FIXME
+def test_issues_166():
+    import pytest
+    from issues import issue166_days, issue166_secs, issue166_usecs
+    from datetime import timedelta
+
+    delta = timedelta(days=42, seconds=77, microseconds=99)
+    if is_pynih:
+        exc = AssertionError
+    else:
+        exc = RuntimeError
+
+    with(pytest.raises(exc)):
+        assert(issue166_days(delta)) == 42
+        assert(issue166_secs(delta)) == 77
+        assert(issue166_usecs(delta)) == 99
