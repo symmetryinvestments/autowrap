@@ -91,6 +91,7 @@ template isUserAggregate(A...) if(A.length == 1) {
     import std.datetime;
     import std.traits: Unqual, isInstanceOf;
     import std.typecons: Tuple;
+
     alias T = A[0];
 
     enum isUserAggregate =

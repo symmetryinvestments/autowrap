@@ -8,6 +8,7 @@ import std.traits: Unqual, isIntegral, isFloatingPoint, isAggregateType, isArray
     isCallable, isSomeString, isFunctionPointer, isDelegate;
 import std.range: isInputRange;
 import std.datetime: Date, DateTime;
+import core.time: Duration;
 
 
 PyObject* toPython(T)(T value) @trusted if(isIntegral!T) {
@@ -129,4 +130,12 @@ PyObject* toPython(T)(T value) if(isSomeChar!T) {
 PyObject* toPython(T)(T value) if(isCallable!T && !isUserAggregate!T) {
     import python.type: pythonCallable;
     return pythonCallable(value);
+}
+
+
+PyObject* toPython(T)(T value) if(is(Unqual!T == Duration)) {
+    import python.raw: pyDeltaFromDSU;
+    int days, seconds, useconds;
+    value.split!("days", "seconds", "usecs")(days, seconds, useconds);
+    return pyDeltaFromDSU(days, seconds, useconds);
 }

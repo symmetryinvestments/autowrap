@@ -176,7 +176,8 @@ auto pyFalse() {
 
 // Demacroify
 void pyIncRef(PyObject* obj) @nogc nothrow {
-    Py_INCREF(obj);
+    // had to hand translate due to static inline C function
+    obj.ob_refcnt++;
 }
 
 // Demacroify
@@ -262,4 +263,9 @@ auto pyDateFromDate(int year, int month, int day) {
 
 auto pyDateTimeFromDateAndTime(int year, int month, int day, int hour = 0, int minute = 0, int second = 0, int usec = 0) {
     return PyDateTime_FromDateAndTime(year, month, day, hour, minute, second, usec);
+}
+
+
+auto pyDeltaFromDSU(int days, int seconds, int useconds) {
+    return PyDelta_FromDSU(days, seconds, useconds);
 }

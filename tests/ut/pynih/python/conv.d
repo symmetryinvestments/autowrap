@@ -216,3 +216,10 @@ unittest {
     }
     const back = (&fun).toPython.to!(typeof(&fun));
 }
+
+
+@("Duration")
+unittest {
+    import core.time: seconds;
+    backAndForth(1.seconds);
+}

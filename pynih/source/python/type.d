@@ -12,9 +12,10 @@ import std.datetime: DateTime, Date;
 import std.typecons: Tuple;
 import std.range.primitives: isInputRange;
 import std.meta: allSatisfy;
+static import core.time;
 
 
-package enum isPhobos(T) = isDateOrDateTime!T || isTuple!T;
+package enum isPhobos(T) = isDateOrDateTime!T || isTuple!T || is(Unqual!T == core.time.Duration);
 package enum isDateOrDateTime(T) = is(Unqual!T == DateTime) || is(Unqual!T == Date);
 package enum isTuple(T) = is(T: Tuple!A, A...);
 package enum isUserAggregate(T) = isAggregateType!T && !isPhobos!(T);
@@ -94,7 +95,7 @@ struct PythonType(T) {
             static if(
                 hasMember!(T, "opCmp")
                 && !__traits(isSame, TemplateOf!T, std.typecons.Typedef)
-                && &T.opCmp !is &Object.opCmp
+                && cast(void*) &T.opCmp !is cast(void*) &Object.opCmp
                 )
             {
                 _pyType.tp_richcompare = &PythonOpCmp!T._py_cmp;
@@ -425,7 +426,7 @@ private string dlangBinOpToPythonSlot(string op) {
         "*":   "tp_as_number.nb_multiply",
         "*=":  "tp_as_number.nb_inplace_multiply",
         "/":   "tp_as_number.nb_divide",
-        "/=":  "tp_as_number.nb_inplace_divide",
+        "/=":  "tp_as_number.nb_inplace_true_divide",
         "%":   "tp_as_number.nb_remainder",
         "%=":  "tp_as_number.nb_inplace_remainder",
         "^^":  "tp_as_number.nb_power",
@@ -455,7 +456,7 @@ private string dlangAssignOpToPythonSlot(string op) {
         "+":  "tp_as_number.nb_inplace_add",
         "-":  "tp_as_number.nb_inplace_subtract",
         "*":  "tp_as_number.nb_inplace_multiply",
-        "/":  "tp_as_number.nb_inplace_divide",
+        "/":  "tp_as_number.nb_inplace_true_divide",
         "%":  "tp_as_number.nb_inplace_remainder",
         "^^": "tp_as_number.nb_inplace_power",
         "&":  "tp_as_number.nb_inplace_and",
