@@ -187,11 +187,7 @@ def test_issue_163():
 
 
 def test_issues_164():
-    import pytest
-
-    with pytest.raises(ImportError):
-        from issues import MethodParamString
-        from issues import Issue164
-        i = Issue164()
-        assert i.strlen(MethodParamString("foo")) == 3
-        assert i.strlen(MethodParamString("quux")) == 4
+    from issues import Issue164, MethodParamString
+    i = Issue164()
+    assert i.strlen(MethodParamString("foo")) == 3
+    assert i.strlen(MethodParamString("quux")) == 4
