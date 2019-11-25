@@ -8,6 +8,7 @@ import std.traits: Unqual, isIntegral, isFloatingPoint, isAggregateType, isArray
     isDelegate, isFunctionPointer;
 import std.range: isInputRange;
 import std.datetime: DateTime, Date;
+import core.time: Duration;
 
 
 T to(T)(PyObject* value) @trusted if(isIntegral!T) {
@@ -275,4 +276,14 @@ private T toDlangFunction(T)(PyObject* value)
         static if(!is(ReturnType!T == void))
             return pyResult.to!(ReturnType!T);
     };
+}
+
+
+T to(T)(PyObject* value) if(is(Unqual!T == Duration)) {
+    import python.raw: PyDateTime_Delta;
+    import core.time: days, seconds, usecs;
+
+    const delta = cast(PyDateTime_Delta*) value;
+
+    return delta.days.days + delta.seconds.seconds + delta.microseconds.usecs;
 }

@@ -210,3 +210,18 @@ struct Issue164 {
         return s.value.length;
     }
 }
+
+
+export int issue166_days(Duration dur) {
+    return cast(int) dur.total!"days";
+}
+
+
+export int issue166_secs(Duration dur) {
+    return cast(int) dur.total!"seconds";
+}
+
+
+export int issue166_usecs(Duration dur) {
+    return cast(int) dur.total!"usecs";
+}
