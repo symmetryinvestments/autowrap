@@ -173,3 +173,14 @@ def test_issue_161():
         with pytest.raises(RuntimeError):
             # FIXME - test the fields as well
             Issue161("msg", "file", line, next, err, errorFormatter)
+
+
+def test_issue_163():
+    import pytest
+    from issues import issue163
+    ints = [1, 2, 3]
+    issue163(ints)
+    with pytest.raises(AssertionError):
+        assert ints == [1, 2, 3, 42]
+        issue163(ints)
+        assert ints == [1, 2, 3, 42, 42]

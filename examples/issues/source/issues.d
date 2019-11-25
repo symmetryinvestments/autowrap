@@ -197,3 +197,8 @@ private string formatSocketError(int err) @trusted
 {
     return "oops";
 }
+
+
+export void issue163(out int[] ints) {
+    ints ~= 42;
+}
