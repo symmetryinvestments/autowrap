@@ -184,3 +184,14 @@ def test_issue_163():
         assert ints == [1, 2, 3, 42]
         issue163(ints)
         assert ints == [1, 2, 3, 42, 42]
+
+
+def test_issues_164():
+    import pytest
+
+    with pytest.raises(ImportError):
+        from issues import MethodParamString
+        from issues import Issue164
+        i = Issue164()
+        assert i.strlen(MethodParamString("foo")) == 3
+        assert i.strlen(MethodParamString("quux")) == 4

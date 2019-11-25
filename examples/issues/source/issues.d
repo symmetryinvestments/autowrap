@@ -1,7 +1,8 @@
 module issues;
 
 
-import extra: String;
+import extra: String, MethodParamString;
+import core.time: Duration;
 
 struct Uncopiable {
     @disable this(this);
@@ -201,4 +202,11 @@ private string formatSocketError(int err) @trusted
 
 export void issue163(out int[] ints) {
     ints ~= 42;
+}
+
+
+struct Issue164 {
+    size_t strlen(MethodParamString s) {
+        return s.value.length;
+    }
 }
