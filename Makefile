@@ -1,7 +1,23 @@
 # Makefile to drive the tests
 
 export PYTHON_LIB_DIR ?= /usr/lib
-DUB_CONFIGURATION ?= python37
+export DUB_CONFIGURATION ?= env
+export PYD_LIBPYTHON_DIR ?= /usr/lib
+export PYD_LIBPYTHON ?= python3.8
+export PYD_D_VERSION_1 ?= Python_2_4_Or_Later
+export PYD_D_VERSION_2 ?= Python_2_5_Or_Later
+export PYD_D_VERSION_3 ?= Python_2_6_Or_Later
+export PYD_D_VERSION_4 ?= Python_2_7_Or_Later
+export PYD_D_VERSION_5 ?= Python_3_0_Or_Later
+export PYD_D_VERSION_6 ?= Python_3_1_Or_Later
+export PYD_D_VERSION_7 ?= Python_3_2_Or_Later
+export PYD_D_VERSION_8 ?= Python_3_3_Or_Later
+export PYD_D_VERSION_9 ?= Python_3_4_Or_Later
+export PYD_D_VERSION_10 ?= Python_3_5_Or_Later
+export PYD_D_VERSION_11 ?= Python_3_6_Or_Later
+export PYD_D_VERSION_12 ?= Python_3_7_Or_Later
+export PYD_D_VERSION_13 ?= Python_3_8_Or_Later
+
 
 .PHONY: clean test test_python test_python_pyd test_python_pynih test_cs test_simple_pyd test_simple_pynih test_simple_cs test_pyd_pyd test_issues_pyd test_issues_pynih test_numpy_pyd test_numpy_pynih examples/simple/lib/pyd/libsimple.so examples/simple/lib/pynih/libsimple.so examples/issues/lib/pyd/libissues.so examples/issues/lib/pynih/libissues.so examples/numpy/lib/pyd/libnumpy.so examples/numpy/lib/pynih/libnumpy.so examples/pyd/lib/pyd/libpydtests.so examples/pyd/lib/pynih/libpydtests.so examples/phobos/lib/pyd/libphobos.so examples/phobos/lib/pynih/libphobos.so examples/simple/lib/csharp/libsimple.so examples/simple/Simple.cs
 
@@ -13,17 +29,7 @@ test_python_pynih: test_simple_pynih test_pyd_pynih test_issues_pynih
 test_cs: test_simple_cs
 
 clean:
-	@cd csharp && dub clean -q
-	@cd excel && dub clean -q
-	@cd pynih && dub clean -q
-	@cd python && dub clean -q
-	@cd reflection && dub clean -q
-	@cd examples/issues && dub clean -q
-	@cd examples/numpy && dub clean -q
-	@cd examples/pyd && dub clean -q
-	@cd examples/simple && dub clean -q
-	@rm -f examples/*/*.so examples/pyd/lib/pyd/*.so examples/simple/lib/*/*.so examples/simple/simple examples/simple/Simple.cs
-	@rm -rf tests/*/bin tests/*/obj
+	git clean -xffd
 
 test_simple_pyd: tests/test_simple.py examples/simple/lib/pyd/simple.so
 	PYTHONPATH=$(PWD)/examples/simple/lib/pyd pytest -s -vv $<
