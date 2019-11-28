@@ -5,7 +5,7 @@ set -euo pipefail
 DC="${DC:-dmd}"
 TRAVIS="${TRAVIS:-}"
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" > /dev/null && pwd )"
-PYTHON_INCLUDE_DIR="${PYTHON_INCLUDE_DIR:-/usr/include/python3.7m}"
+PYTHON_INCLUDE_DIR="${PYTHON_INCLUDE_DIR:-/usr/include/python3.8}"
 
 
 if [ "$DC" = "ldc2" ]; then
@@ -14,4 +14,4 @@ if [ "$DC" = "ldc2" ]; then
 fi
 
 cd "$SCRIPT_DIR"
-make -j`nproc`
+make -j"$(nproc)"

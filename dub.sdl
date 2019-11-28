@@ -30,7 +30,7 @@ configuration "unittest" {
     versions "unitUnthreaded"  # GIL
     versions "TestingAutowrap"
 
-    libs "python3.7m"
+    libs "python3.8"
     lflags "-L$PYTHON_LIB_DIR"
 
     dependency ":common" version="*"
@@ -53,7 +53,7 @@ configuration "unittest-no-pynih" {
     versions "unitUnthreaded"  # GIL
     versions "TestingAutowrap"
 
-    libs "python3.7m"
+    libs "python3.8"
     lflags "-L$PYTHON_LIB_DIR"
     versions "NoPynih"
 

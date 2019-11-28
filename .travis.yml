@@ -3,7 +3,7 @@ sudo: required
 dist: bionic
 
 python:
-  - "3.7"
+  - "3.8"
 
 addons:
   apt:
@@ -24,10 +24,11 @@ install:
 
 env:
   global:
-    - PYTHON_INCLUDE_DIR=~/virtualenv/python3.7/include/python3.7m
-    - PYTHON_LIB_DIR=/opt/python/3.7.1/lib
+    - PYTHON_INCLUDE_DIR=~/virtualenv/python3.8/include/python3.8
+    - PYTHON_LIB_DIR=/opt/python/3.8.0/lib
+    - PYD_LIBPYTHON_DIR=/opt/python/3.8.0/lib
     - PATH=$PYTHON_LIB_DIR:$PATH
-    - LD_RUN_PATH=$PYTHON_LIB_DIR:$LD_RUN_PATH
+    - LD_RUN_PATH=$PYTHON_LIB_DIR:$PYD_LIBPYTHON_DIR:$LD_RUN_PATH
   matrix:
     - DC=dmd-2.089.0
     - DC=dmd-2.088.1
