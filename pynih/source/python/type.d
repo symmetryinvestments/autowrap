@@ -194,10 +194,13 @@ struct PythonType(T) {
             import python.raw: PyEnum_Type;
             _pyType.tp_basicsize = 0;
             _pyType.tp_base = &PyEnum_Type;
-            import python.conv.d_to_python: toPython;
             try
-                _pyType.tp_dict = ["foo": 0, "bar": 1, "baz": 2].toPython;
-            catch(Exception _) {}
+                _pyType.tp_dict = classDict;
+            catch(Exception e) {
+                import core.stdc.stdio;
+                enum msg = "Could not create class dict for " ~ T.stringof ~ "\n";
+                printf(msg);
+            }
         } else
             static assert(false, "Don't know what to do for type " ~ T.stringof);
 
@@ -210,6 +213,21 @@ struct PythonType(T) {
         if(PyType_Ready(&_pyType) < 0) {
             PyErr_SetString(PyExc_TypeError, &"not ready"[0]);
             failedToReady = true;
+        }
+    }
+
+    static if(is(T == enum)) {
+        private static PyObject* classDict() {
+            import python.conv.d_to_python: toPython;
+            import std.traits: EnumMembers, OriginalType;
+
+            OriginalType!T[string] dict;
+
+            static foreach(i; 0 .. EnumMembers!T.length) {
+                dict[__traits(identifier, EnumMembers!T[i])] = EnumMembers!T[i];
+            }
+
+            return dict.toPython;
         }
     }
 
