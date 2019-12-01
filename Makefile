@@ -32,7 +32,7 @@ clean:
 	git clean -xffd
 
 test_simple_pyd: tests/test_simple.py examples/simple/lib/pyd/simple.so
-	PYTHONPATH=$(PWD)/examples/simple/lib/pyd pytest -s -vv $<
+	PYTHONPATH=$(PWD)/examples/simple/lib/pyd PYD=1 pytest -s -vv $<
 
 examples/simple/lib/pyd/simple.so: examples/simple/lib/pyd/libsimple.so
 	@cp $^ $@
@@ -47,7 +47,7 @@ test_simple_pynih_only: tests/test_simple_pynih_only.py examples/simple/lib/pyni
 	PYTHONPATH=$(PWD)/examples/simple/lib/pynih pytest -s -vv $<
 
 test_simple_pynih: tests/test_simple.py examples/simple/lib/pynih/simple.so
-	PYTHONPATH=$(PWD)/examples/simple/lib/pynih pytest -s -vv $<
+	PYTHONPATH=$(PWD)/examples/simple/lib/pynih PYNIH=1 pytest -s -vv $<
 
 test_simple_cs: examples/simple/lib/csharp/libsimple.x64.so examples/simple/Simple.cs
 	@cd tests/test_simple_cs && \

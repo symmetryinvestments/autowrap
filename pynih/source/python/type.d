@@ -190,6 +190,14 @@ struct PythonType(T) {
         } else static if(isCallable!T) {
             _pyType.tp_basicsize = PythonCallable!T.sizeof;
             _pyType.tp_call = &PythonCallable!T._py_call;
+        } else static if(is(T == enum)) {
+            import python.raw: PyEnum_Type;
+            _pyType.tp_basicsize = 0;
+            _pyType.tp_base = &PyEnum_Type;
+            import python.conv.d_to_python: toPython;
+            try
+                _pyType.tp_dict = ["foo": 0, "bar": 1, "baz": 2].toPython;
+            catch(Exception _) {}
         } else
             static assert(false, "Don't know what to do for type " ~ T.stringof);
 

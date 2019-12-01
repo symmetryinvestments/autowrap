@@ -101,7 +101,7 @@ template isUserAggregate(A...) if(A.length == 1) {
         !is(Unqual!T == TimeOfDay) &&
         !is(Unqual!T == Duration) &&
         !isInstanceOf!(Tuple, T) &&
-        (is(T == struct) || is(T == class));
+        (is(T == struct) || is(T == class) || is(T == enum));
 }
 
 

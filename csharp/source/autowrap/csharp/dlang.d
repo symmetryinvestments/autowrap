@@ -37,7 +37,7 @@ public string wrapDLang(Modules...)() if(allSatisfy!(isModule, Modules)) {
 
     static foreach(Agg; AllAggregates!Modules)
     {
-        static if(verifySupported!Agg && !isDateTimeType!Agg)
+        static if(verifySupported!Agg && !isDateTimeType!Agg && !is(Agg == enum))
         {
             ret ~= generateSliceMethods!Agg(imports);
             ret ~= generateConstructors!Agg(imports);
