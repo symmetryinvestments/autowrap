@@ -19,3 +19,10 @@ struct String {
 string otherStringAsParam(OtherString s) {
     return s.s ~ "quux";
 }
+
+
+enum MyEnum {
+    foo,
+    bar,
+    baz,
+}

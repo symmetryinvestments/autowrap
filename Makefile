@@ -24,15 +24,16 @@ export PYD_D_VERSION_13 ?= Python_3_8_Or_Later
 all: test
 test: test_python test_cs
 test_python: test_python_pyd test_python_pynih
-test_python_pyd:   test_simple_pyd   test_pyd_pyd   test_issues_pyd   test_numpy_pyd
-test_python_pynih: test_simple_pynih test_pyd_pynih test_issues_pynih
+test_python_pyd:   test_simple_pyd   test_pyd_pyd   test_issues_pyd   test_phobos_pyd   test_numpy_pyd
+test_python_pynih: test_simple_pynih test_pyd_pynih test_issues_pynih test_phobos_pynih
+test_python_phobos: test_phobos_pynih test_phobos_pyd
 test_cs: test_simple_cs
 
 clean:
 	git clean -xffd
 
 test_simple_pyd: tests/test_simple.py examples/simple/lib/pyd/simple.so
-	PYTHONPATH=$(PWD)/examples/simple/lib/pyd pytest -s -vv $<
+	PYTHONPATH=$(PWD)/examples/simple/lib/pyd PYD=1 pytest -s -vv $<
 
 examples/simple/lib/pyd/simple.so: examples/simple/lib/pyd/libsimple.so
 	@cp $^ $@
@@ -47,7 +48,7 @@ test_simple_pynih_only: tests/test_simple_pynih_only.py examples/simple/lib/pyni
 	PYTHONPATH=$(PWD)/examples/simple/lib/pynih pytest -s -vv $<
 
 test_simple_pynih: tests/test_simple.py examples/simple/lib/pynih/simple.so
-	PYTHONPATH=$(PWD)/examples/simple/lib/pynih pytest -s -vv $<
+	PYTHONPATH=$(PWD)/examples/simple/lib/pynih PYNIH=1 pytest -s -vv $<
 
 test_simple_cs: examples/simple/lib/csharp/libsimple.x64.so examples/simple/Simple.cs
 	@cd tests/test_simple_cs && \
@@ -136,7 +137,7 @@ examples/numpy/lib/pynih/libnumpy.so: pynih/source/python/raw.d
 
 
 test_phobos_pyd: tests/test_phobos.py examples/phobos/lib/pyd/phobos.so
-	PYTHONPATH=$(PWD)/examples/phobos/lib/pyd pytest -s -vv $<
+	PYTHONPATH=$(PWD)/examples/phobos/lib/pyd PYD=1 pytest -s -vv $<
 
 examples/phobos/lib/pyd/phobos.so: examples/phobos/lib/pyd/libphobos.so
 	@cp $^ $@
@@ -148,7 +149,7 @@ examples/phobos/dub.selections.json:
 	@cd examples/phobos && dub upgrade -q
 
 test_phobos_pynih: tests/test_phobos.py examples/phobos/lib/pynih/phobos.so
-	PYTHONPATH=$(PWD)/examples/phobos/lib/pynih pytest -s -vv $<
+	PYTHONPATH=$(PWD)/examples/phobos/lib/pynih PYNIH=1 pytest -s -vv $<
 
 examples/phobos/lib/pynih/phobos.so: examples/phobos/lib/pynih/libphobos.so
 	@cp $^ $@

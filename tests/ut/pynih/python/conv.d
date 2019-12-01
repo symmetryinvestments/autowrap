@@ -223,3 +223,15 @@ unittest {
     import core.time: seconds;
     backAndForth(1.seconds);
 }
+
+
+@("enum")
+unittest {
+    static enum Enum {
+        foo,
+        bar,
+        baz,
+    }
+
+    backAndForth(Enum.bar);
+}

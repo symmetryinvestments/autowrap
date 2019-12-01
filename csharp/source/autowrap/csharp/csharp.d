@@ -144,7 +144,7 @@ public string generateCSharp(Modules...)(LibraryName libraryName, RootNamespace 
 
     static foreach(Agg; AllAggregates!Modules)
     {
-        static if(verifySupported!Agg && !isDateTimeType!Agg)
+        static if(verifySupported!Agg && !isDateTimeType!Agg && !is(Agg == enum))
         {
             generateRangeDef!Agg(libraryName.value);
             generateConstructors!Agg(libraryName.value);

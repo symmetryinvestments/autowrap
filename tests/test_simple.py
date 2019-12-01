@@ -1,5 +1,9 @@
 from datetime import date
 import pytest
+import os
+
+is_pyd = os.environ.get('PYD')
+is_pynih = os.environ.get('PYNIH')
 
 
 def test_adder():
@@ -261,3 +265,18 @@ def test_property_getter_setter():
     assert obj.i == 42
     obj.i = 33  # shouldn't throw
     assert obj.i == 33
+
+
+def test_enum():
+    import pytest
+    if is_pyd:  # FIXME
+        with pytest.raises(ImportError):
+            from simple import MyEnum
+    else:
+        from simple import MyEnum
+        assert MyEnum.foo == 0
+        assert MyEnum.bar == 1
+        assert MyEnum.baz == 2
+
+        with pytest.raises(AttributeError):  # no quux
+            assert MyEnum.quux == 42
