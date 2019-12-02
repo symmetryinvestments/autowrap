@@ -25,22 +25,22 @@ namespace Autowrap.CSharp.Examples.Simple.Tests
         [TestMethod]
         public void TestAdder()
         {
-            Assert.AreEqual((new Adder(3)).Add(5), 8);
-            Assert.AreEqual((new Adder(2)).Add(7), 9);
+            Assert.AreEqual(8, (new Adder(3)).Add(5));
+            Assert.AreEqual(9, (new Adder(2)).Add(7));
         }
 
         [TestMethod]
         public void TestPrefix()
         {
             var p = new Prefix("foo");
-            Assert.AreEqual(p.Pre("bar"), "foobar");
+            Assert.AreEqual("foobar", p.Pre("bar"));
         }
 
         [TestMethod]
         public void TestIntString1()
         {
             var x = new IntString(42);
-            Assert.AreEqual(x.I, 42);
+            Assert.AreEqual(42, x.I);
             Assert.IsNull(x.S);
         }
 
@@ -48,8 +48,8 @@ namespace Autowrap.CSharp.Examples.Simple.Tests
         public void TestIntString2()
         {
             var x = new IntString(33, "foobar");
-            Assert.AreEqual(x.I, 33);
-            Assert.AreEqual(x.S, "foobar");
+            Assert.AreEqual(33, x.I);
+            Assert.AreEqual("foobar", x.S);
         }
 
         [TestMethod]
@@ -74,9 +74,9 @@ namespace Autowrap.CSharp.Examples.Simple.Tests
         public void TestCreateDateTime()
         {
             var d = Api.Functions.CreateDateTime(2017, 1, 2);
-            Assert.AreEqual(d.Year, 2017);
-            Assert.AreEqual(d.Month, 1);
-            Assert.AreEqual(d.Day, 2);
+            Assert.AreEqual(2017, d.Year);
+            Assert.AreEqual(1, d.Month);
+            Assert.AreEqual(2, d.Day);
         }
 
         [TestMethod]
@@ -115,16 +115,16 @@ namespace Autowrap.CSharp.Examples.Simple.Tests
         public void TestCreateDate()
         {
             var d = Api.Functions.CreateDate(2017, 1, 2);
-            Assert.AreEqual(d.Year, 2017);
-            Assert.AreEqual(d.Month, 1);
-            Assert.AreEqual(d.Day, 2);
+            Assert.AreEqual(2017, d.Year);
+            Assert.AreEqual(1, d.Month);
+            Assert.AreEqual(2, d.Day);
         }
 
         [TestMethod]
         public void TestFoo()
         {
             var f = new Foo(2, 3);
-            Assert.AreEqual(f.ToString(), "Foo(2, 3)");
+            Assert.AreEqual("Foo(2, 3)", f.ToString());
         }
 
         // test_not_copyable from test_simple.py not reproduced here, because it doesn't seem relevant to C#
@@ -132,8 +132,8 @@ namespace Autowrap.CSharp.Examples.Simple.Tests
         [TestMethod]
         public void TestProduct()
         {
-            Assert.AreEqual(Wrap_all.Functions.Product(2, 3), 6);
-            Assert.AreEqual(Wrap_all.Functions.Product(4, 5), 20);
+            Assert.AreEqual(6, Wrap_all.Functions.Product(2, 3));
+            Assert.AreEqual(20, Wrap_all.Functions.Product(4, 5));
         }
 
         [TestMethod]
@@ -147,41 +147,41 @@ namespace Autowrap.CSharp.Examples.Simple.Tests
         public void TestApiOuter()
         {
             var outer = new ApiOuter(42, new NotWrappedInner("foobar"));
-            Assert.AreEqual(outer.Value, 42);
-            Assert.AreEqual(outer.Inner.Value, "foobar");
+            Assert.AreEqual(42, outer.Value);
+            Assert.AreEqual("foobar", outer.Inner.Value);
         }
 
         [TestMethod]
         public void TestSafePureEtcStruct()
         {
             var s = new SafePureEtcStruct();
-            Assert.AreEqual(s.Stuff(3), 6);
+            Assert.AreEqual(6, s.Stuff(3));
         }
 
         [TestMethod]
         public void TestTheYear()
         {
-            Assert.AreEqual(Api.Functions.TheYear(new DateTime(2017, 1, 1)), 2017);
-            Assert.AreEqual(Api.Functions.TheYear(new DateTime(2018, 2, 3)), 2018);
+            Assert.AreEqual(2017, Api.Functions.TheYear(new DateTime(2017, 1, 1)));
+            Assert.AreEqual(2018, Api.Functions.TheYear(new DateTime(2018, 2, 3)));
         }
 
         [TestMethod]
         public void TestWrapAllString()
         {
-            Assert.AreEqual(new Wrap_all.String("foobar").S, "foobar");
+            Assert.AreEqual("foobar", new Wrap_all.String("foobar").S);
         }
 
         [TestMethod]
         public void TestWrapAllOtherStringAsParam()
         {
-            Assert.AreEqual(Wrap_all.Functions.OtherStringAsParam(new OtherString("hello ")), "hello quux");
+            Assert.AreEqual("hello quux", Wrap_all.Functions.OtherStringAsParam(new OtherString("hello ")));
         }
 
         [TestMethod]
         public void TestAddWithDefault()
         {
-            Assert.AreEqual(Api.Functions.AddWithDefault(1, new NotWrappedInt(2)), 3);
-            Assert.AreEqual(Api.Functions.AddWithDefault(1), 43);
+            Assert.AreEqual(3, Api.Functions.AddWithDefault(1, new NotWrappedInt(2)));
+            Assert.AreEqual(43, Api.Functions.AddWithDefault(1));
         }
 
         // test_struct_with_private_member from test_simple.py not reproduced, because AFAIK,

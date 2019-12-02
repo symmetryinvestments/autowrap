@@ -249,7 +249,7 @@ namespace Autowrap {
                     stream.CopyTo(file);
                     if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
                         var ufi = new UnixFileInfo(outputName);
-                        ufi.FileAccessPermissions |= FileAccessPermissions.UserExecute | FileAccessPermissions.GroupExecute | FileAccessPermissions.OtherExecute; 
+                        ufi.FileAccessPermissions |= FileAccessPermissions.UserExecute | FileAccessPermissions.GroupExecute | FileAccessPermissions.OtherExecute;
                     }
                 }
             } else {
