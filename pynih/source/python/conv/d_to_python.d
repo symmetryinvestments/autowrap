@@ -122,7 +122,7 @@ PyObject* toPython(T)(T value) if(isTuple!T) {
 }
 
 
-PyObject* toPython(T)(T value) if(is(Unqual!T == char)) {
+PyObject* toPython(T)(T value) if(is(Unqual!T == char) || is(Unqual!T == wchar) || is(Unqual!T == dchar)) {
     return [value].toPython;
 }
 
