@@ -131,7 +131,11 @@ struct PythonType(T) {
                 if(_pyType.tp_as_mapping is null)
                     _pyType.tp_as_mapping = new PyMappingMethods;
 
-                _pyType.tp_as_mapping.mp_ass_subscript = &PythonIndexAssign!T._py_index_assign;
+                static if(__traits(compiles, &PythonIndexAssign!T._py_index_assign))
+                    _pyType.tp_as_mapping.mp_ass_subscript = &PythonIndexAssign!T._py_index_assign;
+                else
+                    pragma(msg, "WARNING: could not implement Python index assign for ",
+                           fullyQualifiedName!T);
             }
 
             enum isPythonableUnary(string op) = op == "+" || op == "-" || op == "~";
@@ -290,15 +294,13 @@ struct PythonType(T) {
                 static if(is(ReturnType!overload == void))  {// setter
                     static if(__traits(compiles, &PythonClass!T.propertySet!overload))
                         getsets[i].set = &PythonClass!T.propertySet!overload;
-                    else {
+                    else
                         pragma(msg, "Cannot implement ", fullyQualifiedName!T, ".set!", i);
-                    }
                 } else  { // getter
                     static if(__traits(compiles, &PythonClass!T.propertyGet!overload))
                         getsets[i].get = &PythonClass!T.propertyGet!overload;
-                    else {
+                    else
                         pragma(msg, "Cannot implement ", fullyQualifiedName!T, ".get!", i);
-                    }
                 }
             }
         }}
