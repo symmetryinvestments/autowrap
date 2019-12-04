@@ -240,36 +240,11 @@ struct PythonType(T) {
     static if(isUserAggregate!T)
     private static auto getsetDefs() {
         import python.raw: PyGetSetDef;
-        import mirror.traits: isProperty;
-        import std.meta: staticMap, Filter, Alias;
-        import std.traits: isFunction, ReturnType;
+        import mirror.traits: isProperty, MemberFunctionsByOverload;
+        import std.meta: Filter;
+        import std.traits: ReturnType;
 
-        static if(is(T == struct)) {
-
-            template isPublic(string memberName) {
-                alias member = __traits(getMember, T, memberName);
-                static if(__traits(compiles, __traits(getProtection, member)))
-                    enum isPublic = __traits(getProtection, member) == "public";
-                else
-                    enum isPublic = false;
-            }
-
-            alias publicMemberNames = Filter!(isPublic, __traits(allMembers, T));
-            alias AggMember(string memberName) = Alias!(__traits(getMember, T, memberName));
-            alias members = staticMap!(AggMember, publicMemberNames);
-            alias publicMemberFunctions = Filter!(isFunction, members);
-        } else {
-            import std.traits: MemberFunctionsTuple;
-            enum isFunctionName(string name) = isFunction!(__traits(getMember, T, name));
-            alias functionNames = Filter!(isFunctionName, __traits(allMembers, T));
-            alias memberFunctionsTuple(string name) = MemberFunctionsTuple!(T, name);
-            alias memberFunctions = staticMap!(memberFunctionsTuple, functionNames);
-            enum isPublic(alias T) = __traits(getProtection, T) == "public";
-            alias publicMemberFunctions = Filter!(isPublic, memberFunctions);
-        }
-
-        alias properties = Filter!(isProperty, publicMemberFunctions);
-
+        alias properties = Filter!(isProperty, MemberFunctionsByOverload!T);
 
         // +1 due to the sentinel
         static PyGetSetDef[fieldNames.length + properties.length + 1] getsets;
