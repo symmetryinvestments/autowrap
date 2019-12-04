@@ -113,7 +113,10 @@ struct PythonType(T) {
             }
 
             static if(hasMember!(T, "opSlice")) {
-                _pyType.tp_iter = &PythonIter!T._py_iter;
+                static if(__traits(compiles, &PythonIter!T._py_iter))
+                    _pyType.tp_iter = &PythonIter!T._py_iter;
+                else
+                    pragma(msg, "WARNING: could not implement Python opSlice for ", fullyQualifiedName!T);
             }
 
             // In Python, both D's opIndex and opSlice are dealt with by one function,
@@ -1295,6 +1298,7 @@ private template PythonIter(T) {
         import python.conv.d_to_python: toPython;
         import python.conv.python_to_d: to;
         import std.array;
+        import std.traits: fullyQualifiedName;
 
         PyObject* impl() {
             static if(__traits(compiles, T.init[].array[0])) {
@@ -1302,7 +1306,7 @@ private template PythonIter(T) {
                 auto list = dObj[].array.toPython;
                 return PyObject_GetIter(list);
             } else {
-                throw new Exception("Cannot get an array from " ~ T.stringof ~ "[]");
+                throw new Exception("Cannot get an array from " ~ fullyQualifiedName!T ~ "[]");
             }
         }
 
