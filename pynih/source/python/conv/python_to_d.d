@@ -119,12 +119,17 @@ T to(T)(PyObject* value) if(isArray!T && !isSomeString!T)
 {
     import python.raw: PyList_Size, PyList_GetItem, PyTuple_Size, PyTuple_GetItem;
     import std.range: ElementEncodingType;
-    import std.traits: Unqual;
+    import std.traits: Unqual, isDynamicArray;
     import std.exception: enforce;
     import std.conv: text;
 
-    alias ArrayType = Unqual!T;
     alias ElementType = Unqual!(ElementEncodingType!T);
+
+    // This is needed to deal with array of const or immutable
+    static if(isDynamicArray!T)
+        alias ArrayType = ElementType[];
+    else
+        alias ArrayType = Unqual!T;
 
     // deal with void[] here since otherwise we won't be able to iterate over it
     static if(is(ElementType == void))
@@ -159,7 +164,10 @@ T to(T)(PyObject* value) if(isArray!T && !isSomeString!T)
         elt = pythonItem.to!(typeof(elt));
     }
 
-    return ret;
+    static if(is(T == typeof(ret)))
+        return ret;
+    else
+        return cast(T) ret;
 }
 
 
@@ -238,7 +246,7 @@ T to(T)(PyObject* value) if(isTuple!T)
 }
 
 
-T to(T)(PyObject* value) if(is(Unqual!T == char)) {
+T to(T)(PyObject* value) if(is(Unqual!T == char) || is(Unqual!T == wchar) || is(Unqual!T == dchar)) {
     auto str = value.to!string;
     return str[0];
 }

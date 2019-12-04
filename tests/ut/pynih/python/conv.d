@@ -76,12 +76,25 @@ unittest {
 }
 
 
+@("array.static.immutable(int)")
+unittest {
+    immutable(int)[3] ints = [1, 2, 3];
+    backAndForth(ints);
+}
+
+
 @("array.slice.char")
 unittest {
     auto chars = ['a', 'b', 'c'];
     backAndForth(chars);
 }
 
+
+@("array.slice.immutable(int)")
+unittest {
+    immutable(int)[] ints = [1, 2, 3];
+    backAndForth(ints);
+}
 
 @("aa.int.string")
 unittest {
@@ -245,4 +258,11 @@ unittest {
     }
 
     backAndForth(Char.b);
+}
+
+
+@("dchar")
+unittest {
+    const str = "foobar"d;
+    backAndForth(str[0]);
 }
