@@ -92,13 +92,19 @@ struct PythonType(T) {
 
             // special-case std.typecons.Typedef
             // see: https://issues.dlang.org/show_bug.cgi?id=20117
-            static if(
-                hasMember!(T, "opCmp")
-                && !__traits(isSame, TemplateOf!T, std.typecons.Typedef)
-                && cast(void*) &T.opCmp !is cast(void*) &Object.opCmp
-                )
-            {
-                _pyType.tp_richcompare = &PythonOpCmp!T._py_cmp;
+            static isSamePtr(void* lhs, void* rhs) {
+                return lhs is rhs;
+            }
+
+            static if(__traits(compiles, isSamePtr(&T.opCmp, &Object.opCmp))) {
+                static if(
+                    hasMember!(T, "opCmp")
+                    && !__traits(isSame, TemplateOf!T, std.typecons.Typedef)
+                    && !isSamePtr(&T.opCmp, &Object.opCmp)
+                    )
+                {
+                    _pyType.tp_richcompare = &PythonOpCmp!T._py_cmp;
+                }
             }
 
             static if(hasMember!(T, "opSlice")) {
