@@ -11,7 +11,7 @@ import std.datetime: Date, DateTime;
 import core.time: Duration;
 
 
-PyObject* toPython(T)(T value) @trusted if(isIntegral!T) {
+PyObject* toPython(T)(T value) @trusted if(isIntegral!T && !is(T == enum)) {
     import python.raw: PyLong_FromLong;
     return PyLong_FromLong(value);
 }
@@ -122,7 +122,7 @@ PyObject* toPython(T)(T value) if(isTuple!T) {
 }
 
 
-PyObject* toPython(T)(T value) if(isSomeChar!T) {
+PyObject* toPython(T)(T value) if(is(Unqual!T == char)) {
     return [value].toPython;
 }
 
@@ -138,4 +138,10 @@ PyObject* toPython(T)(T value) if(is(Unqual!T == Duration)) {
     int days, seconds, useconds;
     value.split!("days", "seconds", "usecs")(days, seconds, useconds);
     return pyDeltaFromDSU(days, seconds, useconds);
+}
+
+
+PyObject* toPython(T)(T value) if(is(T == enum)) {
+    import std.traits: OriginalType;
+    return toPython(cast(OriginalType!T) value);
 }

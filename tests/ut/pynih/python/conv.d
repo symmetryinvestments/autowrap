@@ -225,7 +225,7 @@ unittest {
 }
 
 
-@("enum")
+@("enum.int")
 unittest {
     static enum Enum {
         foo,
@@ -234,4 +234,15 @@ unittest {
     }
 
     backAndForth(Enum.bar);
+}
+
+
+@("enum.char")
+unittest {
+    static enum Char: char {
+        a = 'a',
+        b = 'b',
+    }
+
+    backAndForth(Char.b);
 }
