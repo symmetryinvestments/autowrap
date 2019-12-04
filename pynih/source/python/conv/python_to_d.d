@@ -42,8 +42,7 @@ auto to(T)(PyObject* value) @trusted if(isUserAggregate!T && is(T == struct)) {
         toStructImpl(value, ret);
     }
 
-    // might need to be cast to `const` or `immutable`
-    return cast(RetType) ret;
+    return maybeCast!RetType(ret);
 }
 
 
@@ -164,10 +163,7 @@ T to(T)(PyObject* value) if(isArray!T && !isSomeString!T)
         elt = pythonItem.to!(typeof(elt));
     }
 
-    static if(is(T == typeof(ret)))
-        return ret;
-    else
-        return cast(T) ret;
+    return maybeCast!T(ret);
 }
 
 
@@ -300,4 +296,19 @@ T to(T)(PyObject* value) if(is(Unqual!T == Duration)) {
 T to(T)(PyObject* value) if(is(T == enum)) {
     import std.traits: OriginalType;
     return cast(T) value.to!(OriginalType!T);
+}
+
+
+// Usually this is needed in the presence of `const` or `immutable`
+private auto maybeCast(Wanted, Actual)(auto ref Actual value) {
+    static if(is(Wanted == Actual))
+        return value;
+    // the presence of `opCast` might mean this isn't
+    // always possible
+    else static if(__traits(compiles, cast(Wanted) value))
+        return cast(Wanted) value;
+    else {
+        Wanted ret = value;
+        return ret;
+    }
 }

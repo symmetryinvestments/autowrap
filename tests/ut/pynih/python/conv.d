@@ -220,6 +220,27 @@ unittest {
 }
 
 
+// Similar to issue with std.bitmanip.BitArray.
+// The presence of `opCast` makes the conversion to `const(T)` fail
+// since there's no available cast to `const(T)`.
+@("udt.struct.opCast")
+unittest {
+    static struct Struct {
+
+        void[] opCast(T: void[])() @safe @nogc pure nothrow {
+            return null;
+        }
+
+        size_t[] opCast(T: size_t[])() @safe @nogc pure nothrow {
+            return null;
+        }
+    }
+
+    const s = Struct();
+    backAndForth(s);
+}
+
+
 @ShouldFail("D function pointers not yet supported")
 @("function")
 unittest {
