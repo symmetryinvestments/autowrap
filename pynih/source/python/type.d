@@ -83,7 +83,12 @@ struct PythonType(T) {
         // FIXME: types are that user aggregates *and* callables
         static if(isUserAggregate!T) {
             _pyType.tp_basicsize = PythonClass!T.sizeof;
-            _pyType.tp_getset = getsetDefs;
+
+            static if(__traits(compiles, getsetDefs()))
+                _pyType.tp_getset = getsetDefs;
+            else
+                pragma(msg, "WARNING: could not generate attribute accessors for ", fullyQualifiedName!T);
+
             _pyType.tp_methods = methodDefs;
             static if(!isAbstract!T)
                 _pyType.tp_new = &_py_new;
@@ -252,10 +257,21 @@ struct PythonType(T) {
         // don't bother if already initialised
         if(getsets != getsets.init) return &getsets[0];
 
+        template isPublic(string fieldName) {
+            static if(__traits(compiles, __traits(getMember, T, fieldName))) {
+                alias field = __traits(getMember, T, fieldName);
+                static if(__traits(compiles, __traits(getProtection, field)))
+                    enum isPublic = __traits(getProtection, field) == "public";
+                else
+                    enum isPublic = false;
+            } else
+                enum isPublic = false;
+        }
+
         // first deal with the public fields
         static foreach(i; 0 .. fieldNames.length) {
             getsets[i].name = cast(typeof(PyGetSetDef.name)) fieldNames[i];
-            static if(__traits(getProtection, __traits(getMember, T, fieldNames[i])) == "public") {
+            static if(isPublic!(fieldNames[i])) {
                 getsets[i].get = &PythonClass!T._get_impl!i;
                 getsets[i].set = &PythonClass!T._set_impl!i;
             }
@@ -268,10 +284,19 @@ struct PythonType(T) {
             getsets[i].name = cast(typeof(PyGetSetDef.name)) __traits(identifier, property);
 
             static foreach(overload; __traits(getOverloads, T, __traits(identifier, property))) {
-                static if(is(ReturnType!overload == void))  // setter
-                    getsets[i].set = &PythonClass!T.propertySet!(overload);
-                else  // getter
-                    getsets[i].get = &PythonClass!T.propertyGet!(overload);
+                static if(is(ReturnType!overload == void))  {// setter
+                    static if(__traits(compiles, &PythonClass!T.propertySet!overload))
+                        getsets[i].set = &PythonClass!T.propertySet!overload;
+                    else {
+                        pragma(msg, "Cannot implement ", fullyQualifiedName!T, ".set!", i);
+                    }
+                } else  { // getter
+                    static if(__traits(compiles, &PythonClass!T.propertyGet!overload))
+                        getsets[i].get = &PythonClass!T.propertyGet!overload;
+                    else {
+                        pragma(msg, "Cannot implement ", fullyQualifiedName!T, ".get!", i);
+                    }
+                }
             }
         }}
 
@@ -348,10 +373,20 @@ struct PythonType(T) {
             import python.conv: to;
             import std.string: toStringz;
             import std.conv: text;
+            import std.traits: fullyQualifiedName;
 
             assert(self_ !is null);
-            auto ret = text(self_.to!T);
-            return pyUnicodeDecodeUTF8(ret.ptr, ret.length, null /*errors*/);
+
+            static if(__traits(compiles, self_.to!T)) {
+                auto ret = text(self_.to!T);
+                return pyUnicodeDecodeUTF8(ret.ptr, ret.length, null /*errors*/);
+            } else {
+                pragma(msg, "WARNING: cannot generate repr for ", fullyQualifiedName!T);
+                PyObject* impl() {
+                    throw new Exception("Unable to generate Python repr for F " ~ fullyQualifiedName!T);
+                }
+                return impl;
+            }
         });
     }
 
@@ -398,7 +433,16 @@ struct PythonType(T) {
                     }
                 }
 
-                return callDlangFunction!(typeof(impl), impl)(null /*self*/, args, kwargs);
+                static if(__traits(compiles, callDlangFunction!(typeof(impl), impl)(null, args, kwargs)))
+                    return callDlangFunction!(typeof(impl), impl)(null /*self*/, args, kwargs);
+                else {
+                    enum msg = "could not generate constructor for " ~ fullyQualifiedName!T;
+                    pragma(msg, "WARNING: ", msg);
+                    static PyObject* oops() {
+                        throw new Exception(msg);
+                    }
+                    return oops;
+                }
             }
         });
     }
@@ -868,11 +912,15 @@ struct PythonClass(T) if(isUserAggregate!T) {
 
         auto self = cast(PythonClass*) self_;
 
-        auto field = self.getField!FieldIndex;
-        assert(field !is null, "Cannot increase reference count on null field");
-        pyIncRef(field);
+        auto impl() {
+            auto field = self.getField!FieldIndex;
+            assert(field !is null, "Cannot increase reference count on null field");
+            pyIncRef(field);
 
-        return field;
+            return field;
+        }
+
+        return noThrowable!impl;
     }
 
     // The function pointer for PyGetSetDef.set
@@ -899,18 +947,36 @@ struct PythonClass(T) if(isUserAggregate!T) {
             // checkPythonType!(fieldTypes[FieldIndex])(value);
         }
 
-        auto self = cast(PythonClass!T*) self_;
-        auto tmp = self.getField!FieldIndex;
+        auto impl() {
+            auto self = cast(PythonClass!T*) self_;
+            auto tmp = self.getField!FieldIndex;
 
-        pyIncRef(value);
-        mixin(`self.`, fieldNames[FieldIndex], ` = value;`);
-        pyDecRef(tmp);
+            pyIncRef(value);
+            mixin(`self.`, fieldNames[FieldIndex], ` = value;`);
+            pyDecRef(tmp);
 
-        return 0;
+            return 0;
+        }
+
+        return noThrowable!impl;
     }
 
     PyObject* getField(int FieldIndex)() {
-        mixin(`return this.`, fieldNames[FieldIndex], `;`);
+
+        auto impl()() {
+            mixin(`return this.`, fieldNames[FieldIndex], `;`);
+        }
+
+        static if(__traits(compiles, impl!()()))
+            return impl;
+        else {
+            import std.traits: fullyQualifiedName;
+            import std.conv: text;
+
+            enum msg = text("cannot implement ", fullyQualifiedName!T, ".getField!", FieldIndex);
+            pragma(msg, "WARNING: ", msg);
+            throw new Exception(msg);
+        }
     }
 
     static extern(C) PyObject* propertyGet(alias F)
@@ -1158,8 +1224,8 @@ private template PythonSubscript(T) {
             Py_ssize_t, PySlice_GetIndices;
         import python.conv.python_to_d: to;
         import python.conv.d_to_python: toPython;
-        import std.traits: Parameters, Unqual, hasMember;
-        import std.meta: Filter;
+        import std.traits: Parameters, Unqual, hasMember, fullyQualifiedName;
+        import std.meta: Filter, AliasSeq;
 
         PyObject* impl() {
             static if(hasMember!(T, "opIndex")) {
@@ -1174,36 +1240,42 @@ private template PythonSubscript(T) {
                 } else if(pySliceCheck(key)) {
 
                     enum hasTwoParams(alias F) = Parameters!F.length == 2;
-                    alias twoParamOpSlices = Filter!(hasTwoParams, __traits(getOverloads, T, "opSlice"));
 
-                    static if(twoParamOpSlices.length > 0) {
-
-                        static assert(twoParamOpSlices.length == 1);
-                        alias opSlice = twoParamOpSlices[0];
-
-                        const len = PyObject_Length(self);
-                        Py_ssize_t start, stop, step;
-                        const indicesRet = PySlice_GetIndices(key, len, &start, &stop, &step);
-
-                        if(indicesRet < 0)
-                            throw new Exception("Could not get slice indices for key '" ~ PyObject_Repr(key).to!string ~ "'");
-
-                        if(step != 1)
-                            throw new Exception("Slice steps other than 1 not supported in D: " ~ PyObject_Repr(key).to!string);
-
-                        auto dObj = self.to!T;
-                        return dObj[start .. stop].toPython;
-
+                    static if(!hasMember!(T, "opSlice")) {
+                        throw new Exception(fullyQualifiedName!T ~ " has no opSlice");
                     } else {
-                        throw new Exception(T.stringof ~ " cannot be sliced by " ~ PyObject_Repr(key).to!string);
-                    }
 
-                    assert(0, "Error in slicing " ~ T.stringof ~ " with " ~ PyObject_Repr(key).to!string);
+                        alias twoParamOpSlices = Filter!(hasTwoParams, __traits(getOverloads, T, "opSlice"));
+
+                        static if(twoParamOpSlices.length > 0) {
+
+                            static assert(twoParamOpSlices.length == 1);
+                            alias opSlice = twoParamOpSlices[0];
+
+                            const len = PyObject_Length(self);
+                            Py_ssize_t start, stop, step;
+                            const indicesRet = PySlice_GetIndices(key, len, &start, &stop, &step);
+
+                            if(indicesRet < 0)
+                                throw new Exception("Could not get slice indices for key '" ~ PyObject_Repr(key).to!string ~ "'");
+
+                            if(step != 1)
+                                throw new Exception("Slice steps other than 1 not supported in D: " ~ PyObject_Repr(key).to!string);
+
+                            auto dObj = self.to!T;
+                            return dObj[start .. stop].toPython;
+
+                        } else {
+                            throw new Exception(T.stringof ~ " cannot be sliced by " ~ PyObject_Repr(key).to!string);
+                        }
+
+                        assert(0, "Error in slicing " ~ T.stringof ~ " with " ~ PyObject_Repr(key).to!string);
+                    }
                 } else
                     throw new Exception(T.stringof ~ " failed pyIndexCheck and pySliceCheck for key '" ~ PyObject_Repr(key).to!string ~ "'");
                 assert(0);
             } else
-                throw new Exception(T.stringof ~ " has no opIndex");
+                throw new Exception(fullyQualifiedName!T ~ " has no opIndex");
         }
 
         return noThrowable!impl;
