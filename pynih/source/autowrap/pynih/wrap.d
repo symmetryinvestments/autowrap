@@ -87,7 +87,8 @@ auto createPythonModule(LibraryName libraryName, modules...)()
     import autowrap.common: toSnakeCase;
     import python.type: PythonFunction;
     import python.boilerplate: Module, CFunctions, CFunction, Aggregates;
-    import autowrap.reflection: AllAggregates, AllFunctions;
+    import python.raw: PyModule_AddIntConstant, PyModule_AddStringConstant;
+    import autowrap.reflection: AllAggregates, AllFunctions, AllConstants;
     import std.meta: Filter, templateNot, staticMap;
     import std.traits: fullyQualifiedName;
 
@@ -116,7 +117,24 @@ auto createPythonModule(LibraryName libraryName, modules...)()
     enum pythonModule = python.boilerplate.Module(libraryName.value);
 
     mixin createPythonModule!(pythonModule, cfunctions, aggregates);
-    return _py_init_impl;
+    auto ret = _py_init_impl();
+
+    template isIntegral(alias var) {
+        import std.traits: _isIntegral = isIntegral;
+        enum isIntegral = _isIntegral!(var.Type);
+    }
+
+    enum isString(alias var) = is(var.Type == string);
+
+    alias constants = AllConstants!modules;
+    static foreach(intConstant; Filter!(isIntegral, constants)) {
+        PyModule_AddIntConstant(ret, intConstant.identifier, intConstant.value);
+    }
+    static foreach(strConstant; Filter!(isString, constants)) {
+        PyModule_AddStringConstant(ret, strConstant.identifier, strConstant.value);
+    }
+
+    return ret;
 }
 
 

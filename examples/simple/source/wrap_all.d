@@ -67,3 +67,12 @@ extern(C) int mysend(int, const(void)* ptr, ulong length, int index) {
     return cast(int) bytes[index];
 
 }
+
+static if(!is(typeof(GLOBAL_INT_ENUM))) {
+    enum GLOBAL_INT_ENUM = 42;
+}
+
+
+static if(!is(typeof(GLOBAL_STRING_ENUM))) {
+    enum GLOBAL_STRING_ENUM = "quux";
+}

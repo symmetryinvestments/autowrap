@@ -298,3 +298,21 @@ def test_send():
         # FIXME
         with pytest.raises(AssertionError):
             assert mysend(socket, bs, len(bs), 0) == ord('a')
+
+
+def test_global_int_enum():
+    if is_pyd:
+        with pytest.raises(ImportError):
+            from simple import GLOBAL_INT_ENUM
+    else:
+        from simple import GLOBAL_INT_ENUM
+        assert GLOBAL_INT_ENUM == 42
+
+
+def test_global_string_enum():
+    if is_pyd:
+        with pytest.raises(ImportError):
+            from simple import GLOBAL_STRING_ENUM
+    else:
+        from simple import GLOBAL_STRING_ENUM
+        assert GLOBAL_STRING_ENUM == "quux"
