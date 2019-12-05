@@ -87,11 +87,27 @@ T to(T)(PyObject* value) if(isPointer!T && isUserAggregate!(PointerTarget!T)) {
 
 
 // FIXME - not sure why a separate implementation is needed for non user aggregates
-T to(T)(PyObject* value) if(isPointer!T && !isUserAggregate!(PointerTarget!T) && !isFunctionPointer!T && !isDelegate!T) {
-    import std.traits: Unqual;
+T to(T)(PyObject* value)
+    if(isPointer!T && !isUserAggregate!(PointerTarget!T) &&
+       !isFunctionPointer!T && !isDelegate!T &&
+       !is(Unqual!(PointerTarget!T) == void))
+{
+    import std.traits: Unqual, PointerTarget;
     auto ret = new Unqual!(PointerTarget!T);
+
     *ret = value.to!(Unqual!(PointerTarget!T));
+
     return ret;
+}
+
+
+T to(T)(PyObject* value) if(isPointer!T && is(Unqual!(PointerTarget!T) == void))
+{
+    import python.raw: pyBytesCheck, PyBytes_AsString;
+    import std.exception: enforce;
+
+    enforce(pyBytesCheck(value), "Can only convert Python bytes object to void*");
+    return cast(void*) PyBytes_AsString(value);
 }
 
 

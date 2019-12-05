@@ -163,6 +163,10 @@ bool pyMappingCheck(PyObject* obj) @nogc nothrow {
     return cast(bool) PyMapping_Check(obj);
 }
 
+bool pyBytesCheck(PyObject* obj) @nogc nothrow {
+    return cast(bool) PyBytes_Check(obj);
+}
+
 
 // Demacroify
 auto pyTrue() {

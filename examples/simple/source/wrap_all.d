@@ -59,3 +59,11 @@ struct HasOnlyOpIndex {
         return i == 42;
     }
 }
+
+
+extern(C) int mysend(int, const(void)* ptr, ulong length, int index) {
+    auto bytes = cast(ubyte*) ptr;
+    if(index > length) throw new Exception("index cannot be more than length");
+    return cast(int) bytes[index];
+
+}
