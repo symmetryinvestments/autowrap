@@ -280,3 +280,21 @@ def test_enum():
 
         with pytest.raises(AttributeError):  # no quux
             assert MyEnum.quux == 42
+
+
+def test_send():
+    from simple import mysend
+
+    with pytest.raises(RuntimeError):
+        mysend(1, 2, 3, 4)
+
+    socket = 42
+    bs = b'abc'
+    if is_pynih:
+        assert mysend(socket, bs, len(bs), 0) == ord('a')
+        assert mysend(socket, bs, len(bs), 1) == ord('b')
+        assert mysend(socket, bs, len(bs), 2) == ord('c')
+    else:
+        # FIXME
+        with pytest.raises(AssertionError):
+            assert mysend(socket, bs, len(bs), 0) == ord('a')

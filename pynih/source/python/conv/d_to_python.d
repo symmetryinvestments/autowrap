@@ -5,7 +5,8 @@ import python.raw: PyObject;
 import python.type: isUserAggregate, isTuple, isNonRangeUDT;
 import std.traits: Unqual, isIntegral, isFloatingPoint, isAggregateType, isArray,
     isStaticArray, isAssociativeArray, isPointer, isSomeChar,
-    isCallable, isSomeString, isFunctionPointer, isDelegate;
+    isCallable, isSomeString, isFunctionPointer, isDelegate,
+    PointerTarget;
 import std.range: isInputRange;
 import std.datetime: Date, DateTime;
 import core.time: Duration;
@@ -60,7 +61,9 @@ PyObject* toPython(T)(auto ref T value) if(isNonRangeUDT!T) {
 }
 
 
-PyObject* toPython(T)(T value) if(isPointer!T && !isFunctionPointer!T && !isDelegate!T) {
+PyObject* toPython(T)(T value)
+    if(isPointer!T && !isFunctionPointer!T && !isDelegate!T && !is(Unqual!(PointerTarget!T) == void))
+{
     static if(__traits(compiles, toPython(*value)))
         return toPython(*value);
     else {
@@ -69,6 +72,13 @@ PyObject* toPython(T)(T value) if(isPointer!T && !isFunctionPointer!T && !isDele
         pragma(msg, "WARNING: ", msg);
         throw new Exception(msg);
     }
+}
+
+
+PyObject* toPython(T)(T value)
+    if(isPointer!T && is(Unqual!(PointerTarget!T) == void))
+{
+    throw new Exception("Converting void* to Python is not supported");
 }
 
 
