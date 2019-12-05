@@ -76,3 +76,10 @@ static if(!is(typeof(GLOBAL_INT_ENUM))) {
 static if(!is(typeof(GLOBAL_STRING_ENUM))) {
     enum GLOBAL_STRING_ENUM = "quux";
 }
+
+
+const(char)* intToString(int i) {
+    import std.conv: text;
+    import std.string: toStringz;
+    return i.text.toStringz;
+}

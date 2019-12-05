@@ -92,12 +92,19 @@ T to(T)(PyObject* value)
        !isFunctionPointer!T && !isDelegate!T &&
        !is(Unqual!(PointerTarget!T) == void))
 {
+    import python.raw: pyUnicodeCheck;
     import std.traits: Unqual, PointerTarget;
-    auto ret = new Unqual!(PointerTarget!T);
+    import std.string: toStringz;
 
-    *ret = value.to!(Unqual!(PointerTarget!T));
+    enum isStringz = is(PointerTarget!T == const(char)) || is(PointerTarget!T == immutable(char));
 
-    return ret;
+    if(isStringz && pyUnicodeCheck(value))
+        return value.to!string.toStringz.maybeCast!T;
+    else {
+        auto ret = new Unqual!(PointerTarget!T);
+        *ret = value.to!(Unqual!(PointerTarget!T));
+        return ret.maybeCast!T;
+    }
 }
 
 

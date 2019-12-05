@@ -316,3 +316,13 @@ def test_global_string_enum():
     else:
         from simple import GLOBAL_STRING_ENUM
         assert GLOBAL_STRING_ENUM == "quux"
+
+
+def test_int_to_string():
+    from simple import int_to_string
+    if is_pyd:
+        with pytest.raises(RuntimeError):
+            assert int_to_string(42) == "42"
+    else:
+        assert int_to_string(42) == "42"
+        assert int_to_string(77) == "77"
