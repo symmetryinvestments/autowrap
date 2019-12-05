@@ -61,7 +61,14 @@ PyObject* toPython(T)(auto ref T value) if(isNonRangeUDT!T) {
 
 
 PyObject* toPython(T)(T value) if(isPointer!T && !isFunctionPointer!T && !isDelegate!T) {
-    return toPython(*value);
+    static if(__traits(compiles, toPython(*value)))
+        return toPython(*value);
+    else {
+        import std.traits: fullyQualifiedName;
+        enum msg = "could not convert " ~ fullyQualifiedName!T ~ " to Python";
+        pragma(msg, "WARNING: ", msg);
+        throw new Exception(msg);
+    }
 }
 
 
