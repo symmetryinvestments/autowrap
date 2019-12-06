@@ -1,6 +1,6 @@
-.PHONY: test
+.PHONY: test contract/libcontract.so
 
-dpp_version = 0.3.4
+dpp_version = 0.4.0
 dpp_pkg_dir = $(HOME)/.dub/packages/dpp-$(dpp_version)
 dpp_lock = $(dpp_pkg_dir)/dpp.lock
 dpp_dir = $(dpp_pkg_dir)/dpp
@@ -16,7 +16,7 @@ contract/contract.so: contract/libcontract.so
 	cp $< $@
 
 
-contract/libcontract.so: contract/dub.sdl contract/dub.selections.json contract/source/contract/main.d contract/source/contract/scalars.d contract/source/contract/udt.d dub.sdl dub.selections.json source/python/raw.d source/python/package.d source/python/cooked.d source/python/boilerplate.d
+contract/libcontract.so: source/python/raw.d
 	cd contract && dub build -q
 
 
