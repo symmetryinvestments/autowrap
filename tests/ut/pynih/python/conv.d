@@ -61,6 +61,12 @@ unittest {
     backAndForth(value);
 }
 
+@("stringz")
+unittest {
+    import std.string: toStringz, fromStringz;
+    const value = "foobar".toStringz;
+    value.toPython.to!(typeof(value)).fromStringz.should == "foobar";
+}
 
 @("array.static.int")
 unittest {

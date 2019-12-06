@@ -9,6 +9,32 @@ import std.typecons: Flag, No;
 private enum isString(alias T) = is(typeof(T) == string);
 
 
+template AllConstants(Modules modules) {
+    import std.algorithm: map;
+    import std.array: join;
+    import std.typecons: Yes, No;  // needed for Module.toString in the mixin
+
+    enum modulesList = modules.value.map!(a => a.toString).join(", ");
+    mixin(`alias AllConstants = AllConstants!(`, modulesList, `);`);
+}
+
+template AllConstants(Modules...) if(allSatisfy!(isModule, Modules)) {
+    import std.meta: staticMap;
+    alias AllConstants = staticMap!(Constants, Modules);
+}
+
+template Constants(Module module_) {
+    import mirror.meta: MirrorModule = Module;
+    import std.meta: Filter;
+
+    alias mod = MirrorModule!(module_.name);
+
+    private enum isConstant(alias var) = var.isConstant;
+
+    alias Constants = Filter!(isConstant, mod.Variables);
+}
+
+
 template AllFunctions(Modules modules) {
     import std.algorithm: map;
     import std.array: join;
