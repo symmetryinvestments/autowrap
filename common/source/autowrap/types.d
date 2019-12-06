@@ -7,7 +7,10 @@ module autowrap.types;
 
 template isModule(alias T) {
     import std.traits: Unqual;
-    enum isModule = is(Unqual!(typeof(T)) == Module);
+    static if(is(T))
+        enum isModule = is(Unqual!T == Module);
+    else
+        enum isModule = is(Unqual!(typeof(T)) == Module);
 }
 
 
@@ -17,10 +20,14 @@ template isModule(alias T) {
 struct Modules {
     import std.traits: Unqual;
     import std.meta: allSatisfy;
+    import std.typecons: Flag;
+
+    private enum isString(T) = is(Unqual!(T) == string);
+    private enum isModuleOrString(T) = isModule!T || isString!T;
 
     Module[] value;
 
-    this(A...)(auto ref A modules) {
+    this(A...)(auto ref A modules) if(allSatisfy!(isModuleOrString, A)) {
 
         foreach(module_; modules) {
             static if(is(Unqual!(typeof(module_)) == Module))
@@ -29,6 +36,12 @@ struct Modules {
                 value ~= Module(module_);
             else
                 static assert(false, "Modules must either be `string` or `Module`");
+        }
+    }
+
+    this(A...)(Flag!"alwaysExport" alwaysExport, A moduleNames) if(allSatisfy!(isString, A)) {
+        static foreach(moduleName; moduleNames) {
+            value ~= Module(moduleName, alwaysExport);
         }
     }
 }
