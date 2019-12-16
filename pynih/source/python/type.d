@@ -899,7 +899,10 @@ struct PythonClass(T) if(isUserAggregate!T) {
 
                 static foreach(fieldName; fieldNames) {{
                     alias Field = typeof(__traits(getMember, ret, fieldName));
-                    __traits(getMember, ret, fieldName) = __traits(getMember, pyclass, fieldName).to!Field;
+                    // The reason we can't just assign to the field here is that the field
+                    // might be const or immutable.
+                    auto fieldPtr = cast(Unqual!Field*) &__traits(getMember, ret, fieldName);
+                    *fieldPtr = __traits(getMember, pyclass, fieldName).to!Field;
                 }}
 
                 return cast(Object) ret;

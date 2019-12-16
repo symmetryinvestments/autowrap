@@ -83,3 +83,13 @@ const(char)* intToString(int i) {
     import std.string: toStringz;
     return i.text.toStringz;
 }
+
+
+// FIXME
+version(Have_autowrap_csharp) {}
+else {
+    class ImmutableFields {
+        this(string name) { this.name = name; }
+        immutable string name;
+    }
+}
