@@ -326,3 +326,13 @@ def test_int_to_string():
     else:
         assert int_to_string(42) == "42"
         assert int_to_string(77) == "77"
+
+
+def test_immutable_fields():
+    from simple import ImmutableFields
+    i = ImmutableFields("foobar")
+    if is_pyd:  # FIXME
+        with pytest.raises(AttributeError):
+            assert i.name == "foobar"
+    else:
+        assert i.name == "foobar"
