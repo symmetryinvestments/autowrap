@@ -1,7 +1,7 @@
 {
 	"fileVersion": 1,
 	"versions": {
-		"mirror": "0.1.6",
+		"mirror": "0.1.7",
 		"unit-threaded": "0.10.4"
 	}
 }
