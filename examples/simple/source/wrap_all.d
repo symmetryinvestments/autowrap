@@ -77,6 +77,7 @@ static if(!is(typeof(GLOBAL_STRING_ENUM))) {
     enum GLOBAL_STRING_ENUM = "quux";
 }
 
+enum GLOBAL_EMPTY_STRING_ENUM = "";
 
 const(char)* intToString(int i) {
     import std.conv: text;

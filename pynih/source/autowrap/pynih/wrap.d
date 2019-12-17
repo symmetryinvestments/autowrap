@@ -92,6 +92,8 @@ auto createPythonModule(LibraryName libraryName, modules...)()
     import std.meta: Filter, templateNot, staticMap;
     import std.traits: fullyQualifiedName;
 
+    static immutable char[1] emptyString = ['\0'];
+
     alias allFunctions = AllFunctions!modules;
     enum isWrappableFunction(alias functionSymbol) =
         __traits(compiles, &PythonFunction!(functionSymbol.symbol)._py_function_impl);
@@ -128,10 +130,13 @@ auto createPythonModule(LibraryName libraryName, modules...)()
 
     alias constants = AllConstants!modules;
     static foreach(intConstant; Filter!(isIntegral, constants)) {
-        PyModule_AddIntConstant(ret, intConstant.identifier, intConstant.value);
+        PyModule_AddIntConstant(ret, &intConstant.identifier[0], intConstant.value);
     }
     static foreach(strConstant; Filter!(isString, constants)) {
-        PyModule_AddStringConstant(ret, strConstant.identifier, strConstant.value);
+        // We can't pass a null pointer if the value of the string constant is empty
+        PyModule_AddStringConstant(ret,
+                                   &strConstant.identifier[0],
+                                   strConstant.value.length ? &strConstant.value[0] : &emptyString[0]);
     }
 
     return ret;

@@ -318,6 +318,16 @@ def test_global_string_enum():
         assert GLOBAL_STRING_ENUM == "quux"
 
 
+def test_global_empty_string_enum():
+    if is_pyd:
+        with pytest.raises(ImportError):
+            from simple import GLOBAL_EMPTY_STRING_ENUM
+    else:
+        from simple import GLOBAL_EMPTY_STRING_ENUM
+        assert GLOBAL_EMPTY_STRING_ENUM == ""
+
+
+
 def test_int_to_string():
     from simple import int_to_string
     if is_pyd:
