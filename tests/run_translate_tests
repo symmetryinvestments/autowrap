@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+#
+# Exercise pytest_translate
+#
+set -ex
+tests_dir=$(dirname $(realpath ${BASH_SOURCE[0]}))
+translate_dir=$(dirname $tests_dir)/translate
+rm -rf $tests_dir/testout
+mkdir -p $tests_dir/testout
+$translate_dir/test_asttoirvisitor.py
+$translate_dir/pytest_translate $tests_dir/test_simple.py $tests_dir/testout/test_simple.cs
+echo Success
