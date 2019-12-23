@@ -22,7 +22,7 @@ export PYD_D_VERSION_13 ?= Python_3_8_Or_Later
 .PHONY: clean test test_python test_python_pyd test_python_pynih test_cs test_simple_pyd test_simple_pynih test_simple_cs test_pyd_pyd test_issues_pyd test_issues_pynih test_numpy_pyd test_numpy_pynih examples/simple/lib/pyd/libsimple.so examples/simple/lib/pynih/libsimple.so examples/issues/lib/pyd/libissues.so examples/issues/lib/pynih/libissues.so examples/numpy/lib/pyd/libnumpy.so examples/numpy/lib/pynih/libnumpy.so examples/pyd/lib/pyd/libpydtests.so examples/pyd/lib/pynih/libpydtests.so examples/phobos/lib/pyd/libphobos.so examples/phobos/lib/pynih/libphobos.so examples/simple/lib/csharp/libsimple.so examples/simple/Simple.cs
 
 all: test
-test: test_python test_cs
+test: translate_tests test_python test_cs
 test_python: test_python_pyd test_python_pynih
 test_python_pyd:   test_simple_pyd   test_pyd_pyd   test_issues_pyd   test_numpy_pyd
 test_python_pynih: test_simple_pynih test_pyd_pynih test_issues_pynih
@@ -31,6 +31,9 @@ test_cs: test_simple_cs
 
 clean:
 	git clean -xffd
+
+translate_tests:
+	./tests/run_translate_tests
 
 test_simple_pyd: tests/test_simple.py examples/simple/lib/pyd/simple.so
 	PYTHONPATH=$(PWD)/examples/simple/lib/pyd PYD=1 pytest -s -vv $<

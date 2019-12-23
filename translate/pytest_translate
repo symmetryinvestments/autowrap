@@ -1,0 +1,64 @@
+#!/usr/bin/env python3
+#
+# Translate a python test to another language.
+#
+import enum
+import sys
+import os
+import argparse
+import ast
+
+from asttoirvisitor import AstToIrVisitor
+
+class Language(enum.Enum):
+    PYTHON = 0
+    CSHARP = 1
+
+
+class UnknownFilenameLanguageError(Exception):
+    def __init__(self, filename):
+        self.filename = filename
+
+
+def get_fileext_language(filename):
+    if filename.endswith(".py"):
+        return Language.PYTHON
+    if filename.endswith(".cs"):
+        return Language.CSHARP
+    raise UnknownFilenameLanguageError(filename)
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="Translate python test to another language")
+    parser.add_argument("input_file")
+    parser.add_argument("output_file")
+
+    args = parser.parse_args()
+
+    print(f"input_file: {args.input_file}")
+    print(f"output_file: {args.output_file}")
+
+    try:
+        output_language = get_fileext_language(args.output_file)
+    except UnknownFilenameLanguageError:
+        sys.exit(f"ERROR: unknown file extension from '{args.output_file}'")
+    print(f"output_language: {output_language}")
+
+    with open(args.input_file, "r") as file:
+        input_source = file.read()
+
+    try:
+        input_ast = ast.parse(input_source, args.input_file)
+    except SyntaxError as syntaxError:
+        sys.exit(f"ERROR: failed to parse '{args.input_file}': {syntaxError}")
+
+    module = AstToIrVisitor().visit(input_ast)
+
+    if output_language == Language.CSHARP:
+        import csharpgen
+        csharpgen.translate(module, args.output_file)
+    else:
+        sys.exit(f"unsupported output language '{output_language}'")
+
+if __name__ == "__main__":
+    main()
