@@ -2,9 +2,7 @@
 #
 # Translate a python test to another language.
 #
-import sys
 import argparse
-import ast
 import os.path
 import backend.csharp
 
@@ -14,9 +12,6 @@ def main():
     extension = os.path.splitext(args.output_file)[1]
     if extension != '.cs':
         raise Exception(f"Unsupported file extension '{extension}'")
-    # input_ast = parse_file(args.input_file)
-    # module = AstToIrVisitor().visit(input_ast)
-    # backend.csharp.translate(module, args.output_file)
     backend.csharp.translate(read_file(args.input_file), args.output_file)
 
 
@@ -31,16 +26,6 @@ def cmd_line_args():
 def read_file(file_name):
     with open(file_name, "r") as f:
         return f.read()
-
-
-def parse_file(file_name):
-    with open(file_name, "r") as f:
-        input_source = f.read()
-
-    try:
-        return ast.parse(input_source, file_name)
-    except SyntaxError as syntaxError:
-        sys.exit(f"ERROR: failed to parse '{file_name}': {syntaxError}")
 
 
 if __name__ == "__main__":
