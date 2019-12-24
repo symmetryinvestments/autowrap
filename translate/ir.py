@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 import typing
-import ast
 
 
 @dataclass
@@ -47,6 +46,7 @@ class Module(Scope):
 
     def accept(self, visitor):
         visitor.visit_Module(self)
+
 
 class Function(Scope):
     def __init__(self, name):

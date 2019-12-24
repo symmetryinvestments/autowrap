@@ -4,11 +4,11 @@
 #
 import enum
 import sys
-import os
 import argparse
 import ast
 
 from asttoirvisitor import AstToIrVisitor
+
 
 class Language(enum.Enum):
     PYTHON = 0
@@ -26,6 +26,7 @@ def get_fileext_language(filename):
     if filename.endswith(".cs"):
         return Language.CSHARP
     raise UnknownFilenameLanguageError(filename)
+
 
 def main():
     parser = argparse.ArgumentParser(
@@ -59,6 +60,7 @@ def main():
         csharpgen.translate(module, args.output_file)
     else:
         sys.exit(f"unsupported output language '{output_language}'")
+
 
 if __name__ == "__main__":
     main()
