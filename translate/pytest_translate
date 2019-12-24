@@ -36,14 +36,10 @@ def main():
 
     args = parser.parse_args()
 
-    print(f"input_file: {args.input_file}")
-    print(f"output_file: {args.output_file}")
-
     try:
         output_language = get_fileext_language(args.output_file)
     except UnknownFilenameLanguageError:
         sys.exit(f"ERROR: unknown file extension from '{args.output_file}'")
-    print(f"output_language: {output_language}")
 
     with open(args.input_file, "r") as file:
         input_source = file.read()
