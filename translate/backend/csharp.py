@@ -1,7 +1,7 @@
 import ir
 
 
-class CSharpGenerator(ir.IrVisitor):
+class CSharp(ir.IrVisitor):
     def __init__(self, out_file):
         self.out_file = out_file
         self.indent_level = 0
@@ -49,4 +49,4 @@ class CSharpGenerator(ir.IrVisitor):
 
 def translate(module, filename):
     with open(filename, "w") as file:
-        CSharpGenerator(file).translate(module)
+        CSharp(file).translate(module)
