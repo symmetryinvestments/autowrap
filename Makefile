@@ -21,7 +21,7 @@ export PYD_D_VERSION_13 ?= Python_3_8_Or_Later
 .PHONY: all
 all: test
 .PHONY: test
-test: translate_tests test_python test_cs test_translation
+test: test_python test_cs test_translation
 .PHONY: test_python
 test_python: test_python_pyd test_python_pynih
 .PHONY: test_python_pyd
@@ -33,7 +33,7 @@ test_python_phobos: test_phobos_pynih test_phobos_pyd
 .PHONY: test_cs
 test_cs: test_simple_cs
 .PHONY: test_translation
-test_translation: test_translation_ut
+test_translation: test_translation_ut test_transl_simple_cs
 .PHONY: test_translation_ut
 test_translation_ut:
 	cd translate && PYTHONPATH=$(PWD)/translate pytest -s -vv
@@ -41,10 +41,6 @@ test_translation_ut:
 .PHONY: clean
 clean:
 	git clean -xffd
-
-.PHONY: translate_tests
-translate_tests:
-	./tests/run_translate_tests
 
 .PHONY: test_simple_pyd
 test_simple_pyd: tests/test_simple.py examples/simple/lib/pyd/simple.so
@@ -68,6 +64,21 @@ test_simple_pynih_only: tests/test_simple_pynih_only.py examples/simple/lib/pyni
 .PHONY: test_simple_pynih
 test_simple_pynih: tests/test_simple.py examples/simple/lib/pynih/simple.so
 	PYTHONPATH=$(PWD)/examples/simple/lib/pynih PYNIH=1 pytest -s -vv $<
+
+
+# Runs the generated C# test for the simple example
+.PHONY: test_transl_simple_cs
+test_transl_simple_cs: examples/simple/lib/csharp/libsimple.x64.so tests/test_transl_simple_cs/Simple.cs tests/test_transl_simple_cs/TestSimple.cs
+	@cd tests/test_transl_simple_cs && \
+	dotnet build test_simple_cs.csproj && \
+	dotnet test test_simple_cs.csproj
+
+tests/test_transl_simple_cs/TestSimple.cs: translate/pytest_translate tests/test_simple.py
+	$^ $@
+
+tests/test_transl_simple_cs/Simple.cs: examples/simple/Simple.cs
+	cp $^ $@
+
 
 .PHONY: test_simple_cs
 test_simple_cs: examples/simple/lib/csharp/libsimple.x64.so examples/simple/Simple.cs
