@@ -1,12 +1,9 @@
-#!/usr/bin/env python3
-import unittest
 import ast
 from asttoirvisitor import AstToIrVisitor
 
 
-class AstToIrVisitorTestCase(unittest.TestCase):
-    def test_ir_visitor(self):
-        test_ast = ast.parse("""
+def test_ir_visitor():
+    test_ast = ast.parse("""
 import a
 import a as b
 import a as b, c
@@ -21,8 +18,5 @@ from a import b as c, d as e, f as g
 def foo():
     return 0
 """)
-        module = AstToIrVisitor().visit(test_ast)
-
-
-if __name__ == '__main__':
-    unittest.main()
+    #  only verifies that no exceptions are raised
+    AstToIrVisitor().visit(test_ast)

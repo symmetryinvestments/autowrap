@@ -20,7 +20,8 @@ class DefaultTranslateIrVisitor(ir.IrVisitor):
         self.gen = gen
 
     def visit_UnsupportedNode(self, node):
-        self.gen.writeln(f"// TODO: this node is not supported {node.ast_node}")
+        self.gen.writeln(
+            f"// TODO: this node is not supported {node.ast_node}")
 
     def visit_Function(self, node):
         self.gen.writeln(f"public void {node.name}()")
