@@ -33,7 +33,6 @@ class DefaultTranslateIrVisitor(ir.IrVisitor):
         self.gen.close_block()
 
 
-# a small helper function for generating C# code
 class CSharpGenerator:
     def __init__(self, out_file):
         self.out_file = out_file
