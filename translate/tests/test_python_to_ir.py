@@ -13,9 +13,12 @@ def test_foo():
 
 """)
     assert ir == [
-        AutowrapTest([
-            Assertion(1, 2),
-        ])
+        AutowrapTest(
+            "test_foo",
+            [
+                Assertion(1, 2),
+            ]
+        )
     ]
 
 
@@ -25,12 +28,15 @@ def random_function():
     pass
 
 
-def test_foo():
+def test_bar():
     assert 3 == 4
 
 """)
     assert ir == [
-        AutowrapTest([
-            Assertion(3, 4),
-        ])
+        AutowrapTest(
+            "test_bar",
+            [
+                Assertion(3, 4),
+            ]
+        )
     ]

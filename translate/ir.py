@@ -73,6 +73,7 @@ class IrVisitor:
 
 @dataclass
 class AutowrapTest:
+    name: str
     statements: typing.List[typing.Any]
 
 

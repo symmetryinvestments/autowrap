@@ -19,7 +19,8 @@ class ModuleVisitor(NodeVisitor):
         if not node.name.startswith('test_'):
             return
 
-        self.tests.append(AutowrapTest(function_to_statements(node)))
+        statements = function_to_statements(node)
+        self.tests.append(AutowrapTest(node.name, statements))
 
 
 def function_to_statements(node):
@@ -33,7 +34,11 @@ class PyTestVisitor(NodeVisitor):
         self.statements = []
 
     def visit_Assert(self, node):
-        self.statements.append(node_to_assertion(node))
+        try:
+            self.statements.append(node_to_assertion(node))
+        except:
+            # FIXME
+            pass
 
 
 def node_to_assertion(node):
