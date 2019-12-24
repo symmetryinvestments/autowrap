@@ -69,3 +69,14 @@ class UnsupportedNode(Scope):
 class IrVisitor:
     def visit(self, node):
         node.accept(self)
+
+
+@dataclass
+class AutowrapTest:
+    statements: typing.List[typing.Any]
+
+
+@dataclass
+class Assertion:
+    lhs: typing.Any
+    rhs: typing.Any
