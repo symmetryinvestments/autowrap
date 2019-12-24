@@ -2,60 +2,36 @@
 #
 # Translate a python test to another language.
 #
-import enum
 import sys
 import argparse
 import ast
-
+import csharpgen
 from asttoirvisitor import AstToIrVisitor
 
 
-class Language(enum.Enum):
-    PYTHON = 0
-    CSHARP = 1
-
-
-class UnknownFilenameLanguageError(Exception):
-    def __init__(self, filename):
-        self.filename = filename
-
-
-def get_fileext_language(filename):
-    if filename.endswith(".py"):
-        return Language.PYTHON
-    if filename.endswith(".cs"):
-        return Language.CSHARP
-    raise UnknownFilenameLanguageError(filename)
-
-
 def main():
+    args = cmd_line_args()
+    input_ast = parse_file(args.input_file)
+    module = AstToIrVisitor().visit(input_ast)
+    csharpgen.translate(module, args.output_file)
+
+
+def cmd_line_args():
     parser = argparse.ArgumentParser(
         description="Translate python test to another language")
     parser.add_argument("input_file")
     parser.add_argument("output_file")
+    return parser.parse_args()
 
-    args = parser.parse_args()
 
-    try:
-        output_language = get_fileext_language(args.output_file)
-    except UnknownFilenameLanguageError:
-        sys.exit(f"ERROR: unknown file extension from '{args.output_file}'")
-
-    with open(args.input_file, "r") as file:
-        input_source = file.read()
+def parse_file(file_name):
+    with open(file_name, "r") as f:
+        input_source = f.read()
 
     try:
-        input_ast = ast.parse(input_source, args.input_file)
+        return ast.parse(input_source, file_name)
     except SyntaxError as syntaxError:
-        sys.exit(f"ERROR: failed to parse '{args.input_file}': {syntaxError}")
-
-    module = AstToIrVisitor().visit(input_ast)
-
-    if output_language == Language.CSHARP:
-        import csharpgen
-        csharpgen.translate(module, args.output_file)
-    else:
-        sys.exit(f"unsupported output language '{output_language}'")
+        sys.exit(f"ERROR: failed to parse '{file_name}': {syntaxError}")
 
 
 if __name__ == "__main__":
