@@ -73,8 +73,8 @@ test_transl_simple_cs: examples/simple/lib/csharp/libsimple.x64.so tests/test_tr
 	dotnet build test_simple_cs.csproj && \
 	dotnet test test_simple_cs.csproj
 
-tests/test_transl_simple_cs/TestSimple.cs: translate/pytest_translate tests/test_simple.py
-	$^ $@
+tests/test_transl_simple_cs/TestSimple.cs: translate/pytest_translate tests/test_simple.py translate/csharpgen.py
+	translate/pytest_translate tests/test_simple.py $@
 
 tests/test_transl_simple_cs/Simple.cs: examples/simple/Simple.cs
 	cp $^ $@

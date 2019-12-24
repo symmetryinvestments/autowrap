@@ -1,4 +1,3 @@
-from datetime import date
 import pytest
 import os
 
@@ -177,6 +176,7 @@ def test_safe_pure_etc_struct():
 
 def test_the_year():
     from simple import the_year
+    from datetime import date
     assert the_year(date(2017, 1, 1)) == 2017
     assert the_year(date(2018, 2, 3)) == 2018
 
@@ -325,7 +325,6 @@ def test_global_empty_string_enum():
     else:
         from simple import GLOBAL_EMPTY_STRING_ENUM
         assert GLOBAL_EMPTY_STRING_ENUM == ""
-
 
 
 def test_int_to_string():

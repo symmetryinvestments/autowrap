@@ -53,8 +53,6 @@ class AstToIrVisitor(ast.NodeVisitor):
         self.log(f"visit_FunctionDef name={node.name} args={node.args}")
         assert self.current_scope
         assert self.scope_depth > 0
-        parent_scope = self.current_scope
-        # args, body, name, returns
         func = ir.Function(node.name)
         self._visit_new_scope(node, func)
         self.current_scope.add_function_def(func)
@@ -62,5 +60,4 @@ class AstToIrVisitor(ast.NodeVisitor):
     def visit_Assign(self, node):
         assert self.current_scope
         self.log(f"visitAssign targets={node.targets} value={node.value}")
-        # self.current_scope.add_assign(node)
         self._visitimpl(node)
