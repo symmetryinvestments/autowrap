@@ -5,12 +5,16 @@
 import sys
 import argparse
 import ast
+import os.path
 import csharpgen
 from asttoirvisitor import AstToIrVisitor
 
 
 def main():
     args = cmd_line_args()
+    extension = os.path.splitext(args.output_file)[1]
+    if extension != '.cs':
+        raise Exception(f"Unsupported file extension '{extension}'")
     input_ast = parse_file(args.input_file)
     module = AstToIrVisitor().visit(input_ast)
     csharpgen.translate(module, args.output_file)
