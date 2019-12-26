@@ -14,7 +14,7 @@ class Import:
     symbols: typing.List[ImportedSymbol]
 
 
-# base class for a nodes that holds code and/or symbol decls
+# base class for nodes that hold code and/or symbol decls
 # i.e. module/function
 class Scope:
     def __init__(self):

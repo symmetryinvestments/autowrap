@@ -6,7 +6,7 @@ import sys
 import argparse
 import ast
 import os.path
-import csharpgen
+import backend.csharp
 from asttoirvisitor import AstToIrVisitor
 
 
@@ -17,7 +17,7 @@ def main():
         raise Exception(f"Unsupported file extension '{extension}'")
     input_ast = parse_file(args.input_file)
     module = AstToIrVisitor().visit(input_ast)
-    csharpgen.translate(module, args.output_file)
+    backend.csharp.translate(module, args.output_file)
 
 
 def cmd_line_args():
