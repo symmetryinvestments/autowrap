@@ -46,7 +46,7 @@ def translate_test(writer, test):
     for statement in test.statements:
         if isinstance(statement, Assertion):
             writer.writeln(
-                f"// Assert.AreEqual({statement.lhs}, {statement.rhs});")
+                f"// Assert.AreEqual({statement.rhs}, {statement.lhs});")
         else:
             writer.writeln(f"// TODO: translate {statement}")
     writer.close_block()
