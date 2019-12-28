@@ -53,8 +53,10 @@ configuration "unittest-no-pynih" {
     versions "unitUnthreaded"  # GIL
     versions "TestingAutowrap"
 
-    libs "python3.8"
-    lflags "-L$PYTHON_LIB_DIR"
+    libs "python3.8" platform="posix"
+    lflags "-L$PYTHON_LIB_DIR" platform="posix"
+    libs "python38" platform="windows"
+    lflags "\\\"/LIBPATH:$PYTHON_LIB_DIR\\\"" platform="windows"
     versions "NoPynih"
 
     dependency ":common" version="*"
