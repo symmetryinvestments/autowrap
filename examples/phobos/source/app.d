@@ -135,7 +135,7 @@ version(Have_autowrap_pyd) {
         Module("std.datetime.date", Yes.alwaysExport),
         Module("std.datetime.interval", Yes.alwaysExport),
         Module("std.datetime.stopwatch", Yes.alwaysExport),
-        // Module("std.datetime.systime", Yes.alwaysExport),  // linker Timezone propertyGet
+        Module("std.datetime.systime", Yes.alwaysExport),  // linker Timezone propertyGet
         // Module("std.datetime.timezone", Yes.alwaysExport), // compilation failure
         Module("std.demangle", Yes.alwaysExport),
         Module("std.digest.crc", Yes.alwaysExport),
