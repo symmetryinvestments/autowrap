@@ -18,7 +18,7 @@ export PYD_D_VERSION_13 ?= Python_3_8_Or_Later
 
 
 .PHONY: all
-all: test_std_datetime
+all: test_std_datetime test_std_file
 
 
 pynih/source/python/raw.d: ../../pynih/Makefile ../../pynih/source/python/raw.dpp
@@ -40,7 +40,7 @@ std_datetime/lib/pyd/std_datetime.so: std_datetime/lib/pyd/libstd_datetime.so
 std_datetime/lib/pyd/libstd_datetime.so:
 	@cd std_datetime && dub build -q -c $(DUB_CONFIGURATION)
 
-dub.selections.json:
+std_datetime/dub.selections.json:
 	@cd std_datetime && dub upgrade -q
 
 .PHONY: test_std_datetime_pynih
@@ -54,3 +54,34 @@ std_datetime/lib/pynih/std_datetime.so: std_datetime/lib/pynih/libstd_datetime.s
 std_datetime/lib/pynih/libstd_datetime.so: ../../pynih/source/python/raw.d
 	@cd std_datetime && dub build -q -c pynih
 #end std_datetime
+
+
+# start std_file
+.PHONY: test_std_file
+test_std_file: test_std_file_pyd test_std_file_pynih
+
+.PHONY: test_std_file_pyd
+test_std_file_pyd: tests/test_std_file.py std_file/lib/pyd/std_file.so
+	PYTHONPATH=$(shell pwd)/std_file/lib/pyd PYD=1 pytest -s -vv $<
+
+std_file/lib/pyd/std_file.so: std_file/lib/pyd/libstd_file.so
+	@cp $^ $@
+
+.PHONY: std_file/lib/pyd/libstd_file.so
+std_file/lib/pyd/libstd_file.so:
+	@cd std_file && dub build -q -c $(DUB_CONFIGURATION)
+
+std_file/dub.selections.json:
+	@cd std_file && dub upgrade -q
+
+.PHONY: test_std_file_pynih
+test_std_file_pynih: tests/test_std_file.py std_file/lib/pynih/std_file.so
+	PYTHONPATH=$(shell pwd)/std_file/lib/pynih PYNIH=1 pytest -s -vv $<
+
+std_file/lib/pynih/std_file.so: std_file/lib/pynih/libstd_file.so
+	@cp $^ $@
+
+.PHONY: std_file/lib/pynih/libstd_file.so
+std_file/lib/pynih/libstd_file.so: ../../pynih/source/python/raw.d
+	@cd std_file && dub build -q -c pynih
+#end std_file
