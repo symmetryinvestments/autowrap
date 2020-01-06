@@ -57,14 +57,32 @@ struct Module {
 
     string name;
     Flag!"alwaysExport" alwaysExport = No.alwaysExport;
+    Ignore[] ignoredSymbols;
+
+    this(string name) {
+        this(name, No.alwaysExport);
+    }
+
+    this(string name, Flag!"alwaysExport" alwaysExport, Ignore[] ignoredSymbols...) {
+        this.name = name;
+        this.alwaysExport = alwaysExport;
+        this.ignoredSymbols = ignoredSymbols;
+    }
 
     string toString() @safe pure const {
         import std.conv: text;
         import std.string: capitalize;
-        return text(`Module("`, name, `", `, text(alwaysExport).capitalize, `.alwaysExport)`);
+        return text(`Module("`, name, `", `, text(alwaysExport).capitalize, `.alwaysExport, `, ignoredSymbols, `)`);
     }
 }
 
+
+/**
+   Used in a module to ignore certain symbols
+ */
+struct Ignore {
+    string identifier;
+}
 
 /**
    The name of the dynamic library, i.e. the file name with the .so/.dll extension

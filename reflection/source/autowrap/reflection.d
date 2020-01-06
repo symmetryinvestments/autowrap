@@ -1,7 +1,7 @@
 module autowrap.reflection;
 
 
-public import autowrap.types: isModule, Modules, Module;
+public import autowrap.types: isModule, Modules, Module, Ignore;
 import std.meta: allSatisfy;
 import std.typecons: Flag, No;
 
@@ -57,20 +57,23 @@ template AllFunctions(Modules...) if(allSatisfy!(isModule, Modules)) {
 
 template Functions(Module module_) {
     mixin(`import dmodule = ` ~ module_.name ~ `;`);
-    alias Functions = Functions!(dmodule, module_.alwaysExport);
+    alias Functions = Functions!(dmodule, module_.alwaysExport, module_.ignoredSymbols);
 }
 
-template Functions(alias module_, Flag!"alwaysExport" alwaysExport = No.alwaysExport)
+template Functions(alias module_, Flag!"alwaysExport" alwaysExport = No.alwaysExport, Ignore[] ignoredSymbols = [])
     if(!is(typeof(module_) == string))
 {
     import mirror.meta: MirrorModule = Module, FunctionSymbol;
-    import std.meta: staticMap, Filter;
+    import std.meta: staticMap, Filter, templateNot;
     import std.traits: moduleName;
+    import std.algorithm: canFind;
 
     alias mod = MirrorModule!(moduleName!module_);
     enum isExport(alias F) = isExportFunction!(F.symbol, alwaysExport);
+    enum shouldIgnore(alias F) = ignoredSymbols.canFind!(a => a.identifier == F.identifier);
 
-    alias Functions = Filter!(isExport, mod.FunctionsBySymbol);
+    alias Functions = Filter!(templateNot!shouldIgnore,
+                              Filter!(isExport, mod.FunctionsBySymbol));
 }
 
 
