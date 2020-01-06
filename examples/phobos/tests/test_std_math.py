@@ -15,8 +15,15 @@ def test_fabs():
 
 # FIXME
 def test_sqrt():
-    with pytest.raises(ImportError):
+    if is_pynih:  # FIXME
+        with pytest.raises(ImportError):
+            from std_math import sqrt
+    else:
         from std_math import sqrt
+        assert sqrt(4) == 2
+        assert sqrt(4.0) == 2
+        assert sqrt(9) == 3
+        assert sqrt(9.0) == 3
 
 
 def test_ceil():
