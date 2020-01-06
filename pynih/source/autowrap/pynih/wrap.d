@@ -6,7 +6,7 @@ module autowrap.pynih.wrap;
 
 public import std.typecons: Yes, No;
 public import autowrap.types: Modules, Module, isModule,
-    LibraryName, PreModuleInitCode, PostModuleInitCode, RootNamespace;
+    LibraryName, PreModuleInitCode, PostModuleInitCode, RootNamespace, Ignore;
 static import python.boilerplate;
 import python.raw: isPython2, isPython3;
 import std.meta: allSatisfy;
