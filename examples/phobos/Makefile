@@ -17,102 +17,46 @@ export PYD_D_VERSION_12 ?= Python_3_7_Or_Later
 export PYD_D_VERSION_13 ?= Python_3_8_Or_Later
 
 
+define test-package
+.PHONY: test_std_$1
+test_std_$1: test_std_$1_pyd test_std_$1_pynih
+
+.PHONY: test_std_$1_pyd
+test_std_$1_pyd: tests/test_std_$1.py std_$1/lib/pyd/std_$1.so
+	PYTHONPATH=$(shell pwd)/std_$1/lib/pyd PYD=1 pytest -s -vv $$<
+
+std_$1/lib/pyd/std_$1.so: std_$1/lib/pyd/libstd_$1.so
+	@cp $$^ $$@
+
+.PHONY: std_$1/lib/pyd/libstd_$1.so
+std_$1/lib/pyd/libstd_$1.so:
+	@cd std_$1 && dub build -q -c $(DUB_CONFIGURATION)
+
+std_$1/dub.selections.json:
+	@cd std_$1 && dub upgrade -q
+
+.PHONY: test_std_$1_pynih
+test_std_$1_pynih: tests/test_std_$1.py std_$1/lib/pynih/std_$1.so
+	PYTHONPATH=$(shell pwd)/std_$1/lib/pynih PYNIH=1 pytest -s -vv $$<
+
+std_$1/lib/pynih/std_$1.so: std_$1/lib/pynih/libstd_$1.so
+	@cp $$^ $$@
+
+.PHONY: std_$1/lib/pynih/libstd_$1.so
+std_$1/lib/pynih/libstd_$1.so: ../../pynih/source/python/raw.d
+	@cd std_$1 && dub build -q -c pynih
+endef
+
+
 .PHONY: all
 all: test_std_datetime test_std_file test_std_math
 
 
+# pynih needs this first and foremost
 pynih/source/python/raw.d: ../../pynih/Makefile ../../pynih/source/python/raw.dpp
 	make -C ../../pynih source/python/raw.d
 
 
-# start std_datetime
-.PHONY: test_std_datetime
-test_std_datetime: test_std_datetime_pyd test_std_datetime_pynih
-
-.PHONY: test_std_datetime_pyd
-test_std_datetime_pyd: tests/test_std_datetime.py std_datetime/lib/pyd/std_datetime.so
-	PYTHONPATH=$(shell pwd)/std_datetime/lib/pyd PYD=1 pytest -s -vv $<
-
-std_datetime/lib/pyd/std_datetime.so: std_datetime/lib/pyd/libstd_datetime.so
-	@cp $^ $@
-
-.PHONY: std_datetime/lib/pyd/libstd_datetime.so
-std_datetime/lib/pyd/libstd_datetime.so:
-	@cd std_datetime && dub build -q -c $(DUB_CONFIGURATION)
-
-std_datetime/dub.selections.json:
-	@cd std_datetime && dub upgrade -q
-
-.PHONY: test_std_datetime_pynih
-test_std_datetime_pynih: tests/test_std_datetime.py std_datetime/lib/pynih/std_datetime.so
-	PYTHONPATH=$(shell pwd)/std_datetime/lib/pynih PYNIH=1 pytest -s -vv $<
-
-std_datetime/lib/pynih/std_datetime.so: std_datetime/lib/pynih/libstd_datetime.so
-	@cp $^ $@
-
-.PHONY: std_datetime/lib/pynih/libstd_datetime.so
-std_datetime/lib/pynih/libstd_datetime.so: ../../pynih/source/python/raw.d
-	@cd std_datetime && dub build -q -c pynih
-#end std_datetime
-
-
-# start std_file
-.PHONY: test_std_file
-test_std_file: test_std_file_pyd test_std_file_pynih
-
-.PHONY: test_std_file_pyd
-test_std_file_pyd: tests/test_std_file.py std_file/lib/pyd/std_file.so
-	PYTHONPATH=$(shell pwd)/std_file/lib/pyd PYD=1 pytest -s -vv $<
-
-std_file/lib/pyd/std_file.so: std_file/lib/pyd/libstd_file.so
-	@cp $^ $@
-
-.PHONY: std_file/lib/pyd/libstd_file.so
-std_file/lib/pyd/libstd_file.so:
-	@cd std_file && dub build -q -c $(DUB_CONFIGURATION)
-
-std_file/dub.selections.json:
-	@cd std_file && dub upgrade -q
-
-.PHONY: test_std_file_pynih
-test_std_file_pynih: tests/test_std_file.py std_file/lib/pynih/std_file.so
-	PYTHONPATH=$(shell pwd)/std_file/lib/pynih PYNIH=1 pytest -s -vv $<
-
-std_file/lib/pynih/std_file.so: std_file/lib/pynih/libstd_file.so
-	@cp $^ $@
-
-.PHONY: std_file/lib/pynih/libstd_file.so
-std_file/lib/pynih/libstd_file.so: ../../pynih/source/python/raw.d
-	@cd std_file && dub build -q -c pynih
-#end std_file
-
-
-# start std_math
-.PHONY: test_std_math
-test_std_math: test_std_math_pyd test_std_math_pynih
-
-.PHONY: test_std_math_pyd
-test_std_math_pyd: tests/test_std_math.py std_math/lib/pyd/std_math.so
-	PYTHONPATH=$(shell pwd)/std_math/lib/pyd PYD=1 pytest -s -vv $<
-
-std_math/lib/pyd/std_math.so: std_math/lib/pyd/libstd_math.so
-	@cp $^ $@
-
-.PHONY: std_math/lib/pyd/libstd_math.so
-std_math/lib/pyd/libstd_math.so:
-	@cd std_math && dub build -q -c $(DUB_CONFIGURATION)
-
-std_math/dub.selections.json:
-	@cd std_math && dub upgrade -q
-
-.PHONY: test_std_math_pynih
-test_std_math_pynih: tests/test_std_math.py std_math/lib/pynih/std_math.so
-	PYTHONPATH=$(shell pwd)/std_math/lib/pynih PYNIH=1 pytest -s -vv $<
-
-std_math/lib/pynih/std_math.so: std_math/lib/pynih/libstd_math.so
-	@cp $^ $@
-
-.PHONY: std_math/lib/pynih/libstd_math.so
-std_math/lib/pynih/libstd_math.so: ../../pynih/source/python/raw.d
-	@cd std_math && dub build -q -c pynih
-#end std_math
+$(eval $(call test-package,datetime))
+$(eval $(call test-package,file))
+$(eval $(call test-package,math))
