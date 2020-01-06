@@ -18,7 +18,7 @@ export PYD_D_VERSION_13 ?= Python_3_8_Or_Later
 
 
 .PHONY: all
-all: test_std_datetime test_std_file
+all: test_std_datetime test_std_file test_std_math
 
 
 pynih/source/python/raw.d: ../../pynih/Makefile ../../pynih/source/python/raw.dpp
@@ -85,3 +85,34 @@ std_file/lib/pynih/std_file.so: std_file/lib/pynih/libstd_file.so
 std_file/lib/pynih/libstd_file.so: ../../pynih/source/python/raw.d
 	@cd std_file && dub build -q -c pynih
 #end std_file
+
+
+# start std_math
+.PHONY: test_std_math
+test_std_math: test_std_math_pyd test_std_math_pynih
+
+.PHONY: test_std_math_pyd
+test_std_math_pyd: tests/test_std_math.py std_math/lib/pyd/std_math.so
+	PYTHONPATH=$(shell pwd)/std_math/lib/pyd PYD=1 pytest -s -vv $<
+
+std_math/lib/pyd/std_math.so: std_math/lib/pyd/libstd_math.so
+	@cp $^ $@
+
+.PHONY: std_math/lib/pyd/libstd_math.so
+std_math/lib/pyd/libstd_math.so:
+	@cd std_math && dub build -q -c $(DUB_CONFIGURATION)
+
+std_math/dub.selections.json:
+	@cd std_math && dub upgrade -q
+
+.PHONY: test_std_math_pynih
+test_std_math_pynih: tests/test_std_math.py std_math/lib/pynih/std_math.so
+	PYTHONPATH=$(shell pwd)/std_math/lib/pynih PYNIH=1 pytest -s -vv $<
+
+std_math/lib/pynih/std_math.so: std_math/lib/pynih/libstd_math.so
+	@cp $^ $@
+
+.PHONY: std_math/lib/pynih/libstd_math.so
+std_math/lib/pynih/libstd_math.so: ../../pynih/source/python/raw.d
+	@cd std_math && dub build -q -c pynih
+#end std_math
