@@ -2,10 +2,10 @@ import autowrap;
 
 
 enum str = wrapDlang!(
-    LibraryName("std_file"),
+    LibraryName("std_math"),
     Modules(
         Yes.alwaysExport,
-        "std.file",
+        "std.math",
     )
 );
 
