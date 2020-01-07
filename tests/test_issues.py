@@ -186,7 +186,7 @@ def test_issue_163():
         assert ints == [1, 2, 3, 42, 42]
 
 
-def test_issues_164():
+def test_issue_164():
     from issues import Issue164, MethodParamString
     i = Issue164()
     assert i.strlen(MethodParamString("foo")) == 3
@@ -194,7 +194,7 @@ def test_issues_164():
 
 
 # FIXME
-def test_issues_166():
+def test_issue_166():
     import pytest
     from issues import issue166_days, issue166_secs, issue166_usecs
     from datetime import timedelta
@@ -209,3 +209,15 @@ def test_issues_166():
         assert(issue166_days(delta)) == 42
         assert(issue166_secs(delta)) == 77
         assert(issue166_usecs(delta)) == 99
+
+
+def test_issue_198():
+    from issues import Issue198
+    import pytest
+
+    i = Issue198([0, 1, 2, 3, 4, 5])
+    if is_pynih:
+        assert i[1:4] == [1, 2, 3]
+    else:
+        with pytest.raises(TypeError):  # FIXME
+            assert i[1:4] == [1, 2, 3]
