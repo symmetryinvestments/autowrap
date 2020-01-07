@@ -49,7 +49,7 @@ endef
 
 
 .PHONY: all
-all: test_std_datetime test_std_file test_std_math
+all: test_std_datetime test_std_file test_std_math test_std_mmfile test_std_net
 
 
 # pynih needs this first and foremost
@@ -61,3 +61,4 @@ $(eval $(call test-package,datetime))
 $(eval $(call test-package,file))
 $(eval $(call test-package,math))
 $(eval $(call test-package,mmfile))
+$(eval $(call test-package,net))
