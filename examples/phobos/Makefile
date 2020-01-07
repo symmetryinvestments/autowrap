@@ -60,3 +60,4 @@ pynih/source/python/raw.d: ../../pynih/Makefile ../../pynih/source/python/raw.dp
 $(eval $(call test-package,datetime))
 $(eval $(call test-package,file))
 $(eval $(call test-package,math))
+$(eval $(call test-package,mmfile))
