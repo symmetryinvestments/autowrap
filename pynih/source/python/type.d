@@ -562,9 +562,11 @@ private auto pythonArgsToDArgs(bool isVariadic, P...)(PyObject* args, PyObject* 
                 throw new ArgumentConversionException("Can't convert to " ~ T.stringof);
             }
         } else {
-            pragma(msg, "WARNING: cannot check python type for `", T, "`");
-            // uncomment to see the compilation error
-            // checkPythonType!T(item);
+            version(PynihCheckType) {
+                pragma(msg, "WARNING: cannot check python type for `", T, "`");
+                // uncomment to see the compilation error
+                // checkPythonType!T(item);
+            }
         }
 
         dArgs[i] = item.to!T;
@@ -950,9 +952,11 @@ struct PythonClass(T) if(isUserAggregate!T) {
                 return -1;
             }
         } else {
-            pragma(msg, "WARNING: cannot check python type for field #", FieldIndex, " of ", T);
-            // uncomment below to see compilation failure
-            // checkPythonType!(fieldTypes[FieldIndex])(value);
+            version(PynihCheckType) {
+                pragma(msg, "WARNING: cannot check python type for field #", FieldIndex, " of ", T);
+                // uncomment below to see compilation failure
+                // checkPythonType!(fieldTypes[FieldIndex])(value);
+            }
         }
 
         auto impl() {
