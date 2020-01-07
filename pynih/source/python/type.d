@@ -1236,7 +1236,9 @@ private template PythonSubscript(T) {
         import std.meta: Filter, AliasSeq;
 
         PyObject* impl() {
-            static if(hasMember!(T, "opIndex")) {
+            static if(!hasMember!(T, "opIndex") && !hasMember!(T, "opSlice")) {
+                throw new Exception(fullyQualifiedName!T ~ " has no opIndex or opSlice");
+            } else {
                 if(pyIndexCheck(key)) {
                     static if(__traits(compiles, Parameters!(T.opIndex))) {
                         alias parameters = Parameters!(T.opIndex);
@@ -1282,8 +1284,7 @@ private template PythonSubscript(T) {
                 } else
                     throw new Exception(T.stringof ~ " failed pyIndexCheck and pySliceCheck for key '" ~ PyObject_Repr(key).to!string ~ "'");
                 assert(0);
-            } else
-                throw new Exception(fullyQualifiedName!T ~ " has no opIndex");
+            }
         }
 
         return noThrowable!impl;

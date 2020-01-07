@@ -3,7 +3,7 @@ module python.conv.d_to_python;
 
 import python.raw: PyObject;
 import python.type: isUserAggregate, isTuple, isNonRangeUDT;
-import std.traits: Unqual, isIntegral, isFloatingPoint, isAggregateType, isArray,
+import std.traits: Unqual, isIntegral, isFloatingPoint, isAggregateType,
     isStaticArray, isAssociativeArray, isPointer, isSomeChar,
     isCallable, isSomeString, isFunctionPointer, isDelegate,
     PointerTarget;
@@ -21,6 +21,12 @@ PyObject* toPython(T)(T value) @trusted if(isIntegral!T && !is(T == enum)) {
 PyObject* toPython(T)(T value) @trusted if(isFloatingPoint!T) {
     import python.raw: PyFloat_FromDouble;
     return PyFloat_FromDouble(value);
+}
+
+
+PyObject* toPython(T)(T value) if(is(Unqual!T == void[])) {
+    auto bytes = cast(ubyte[]) value;
+    return bytes.toPython;
 }
 
 

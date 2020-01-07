@@ -225,3 +225,21 @@ export int issue166_secs(Duration dur) {
 export int issue166_usecs(Duration dur) {
     return cast(int) dur.total!"usecs";
 }
+
+
+struct Issue198 {
+
+    ubyte[] bytes;
+
+    void[] opSlice(ulong start, ulong end) {
+        return bytes[start .. end];
+    }
+
+    ubyte opIndex(ulong i) {
+        return 42;
+    }
+
+    auto length() @property @safe @nogc pure const {
+        return bytes.length;
+    }
+}
