@@ -1,7 +1,6 @@
 name "std_mmfile"
 targetType "dynamicLibrary"
 
-
 configuration "python37" {
     targetPath "lib/pyd"
     lflags "-L$PYTHON_LIB_DIR"
