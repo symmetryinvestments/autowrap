@@ -21,15 +21,18 @@ export PYD_D_VERSION_13 ?= Python_3_8_Or_Later
 .PHONY: all
 all: test
 .PHONY: test
-test: test_python test_cs test_translation
+test: test_python test_cs test_translation test_phobos
 .PHONY: test_python
 test_python: test_python_pyd test_python_pynih
 .PHONY: test_python_pyd
 test_python_pyd:   test_simple_pyd   test_pyd_pyd   test_issues_pyd   test_numpy_pyd
 .PHONY: test_python_pynih
 test_python_pynih: test_simple_pynih test_pyd_pynih test_issues_pynih
-.PHONY: test_python_phobos
+.PHONY: test_python_phobos  # old Phobos target, reflects on all modules at the same time
 test_python_phobos: test_phobos_pynih test_phobos_pyd
+.PHONY: test_phobos  # new Phobos target, reflects on individual Phobos modules / packages
+test_phobos:
+	make -C examples/phobos
 .PHONY: test_cs
 test_cs: test_simple_cs
 .PHONY: test_translation
