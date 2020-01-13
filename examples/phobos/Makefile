@@ -49,7 +49,7 @@ endef
 
 
 .PHONY: all
-all: test_std_datetime test_std_file test_std_math test_std_mmfile test_std_net
+all: test_std_datetime test_std_file test_std_math test_std_mmfile test_std_net test_std_numeric
 
 
 # pynih needs this first and foremost
