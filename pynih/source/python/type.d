@@ -113,10 +113,19 @@ struct PythonType(T) {
             }
 
             static if(hasMember!(T, "opSlice")) {
-                static if(__traits(compiles, &PythonIter!T._py_iter))
-                    _pyType.tp_iter = &PythonIter!T._py_iter;
+                static if(__traits(compiles, &PythonIterViaList!T._py_iter))
+                    _pyType.tp_iter = &PythonIterViaList!T._py_iter;
                 else
                     pragma(msg, "WARNING: could not implement Python opSlice for ", fullyQualifiedName!T);
+            } else static if(isInputRange!T) {
+                static if(__traits(compiles, &PythonIter!T._py_iter_next)) {
+                    _pyType.tp_iter = &PythonIter!T._py_iter;
+                    _pyType.tp_iternext = &PythonIter!T._py_iter_next;
+                } else {
+                    pragma(msg, "WARNING: could not implement Python iterator for ", fullyQualifiedName!T);
+                    _pyType.tp_iternext = &PythonIter!T._py_iter_next;
+                }
+
             }
 
             // In Python, both D's opIndex and opSlice are dealt with by one function,
@@ -382,7 +391,7 @@ struct PythonType(T) {
 
             assert(self_ !is null);
 
-            static if(__traits(compiles, self_.to!T)) {
+            static if(__traits(compiles, text(self_.to!T))) {
                 auto ret = text(self_.to!T);
                 return pyUnicodeDecodeUTF8(ret.ptr, ret.length, null /*errors*/);
             } else {
@@ -629,9 +638,7 @@ private void mutateSelf(T)(PyObject* self, auto ref T dAggregate) {
     import python.conv.d_to_python: toPython;
     import python.raw: pyDecRef;
 
-    auto newSelf = {
-        return self is null ? self : toPython(dAggregate);
-    }();
+    auto newSelf = self is null ? self : toPython(dAggregate);
     scope(exit) {
         if(self !is null) pyDecRef(newSelf);
     }
@@ -1301,13 +1308,13 @@ private template PythonSubscript(T) {
    We get a D slice from it, convert it to a Python list,
    then return its iterator.
  */
-private template PythonIter(T) {
+private template PythonIterViaList(T) {
 
     static extern(C) PyObject* _py_iter(PyObject* self) nothrow {
         import python.raw: PyObject_GetIter;
         import python.conv.d_to_python: toPython;
         import python.conv.python_to_d: to;
-        import std.array;
+        import std.array: array;
         import std.traits: fullyQualifiedName;
 
         PyObject* impl() {
@@ -1318,6 +1325,39 @@ private template PythonIter(T) {
             } else {
                 throw new Exception("Cannot get an array from " ~ fullyQualifiedName!T ~ "[]");
             }
+        }
+
+        return noThrowable!impl;
+    }
+}
+
+
+/**
+   Implement a Python iterator based on a D range.
+ */
+private template PythonIter(T) if(isInputRange!T)
+{
+    static extern(C) PyObject* _py_iter(PyObject* self) nothrow {
+        return self;
+    }
+
+    static extern(C) PyObject* _py_iter_next(PyObject* self) nothrow {
+        import python.raw: PyErr_SetNone, PyExc_StopIteration;
+        import python.conv: to, toPython;
+
+        auto impl() {
+            auto dObj = self.to!T;
+
+            if(dObj.empty) {
+                PyErr_SetNone(PyExc_StopIteration);
+                return null;
+            }
+
+            dObj.popFront;
+            auto newSelf = dObj.toPython;
+            *self = *newSelf;
+            auto ret = dObj.front.toPython;
+            return ret;
         }
 
         return noThrowable!impl;

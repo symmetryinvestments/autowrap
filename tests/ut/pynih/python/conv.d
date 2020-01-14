@@ -311,7 +311,6 @@ unittest {
             import std.conv: text;
             return i.text;
         }
-
     }
 
     static assert(isForwardRange!FortyTwos);
