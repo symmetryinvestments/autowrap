@@ -293,3 +293,29 @@ unittest {
     const str = "foobar"d;
     backAndForth(str[0]);
 }
+
+
+@("range.infinite")
+unittest {
+
+    import std.range.primitives: isForwardRange;
+
+    // infinite range
+    static struct FortyTwos {
+        int i;
+        enum empty = false;
+        int front() { return 42; }
+        void popFront() {}
+        auto save() { return this; }
+        string toString() {
+            import std.conv: text;
+            return i.text;
+        }
+
+    }
+
+    static assert(isForwardRange!FortyTwos);
+    auto py = FortyTwos(77).toPython;
+    auto d = py.to!FortyTwos;
+    d.i.should == 77;
+}
