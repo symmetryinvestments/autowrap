@@ -221,3 +221,12 @@ def test_issue_198():
     else:
         with pytest.raises(TypeError):  # FIXME
             assert i[1:4] == [1, 2, 3]
+
+
+def test_infinite_range():
+    from issues import FortyTwos
+    # from itertools import islice
+
+    _ = FortyTwos(77)
+    #  FIXME - this causes a segfault despite the test passing
+    # assert list(islice(rng, 4)) == [42, 42, 42, 42]

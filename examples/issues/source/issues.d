@@ -243,3 +243,17 @@ struct Issue198 {
         return bytes.length;
     }
 }
+
+
+// infinite range
+struct FortyTwos {
+    int i;  // why not
+    enum empty = false;
+    int front() { return 42; }
+    void popFront() {}
+    auto save() { return this; }
+    string toString() {
+        import std.conv: text;
+        return i.text;
+    }
+}

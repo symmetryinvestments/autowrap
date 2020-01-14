@@ -7,7 +7,7 @@ import std.traits: Unqual, isIntegral, isFloatingPoint, isAggregateType,
     isStaticArray, isAssociativeArray, isPointer, isSomeChar,
     isCallable, isSomeString, isFunctionPointer, isDelegate,
     PointerTarget;
-import std.range: isInputRange;
+import std.range: isInputRange, isInfinite;
 import std.datetime: Date, DateTime;
 import core.time: Duration;
 
@@ -30,14 +30,16 @@ PyObject* toPython(T)(T value) if(is(Unqual!T == void[])) {
 }
 
 
-PyObject* toPython(T)(T value) if(isInputRange!T && !isSomeString!T && !isStaticArray!T) {
+PyObject* toPython(T)(T value)
+    if(isInputRange!T && !isInfinite!T && !isSomeString!T && !isStaticArray!T)
+{
     import python.raw: PyList_New, PyList_SetItem, PyList_Append;
     import std.range: isForwardRange, enumerate;
 
     static if(__traits(hasMember, T, "length")) {
         const length = value.length;
         enum append = false;
-    } else static if(isForwardRange!T){
+    } else static if(isForwardRange!T) {
         import std.range: walkLength;
         import std.array: save;
         const length = walkLength(value.save);
@@ -57,7 +59,13 @@ PyObject* toPython(T)(T value) if(isInputRange!T && !isSomeString!T && !isStatic
     }
 
     return ret;
+}
 
+PyObject* toPython(T)(T value)
+    if(isInputRange!T && isInfinite!T)
+{
+    import python.type: pythonClass;
+    return pythonClass(value);
 }
 
 
