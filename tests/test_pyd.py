@@ -368,3 +368,12 @@ def test_overloads():
     if is_pynih:  # pyd can only wrap the first one
         assert overload(3) == -3
         assert overload(-2) == 2
+
+
+def test_funcs():
+    from pyd import appends_to_fn_cb
+    import pytest
+    #  FIXME
+    with pytest.raises(RuntimeError):
+        assert appends_to_fn_cb(lambda x: str(x), 42, "post") == \
+            "42post"
