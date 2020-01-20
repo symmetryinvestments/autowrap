@@ -318,3 +318,18 @@ unittest {
     auto d = py.to!FortyTwos;
     d.i.should == 77;
 }
+
+
+@("exception.msg")
+unittest {
+    static class MyException: Exception {
+        // These members make no sense, but that's what
+        // std.xml.CheckException does
+        this(string msg) { super(msg); }
+        string msg;
+        size_t line;
+    }
+
+    // FIXME - cannot deal with repeated field names
+    // auto py = (new MyException("oops")).toPython;
+}

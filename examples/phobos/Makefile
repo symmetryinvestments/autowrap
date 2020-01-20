@@ -49,7 +49,8 @@ endef
 
 
 .PHONY: all
-all: test_std_datetime test_std_file test_std_math test_std_mmfile test_std_net test_std_numeric test_std_process test_std_random test_std_stdio
+all: test_std_datetime test_std_file test_std_math test_std_mmfile test_std_net \
+test_std_numeric test_std_process test_std_random test_std_stdio test_std_xml
 
 
 # pynih needs this first and foremost
@@ -66,3 +67,4 @@ $(eval $(call test-package,numeric))
 $(eval $(call test-package,process))
 $(eval $(call test-package,random))
 $(eval $(call test-package,stdio))
+$(eval $(call test-package,xml))

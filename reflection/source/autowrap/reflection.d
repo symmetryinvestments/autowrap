@@ -104,14 +104,17 @@ template AllAggregates(Modules...) if(allSatisfy!(isModule, Modules)) {
 
 private template AllAggregatesInModule(Module module_) {
     import mirror.meta: MirrorModule = Module;
-    import std.meta: NoDuplicates, Filter, staticMap;
+    import std.meta: NoDuplicates, Filter, staticMap, templateNot;
+    import std.algorithm: canFind;
 
     alias mod = MirrorModule!(module_.name);
+    enum shouldIgnore(T) = module_.ignoredSymbols.canFind!(a => a.identifier == T.stringof);
 
     alias AllAggregatesInModule =
-        NoDuplicates!(
-            Filter!(isUserAggregate,
-                    staticMap!(PrimordialType, mod.AllAggregates)));
+        Filter!(templateNot!shouldIgnore,
+                NoDuplicates!(
+                    Filter!(isUserAggregate,
+                            staticMap!(PrimordialType, mod.AllAggregates))));
 }
 
 
