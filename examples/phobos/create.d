@@ -67,7 +67,8 @@ void run(string[] args) @safe {
                 lflags "-L$PYTHON_LIB_DIR"
                 dependency "autowrap:pynih" path="../../.."
             }
-        `.format(stdName));
+        `.format(stdName).deindent
+        );
     }
 
     {
@@ -82,7 +83,7 @@ void run(string[] args) @safe {
                     "unit-threaded": "0.10.5"
                 }
             }
-        `);
+        `.deindent);
     }
 
     {
@@ -100,7 +101,7 @@ void run(string[] args) @safe {
 
             // pragma(msg, str);
             mixin(str);
-        }.format(stdName, name));
+        }.format(stdName, name).deindent);
     }
 
     {
@@ -115,4 +116,21 @@ void run(string[] args) @safe {
     import %s
 `.format(stdName));
     }
+}
+
+
+private string deindent(in string str) @safe pure {
+    import std.string: splitLines;
+    import std.algorithm: map;
+    import std.array: join;
+
+    enum indent = 12;
+
+    return str
+        .splitLines
+        [1..$]  // drop first empty line due to newline
+        .map!(a => a.length >= indent ? a[indent .. $] : a)
+        [0 .. $-1]  // drop empty last line due to newline
+        .join("\n")
+        ;
 }
