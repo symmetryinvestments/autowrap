@@ -90,13 +90,13 @@ version(Have_autowrap_pyd) {
         Module("std.signals", Yes.alwaysExport),
         Module("std.socket", Yes.alwaysExport),
         Module("std.stdint", Yes.alwaysExport),
-        // Module("std.stdio", Yes.alwaysExport), // compilation failure
+        Module("std.stdio", Yes.alwaysExport),
         Module("std.string", Yes.alwaysExport),
         Module("std.system", Yes.alwaysExport),
         Module("std.traits", Yes.alwaysExport),
         Module("std.typecons", Yes.alwaysExport),
         Module("std.typetuple", Yes.alwaysExport),
-        // Module("std.uni", Yes.alwaysExport), // compilation failure
+        Module("std.uni", Yes.alwaysExport),
         Module("std.uri", Yes.alwaysExport),
         Module("std.utf", Yes.alwaysExport),
         Module("std.uuid", Yes.alwaysExport),
@@ -175,36 +175,36 @@ version(Have_autowrap_pyd) {
         Module("std.experimental.allocator.building_blocks.scoped_allocator", Yes.alwaysExport),
         Module("std.experimental.allocator.building_blocks.segregator", Yes.alwaysExport),
         Module("std.experimental.allocator.building_blocks.stats_collector", Yes.alwaysExport),
-        // Module("std.file", Yes.alwaysExport),  // compilation failure
+        Module("std.file", Yes.alwaysExport),
         Module("std.format", Yes.alwaysExport),
         Module("std.functional", Yes.alwaysExport),
         Module("std.getopt", Yes.alwaysExport),
         Module("std.json", Yes.alwaysExport),
-        // Module("std.math", Yes.alwaysExport), // undefined symbol rndtonl
+        Module("std.math", Yes.alwaysExport),
         Module("std.mathspecial", Yes.alwaysExport),
         Module("std.meta", Yes.alwaysExport),
-        // Module("std.mmfile", Yes.alwaysExport), // compilation failure
-        // Module("std.net.curl", Yes.alwaysExport), // compilation failure
+        Module("std.mmfile", Yes.alwaysExport),
+        Module("std.net.curl", Yes.alwaysExport),
         Module("std.net.isemail", Yes.alwaysExport),
-        // Module("std.numeric", Yes.alwaysExport),  // compilation failure
+        Module("std.numeric", Yes.alwaysExport),
         Module("std.outbuffer", Yes.alwaysExport),
         // Module("std.parallelism", Yes.alwaysExport), // compilation failure
         Module("std.path", Yes.alwaysExport),
-        // Module("std.process", Yes.alwaysExport), // compilation failure
-        // Module("std.random", Yes.alwaysExport), // compilation failure
+        Module("std.process", Yes.alwaysExport),
+        Module("std.random", Yes.alwaysExport),
         Module("std.range.interfaces", Yes.alwaysExport),
         Module("std.range.primitives", Yes.alwaysExport),
         Module("std.regex", Yes.alwaysExport),
         Module("std.signals", Yes.alwaysExport),
         Module("std.socket", Yes.alwaysExport),
         Module("std.stdint", Yes.alwaysExport),
-        // Module("std.stdio", Yes.alwaysExport), // compilation failure
+        Module("std.stdio", Yes.alwaysExport),
         Module("std.string", Yes.alwaysExport),
         Module("std.system", Yes.alwaysExport),
         Module("std.traits", Yes.alwaysExport),
         Module("std.typecons", Yes.alwaysExport),
         Module("std.typetuple", Yes.alwaysExport),
-        // Module("std.uni", Yes.alwaysExport), // compilation failure
+        Module("std.uni", Yes.alwaysExport),
         Module("std.uri", Yes.alwaysExport),
         Module("std.utf", Yes.alwaysExport),
         Module("std.uuid", Yes.alwaysExport),
@@ -212,9 +212,9 @@ version(Have_autowrap_pyd) {
         Module("std.windows.charset", Yes.alwaysExport),
         Module("std.windows.registry", Yes.alwaysExport),
         Module("std.windows.syserror", Yes.alwaysExport),
-        // Module("std.xml", Yes.alwaysExport), // compilation failure
-        // Module("std.zip", Yes.alwaysExport),  // linker propertyGet TimeZone
-        // Module("std.zlib", Yes.alwaysExport), // compilation failure
+        Module("std.xml", Yes.alwaysExport),
+        Module("std.zip", Yes.alwaysExport),
+        Module("std.zlib", Yes.alwaysExport),
     );
 }
 
