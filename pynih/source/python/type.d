@@ -121,11 +121,8 @@ struct PythonType(T) {
                 static if(__traits(compiles, &PythonIter!T._py_iter_next)) {
                     _pyType.tp_iter = &PythonIter!T._py_iter;
                     _pyType.tp_iternext = &PythonIter!T._py_iter_next;
-                } else {
+                } else
                     pragma(msg, "WARNING: could not implement Python iterator for ", fullyQualifiedName!T);
-                    _pyType.tp_iternext = &PythonIter!T._py_iter_next;
-                }
-
             }
 
             // In Python, both D's opIndex and opSlice are dealt with by one function,
@@ -133,7 +130,7 @@ struct PythonType(T) {
             static if(hasMember!(T, "opIndex") || hasMember!(T, "opSlice")) {
                 if(_pyType.tp_as_mapping is null)
                     _pyType.tp_as_mapping = new PyMappingMethods;
-                static if(__traits(compiles, &PythonIndexAssign!T._py_index))
+                static if(__traits(compiles, &PythonSubscript!T._py_index))
                     _pyType.tp_as_mapping.mp_subscript = &PythonSubscript!T._py_index;
                 else
                     pragma(msg, "WARNING: could not implement Python index for ",

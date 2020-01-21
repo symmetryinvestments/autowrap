@@ -50,7 +50,8 @@ endef
 
 .PHONY: all
 all: test_std_datetime test_std_file test_std_math test_std_mmfile test_std_net \
-test_std_numeric test_std_process test_std_random test_std_stdio test_std_xml
+test_std_numeric test_std_process test_std_random test_std_stdio test_std_xml \
+test_std_uni
 
 
 # pynih needs this first and foremost
