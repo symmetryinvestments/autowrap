@@ -133,7 +133,11 @@ struct PythonType(T) {
             static if(hasMember!(T, "opIndex") || hasMember!(T, "opSlice")) {
                 if(_pyType.tp_as_mapping is null)
                     _pyType.tp_as_mapping = new PyMappingMethods;
-                _pyType.tp_as_mapping.mp_subscript = &PythonSubscript!T._py_index;
+                static if(__traits(compiles, &PythonIndexAssign!T._py_index))
+                    _pyType.tp_as_mapping.mp_subscript = &PythonSubscript!T._py_index;
+                else
+                    pragma(msg, "WARNING: could not implement Python index for ",
+                           fullyQualifiedName!T);
             }
 
             static if(hasMember!(T, "opIndexAssign")) {
