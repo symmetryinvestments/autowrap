@@ -14,7 +14,7 @@ enum str = wrapDlang!(
         "std.experimental.allocator.gc_allocator",
         "std.experimental.allocator.mallocator",
         "std.experimental.allocator.mmap_allocator",
-        // "std.experimental.allocator.showcase",
+        "std.experimental.allocator.showcase",
         "std.experimental.allocator.typed",
         "std.experimental.allocator.building_blocks.affix_allocator",
         "std.experimental.allocator.building_blocks.aligned_block_list",
@@ -37,3 +37,27 @@ enum str = wrapDlang!(
 
 // pragma(msg, str);
 mixin(str);
+
+
+/**
+   Without this there is a linker error (only pyd) about an undefined
+   symbol corrensponding to the .init value for the TypeInfo object.
+*/
+void hack0() {
+    import std.experimental.allocator.building_blocks.region: Region;
+    import std.experimental.allocator.mmap_allocator: MmapAllocator;
+    import std.typecons: Flag;
+    auto id = typeid(Region!(MmapAllocator));
+}
+
+
+// FIXME - The linker error comes from `toStructImpl` but causing it
+// to not compile causes problems for other structs.
+pragma(mangle, "_D6python4conv11python_to_d__T2toTS3std12experimental9allocator15building_blocks14allocator_list__T13AllocatorListTSQDdQDcQCr8showcase14mmapRegionListFmZ7FactoryTSQEyQExQEmQEf14null_allocator13NullAllocatorZQEe4NodeZQHeFNePSQIo3raw7_objectZPQHz")
+extern(C) void hack1() {
+
+    import std.experimental.allocator.building_blocks.region: Region;
+    import std.experimental.allocator.mmap_allocator: MmapAllocator;
+    import std.typecons: Flag;
+    auto id = typeid(Region!(MmapAllocator));
+}
