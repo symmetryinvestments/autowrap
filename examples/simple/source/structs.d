@@ -74,3 +74,8 @@ struct GetterSetterConst {
     @property int i() @safe const pure nothrow { return _i; }
     @property void i(int i) @safe pure nothrow { _i = i; }
 }
+
+
+struct NotCopyable {
+    @disable this(this);
+}
