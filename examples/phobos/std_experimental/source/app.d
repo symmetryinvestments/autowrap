@@ -10,7 +10,7 @@ enum str = wrapDlang!(
         // "std.experimental.logger.filelogger", // compilation failure
         // "std.experimental.logger.multilogger", // compilation failure
         // "std.experimental.logger.nulllogger",  // compilation failure
-        // "std.experimental.allocator.common", // compilation failure
+        "std.experimental.allocator.common",
         "std.experimental.allocator.gc_allocator",
         "std.experimental.allocator.mallocator",
         "std.experimental.allocator.mmap_allocator",
