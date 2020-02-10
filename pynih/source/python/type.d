@@ -301,16 +301,16 @@ struct PythonType(T) {
             getsets[i].name = cast(typeof(PyGetSetDef.name)) __traits(identifier, property);
 
             static foreach(overload; __traits(getOverloads, T, __traits(identifier, property))) {
-                static if(is(ReturnType!overload == void))  {// setter
+                static if(is(ReturnType!overload == void)) { // setter
                     static if(__traits(compiles, &PythonClass!T.propertySet!overload))
                         getsets[i].set = &PythonClass!T.propertySet!overload;
                     else
-                        pragma(msg, "Cannot implement ", fullyQualifiedName!T, ".set!", i);
+                        pragma(msg, "Cannot implement ", fullyQualifiedName!T, ".set!", i, " (", __traits(identifier, overload), ")");
                 } else  { // getter
                     static if(__traits(compiles, &PythonClass!T.propertyGet!overload))
                         getsets[i].get = &PythonClass!T.propertyGet!overload;
                     else
-                        pragma(msg, "Cannot implement ", fullyQualifiedName!T, ".get!", i);
+                        pragma(msg, "Cannot implement ", fullyQualifiedName!T, ".get!", i, " (", __traits(identifier, overload), ")");
                 }
             }
         }}
@@ -881,7 +881,7 @@ Object delegate(PyObject*)[string] gFactory;
    assign anything but an integer to `Foo.i` or a string to `Foo.s` in Python
    will raise `TypeError`.
  */
-struct PythonClass(T) if(isUserAggregate!T) {
+struct PythonClass(T) {//}if(isUserAggregate!T) {
     import python.raw: PyObjectHead, PyGetSetDef;
     import std.traits: Unqual;
 
