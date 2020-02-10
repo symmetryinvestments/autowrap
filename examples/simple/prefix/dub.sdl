@@ -1,0 +1,57 @@
+name "prefix"
+targetType "dynamicLibrary"
+dependency "simple" path=".."
+
+
+configuration "python37" {
+    targetPath "../lib/pyd"
+    lflags "-L$PYTHON_LIB_DIR"
+    dependency "autowrap:python" path="../../../"
+    subConfiguration "autowrap:python" "python37"
+}
+
+configuration "env" {
+    targetPath "../lib/pyd"
+    dependency "autowrap:python" path="../../../"
+    subConfiguration "autowrap:python" "env"
+}
+
+configuration "pynih" {
+    targetPath "../lib/pynih"
+    lflags "-L$PYTHON_LIB_DIR"
+    dependency "autowrap:pynih" path="../../../"
+}
+
+configuration "csharp" {
+    targetPath "../lib/csharp"
+    dependency "autowrap:csharp" path="../../../"
+}
+
+configuration "emitCSharp" {
+    targetType "executable"
+    dependency "autowrap:csharp" path="../../../"
+}
+
+configuration "excel" {
+  preBuildCommands "dub run -c excel-def --nodeps -q -- simple.def"
+  sourceFiles "simple.def"
+  libs "xlcall32"
+  postBuildCommands "copy /y simple.dll simple.xll"
+  versions "WrapExcel"
+  dependency "excel-d" version="~>0.5.5"
+}
+
+configuration "excel-def" {
+  targetType "executable"
+  targetName "simple"
+  versions "excelDef" "WrapExcel"
+  dependency "excel-d" version="~>0.5.5"
+}
+
+configuration "excel-xll" {
+  sourceFiles "simple.def"
+  libs "xlcall32"
+  postBuildCommands "copy /y myxll.dll myxll.xll"
+  versions "WrapExcel"
+  dependency "excel-d" version="~>0.5.5"
+}

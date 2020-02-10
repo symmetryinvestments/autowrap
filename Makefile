@@ -46,23 +46,12 @@ clean:
 	git clean -xffd
 
 .PHONY: test_simple_pyd
-test_simple_pyd: tests/test_simple.py examples/simple/lib/pyd/simple.so
-	PYTHONPATH=$(PWD)/examples/simple/lib/pyd PYD=1 pytest -s -vv $<
-
-
-examples/simple/lib/pyd/simple.so: examples/simple/lib/pyd/libsimple.so
-	@cp $^ $@
-
-.PHONY: examples/simple/lib/pyd/libsimple.so
-examples/simple/lib/pyd/libsimple.so:
-	@cd examples/simple && dub build -q -c $(DUB_CONFIGURATION)
-
-example/simple/dub.selections.json:
-	@cd examples/simple && dub upgrade -q
+test_simple_pyd:
+	make -C examples/simple test_simple_pyd
 
 .PHONY: test_simple_pynih
-test_simple_pynih: tests/test_simple.py examples/simple/lib/pynih/simple.so
-	PYTHONPATH=$(PWD)/examples/simple/lib/pynih PYNIH=1 pytest -s -vv $<
+test_simple_pynih: pynih/source/python/raw.d
+	make -C examples/simple test_simple_pynih
 
 
 # Runs the generated C# test for the simple example
@@ -98,12 +87,6 @@ examples/simple/Simple.cs: examples/simple/lib/csharp/libsimple.so
 pynih/source/python/raw.d: pynih/Makefile pynih/source/python/raw.dpp
 	make -C pynih source/python/raw.d
 
-examples/simple/lib/pynih/simple.so: examples/simple/lib/pynih/libsimple.so
-	@cp $^ $@
-
-.PHONY: examples/simple/lib/pynih/libsimple.so
-examples/simple/lib/pynih/libsimple.so: pynih/source/python/raw.d
-	@cd examples/simple && dub build -q -c pynih
 
 .PHONY: test_issues_pyd
 test_issues_pyd: tests/test_issues.py examples/issues/lib/pyd/issues.so

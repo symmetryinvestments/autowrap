@@ -6,33 +6,33 @@ is_pynih = os.environ.get('PYNIH')
 
 
 def test_adder():
-    from simple import Adder
+    from adder import Adder
     assert Adder(3).add(5) == 8
     assert Adder(2).add(7) == 9
 
 
 def test_prefix():
-    from simple import Prefix
+    from prefix import Prefix
     p = Prefix("foo")
     assert p.pre("bar") == "foobar"
 
 
 def test_int_string1():
-    from simple import IntString
+    from structs import IntString
     x = IntString(42)
     assert x.i == 42
     assert x.s == ""
 
 
 def test_int_string2():
-    from simple import IntString
+    from structs import IntString
     x = IntString(33, "foobar")
     assert x.i == 33
     assert x.s == "foobar"
 
 
 def test_point():
-    from simple import create_int_point
+    from api import create_int_point
     p = create_int_point(42, 33)
     assert p.x == 42
     assert p.y == 33
@@ -42,7 +42,7 @@ def test_point():
 
 
 def test_create_outer():
-    from simple import create_outer
+    from api import create_outer
     o = create_outer(2.0, 3.0, 33.3, "foo", "bar")
     [fst_i1, snd_i1] = o.inner1s
     assert fst_i1.point.x == 2.0
@@ -57,7 +57,7 @@ def test_create_outer():
 
 
 def test_create_outers():
-    from simple import create_outers
+    from api import create_outers
     [o] = create_outers(2.0, 3.0, 33.3, "foo", "bar")
     [fst_i1, snd_i1] = o.inner1s
     assert fst_i1.point.x == 2.0
@@ -72,7 +72,7 @@ def test_create_outers():
 
 
 def test_create_datetime():
-    from simple import create_date_time
+    from api import create_date_time
     d = create_date_time(2017, 1, 2)
     assert d.year == 2017
     assert d.month == 1
@@ -80,7 +80,7 @@ def test_create_datetime():
 
 
 def test_datetime_array():
-    from simple import date_time_array
+    from api import date_time_array
     [ds] = date_time_array(2017, 2, 3)
     assert len(ds) == 1
     [d] = ds
@@ -90,7 +90,7 @@ def test_datetime_array():
 
 
 def test_points():
-    from simple import points
+    from api import points
     [ps] = points(3, 1, 2)
     assert len(ps) == 3
     assert all(p.x == 1 for p in ps)
@@ -98,7 +98,7 @@ def test_points():
 
 
 def test_tuple_of_date_times():
-    from simple import tuple_of_date_times
+    from api import tuple_of_date_times
     ([d1], [d2]) = tuple_of_date_times(2017, 4, 5)
 
     assert d1.year == 2017
@@ -111,7 +111,7 @@ def test_tuple_of_date_times():
 
 
 def test_create_outer2():
-    from simple import create_outer2
+    from api import create_outer2
     o = create_outer2(2.0, 3.0, 33.3, "foo", "bar")
     [fst_i1, snd_i1] = o.inner1s
     assert fst_i1.point.x == 2.0
@@ -126,12 +126,12 @@ def test_create_outer2():
 
 
 def test_typedef():
-    from simple import create_typedef_foo
+    from api import create_typedef_foo
     create_typedef_foo(2, 3)
 
 
 def test_create_date():
-    from simple import create_date
+    from api import create_date
     d = create_date(2017, 1, 2)
     assert d.year == 2017
     assert d.month == 1
@@ -139,7 +139,7 @@ def test_create_date():
 
 
 def test_foo():
-    from simple import Foo
+    from api import Foo
     f = Foo(2, 3)
     assert f.toString() == "Foo(2, 3)"
 
@@ -151,54 +151,54 @@ def test_not_copyable():
 
 
 def test_product():
-    from simple import product
+    from wrap_all import product
     assert product(2, 3) == 6
     assert product(4, 5) == 20
 
 
 def test_identity_int():
-    from simple import identity_int
+    from wrap_all import identity_int
     assert identity_int(4) == 4
 
 
 def test_api_outer():
-    from simple import ApiOuter, NotWrappedInner
+    from api import ApiOuter, NotWrappedInner
     outer = ApiOuter(42, NotWrappedInner("foobar"))
     assert outer.value == 42
     assert outer.inner.value == "foobar"
 
 
 def test_safe_pure_etc_struct():
-    from simple import SafePureEtcStruct
+    from structs import SafePureEtcStruct
     s = SafePureEtcStruct()
     assert s.stuff(3) == 6
 
 
 def test_the_year():
-    from simple import the_year
+    from api import the_year
     from datetime import date
     assert the_year(date(2017, 1, 1)) == 2017
     assert the_year(date(2018, 2, 3)) == 2018
 
 
 def test_wrap_all_string():
-    from simple import String
+    from wrap_all import String
     assert String("foobar").s == "foobar"
 
 
 def test_wrap_all_other_string_as_param():
-    from simple import other_string_as_param, OtherString
+    from wrap_all import other_string_as_param, OtherString
     assert other_string_as_param(OtherString("hello ")) == "hello quux"
 
 
 def test_add_with_default():
-    from simple import add_with_default, NotWrappedInt
+    from api import add_with_default, NotWrappedInt
     assert add_with_default(1, NotWrappedInt(2)) == 3
     assert add_with_default(1) == 43
 
 
 def test_struct_with_private_member():
-    from simple import StructWithPrivateMember
+    from structs import StructWithPrivateMember
 
     s = StructWithPrivateMember()
 
@@ -213,7 +213,7 @@ def test_struct_with_private_member():
 
 
 def test_struct_fields():
-    from simple import IntString
+    from structs import IntString
 
     obj = IntString(7, "foobar")
     assert obj.i == 7
@@ -229,7 +229,7 @@ def test_struct_fields():
 
 
 def test_property_getter():
-    from simple import Getter
+    from structs import Getter
 
     g = Getter(42)
     # can't call the property function since not registered
@@ -240,7 +240,7 @@ def test_property_getter():
 
 
 def test_property_setter():
-    from simple import Setter
+    from structs import Setter
 
     s = Setter()
     # can't call the property function since not registered
@@ -250,7 +250,7 @@ def test_property_setter():
 
 
 def test_property_getter_setter():
-    from simple import GetterSetter
+    from structs import GetterSetter
 
     obj = GetterSetter(42)
 
@@ -271,9 +271,9 @@ def test_enum():
     import pytest
     if is_pyd:  # FIXME
         with pytest.raises(ImportError):
-            from simple import MyEnum
+            from wrap_all import MyEnum
     else:
-        from simple import MyEnum
+        from wrap_all import MyEnum
         assert MyEnum.foo == 0
         assert MyEnum.bar == 1
         assert MyEnum.baz == 2
@@ -283,7 +283,7 @@ def test_enum():
 
 
 def test_send():
-    from simple import mysend
+    from wrap_all import mysend
 
     with pytest.raises(RuntimeError):
         mysend(1, 2, 3, 4)
@@ -303,32 +303,32 @@ def test_send():
 def test_global_int_enum():
     if is_pyd:
         with pytest.raises(ImportError):
-            from simple import GLOBAL_INT_ENUM
+            from wrap_all import GLOBAL_INT_ENUM
     else:
-        from simple import GLOBAL_INT_ENUM
+        from wrap_all import GLOBAL_INT_ENUM
         assert GLOBAL_INT_ENUM == 42
 
 
 def test_global_string_enum():
     if is_pyd:
         with pytest.raises(ImportError):
-            from simple import GLOBAL_STRING_ENUM
+            from wrap_all import GLOBAL_STRING_ENUM
     else:
-        from simple import GLOBAL_STRING_ENUM
+        from wrap_all import GLOBAL_STRING_ENUM
         assert GLOBAL_STRING_ENUM == "quux"
 
 
 def test_global_empty_string_enum():
     if is_pyd:
         with pytest.raises(ImportError):
-            from simple import GLOBAL_EMPTY_STRING_ENUM
+            from wrap_all import GLOBAL_EMPTY_STRING_ENUM
     else:
-        from simple import GLOBAL_EMPTY_STRING_ENUM
+        from wrap_all import GLOBAL_EMPTY_STRING_ENUM
         assert GLOBAL_EMPTY_STRING_ENUM == ""
 
 
 def test_int_to_string():
-    from simple import int_to_string
+    from wrap_all import int_to_string
     if is_pyd:
         with pytest.raises(RuntimeError):
             assert int_to_string(42) == "42"
@@ -338,7 +338,7 @@ def test_int_to_string():
 
 
 def test_immutable_fields():
-    from simple import ImmutableFields
+    from wrap_all import ImmutableFields
     i = ImmutableFields("foobar")
     if is_pyd:  # FIXME
         with pytest.raises(AttributeError):
@@ -348,7 +348,7 @@ def test_immutable_fields():
 
 
 def test_method_overloads():
-    from simple import Overloads
+    from structs import Overloads
     o = Overloads()
     assert o.fun(2) == 4
     assert o.fun(3) == 6
@@ -362,7 +362,7 @@ def test_method_overloads():
 
 
 def test_struct_no_ctor():
-    from simple import NoCtor
+    from structs import NoCtor
     s = NoCtor(42, 33.3, "foobar")
     if is_pynih:
         assert s.i == 42
@@ -371,7 +371,7 @@ def test_struct_no_ctor():
 
 
 def test_property_getter_setter_const():
-    from simple import GetterSetterConst
+    from structs import GetterSetterConst
     import pytest
 
     obj = GetterSetterConst(42)
