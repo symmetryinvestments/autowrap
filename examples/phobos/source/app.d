@@ -45,7 +45,7 @@ version(Have_autowrap_pyd) {
         Module("std.experimental.logger.filelogger", Yes.alwaysExport),
         Module("std.experimental.logger.multilogger", Yes.alwaysExport),
         Module("std.experimental.logger.nulllogger", Yes.alwaysExport),
-        // Module("std.experimental.allocator.common", Yes.alwaysExport), // compilation failure
+        Module("std.experimental.allocator.common", Yes.alwaysExport),
         Module("std.experimental.allocator.gc_allocator", Yes.alwaysExport),
         Module("std.experimental.allocator.mallocator", Yes.alwaysExport),
         Module("std.experimental.allocator.mmap_allocator", Yes.alwaysExport),
@@ -153,11 +153,11 @@ version(Have_autowrap_pyd) {
         // Module("std.experimental.logger.filelogger", Yes.alwaysExport), // compilation failure
         // Module("std.experimental.logger.multilogger", Yes.alwaysExport), // compilation failure
         // Module("std.experimental.logger.nulllogger", Yes.alwaysExport),  // compilation failure
-        // Module("std.experimental.allocator.common", Yes.alwaysExport), // compilation failure
+        Module("std.experimental.allocator.common", Yes.alwaysExport),
         Module("std.experimental.allocator.gc_allocator", Yes.alwaysExport),
         Module("std.experimental.allocator.mallocator", Yes.alwaysExport),
         Module("std.experimental.allocator.mmap_allocator", Yes.alwaysExport),
-        // Module("std.experimental.allocator.showcase", Yes.alwaysExport), // compilation failure
+        Module("std.experimental.allocator.showcase", Yes.alwaysExport),
         Module("std.experimental.allocator.typed", Yes.alwaysExport),
         Module("std.experimental.allocator.building_blocks.affix_allocator", Yes.alwaysExport),
         Module("std.experimental.allocator.building_blocks.aligned_block_list", Yes.alwaysExport),
