@@ -62,9 +62,10 @@ auto wrapAggregate(T)() if(isUserAggregate!T) {
 
     import autowrap.python.pyd.class_wrap: MemberFunction;
     import mirror.traits: isProperty, isStaticMemberFunction, PublicFieldNames;
-    import pyd.pyd: wrap_class, Member, Init, StaticDef, Repr, Property;
+    import pyd.pyd: wrap_class, Member, StaticDef, Repr, Property;
     import std.meta: staticMap, Filter, templateNot, AliasSeq;
     import std.algorithm: startsWith;
+    import std.traits: fullyQualifiedName;
 
     alias AggMember(string memberName) = Symbol!(T, memberName);
     alias members = staticMap!(AggMember, __traits(allMembers, T));
@@ -82,27 +83,35 @@ auto wrapAggregate(T)() if(isUserAggregate!T) {
 
     enum isToString(alias F) = __traits(identifier, F) == "toString";
 
-    wrap_class!(
-        T,
-        staticMap!(Member, publicFieldNames),
-        staticMap!(MemberFunction, regularMemberFunctions),
-        staticMap!(StaticDef, staticMemberFunctions),
-        staticMap!(InitTuple, ConstructorParamTuples!T),
-        staticMap!(Repr, Filter!(isToString, memberFunctions)),
-        staticMap!(Property, properties),
-        OpUnaries!T,
-        OpBinaries!T,
-        OpBinaryRights!T,
-        OpCmps!T,
-        Lengths!T,
-        OpIndices!T,
-        DefOpSlices!T,
-        OpSliceRanges!T,
-        OpOpAssigns!T,
-        OpIndexAssigns!T,
-        OpSliceAssigns!T,
-        OpCalls!T,
-   );
+    void impl()() {
+        wrap_class!(
+            T,
+            staticMap!(Member, publicFieldNames),
+            staticMap!(MemberFunction, regularMemberFunctions),
+            staticMap!(StaticDef, staticMemberFunctions),
+            staticMap!(InitTuple, ConstructorParamTuples!T),
+            staticMap!(Repr, Filter!(isToString, memberFunctions)),
+            staticMap!(Property, properties),
+            OpUnaries!T,
+            OpBinaries!T,
+            OpBinaryRights!T,
+            OpCmps!T,
+            Lengths!T,
+            OpIndices!T,
+            DefOpSlices!T,
+            OpSliceRanges!T,
+            OpOpAssigns!T,
+            OpIndexAssigns!T,
+            OpSliceAssigns!T,
+            OpCalls!T,
+       );
+    }
+
+    static if(__traits(compiles, impl!()()))
+        impl!()();
+    else
+        pragma(msg, "WARNING: could not wrap class ", fullyQualifiedName!T);
+
 }
 
 
@@ -188,6 +197,8 @@ private template ConstructorParamTuples(alias T) {
 // Apply pyd's Init to the unpacked types of the parameter Tuple.
 private template InitTuple(alias Tuple) {
     import pyd.pyd: Init;
+    import pyd.class_wrap: Constructors;
+    static if(__traits(compiles, Constructors!()))
     alias InitTuple = Init!(Tuple.Types);
 }
 
