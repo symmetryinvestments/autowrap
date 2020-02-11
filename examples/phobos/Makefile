@@ -51,7 +51,7 @@ endef
 .PHONY: all
 all: test_std_datetime test_std_file test_std_math test_std_mmfile test_std_net \
 test_std_numeric test_std_process test_std_random test_std_stdio test_std_xml \
-test_std_uni test_std_zip test_std_zlib
+test_std_uni test_std_zip test_std_zlib test_std_experimental test_std_variant
 
 
 # pynih needs this first and foremost
@@ -73,3 +73,4 @@ $(eval $(call test-package,uni))
 $(eval $(call test-package,zip))
 $(eval $(call test-package,zlib))
 $(eval $(call test-package,experimental))
+$(eval $(call test-package,variant))
