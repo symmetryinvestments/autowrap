@@ -57,7 +57,7 @@ test_std_conv test_std_csv test_std_datetime test_std_demangle          \
 test_std_encoding test_std_exception test_std_experimental              \
 test_std_file test_std_format test_std_functional test_std_getopt       \
 test_std_json test_std_math test_std_mathspecial test_std_meta          \
-test_std_mmfile test_std_net test_std_numeric test_std_outbuffer
+test_std_mmfile test_std_net test_std_numeric test_std_outbuffer test_std_path
 
 # pynih needs this first and foremost
 pynih/source/python/raw.d: ../../pynih/Makefile ../../pynih/source/python/raw.dpp
@@ -100,3 +100,4 @@ $(eval $(call test-package,mmfile))
 $(eval $(call test-package,net))
 $(eval $(call test-package,numeric))
 $(eval $(call test-package,outbuffer))
+$(eval $(call test-package,path))
