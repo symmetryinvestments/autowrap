@@ -78,7 +78,7 @@ void run(string[] args) @safe {
                 "fileVersion": 1,
                 "versions": {
                     "autowrap": {"path": "../../../"},
-                    "mirror": "0.1.8",
+                    "mirror": "0.1.9",
                     "pyd": "0.13.0",
                     "unit-threaded": "0.10.5"
                 }
