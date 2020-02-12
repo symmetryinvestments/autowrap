@@ -55,7 +55,7 @@ test_std_uni test_std_zip test_std_zlib test_std_variant \
 test_std_algorithm test_std_array test_std_ascii test_std_base64 test_std_bigint \
 test_std_compiler test_std_complex test_std_container test_std_conv test_std_csv \
 test_std_datetime test_std_demangle test_std_encoding test_std_exception \
-test_std_experimental test_std_file
+test_std_experimental test_std_file test_std_format
 
 
 # pynih needs this first and foremost
@@ -92,3 +92,4 @@ $(eval $(call test-package,encoding))
 $(eval $(call test-package,exception))
 $(eval $(call test-package,experimental))
 $(eval $(call test-package,file))
+$(eval $(call test-package,format))
