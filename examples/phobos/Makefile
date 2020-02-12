@@ -56,7 +56,7 @@ test_std_algorithm test_std_array test_std_ascii test_std_base64 test_std_bigint
 test_std_compiler test_std_complex test_std_container test_std_conv test_std_csv \
 test_std_datetime test_std_demangle test_std_encoding test_std_exception \
 test_std_experimental test_std_file test_std_format test_std_functional \
-test_std_getopt test_std_json test_std_math
+test_std_getopt test_std_json test_std_math test_std_mathspecial
 
 
 # pynih needs this first and foremost
@@ -97,3 +97,4 @@ $(eval $(call test-package,functional))
 $(eval $(call test-package,getopt))
 $(eval $(call test-package,json))
 $(eval $(call test-package,math))
+$(eval $(call test-package,mathspecial))
