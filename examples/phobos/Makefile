@@ -60,7 +60,7 @@ test_std_mathspecial test_std_meta test_std_mmfile test_std_net         \
 test_std_numeric test_std_outbuffer test_std_path test_std_process  \
 test_std_random test_std_range test_std_regex test_std_signals      \
 test_std_socket test_std_int test_std_stdio test_std_string test_std_system \
-test_std_traits test_std_typecons
+test_std_traits test_std_typecons test_std_typetuple
 
 # pynih needs this first and foremost
 pynih/source/python/raw.d: ../../pynih/Makefile ../../pynih/source/python/raw.dpp
@@ -113,3 +113,4 @@ $(eval $(call test-package,string))
 $(eval $(call test-package,system))
 $(eval $(call test-package,traits))
 $(eval $(call test-package,typecons))
+$(eval $(call test-package,typetuple))
