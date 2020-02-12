@@ -1,0 +1,40 @@
+name "std_typecons"
+targetType "dynamicLibrary"
+
+
+configuration "python37" {
+    targetPath "lib/pyd"
+    lflags "-L$PYTHON_LIB_DIR"
+    dependency "autowrap:python" path="../../.."
+    subConfiguration "autowrap:python" "python37"
+}
+
+configuration "python36" {
+    targetPath "lib/pyd"
+    dependency "autowrap:python" path="../../.."
+    subConfiguration "autowrap:python" "python36"
+}
+
+configuration "python33" {
+    targetPath "lib/pyd"
+    dependency "autowrap:python" path="../../.."
+    subConfiguration "autowrap:python" "python33"
+}
+
+configuration "python27" {
+    targetPath "lib/pyd"
+    dependency "autowrap:python" path="../../.."
+    subConfiguration "autowrap:python" "python27"
+}
+
+configuration "env" {
+    targetPath "lib/pyd"
+    dependency "autowrap:python" path="../../.."
+    subConfiguration "autowrap:python" "env"
+}
+
+configuration "pynih" {
+    targetPath "lib/pynih"
+    lflags "-L$PYTHON_LIB_DIR"
+    dependency "autowrap:pynih" path="../../.."
+}
