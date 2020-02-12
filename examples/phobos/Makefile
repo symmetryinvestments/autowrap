@@ -49,7 +49,7 @@ endef
 
 
 .PHONY: all
-all: test_std_xml test_std_zip test_std_zlib           \
+all:
 test_std_algorithm test_std_array test_std_ascii   \
 test_std_base64 test_std_bigint test_std_compiler test_std_complex  \
 test_std_container test_std_conv test_std_csv test_std_datetime         \
@@ -61,16 +61,14 @@ test_std_numeric test_std_outbuffer test_std_path test_std_process  \
 test_std_random test_std_range test_std_regex test_std_signals      \
 test_std_socket test_std_int test_std_stdio test_std_string test_std_system \
 test_std_traits test_std_typecons test_std_typetuple test_std_uni test_std_uri \
-test_std_utf test_std_uuid test_std_variant test_std_windows
+test_std_utf test_std_uuid test_std_variant test_std_windows \
+test_std_xml test_std_zip test_std_zlib
 
 # pynih needs this first and foremost
 pynih/source/python/raw.d: ../../pynih/Makefile ../../pynih/source/python/raw.dpp
 	make -C ../../pynih source/python/raw.d
 
 
-$(eval $(call test-package,xml))
-$(eval $(call test-package,zip))
-$(eval $(call test-package,zlib))
 $(eval $(call test-package,algorithm))
 $(eval $(call test-package,array))
 $(eval $(call test-package,ascii))
@@ -119,3 +117,6 @@ $(eval $(call test-package,utf))
 $(eval $(call test-package,uuid))
 $(eval $(call test-package,variant))
 $(eval $(call test-package,windows))
+$(eval $(call test-package,xml))
+$(eval $(call test-package,zip))
+$(eval $(call test-package,zlib))
