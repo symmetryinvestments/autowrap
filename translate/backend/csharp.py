@@ -38,6 +38,7 @@ def translate(source_code, filename):
 
 def translate_test(writer, test):
     from ir import Assertion
+    from ast import dump
 
     writer.writeln(
         f"[Microsoft.VisualStudio.TestTools.UnitTesting.TestMethod]")
@@ -46,7 +47,7 @@ def translate_test(writer, test):
     for statement in test.statements:
         if isinstance(statement, Assertion):
             writer.writeln(
-                f"// Assert.AreEqual({statement.rhs}, {statement.lhs});")
+                f"// Assert.AreEqual({statement.rhs}, {dump(statement.lhs)});")
         else:
             writer.writeln(f"// TODO: translate {statement}")
     writer.close_block()
