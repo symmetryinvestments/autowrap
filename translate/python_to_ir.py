@@ -33,12 +33,15 @@ class PyTestVisitor(NodeVisitor):
     def __init__(self):
         self.statements = []
 
+    def generic_visit(self, node):
+        print(f"TODO: pytest node {type(node)}")
+
+    def visit_FunctionDef(self, node):
+        for statement in node.body:
+            self.visit(statement)
+
     def visit_Assert(self, node):
-        try:
-            self.statements.append(node_to_assertion(node))
-        except:
-            # FIXME
-            pass
+        self.statements.append(node_to_assertion(node))
 
 
 def node_to_assertion(node):
@@ -48,5 +51,43 @@ def node_to_assertion(node):
 
 
 class AssertionVisitor(NodeVisitor):
+
     def visit_Compare(self, node):
-        self.assertion = Assertion(node.left.value, node.comparators[0].value)
+        from ast import dump
+
+        lhs = node.left
+        lhs_visitor = ExpressionVisitor()
+        lhs_visitor.visit(lhs)
+
+        assert len(node.comparators) == 1, "Can only handle one comparator"
+        rhs = node.comparators[0]
+        rhs_visitor = ExpressionVisitor()
+        rhs_visitor.visit(rhs)
+        if rhs_visitor.value is None:
+            print(f"Cannot handle rhs {dump(rhs)}")
+
+        self.assertion = Assertion(lhs_visitor.value, rhs_visitor.value)
+
+
+class ExpressionVisitor(NodeVisitor):
+
+    value = None
+
+    def generic_visit(self, node):
+        from ast import dump
+        print(f"ERROR: cannot handle {dump(node)}")
+
+    def visit_Attribute(self, node):
+        value_visitor = ExpressionVisitor()
+        value_visitor.visit(node.value)
+        self.value = f"{value_visitor.value}.{node.attr}"
+
+    def visit_Constant(self, node):
+        self.value = node.value
+
+    def visit_Call(self, node):
+        from ast import dump
+        print(f"    TODO: call node expression {dump(node)}")
+
+    def visit_Name(self, node):
+        self.value = node.id
