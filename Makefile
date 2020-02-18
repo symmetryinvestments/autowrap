@@ -28,8 +28,6 @@ test_python: test_python_pyd test_python_pynih
 test_python_pyd:   test_simple_pyd   test_pyd_pyd   test_issues_pyd   test_numpy_pyd
 .PHONY: test_python_pynih
 test_python_pynih: test_simple_pynih test_pyd_pynih test_issues_pynih
-.PHONY: test_python_phobos  # old Phobos target, reflects on all modules at the same time
-test_python_phobos: test_phobos_pynih test_phobos_pyd
 .PHONY: test_phobos  # new Phobos target, reflects on individual Phobos modules / packages
 test_phobos:
 	make -C examples/phobos
@@ -160,28 +158,3 @@ examples/numpy/lib/pynih/numpytests.so: examples/numpy/lib/pynih/libnumpy.so
 .PHONY: examples/numpy/lib/pynih/libnumpy.so
 examples/numpy/lib/pynih/libnumpy.so: pynih/source/python/raw.d
 	@cd examples/numpy && dub build -q -c pynih
-
-.PHONY: test_phobos_pyd
-test_phobos_pyd: tests/test_phobos.py examples/phobos/lib/pyd/phobos.so
-	PYTHONPATH=$(PWD)/examples/phobos/lib/pyd PYD=1 pytest -s -vv $<
-
-examples/phobos/lib/pyd/phobos.so: examples/phobos/lib/pyd/libphobos.so
-	@cp $^ $@
-
-.PHONY: examples/phobos/lib/pyd/libphobos.so
-examples/phobos/lib/pyd/libphobos.so:
-	@cd examples/phobos && dub build -q -c $(DUB_CONFIGURATION)
-
-examples/phobos/dub.selections.json:
-	@cd examples/phobos && dub upgrade -q
-
-.PHONY: test_phobos_pynih
-test_phobos_pynih: tests/test_phobos.py examples/phobos/lib/pynih/phobos.so
-	PYTHONPATH=$(PWD)/examples/phobos/lib/pynih PYNIH=1 pytest -s -vv $<
-
-examples/phobos/lib/pynih/phobos.so: examples/phobos/lib/pynih/libphobos.so
-	@cp $^ $@
-
-.PHONY: examples/phobos/lib/pynih/libphobos.so
-examples/phobos/lib/pynih/libphobos.so: pynih/source/python/raw.d
-	@cd examples/phobos && dub build -q -c pynih
