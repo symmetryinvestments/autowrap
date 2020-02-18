@@ -12,3 +12,25 @@ class AutowrapTest:
 class Assertion:
     lhs: typing.Any
     rhs: typing.Any
+
+    def translate(self, writer):
+
+        def stringify(value):
+            """
+            Transform value into a string
+            """
+            if isinstance(value, str):
+                return '"' + value + '"'
+            else:
+                return str(value)
+
+        actual = self.lhs
+        expected = stringify(self.rhs)
+        writer.writeln(
+            f"// Assert.AreEqual({(expected)}, {actual});")
+
+
+@dataclass
+class Import:
+    module: str
+    importees: typing.List[str]
