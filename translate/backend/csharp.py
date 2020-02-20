@@ -67,6 +67,30 @@ def _translate_test(writer, test):
     writer.open_block()
 
     for statement in test.statements:
-        statement.translate(writer)
+        statement_type = type(statement).__name__
+        function_name = '_translate_' + statement_type
+        eval(f"{function_name}(writer, statement)")
 
     writer.close_block()
+
+
+def _translate_Assertion(writer, assertion):
+    def stringify(value):
+        """
+            Transform value into a string
+            """
+        if isinstance(value, str):
+            return '"' + value + '"'
+        else:
+            return str(value)
+
+    actual = assertion.lhs
+    expected = stringify(assertion.rhs)
+    writer.writeln(
+        f"// Assert.AreEqual({(expected)}, {actual});")
+
+
+def _translate_Import(writer, import_):
+    # nothing to do here since imports from Python have to become top-level
+    # using declarations in C#
+    pass
