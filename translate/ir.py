@@ -34,3 +34,8 @@ class Assertion:
 class Import:
     module: str
     importees: typing.List[str]
+
+    def translate(self, writer):
+        # nothing to do here since imports from Python have to become top-level
+        # using declarations in C#
+        pass
