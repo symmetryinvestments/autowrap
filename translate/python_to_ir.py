@@ -111,12 +111,12 @@ class ExpressionVisitor(NodeVisitor):
         is_ctor = func_name[0].isupper()
         func_expr = 'new ' + func_name if is_ctor else func_name
 
-        arg_strings = []
-        for arg in node.args:
+        def arg_value(arg):
             arg_visitor = ExpressionVisitor()
             arg_visitor.visit(arg)
-            arg_strings.append(arg_visitor.value)
+            return arg_visitor.value
 
+        arg_strings = [arg_value(x) for x in node.args]
         args = ", ".join(str(x) for x in arg_strings)
 
         self.value = f"{func_expr}({args})"
