@@ -1,3 +1,6 @@
+from contextlib import contextmanager
+
+
 class Writer:
     def __init__(self, out_file):
         self.out_file = out_file
@@ -15,6 +18,17 @@ class Writer:
         self.writeln("}")
 
 
+@contextmanager
+def NamedBlock(writer, attr, line):
+    try:
+        writer.writeln(attr)
+        writer.writeln(line)
+        writer.open_block()
+        yield writer
+    finally:
+        writer.close_block()
+
+
 def translate(source_code, filename):
     from python_to_ir import transform
 
@@ -27,15 +41,14 @@ def translate(source_code, filename):
 
         # we use the fully-qualified names to avoid name-collisions
         # with the symbols from the test
-        writer.writeln(
-            "[Microsoft.VisualStudio.TestTools.UnitTesting.TestClass]")
-        writer.writeln("public class TestMain")
-        writer.open_block()
+        with NamedBlock(
+                writer,
+                "[Microsoft.VisualStudio.TestTools.UnitTesting.TestClass]",
+                "public class TestMain"
+        ) as block:
 
-        for test in tests:
-            _translate_test(writer, test)
-
-        writer.close_block()
+            for test in tests:
+                _translate_test(block, test)
 
 
 def _write_header(writer, tests):
@@ -61,17 +74,16 @@ def _write_header(writer, tests):
 
 
 def _translate_test(writer, test):
-    writer.writeln(
-        f"[Microsoft.VisualStudio.TestTools.UnitTesting.TestMethod]")
-    writer.writeln(f"public void {test.name}()")
-    writer.open_block()
+    with NamedBlock(
+        writer,
+        "[Microsoft.VisualStudio.TestTools.UnitTesting.TestMethod]",
+        f"public void {test.name}()"
+    ) as block:
 
-    for statement in test.statements:
-        statement_type = type(statement).__name__
-        function_name = '_translate_' + statement_type
-        eval(f"{function_name}(writer, statement)")
-
-    writer.close_block()
+        for statement in test.statements:
+            statement_type = type(statement).__name__
+            function_name = '_translate_' + statement_type
+            eval(f"{function_name}(block, statement)")
 
 
 def _translate_Assertion(writer, assertion):
