@@ -12,3 +12,9 @@ class AutowrapTest:
 class Assertion:
     lhs: typing.Any
     rhs: typing.Any
+
+
+@dataclass
+class Import:
+    module: str
+    importees: typing.List[str]

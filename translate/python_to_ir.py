@@ -1,12 +1,10 @@
-from ir import AutowrapTest, Assertion
 from ast import NodeVisitor
 
 
 def transform(source_code):
     from ast import parse
-    tree = parse(source_code)
     visitor = ModuleVisitor()
-    visitor.visit(tree)
+    visitor.visit(parse(source_code))
     return visitor.tests
 
 
@@ -16,6 +14,8 @@ class ModuleVisitor(NodeVisitor):
         self.tests = []
 
     def visit_FunctionDef(self, node):
+        from ir import AutowrapTest
+
         if not node.name.startswith('test_'):
             return
 
@@ -43,6 +43,15 @@ class PyTestVisitor(NodeVisitor):
     def visit_Assert(self, node):
         self.statements.append(node_to_assertion(node))
 
+    def visit_ImportFrom(self, node):
+        from ir import Import
+
+        for name in node.names:
+            assert name.asname is None, "Cannot yet handle as name"
+
+        self.statements.append(Import(node.module,
+                                      [x.name for x in node.names]))
+
 
 def node_to_assertion(node):
     visitor = AssertionVisitor()
@@ -54,6 +63,7 @@ class AssertionVisitor(NodeVisitor):
 
     def visit_Compare(self, node):
         from ast import dump
+        from ir import Assertion
 
         lhs = node.left
         lhs_visitor = ExpressionVisitor()

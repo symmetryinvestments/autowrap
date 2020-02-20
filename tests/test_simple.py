@@ -268,7 +268,6 @@ def test_property_getter_setter():
 
 
 def test_enum():
-    import pytest
     if is_pyd:  # FIXME
         with pytest.raises(ImportError):
             from wrap_all import MyEnum
@@ -372,7 +371,6 @@ def test_struct_no_ctor():
 
 def test_property_getter_setter_const():
     from structs import GetterSetterConst
-    import pytest
 
     obj = GetterSetterConst(42)
 
