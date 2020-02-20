@@ -52,11 +52,14 @@ class PyTestVisitor(NodeVisitor):
         self.statements.append(Import(node.module,
                                       [x.name for x in node.names]))
 
+    def visit_Expr(self, node):
+        self.visit(node.value)
+
 
 def node_to_assertion(node):
     visitor = AssertionVisitor()
     visitor.visit(node.test)
-    return visitor.assertion
+    return visitor.value
 
 
 class AssertionVisitor(NodeVisitor):
@@ -76,7 +79,7 @@ class AssertionVisitor(NodeVisitor):
         if rhs_visitor.value is None:
             print(f"Cannot handle rhs {dump(rhs)}")
 
-        self.assertion = Assertion(lhs_visitor.value, rhs_visitor.value)
+        self.value = Assertion(lhs_visitor.value, rhs_visitor.value)
 
 
 class ExpressionVisitor(NodeVisitor):
@@ -85,7 +88,10 @@ class ExpressionVisitor(NodeVisitor):
 
     def generic_visit(self, node):
         from ast import dump
-        print(f"ERROR: cannot handle {dump(node)}")
+        try:
+            print(f"ERROR: ExpressionVisitor cannot handle {dump(node)}")
+        except TypeError:
+            print(f"ERROR: ExpressionVisitor cannot handle {node}")
 
     def visit_Attribute(self, node):
         value_visitor = ExpressionVisitor()
@@ -96,8 +102,24 @@ class ExpressionVisitor(NodeVisitor):
         self.value = node.value
 
     def visit_Call(self, node):
-        from ast import dump
-        print(f"    TODO: call node expression {dump(node)}")
+
+        func_visitor = ExpressionVisitor()
+        func_visitor.visit(node.func)
+
+        # hacky way to determine whether a function is a constructor
+        func_name = func_visitor.value
+        is_ctor = func_name[0].isupper()
+        func_expr = 'new ' + func_name if is_ctor else func_name
+
+        arg_strings = []
+        for arg in node.args:
+            arg_visitor = ExpressionVisitor()
+            arg_visitor.visit(arg)
+            arg_strings.append(arg_visitor.value)
+
+        args = ", ".join(str(x) for x in arg_strings)
+
+        self.value = f"{func_expr}({args})"
 
     def visit_Name(self, node):
         self.value = node.id
