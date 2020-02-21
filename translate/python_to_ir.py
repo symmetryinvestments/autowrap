@@ -34,7 +34,7 @@ class PyTestVisitor(NodeVisitor):
         self.value = []
 
     def generic_visit(self, node):
-        print(f"TODO: pytest node {type(node)}")
+        print(f"to-ir TODO: pytest node {type(node)}")
 
     def visit_FunctionDef(self, node):
         for statement in node.body:
@@ -54,6 +54,74 @@ class PyTestVisitor(NodeVisitor):
 
     def visit_Expr(self, node):
         self.visit(node.value)
+
+    def visit_Assign(self, node):
+        from ir import Assignment
+
+        assert len(node.targets), "Cannot handle multiple assignment targets"
+
+        lhs_node = node.targets[0]
+        rhs_node = node.value
+        lhs = _run_visitor(lhs_node, ExpressionVisitor)
+        rhs = _run_visitor(rhs_node, ExpressionVisitor)
+
+        self.value.append(Assignment(lhs, rhs))
+
+    def visit_If(self, node):
+        from ir import IfPyd, IfPynih
+        from ast import Name
+
+        is_name = type(node.test) == Name
+        is_pyd_or_pynih = is_name and node.test.id in ['is_pyd', 'is_pynih']
+        if not is_name or not is_pyd_or_pynih:
+            raise Exception("Cannot handle ifs that aren't is_pyd or is_pynih")
+
+        if node.test.id == 'is_pyd':
+            klass = IfPyd
+        elif node.test.id == 'is_pynih':
+            klass = IfPynih
+        else:
+            assert False, "Logic error"
+
+        statements = [_run_visitor(x, PyTestVisitor) for x in node.body]
+        flat_statements = _flatten(statements)
+
+        self.value.append(klass(flat_statements))
+
+    def visit_Pass(self, node):
+        pass
+
+    def visit_Call(self, node):
+        self.value.append(_run_visitor(node, ExpressionVisitor))
+
+    def visit_With(self, node):
+        from ir import ShouldThrow
+        from ast import Call, Attribute
+
+        assert len(node.items) == 1, \
+            "Cannot handle with block with more than one item"
+
+        context = node.items[0].context_expr
+
+        is_call = type(context) == Call
+        is_call_attr = is_call and type(context.func) == Attribute
+        is_pytest_raises = \
+            is_call_attr \
+            and context.func.value.id == 'pytest' \
+            and context.func.attr == 'raises'
+        if is_pytest_raises:
+            assert len(context.args) == 1, \
+                "Can only handle one arg for pytest.raises"
+            exception = context.args[0].id
+
+        msg = "Cannot handle with blocks that aren't pytest exception checks"
+        if not is_pytest_raises:
+            raise Exception(msg)
+
+        nested_statements = [_run_visitor(x, PyTestVisitor) for x in node.body]
+        flat_statements = _flatten(nested_statements)
+
+        self.value.append(ShouldThrow(exception, flat_statements))
 
 
 class AssertionVisitor(NodeVisitor):
@@ -81,28 +149,53 @@ class ExpressionVisitor(NodeVisitor):
     def generic_visit(self, node):
         from ast import dump
         try:
-            print(f"ERROR: ExpressionVisitor cannot handle {dump(node)}")
+            print(f"ERROR: ExpressionVisitor cannot handle node {dump(node)}")
         except TypeError:
-            print(f"ERROR: ExpressionVisitor cannot handle {node}")
+            print(f"ERROR: ExpressionVisitor cannot handle non-node {node}")
 
     def visit_Attribute(self, node):
         value = _run_visitor(node.value, ExpressionVisitor)
         self.value = f"{value}.{node.attr}"
 
     def visit_Constant(self, node):
-        self.value = node.value
+        from ir import NumLiteral, StringLiteral, BytesLiteral
+
+        value = node.value
+        if type(value) == int or type(value) == float:
+            self.value = NumLiteral(value)
+        elif type(value) == str:
+            self.value = StringLiteral(value)
+        elif type(value) == bytes:
+            self.value = BytesLiteral(value)
+        else:
+            raise Exception(
+                f"Cannot handle constant of type {type(value)} {value}")
 
     def visit_Call(self, node):
 
+        from ir import Call
+
         func_name = _run_visitor(node.func, ExpressionVisitor)
-        # hacky way to determine whether a function is a constructor
-        is_ctor = func_name[0].isupper()
-        func_expr = 'new ' + func_name if is_ctor else func_name
+        args = [_run_visitor(x, ExpressionVisitor) for x in node.args]
+        self.value = Call(func_name, args)
+        # # hacky way to determine whether a function is a constructor
+        # is_ctor = func_name[0].isupper()
+        # func_expr = 'new ' + func_name if is_ctor else func_name
 
-        arg_strings = [_run_visitor(x, ExpressionVisitor) for x in node.args]
-        args = ", ".join(str(x) for x in arg_strings)
+        # arg_strings = [_run_visitor(x, ExpressionVisitor) for x in node.args]
+        # args = ", ".join(str(x) for x in arg_strings)
 
-        self.value = f"{func_expr}({args})"
+        # self.value = f"{func_expr}({args})"
 
     def visit_Name(self, node):
         self.value = node.id
+
+    def visit_List(self, node):
+        from ir import Sequence
+        elts = [_run_visitor(x, ExpressionVisitor) for x in node.elts]
+        self.value = Sequence(elts)
+
+
+def _flatten(list_of_lists):
+    from itertools import chain
+    return list(chain.from_iterable(list_of_lists))

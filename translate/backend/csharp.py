@@ -74,15 +74,22 @@ def _write_header(writer, tests):
 
 
 def _translate_test(writer, test):
+
+    import sys
+
     with NamedBlock(
         writer,
         "[Microsoft.VisualStudio.TestTools.UnitTesting.TestMethod]",
         f"public void {test.name}()"
     ) as block:
 
+        this_module = sys.modules[__name__]
+
         for statement in test.statements:
             statement_type = type(statement).__name__
             function_name = '_translate_' + statement_type
+            assert hasattr(this_module, function_name), \
+                f"No C# handler for IR type {statement_type}"
             eval(f"{function_name}(block, statement)")
 
 
@@ -106,3 +113,23 @@ def _translate_Import(writer, import_):
     # nothing to do here since imports from Python have to become top-level
     # using declarations in C#
     pass
+
+
+def _translate_Assignment(writer, assignment):
+    writer.writeln(f"// TODO: assigment {assignment}")
+
+
+def _translate_Call(writer, call):
+    writer.writeln(f"// TODO: assigment {call}")
+
+
+def _translate_IfPyd(writer, ifpyd):
+    writer.writeln(f"// TODO: assigment {ifpyd}")
+
+
+def _translate_IfPynih(writer, ifpynih):
+    writer.writeln(f"// TODO: assigment {ifpynih}")
+
+
+def _translate_ShouldThrow(writer, should_throw):
+    writer.writeln(f"// TODO: ShouldThrow {should_throw}")
