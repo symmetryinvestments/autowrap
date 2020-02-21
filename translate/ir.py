@@ -21,11 +21,11 @@ class Import:
 
 
 @dataclass
-class Call:
+class FunctionCall:
     """
     A function call.
     """
-    name: str
+    receiver: typing.Any
     args: typing.List[typing.Any]
 
 
@@ -56,6 +56,11 @@ class Sequence:
 
 
 @dataclass
+class IfPython:
+    block: typing.List[typing.Any]
+
+
+@dataclass
 class IfPyd:
     block: typing.List[typing.Any]
 
@@ -69,3 +74,9 @@ class IfPynih:
 class ShouldThrow:
     exception: str
     block: typing.List[typing.Any]
+
+
+@dataclass
+class Attribute:
+    instance: typing.Any
+    attribute: typing.Any

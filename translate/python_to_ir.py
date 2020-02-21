@@ -68,20 +68,22 @@ class PyTestVisitor(NodeVisitor):
         self.value.append(Assignment(lhs, rhs))
 
     def visit_If(self, node):
-        from ir import IfPyd, IfPynih
+        from ir import IfPyd, IfPynih, IfPython
         from ast import Name
 
         is_name = type(node.test) == Name
-        is_pyd_or_pynih = is_name and node.test.id in ['is_pyd', 'is_pynih']
-        if not is_name or not is_pyd_or_pynih:
-            raise Exception("Cannot handle ifs that aren't is_pyd or is_pynih")
 
-        if node.test.id == 'is_pyd':
-            klass = IfPyd
-        elif node.test.id == 'is_pynih':
-            klass = IfPynih
+        if is_name:
+            if node.test.id == 'is_pyd':
+                klass = IfPyd
+            elif node.test.id == 'is_pynih':
+                klass = IfPynih
+            elif node.test.id == 'is_python':
+                klass = IfPython
+            else:
+                raise Exception("Cannot handle ifs that aren't is_pyd or is_pynih")
         else:
-            assert False, "Logic error"
+            raise Exception("Cannot handle ifs that aren't is_pyd or is_pynih")
 
         statements = [_run_visitor(x, PyTestVisitor) for x in node.body]
         flat_statements = _flatten(statements)
@@ -154,8 +156,10 @@ class ExpressionVisitor(NodeVisitor):
             print(f"ERROR: ExpressionVisitor cannot handle non-node {node}")
 
     def visit_Attribute(self, node):
-        value = _run_visitor(node.value, ExpressionVisitor)
-        self.value = f"{value}.{node.attr}"
+        from ir import Attribute
+        instance = _run_visitor(node.value, ExpressionVisitor)
+        attribute = node.attr
+        self.value = Attribute(instance, attribute)
 
     def visit_Constant(self, node):
         from ir import NumLiteral, StringLiteral, BytesLiteral
@@ -172,20 +176,12 @@ class ExpressionVisitor(NodeVisitor):
                 f"Cannot handle constant of type {type(value)} {value}")
 
     def visit_Call(self, node):
+        from ir import FunctionCall
 
-        from ir import Call
-
-        func_name = _run_visitor(node.func, ExpressionVisitor)
+        receiver = _run_visitor(node.func, ExpressionVisitor)
         args = [_run_visitor(x, ExpressionVisitor) for x in node.args]
-        self.value = Call(func_name, args)
-        # # hacky way to determine whether a function is a constructor
-        # is_ctor = func_name[0].isupper()
-        # func_expr = 'new ' + func_name if is_ctor else func_name
 
-        # arg_strings = [_run_visitor(x, ExpressionVisitor) for x in node.args]
-        # args = ", ".join(str(x) for x in arg_strings)
-
-        # self.value = f"{func_expr}({args})"
+        self.value = FunctionCall(receiver, args)
 
     def visit_Name(self, node):
         self.value = node.id
@@ -194,6 +190,9 @@ class ExpressionVisitor(NodeVisitor):
         from ir import Sequence
         elts = [_run_visitor(x, ExpressionVisitor) for x in node.elts]
         self.value = Sequence(elts)
+
+    def visit_Tuple(self, node):
+        self.visit_List(node)
 
 
 def _flatten(list_of_lists):

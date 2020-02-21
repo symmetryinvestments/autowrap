@@ -1,7 +1,7 @@
 from python_to_ir import transform
-from ir import (AutowrapTest, Assertion, Import, Call, NumLiteral,
+from ir import (AutowrapTest, Assertion, Import, FunctionCall, NumLiteral,
                 StringLiteral, Assignment, Sequence, BytesLiteral,
-                IfPyd, IfPynih, ShouldThrow)
+                IfPyd, IfPynih, IfPython, ShouldThrow, Attribute)
 
 
 def test_one_assertion_literals_0():
@@ -44,7 +44,7 @@ def test_bar():
     ]
 
 
-def test_assertion_call_literal():
+def test_assertion_call_function():
     ir = transform("""
 def test_func():
     from mod import func
@@ -56,7 +56,53 @@ def test_func():
             "test_func",
             [
                 Import('mod', ['func']),
-                Assertion(Call("func", [NumLiteral(7)]), NumLiteral(42)),
+                Assertion(
+                    FunctionCall("func", [NumLiteral(7)]),
+                    NumLiteral(42),
+                ),
+            ]
+        )
+    ]
+
+
+def test_assertion_call_method_on_tmp():
+
+    ir = transform("""
+def test_func():
+    from mod import Klass
+    Klass('ctor_arg').func(42, 3.3)
+""")
+
+    assert ir == [
+        AutowrapTest(
+            "test_func",
+            [
+                Import('mod', ['Klass']),
+                FunctionCall(
+                    Attribute(
+                        FunctionCall('Klass', [StringLiteral('ctor_arg')]),
+                        'func',
+                    ),
+                    [NumLiteral(42), NumLiteral(3.3)],
+                ),
+            ]
+        )
+    ]
+
+
+def test_attribute():
+    ir = transform("""
+def test_func():
+    foo.value = 42
+""")
+    assert ir == [
+        AutowrapTest(
+            "test_func",
+            [
+                Assignment(
+                    Attribute('foo', 'value'),
+                    NumLiteral(42),
+                )
             ]
         )
     ]
@@ -123,6 +169,23 @@ def test_oops():
         "Cannot handle ifs that aren't is_pyd or is_pynih"
 
 
+def test_if_python():
+    ir = transform("""
+def test_if_python():
+    if is_python:
+        pass
+""")
+
+    assert ir == [
+        AutowrapTest(
+            "test_if_python",
+            [
+                IfPython([]),
+            ]
+        )
+    ]
+
+
 def test_if_pyd():
     ir = transform("""
 def test_if_pyd():
@@ -184,6 +247,25 @@ def test_raises():
                     [
                         Import('bar', ['foo'])
                     ]
+                )
+            ]
+        )
+    ]
+
+
+
+def test_tuple():
+    ir = transform("""
+def test_tuple():
+    assert (1, 2) == (3, 4, 5)
+""")
+    assert ir == [
+        AutowrapTest(
+            "test_tuple",
+            [
+                Assertion(
+                    Sequence([NumLiteral(1), NumLiteral(2)]),
+                    Sequence([NumLiteral(3), NumLiteral(4), NumLiteral(5)]),
                 )
             ]
         )
