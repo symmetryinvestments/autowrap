@@ -94,7 +94,13 @@ def _translate_test(writer, test):
         for statement in test.statements:
             translation = _translate(statement)
             if translation != "":
-                block.writeln(f"// {translation};")
+                block.writeln(f"{translation};")
+
+
+def _to_csharp_case(name):
+    parts = name.split('_')
+    ret = ''.join(x.capitalize() for x in parts)
+    return 'ToString' if ret == 'Tostring' else ret
 
 
 def _translate(node):
@@ -113,6 +119,8 @@ def _translate(node):
 def _translate_Assertion(assertion):
     actual = _translate(assertion.lhs)
     expected = _translate(assertion.rhs)
+    if expected == '""':
+        expected = 'null'
     return f"Assert.AreEqual({expected}, {actual})"
 
 
@@ -138,9 +146,20 @@ def _translate_Assignment(assignment):
 
 def _translate_FunctionCall(call):
     receiver = _translate(call.receiver)
+    prologue = ""
+    epilogue = ""
+    # hacky way to determine if we need to new up a class
+    if receiver[0].isupper():
+        prologue = '(new '
+        epilogue = ')'
+
     args = ", ".join([_translate(x) for x in call.args])
 
-    return f"{receiver}({args})"
+    return f"{prologue}{receiver}({args}){epilogue}"
+
+
+def _translate_IfPython(ifpython):
+    return "// TODO: ifpython"
 
 
 def _translate_IfPyd(ifpyd):
@@ -174,4 +193,4 @@ def _translate_StringLiteral(val):
 def _translate_Attribute(val):
     instance = _translate(val.instance)
     attribute = _translate(val.attribute)
-    return f"{instance}.{attribute.capitalize()}"
+    return f"{instance}.{_to_csharp_case(attribute)}"

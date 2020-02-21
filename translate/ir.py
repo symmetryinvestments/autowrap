@@ -56,6 +56,11 @@ class Sequence:
 
 
 @dataclass
+class IfPython:
+    block: typing.List[typing.Any]
+
+
+@dataclass
 class IfPyd:
     block: typing.List[typing.Any]
 

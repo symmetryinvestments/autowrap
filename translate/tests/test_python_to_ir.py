@@ -1,7 +1,7 @@
 from python_to_ir import transform
 from ir import (AutowrapTest, Assertion, Import, FunctionCall, NumLiteral,
                 StringLiteral, Assignment, Sequence, BytesLiteral,
-                IfPyd, IfPynih, ShouldThrow, Attribute)
+                IfPyd, IfPynih, IfPython, ShouldThrow, Attribute)
 
 
 def test_one_assertion_literals_0():
@@ -167,6 +167,23 @@ def test_oops():
 
     assert str(info.value) == \
         "Cannot handle ifs that aren't is_pyd or is_pynih"
+
+
+def test_if_python():
+    ir = transform("""
+def test_if_python():
+    if is_python:
+        pass
+""")
+
+    assert ir == [
+        AutowrapTest(
+            "test_if_python",
+            [
+                IfPython([]),
+            ]
+        )
+    ]
 
 
 def test_if_pyd():

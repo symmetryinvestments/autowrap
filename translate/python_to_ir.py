@@ -68,20 +68,22 @@ class PyTestVisitor(NodeVisitor):
         self.value.append(Assignment(lhs, rhs))
 
     def visit_If(self, node):
-        from ir import IfPyd, IfPynih
+        from ir import IfPyd, IfPynih, IfPython
         from ast import Name
 
         is_name = type(node.test) == Name
-        is_pyd_or_pynih = is_name and node.test.id in ['is_pyd', 'is_pynih']
-        if not is_name or not is_pyd_or_pynih:
-            raise Exception("Cannot handle ifs that aren't is_pyd or is_pynih")
 
-        if node.test.id == 'is_pyd':
-            klass = IfPyd
-        elif node.test.id == 'is_pynih':
-            klass = IfPynih
+        if is_name:
+            if node.test.id == 'is_pyd':
+                klass = IfPyd
+            elif node.test.id == 'is_pynih':
+                klass = IfPynih
+            elif node.test.id == 'is_python':
+                klass = IfPython
+            else:
+                raise Exception("Cannot handle ifs that aren't is_pyd or is_pynih")
         else:
-            assert False, "Logic error"
+            raise Exception("Cannot handle ifs that aren't is_pyd or is_pynih")
 
         statements = [_run_visitor(x, PyTestVisitor) for x in node.body]
         flat_statements = _flatten(statements)
