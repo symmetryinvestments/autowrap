@@ -91,19 +91,32 @@ def _translate_test(writer, test):
         f"public void {test.name}()"
     ) as block:
 
+        context = Context()
         for statement in test.statements:
-            translation = _translate(statement)
+            translation = _translate(context, statement)
             if translation != "":
                 block.writeln(f"{translation};")
+
+
+class Context:
+    def __init__(self):
+        self._variables = set()
+
+    def has_variable(self, var):
+        return var in self._variables
+
+    def add_variable(self, var):
+        self._variables.add(var)
 
 
 def _to_csharp_case(name):
     parts = name.split('_')
     ret = ''.join(x.capitalize() for x in parts)
+    # hacky but works
     return 'ToString' if ret == 'Tostring' else ret
 
 
-def _translate(node):
+def _translate(context, node):
     import sys
 
     this_module = sys.modules[__name__]
@@ -113,39 +126,48 @@ def _translate(node):
     assert hasattr(this_module, function_name), \
         f"No C# handler for IR type {node_type}"
 
-    return eval(f"{function_name}(node)")
+    return eval(f"{function_name}(context, node)")
 
 
-def _translate_Assertion(assertion):
-    actual = _translate(assertion.lhs)
-    expected = _translate(assertion.rhs)
+def _translate_Assertion(context, assertion):
+    actual = _translate(context, assertion.lhs)
+    expected = _translate(context, assertion.rhs)
     if expected == '""':
         expected = 'null'
     return f"Assert.AreEqual({expected}, {actual})"
 
 
-def _translate_int(val):
+def _translate_int(context, val):
     return f"{val}"
 
 
-def _translate_str(val):
+def _translate_str(context, val):
     return f'{val}'
 
 
-def _translate_Import(import_):
+def _translate_Import(context, import_):
     # nothing to do here since imports from Python have to become top-level
     # using declarations in C#
     return ""
 
 
-def _translate_Assignment(assignment):
-    lhs = _translate(assignment.lhs)
-    rhs = _translate(assignment.rhs)
-    return f"var {lhs} = {rhs}"
+def _translate_Assignment(context, assignment):
+    lhs = _translate(context, assignment.lhs)
+    rhs = _translate(context, assignment.rhs)
+
+    is_attr = '.' in lhs
+    if not context.has_variable(lhs) and not is_attr:
+        maybe_var = 'var '
+    else:
+        maybe_var = ''
+
+    context.add_variable(lhs)
+
+    return f"{maybe_var}{lhs} = {rhs}"
 
 
-def _translate_FunctionCall(call):
-    receiver = _translate(call.receiver)
+def _translate_FunctionCall(context, call):
+    receiver = _translate(context, call.receiver)
     prologue = ""
     epilogue = ""
     # hacky way to determine if we need to new up a class
@@ -153,44 +175,44 @@ def _translate_FunctionCall(call):
         prologue = '(new '
         epilogue = ')'
 
-    args = ", ".join([_translate(x) for x in call.args])
+    args = ", ".join([_translate(context, x) for x in call.args])
 
     return f"{prologue}{receiver}({args}){epilogue}"
 
 
-def _translate_IfPython(ifpython):
+def _translate_IfPython(context, ifpython):
     return "// TODO: ifpython"
 
 
-def _translate_IfPyd(ifpyd):
+def _translate_IfPyd(context, ifpyd):
     return f"// TODO: ifpyd {ifpyd}"
 
 
-def _translate_IfPynih(ifpynih):
+def _translate_IfPynih(context, ifpynih):
     return f"// TODO: ifpynih {ifpynih}"
 
 
-def _translate_ShouldThrow(should_throw):
+def _translate_ShouldThrow(context, should_throw):
     return f"// TODO: ShouldThrow {should_throw}"
 
 
-def _translate_Sequence(seq):
+def _translate_Sequence(context, seq):
     return f"{{{seq}}}"
 
 
-def _translate_NumLiteral(val):
+def _translate_NumLiteral(context, val):
     return f"{val.value}"
 
 
-def _translate_BytesLiteral(val):
+def _translate_BytesLiteral(context, val):
     return f"{val.value}"
 
 
-def _translate_StringLiteral(val):
+def _translate_StringLiteral(context, val):
     return f'"{val.value}"'
 
 
-def _translate_Attribute(val):
-    instance = _translate(val.instance)
-    attribute = _translate(val.attribute)
+def _translate_Attribute(context, val):
+    instance = _translate(context, val.instance)
+    attribute = _translate(context, val.attribute)
     return f"{instance}.{_to_csharp_case(attribute)}"
