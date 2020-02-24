@@ -64,7 +64,7 @@ test_std_utf test_std_uuid test_std_variant test_std_windows \
 test_std_xml test_std_zip test_std_zlib
 
 # pynih needs this first and foremost
-pynih/source/python/raw.d: ../../pynih/Makefile ../../pynih/source/python/raw.dpp
+../../pynih/source/python/raw.d: ../../pynih/Makefile ../../pynih/source/python/raw.dpp
 	make -C ../../pynih source/python/raw.d
 
 
