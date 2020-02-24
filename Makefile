@@ -32,7 +32,7 @@ test_python_pynih: test_simple_pynih test_pyd_pynih test_issues_pynih
 test_phobos:
 	make -C examples/phobos
 .PHONY: test_cs
-test_cs: test_simple_cs
+test_cs: test_wrapper_cs test_simple_cs
 .PHONY: test_translation
 test_translation: test_translation_ut test_transl_simple_cs
 .PHONY: test_translation_ut
@@ -64,6 +64,18 @@ tests/test_transl_simple_cs/TestSimple.cs: tests/test_simple.py translate/pytest
 
 tests/test_transl_simple_cs/Simple.cs: examples/simple/Simple.cs
 	cp $^ $@
+
+
+.PHONY: test_wrapper_cs
+test_wrapper_cs: csharp/tests/Wrapper.cs csharp/tests/libcsharp-tests.x64.so
+	cd csharp/tests && dotnet build && dotnet test
+
+csharp/tests/Wrapper.cs: csharp/tests/dub.sdl csharp/tests/dub.selections.json csharp/tests/source/app.d csharp/tests/source/test.d
+	cd csharp/tests && dub run -q --config=emitCSharp
+
+.PHONY: csharp/tests/libcsharp-tests.x64.so
+csharp/tests/libcsharp-tests.x64.so:
+	cd csharp/tests && dub build -q && cp libcsharp-tests.so libcsharp-tests.x64.so
 
 
 .PHONY: test_simple_cs
