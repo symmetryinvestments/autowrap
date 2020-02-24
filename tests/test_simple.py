@@ -34,7 +34,7 @@ def test_int_string2():
 
 
 def test_point():
-    if is_python:  # FIXME C#
+    if is_python:  # FIXME C# (template function)
         from api import create_int_point
         p = create_int_point(42, 33)
         assert p.x == 42
@@ -45,7 +45,7 @@ def test_point():
 
 
 def test_create_outer():
-    if is_python:  # FIXME C#
+    if is_python:  # FIXME C# (template function)
         from api import create_outer
         o = create_outer(2.0, 3.0, 33.3, "foo", "bar")
         [fst_i1, snd_i1] = o.inner1s
@@ -61,7 +61,7 @@ def test_create_outer():
 
 
 def test_create_outers():
-    if is_python:  # FIXME C#
+    if is_python:  # FIXME C# (template function)
         from api import create_outers
         [o] = create_outers(2.0, 3.0, 33.3, "foo", "bar")
         [fst_i1, snd_i1] = o.inner1s
@@ -77,16 +77,19 @@ def test_create_outers():
 
 
 def test_create_datetime():
-    if is_python:  # FIXME C#
-        from api import create_date_time
-        d = create_date_time(2017, 1, 2)
-        assert d.year == 2017
-        assert d.month == 1
-        assert d.day == 2
+    from api import create_date_time
+    d = create_date_time(2017, 1, 2)
+    assert d.year == 2017
+    assert d.month == 1
+    assert d.day == 2
 
 
 def test_datetime_array():
-    if is_python:  # FIXME C#
+    # FIXME C# translation:
+    # * len(ds) isn't translated correctly
+    # * Assigning to a list doesn't translate correctly
+    # * Trying to do d = d[0] also doesn't work since subscripts aren't handled
+    if is_python:
         from api import date_time_array
         [ds] = date_time_array(2017, 2, 3)
         assert len(ds) == 1
@@ -97,7 +100,11 @@ def test_datetime_array():
 
 
 def test_points():
-    if is_python:  # FIXME C#
+    # FIXME C# translation
+    # * [ps] =
+    # * len
+    # * assert(all(...))
+    if is_python:
         from api import points
         [ps] = points(3, 1, 2)
         assert len(ps) == 3
@@ -106,7 +113,9 @@ def test_points():
 
 
 def test_tuple_of_date_times():
-    if is_python:  # FIXME C#
+    # FIXME C# translation
+    # * ([d1], [d2]) = ...
+    if is_python:
         from api import tuple_of_date_times
         ([d1], [d2]) = tuple_of_date_times(2017, 4, 5)
 
@@ -120,7 +129,9 @@ def test_tuple_of_date_times():
 
 
 def test_create_outer2():
-    if is_python:  # FIXME C#
+    # FIXME C# translation
+    # * [fst_i1, snd_i1] =
+    if is_python:
         from api import create_outer2
         o = create_outer2(2.0, 3.0, 33.3, "foo", "bar")
         [fst_i1, snd_i1] = o.inner1s
@@ -136,18 +147,17 @@ def test_create_outer2():
 
 
 def test_typedef():
-    if is_python:  # FIXME C#
+    if is_python:  # FIXME C# (function not exported)
         from api import create_typedef_foo
         create_typedef_foo(2, 3)
 
 
 def test_create_date():
-    if is_python:  # FIXME C#
-        from api import create_date
-        d = create_date(2017, 1, 2)
-        assert d.year == 2017
-        assert d.month == 1
-        assert d.day == 2
+    from api import create_date
+    d = create_date(2017, 1, 2)
+    assert d.year == 2017
+    assert d.month == 1
+    assert d.day == 2
 
 
 def test_foo():
@@ -163,16 +173,14 @@ def test_not_copyable():
 
 
 def test_product():
-    if is_python:  # FIXME C#
-        from wrap_all import product
-        assert product(2, 3) == 6
-        assert product(4, 5) == 20
+    from wrap_all import product
+    assert product(2, 3) == 6
+    assert product(4, 5) == 20
 
 
 def test_identity_int():
-    if is_python:  # FIXME C#
-        from wrap_all import identity_int
-        assert identity_int(4) == 4
+    from wrap_all import identity_int
+    assert identity_int(4) == 4
 
 
 def test_api_outer():
@@ -190,28 +198,29 @@ def test_safe_pure_etc_struct():
 
 
 def test_the_year():
-    if is_python:  # FIXME C#
-        from api import the_year
-        from datetime import date
-        assert the_year(date(2017, 1, 1)) == 2017
-        assert the_year(date(2018, 2, 3)) == 2018
+    from api import the_year
+    from datetime import date
+    assert the_year(date(2017, 1, 1)) == 2017
+    assert the_year(date(2018, 2, 3)) == 2018
 
 
 def test_wrap_all_string():
-    # FIXME C# - name clash between Structs.String and Wrap_all.String
+    # FIXME C# translation- name clash between Structs.String and
+    # Wrap_all.String, no current way to mitigate by using fully
+    # qualified names here
     if is_python:
         from wrap_all import String
         assert String("foobar").s == "foobar"
 
 
 def test_wrap_all_other_string_as_param():
-    if is_python:  # FIXME C#
+    if is_python:  # FIXME C# (OtherString not found)
         from wrap_all import other_string_as_param, OtherString
         assert other_string_as_param(OtherString("hello ")) == "hello quux"
 
 
 def test_add_with_default():
-    if is_python:  # FIXME C#
+    if is_python:  # FIXME C# (NotWrappedInt isn't registered)
         from api import add_with_default, NotWrappedInt
         assert add_with_default(1, NotWrappedInt(2)) == 3
         assert add_with_default(1) == 43
@@ -303,7 +312,7 @@ def test_enum():
 
 
 def test_send():
-    if is_python:  # FIXME C#
+    if is_python:  # FIXME C# translation (byte literals)
         from wrap_all import mysend
 
         with pytest.raises(RuntimeError):
@@ -350,7 +359,7 @@ def test_global_empty_string_enum():
 
 def test_int_to_string():
     from wrap_all import int_to_string
-    if is_pyd:
+    if is_pyd:  # FIXME
         with pytest.raises(RuntimeError):
             assert int_to_string(42) == "42"
     else:
