@@ -79,6 +79,7 @@ def _write_imports(writer, tests):
         writer.writeln(f"using {import_.capitalize()};")
 
     writer.writeln('using Microsoft.VisualStudio.TestTools.UnitTesting;')
+    writer.writeln('using System;')
 
     writer.writeln("")
 
@@ -101,19 +102,38 @@ def _translate_test(writer, test):
 class Context:
     def __init__(self):
         self._variables = set()
+        self._func_to_module = dict()
+
+    def add_variable(self, var):
+        self._variables.add(var)
 
     def has_variable(self, var):
         return var in self._variables
 
-    def add_variable(self, var):
-        self._variables.add(var)
+    def add_import(self, import_):
+        for importee in import_.importees:
+            self._func_to_module[importee] = import_.module
+
+    def find_namespace(self, function):
+        """
+        Finds the C# namespace a corresponding Python function called
+        `function` is in
+        """
+        module = self._func_to_module[function]
+        return f"{_to_csharp_case(module)}.Functions"
 
 
 def _to_csharp_case(name):
     parts = name.split('_')
     ret = ''.join(x.capitalize() for x in parts)
-    # hacky but works
-    return 'ToString' if ret == 'Tostring' else ret
+
+    # very hacky
+    if ret == 'Tostring':
+        return 'ToString'
+    elif ret == 'WrapAll':
+        return 'Wrap_all'
+    else:
+        return ret
 
 
 def _translate(context, node):
@@ -146,7 +166,11 @@ def _translate_str(context, val):
 
 
 def _translate_Import(context, import_):
-    # nothing to do here since imports from Python have to become top-level
+    # we add to the current list of imports so that we can know which C#
+    # namespace the Python free functions were put in
+    context.add_import(import_)
+
+    # nothing to return since imports from Python have to become top-level
     # using declarations in C#
     return ""
 
@@ -155,6 +179,7 @@ def _translate_Assignment(context, assignment):
     lhs = _translate(context, assignment.lhs)
     rhs = _translate(context, assignment.rhs)
 
+    # if an attribute access, never declare a new variable
     is_attr = '.' in lhs
     if not context.has_variable(lhs) and not is_attr:
         maybe_var = 'var '
@@ -170,10 +195,28 @@ def _translate_FunctionCall(context, call):
     receiver = _translate(context, call.receiver)
     prologue = ""
     epilogue = ""
-    # hacky way to determine if we need to new up a class
-    if receiver[0].isupper():
+    # hacky way to determine if we're calling a constructor
+    is_ctor = receiver[0].isupper()
+    # hacky way to determine if we're calling a method or function
+    is_function = '.' not in receiver
+
+    if is_ctor:
+        # we add parens here because of expressions
+        # e.g. `Foo(42).method(77)` gets translated as
+        # `(new Foo(42)).method(77)`
         prologue = '(new '
         epilogue = ')'
+    elif is_function:
+        # special-case date:
+        if receiver == 'date':
+            receiver = 'new DateTime'
+        else:
+            # Functions are special since C# is strictly OOP, and
+            # autowrap emits static methods inside
+            # $(MODULE_NAME).Functions, so we have to find out how to
+            # prefix the function call accordingly
+            namespace = context.find_namespace(receiver)
+            receiver = f"{namespace}.{_to_csharp_case(receiver)}"
 
     args = ", ".join([_translate(context, x) for x in call.args])
 
