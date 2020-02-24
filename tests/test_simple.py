@@ -176,7 +176,7 @@ def test_identity_int():
 
 
 def test_api_outer():
-    if is_python:  # FIXME C#
+    if is_python:  # FIXME C#  (NotWrappedInner not registered)
         from api import ApiOuter, NotWrappedInner
         outer = ApiOuter(42, NotWrappedInner("foobar"))
         assert outer.value == 42
@@ -198,7 +198,8 @@ def test_the_year():
 
 
 def test_wrap_all_string():
-    if is_python:  # FIXME C#
+    # FIXME C# - name clash between Structs.String and Wrap_all.String
+    if is_python:
         from wrap_all import String
         assert String("foobar").s == "foobar"
 
@@ -217,40 +218,34 @@ def test_add_with_default():
 
 
 def test_struct_with_private_member():
-    # The translation to C# fails here because it always adds `var`
-    # to the lhs of assignments even when it's not a new variable
-    if is_python:  # FIXME C#
-        from structs import StructWithPrivateMember
+    from structs import StructWithPrivateMember
 
-        s = StructWithPrivateMember()
+    s = StructWithPrivateMember()
 
-        s.i = 42
-        # j is private
-        with pytest.raises(AttributeError):
-            s.j = "oops"
-        s.k = 33
+    s.i = 42
+    # j is private
+    with pytest.raises(AttributeError):
+        s.j = "oops"
+    s.k = 33
 
-        assert s.i == 42
-        assert s.k == 33
+    assert s.i == 42
+    assert s.k == 33
 
 
 def test_struct_fields():
-    # The translation to C# fails here because it always adds `var`
-    # to the lhs of assignments even when it's not a new variable
-    if is_python:  # FIXME C#
-        from structs import IntString
+    from structs import IntString
 
-        obj = IntString(7, "foobar")
-        assert obj.i == 7
-        assert obj.s == "foobar"
+    obj = IntString(7, "foobar")
+    assert obj.i == 7
+    assert obj.s == "foobar"
 
-        obj.i = 42
-        assert obj.i == 42
-        assert obj.s == "foobar"
+    obj.i = 42
+    assert obj.i == 42
+    assert obj.s == "foobar"
 
-        obj.s = "quux"
-        assert obj.i == 42
-        assert obj.s == "quux"
+    obj.s = "quux"
+    assert obj.i == 42
+    assert obj.s == "quux"
 
 
 def test_property_getter():
@@ -265,38 +260,32 @@ def test_property_getter():
 
 
 def test_property_setter():
-    # The translation to C# fails here because it always adds `var`
-    # to the lhs of assignments even when it's not a new variable
-    if is_python:  # FIXME C#
-        from structs import Setter
+    from structs import Setter
 
-        s = Setter()
-        # can't call the property function since not registered
-        with pytest.raises(AttributeError):
-            s.i(33)
+    s = Setter()
+    # can't call the property function since not registered
+    with pytest.raises(AttributeError):
+        s.i(33)
+    if is_python:  # FIXME C# - attribute not registered
         s.i = 33  # shouldn't throw
 
 
 def test_property_getter_setter():
-    # The translation to C# fails here because it always adds `var`
-    # to the lhs of assignments even when it's not a new variable
-    if is_python:  # FIXME C#
+    from structs import GetterSetter
 
-        from structs import GetterSetter
+    obj = GetterSetter(42)
 
-        obj = GetterSetter(42)
+    # can't call the property function since not registered
+    with pytest.raises(TypeError):
+        obj.i()
 
-        # can't call the property function since not registered
-        with pytest.raises(TypeError):
-            obj.i()
+    # can't call the property function since not registered
+    with pytest.raises(TypeError):
+        obj.i(33)
 
-        # can't call the property function since not registered
-        with pytest.raises(TypeError):
-            obj.i(33)
-
-        assert obj.i == 42
-        obj.i = 33  # shouldn't throw
-        assert obj.i == 33
+    assert obj.i == 42
+    obj.i = 33  # shouldn't throw
+    assert obj.i == 33
 
 
 def test_enum():
@@ -370,7 +359,7 @@ def test_int_to_string():
 
 
 def test_immutable_fields():
-    if is_python:  # FIXME C#
+    if is_python:  # FIXME C# (ImmutableFields not found)
         from wrap_all import ImmutableFields
         i = ImmutableFields("foobar")
         if is_pyd:  # FIXME
@@ -395,30 +384,31 @@ def test_method_overloads():
 
 
 def test_struct_no_ctor():
-    if is_python:  # FIXME C#
-        from structs import NoCtor
+    from structs import NoCtor
+    if is_python:  # FIXME C# (no 3-arg ctor for NoCtor)
         s = NoCtor(42, 33.3, "foobar")
-        if is_pynih:
+        if is_pynih:  # FIXME pyd
             assert s.i == 42
             assert s.d == 33.3
             assert s.s == 'foobar'
 
 
 def test_property_getter_setter_const():
-    if is_python:  # FIXME C#
-        from structs import GetterSetterConst
+    from structs import GetterSetterConst
 
-        obj = GetterSetterConst(42)
+    obj = GetterSetterConst(42)
 
-        if is_pynih:
-            # can't call the property function since not registered
-            with pytest.raises(TypeError):
-                obj.i()
+    if is_pynih:
+        # can't call the property function since not registered as a function
+        with pytest.raises(TypeError):
+            obj.i()
 
-            # can't call the property function since not registered
-            with pytest.raises(TypeError):
-                obj.i(33)
+        # can't call the property function since not registered as a function
+        with pytest.raises(TypeError):
+            obj.i(33)
 
-            assert obj.i == 42
+        assert obj.i == 42
 
-        obj.i = 33  # shouldn't throw
+    obj.i = 33  # shouldn't throw
+    if is_pynih:
+        assert obj.i == 33

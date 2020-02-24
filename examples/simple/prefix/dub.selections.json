@@ -9,6 +9,7 @@
 		"nogc": "0.5.0",
 		"pyd": "0.13.1",
 		"scriptlike": "0.10.3",
+		"simple": {"path":".."},
 		"test_allocator": "0.3.2",
 		"unit-threaded": "0.10.7"
 	}
