@@ -1,7 +1,7 @@
 from python_to_ir import transform
 from ir import (AutowrapTest, Assertion, Import, FunctionCall, NumLiteral,
                 StringLiteral, Assignment, Sequence, BytesLiteral,
-                IfPyd, IfPynih, IfPython, ShouldThrow, Attribute)
+                IfPyd, IfPynih, IfPython, ShouldThrow, Attribute, Index)
 
 
 def test_one_assertion_literals_0():
@@ -253,7 +253,6 @@ def test_raises():
     ]
 
 
-
 def test_tuple():
     ir = transform("""
 def test_tuple():
@@ -267,6 +266,29 @@ def test_tuple():
                     Sequence([NumLiteral(1), NumLiteral(2)]),
                     Sequence([NumLiteral(3), NumLiteral(4), NumLiteral(5)]),
                 )
+            ]
+        )
+    ]
+
+
+def test_subscript():
+    ir = transform("""
+def test_subscript():
+    arr = [1, 2, 3]
+    fst = arr[0]
+""")
+
+    assert ir == [
+        AutowrapTest(
+            "test_subscript",
+            [
+                Assignment('arr',
+                           Sequence([
+                               NumLiteral(1),
+                               NumLiteral(2),
+                               NumLiteral(3),
+                           ])),
+                Assignment('fst', Index('arr', NumLiteral(0)))
             ]
         )
     ]

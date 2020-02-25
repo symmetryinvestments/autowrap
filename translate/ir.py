@@ -80,3 +80,9 @@ class ShouldThrow:
 class Attribute:
     instance: typing.Any
     attribute: typing.Any
+
+
+@dataclass
+class Index:
+    name: str
+    index: int

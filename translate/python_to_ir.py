@@ -81,7 +81,8 @@ class PyTestVisitor(NodeVisitor):
             elif node.test.id == 'is_python':
                 klass = IfPython
             else:
-                raise Exception("Cannot handle ifs that aren't is_pyd or is_pynih")
+                raise Exception(
+                    "Cannot handle ifs that aren't is_pyd or is_pynih")
         else:
             raise Exception("Cannot handle ifs that aren't is_pyd or is_pynih")
 
@@ -193,6 +194,18 @@ class ExpressionVisitor(NodeVisitor):
 
     def visit_Tuple(self, node):
         self.visit_List(node)
+
+    def visit_Subscript(self, node):
+        from ir import Index
+        import ast
+
+        assert type(node.slice) is ast.Index, \
+            f"Can only handle Index slice types"
+
+        name = _run_visitor(node.value, ExpressionVisitor)
+        index = _run_visitor(node.slice.value, ExpressionVisitor)
+
+        self.value = Index(name, index)
 
 
 def _flatten(list_of_lists):
