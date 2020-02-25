@@ -38,6 +38,7 @@ script:
   #- ci/test-all.sh
   - echo "listing contents of /opt/python/3.8.0/lib"
   - ls /opt/python/3.8.0/lib
+  - find /opt/python -name 'libpython*.so'
 
 after_success:
  - bash <(curl -s https://codecov.io/bash)
