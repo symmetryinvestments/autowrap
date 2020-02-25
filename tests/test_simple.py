@@ -85,10 +85,11 @@ def test_create_datetime():
 
 
 def test_datetime_array():
+
+    # FIXME C#: date_time_array is not registered
     # FIXME C# translation:
     # * len(ds) isn't translated correctly
-    # * Assigning to a list doesn't translate correctly
-    # * Trying to do d = d[0] also doesn't work since subscripts aren't handled
+    # * [ds] = doesn't translate correctly
     if is_python:
         from api import date_time_array
         [ds] = date_time_array(2017, 2, 3)
@@ -113,6 +114,7 @@ def test_points():
 
 
 def test_tuple_of_date_times():
+    # FIXME C#: tuple_of_date_times not registered
     # FIXME C# translation
     # * ([d1], [d2]) = ...
     if is_python:
@@ -129,6 +131,7 @@ def test_tuple_of_date_times():
 
 
 def test_create_outer2():
+    # FIXME C#: create_outer2 not registered
     # FIXME C# translation
     # * [fst_i1, snd_i1] =
     if is_python:

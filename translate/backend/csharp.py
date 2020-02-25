@@ -259,3 +259,9 @@ def _translate_Attribute(context, val):
     instance = _translate(context, val.instance)
     attribute = _translate(context, val.attribute)
     return f"{instance}.{_to_csharp_case(attribute)}"
+
+
+def _translate_Index(context, val):
+    name = _translate(context, val.name)
+    index = _translate(context, val.index)
+    return f"{name}[{index}]"
