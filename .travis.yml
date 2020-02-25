@@ -25,8 +25,8 @@ install:
 env:
   global:
     - PYTHON_INCLUDE_DIR=~/virtualenv/python3.8/include/python3.8
-    - PYTHON_LIB_DIR=/opt/python/3.8.0/lib
-    - PYD_LIBPYTHON_DIR=/opt/python/3.8.0/lib
+    - PYTHON_LIB_DIR=/opt/python/3.8.1/lib
+    - PYD_LIBPYTHON_DIR=/opt/python/3.8.1/lib
     - PATH=$PYTHON_LIB_DIR:$PATH
     - LD_RUN_PATH=$PYTHON_LIB_DIR:$PYD_LIBPYTHON_DIR:$LD_RUN_PATH
   matrix:
@@ -35,10 +35,11 @@ env:
     - DC=dmd-2.087.1
 
 script:
-  #- ci/test-all.sh
-  - echo "listing contents of /opt/python/3.8.0/lib"
-  - ls /opt/python/3.8.0/lib
+  - echo "listing contents of /opt/python/3.8.1/lib"
+  - ls /opt/python/3.8.1/lib
   - find /opt/python -name 'libpython*.so'
+  - ci/test-all.sh
+
 
 after_success:
  - bash <(curl -s https://codecov.io/bash)
