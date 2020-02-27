@@ -113,11 +113,17 @@ def test_points():
 
 def test_tuple_of_date_times():
     # FIXME C#: tuple_of_date_times not registered
-    # FIXME C# translation
-    # * ([d1], [d2]) = ...
     if is_python:
         from api import tuple_of_date_times
-        ([d1], [d2]) = tuple_of_date_times(2017, 4, 5)
+        tup = tuple_of_date_times(2017, 4, 5)
+
+        arr1 = tup[0]
+        assert len(arr1) == 1
+        d1 = arr1[0]
+
+        arr2 = tup[1]
+        assert len(arr2) == 1
+        d2 = arr2[0]
 
         assert d1.year == 2017
         assert d1.month == 4
