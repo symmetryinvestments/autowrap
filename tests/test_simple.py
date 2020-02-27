@@ -85,12 +85,12 @@ def test_create_datetime():
 
 
 def test_datetime_array():
-
     # FIXME C#: date_time_array is not registered
-    # FIXME C# translation: [ds] =
     if is_python:
         from api import date_time_array
-        [ds] = date_time_array(2017, 2, 3)
+        arr2d = date_time_array(2017, 2, 3)
+        assert len(arr2d) == 1
+        ds = arr2d[0]
         assert len(ds) == 1
         [d] = ds
         assert d.year == 2017
@@ -100,12 +100,12 @@ def test_datetime_array():
 
 def test_points():
     # FIXME C#: points is not registered
-    # FIXME C# translation
-    # * [ps] =
-    # * assert(all(...))
+    # FIXME C# translation (all)
     if is_python:
         from api import points
-        [ps] = points(3, 1, 2)
+        arr = points(3, 1, 2)
+        assert len(arr) == 1
+        ps = arr[0]
         assert len(ps) == 3
         assert all(p.x == 1 for p in ps)
         assert all(p.y == 2 for p in ps)
@@ -113,11 +113,17 @@ def test_points():
 
 def test_tuple_of_date_times():
     # FIXME C#: tuple_of_date_times not registered
-    # FIXME C# translation
-    # * ([d1], [d2]) = ...
     if is_python:
         from api import tuple_of_date_times
-        ([d1], [d2]) = tuple_of_date_times(2017, 4, 5)
+        tup = tuple_of_date_times(2017, 4, 5)
+
+        arr1 = tup[0]
+        assert len(arr1) == 1
+        d1 = arr1[0]
+
+        arr2 = tup[1]
+        assert len(arr2) == 1
+        d2 = arr2[0]
 
         assert d1.year == 2017
         assert d1.month == 4
@@ -130,12 +136,13 @@ def test_tuple_of_date_times():
 
 def test_create_outer2():
     # FIXME C#: create_outer2 not registered
-    # FIXME C# translation
-    # * [fst_i1, snd_i1] =
     if is_python:
         from api import create_outer2
         o = create_outer2(2.0, 3.0, 33.3, "foo", "bar")
-        [fst_i1, snd_i1] = o.inner1s
+        arr = o.inner1s
+        assert len(arr) == 2
+        fst_i1 = arr[0]
+        snd_i1 = arr[1]
         assert fst_i1.point.x == 2.0
         assert fst_i1.point.y == 3.0
         assert fst_i1.value == 33.3
