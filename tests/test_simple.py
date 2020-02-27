@@ -136,12 +136,13 @@ def test_tuple_of_date_times():
 
 def test_create_outer2():
     # FIXME C#: create_outer2 not registered
-    # FIXME C# translation
-    # * [fst_i1, snd_i1] =
     if is_python:
         from api import create_outer2
         o = create_outer2(2.0, 3.0, 33.3, "foo", "bar")
-        [fst_i1, snd_i1] = o.inner1s
+        arr = o.inner1s
+        assert len(arr) == 2
+        fst_i1 = arr[0]
+        snd_i1 = arr[1]
         assert fst_i1.point.x == 2.0
         assert fst_i1.point.y == 3.0
         assert fst_i1.value == 33.3
