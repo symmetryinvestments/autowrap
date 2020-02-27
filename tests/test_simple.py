@@ -100,12 +100,12 @@ def test_datetime_array():
 
 def test_points():
     # FIXME C#: points is not registered
-    # FIXME C# translation
-    # * [ps] =
-    # * assert(all(...))
+    # FIXME C# translation (all)
     if is_python:
         from api import points
-        [ps] = points(3, 1, 2)
+        arr = points(3, 1, 2)
+        assert len(arr) == 1
+        ps = arr[0]
         assert len(ps) == 3
         assert all(p.x == 1 for p in ps)
         assert all(p.y == 2 for p in ps)
