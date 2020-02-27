@@ -213,12 +213,8 @@ def test_the_year():
 
 
 def test_wrap_all_string():
-    # FIXME C# translation- name clash between Structs.String and
-    # Wrap_all.String, no current way to mitigate by using fully
-    # qualified names here
-    if is_python:
-        from wrap_all import String
-        assert String("foobar").s == "foobar"
+    import wrap_all
+    assert wrap_all.String("foobar").s == "foobar"
 
 
 def test_wrap_all_other_string_as_param():

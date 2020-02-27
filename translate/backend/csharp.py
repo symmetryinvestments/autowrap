@@ -103,6 +103,7 @@ class Context:
     def __init__(self):
         self._variables = set()
         self._func_to_module = dict()
+        self._imported_modules = []
 
     def add_variable(self, var):
         self._variables.add(var)
@@ -111,8 +112,13 @@ class Context:
         return var in self._variables
 
     def add_import(self, import_):
-        for importee in import_.importees:
-            self._func_to_module[importee] = import_.module
+        # If there are importees, we map functions to their module of origin.
+        # Otherwise, we register the modules meant to be used as FQNs.
+        if len(import_.importees):
+            for importee in import_.importees:
+                self._func_to_module[importee] = import_.module
+        else:
+            self._imported_modules.append(import_.module)
 
     def find_namespace(self, function):
         """
@@ -121,6 +127,9 @@ class Context:
         """
         module = self._func_to_module[function]
         return f"{_to_csharp_case(module)}.Functions"
+
+    def is_module(self, name):
+        return name in self._imported_modules
 
 
 def _to_csharp_case(name):
@@ -262,6 +271,13 @@ def _translate_StringLiteral(context, val):
 
 def _translate_Attribute(context, val):
     instance = _translate(context, val.instance)
+
+    # If in Python we import a module and use its symbols with a fully
+    # qualified name, we have to translate the module names to C# namespace
+    # conventions.
+    if context.is_module(instance):
+        instance = _to_csharp_case(instance)
+
     attribute = _translate(context, val.attribute)
     return f"{instance}.{_to_csharp_case(attribute)}"
 

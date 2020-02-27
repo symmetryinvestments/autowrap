@@ -4,6 +4,44 @@ from ir import (AutowrapTest, Assertion, Import, FunctionCall, NumLiteral,
                 IfPyd, IfPynih, IfPython, ShouldThrow, Attribute, Index)
 
 
+def test_import():
+    ir = transform("""
+def test_import():
+    import foo, bar
+    a = foo.GLOBAL
+""")
+
+    assert ir == [
+        AutowrapTest(
+            "test_import",
+            [
+                Import("foo", []),
+                Import("bar", []),
+                Assignment(
+                    'a',
+                    Attribute('foo', 'GLOBAL'),
+                )
+            ]
+        )
+    ]
+
+
+def test_import_from():
+    ir = transform("""
+def test_import_from():
+    from foo import bar, baz
+""")
+
+    assert ir == [
+        AutowrapTest(
+            "test_import_from",
+            [
+                Import("foo", ["bar", "baz"]),
+            ]
+        )
+    ]
+
+
 def test_one_assertion_literals_0():
     ir = transform("""
 def random_function():
