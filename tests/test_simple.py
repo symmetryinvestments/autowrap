@@ -85,12 +85,12 @@ def test_create_datetime():
 
 
 def test_datetime_array():
-
     # FIXME C#: date_time_array is not registered
-    # FIXME C# translation: [ds] =
     if is_python:
         from api import date_time_array
-        [ds] = date_time_array(2017, 2, 3)
+        arr2d = date_time_array(2017, 2, 3)
+        assert len(arr2d) == 1
+        ds = arr2d[0]
         assert len(ds) == 1
         [d] = ds
         assert d.year == 2017
