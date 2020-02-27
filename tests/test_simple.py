@@ -87,9 +87,7 @@ def test_create_datetime():
 def test_datetime_array():
 
     # FIXME C#: date_time_array is not registered
-    # FIXME C# translation:
-    # * len(ds) isn't translated correctly
-    # * [ds] = doesn't translate correctly
+    # FIXME C# translation: [ds] =
     if is_python:
         from api import date_time_array
         [ds] = date_time_array(2017, 2, 3)
@@ -101,9 +99,9 @@ def test_datetime_array():
 
 
 def test_points():
+    # FIXME C#: points is not registered
     # FIXME C# translation
     # * [ps] =
-    # * len
     # * assert(all(...))
     if is_python:
         from api import points

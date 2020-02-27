@@ -219,8 +219,12 @@ def _translate_FunctionCall(context, call):
             receiver = f"{namespace}.{_to_csharp_case(receiver)}"
 
     args = ", ".join([_translate(context, x) for x in call.args])
+    if receiver.endswith('.Length'):
+        call_args = ''
+    else:
+        call_args = f"({args})"
 
-    return f"{prologue}{receiver}({args}){epilogue}"
+    return f"{prologue}{receiver}{call_args}{epilogue}"
 
 
 def _translate_IfPython(context, ifpython):
@@ -240,7 +244,8 @@ def _translate_ShouldThrow(context, should_throw):
 
 
 def _translate_Sequence(context, seq):
-    return f"{{{seq}}}"
+    elts = ", ".join([_translate(context, x) for x in seq.value])
+    return f"new[] {{{elts}}}"
 
 
 def _translate_NumLiteral(context, val):
