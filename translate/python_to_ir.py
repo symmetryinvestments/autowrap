@@ -43,6 +43,16 @@ class PyTestVisitor(NodeVisitor):
     def visit_Assert(self, node):
         self.value.append(_run_visitor(node.test, AssertionVisitor))
 
+    def visit_Import(self, node):
+        from ir import Import
+
+        if any(x.asname is not None for x in node.names):
+            raise Exception("Cannot yet handle as name")
+
+        modules = [x.name for x in node.names]
+        for module in modules:
+            self.value.append(Import(module, []))
+
     def visit_ImportFrom(self, node):
         from ir import Import
 
