@@ -262,7 +262,9 @@ def _translate_NumLiteral(context, val):
 
 
 def _translate_BytesLiteral(context, val):
-    return f"{val.value}"
+    py_ints = list(val.value)
+    cs_ints = ",".join([str(x) for x in py_ints])
+    return f"new byte[] {{{cs_ints}}}"
 
 
 def _translate_StringLiteral(context, val):
