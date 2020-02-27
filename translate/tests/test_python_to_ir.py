@@ -65,7 +65,30 @@ def test_func():
     ]
 
 
-def test_assertion_call_method_on_tmp():
+def test_assertion_call_method_on_lvalue():
+
+    ir = transform("""
+def test_func():
+    obj.func(42, 3.3)
+""")
+
+    assert ir == [
+        AutowrapTest(
+            "test_func",
+            [
+                FunctionCall(
+                    Attribute(
+                        'obj',
+                        'func',
+                    ),
+                    [NumLiteral(42), NumLiteral(3.3)],
+                ),
+            ]
+        )
+    ]
+
+
+def test_assertion_call_method_on_rvalue():
 
     ir = transform("""
 def test_func():
@@ -289,6 +312,30 @@ def test_subscript():
                                NumLiteral(3),
                            ])),
                 Assignment('fst', Index('arr', NumLiteral(0)))
+            ]
+        )
+    ]
+
+
+def test_length():
+    ir = transform("""
+def test_length():
+    lst = [1]
+    len(lst)
+""")
+
+    assert ir == [
+        AutowrapTest(
+            "test_length",
+            [
+                Assignment('lst', Sequence([NumLiteral(1)])),
+                FunctionCall(
+                    Attribute(
+                        'lst',
+                        'length',
+                    ),
+                    [],  # args
+                )
             ]
         )
     ]

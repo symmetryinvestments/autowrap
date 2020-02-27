@@ -177,10 +177,20 @@ class ExpressionVisitor(NodeVisitor):
                 f"Cannot handle constant of type {type(value)} {value}")
 
     def visit_Call(self, node):
-        from ir import FunctionCall
+        from ir import FunctionCall, Attribute
+        from ast import Name
 
-        receiver = _run_visitor(node.func, ExpressionVisitor)
-        args = [_run_visitor(x, ExpressionVisitor) for x in node.args]
+        # we special-case the built-in `len` function
+        is_length = type(node.func) is Name and node.func.id == 'len'
+
+        if is_length:
+            assert len(node.args) == 1
+            obj = _run_visitor(node.args[0], ExpressionVisitor)
+            receiver = Attribute(obj, 'length')
+            args = []
+        else:
+            receiver = _run_visitor(node.func, ExpressionVisitor)
+            args = [_run_visitor(x, ExpressionVisitor) for x in node.args]
 
         self.value = FunctionCall(receiver, args)
 
