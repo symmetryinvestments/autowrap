@@ -316,7 +316,8 @@ def test_enum():
 
 
 def test_send():
-    if is_python:  # FIXME C# translation (byte literals)
+    # FIXME C# (mysend not registered)
+    if is_python:
         from wrap_all import mysend
 
         with pytest.raises(RuntimeError):
