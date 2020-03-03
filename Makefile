@@ -54,10 +54,17 @@ test_simple_pynih: pynih/source/python/raw.d
 
 # Runs the generated C# test for the simple example
 .PHONY: test_transl_simple_cs
-test_transl_simple_cs: examples/simple/lib/csharp/libsimple.x64.so tests/test_transl_simple_cs/Simple.cs tests/test_transl_simple_cs/TestSimple.cs
+test_transl_simple_cs: tests/test_transl_simple_cs/bin/Debug/netcoreapp2.1/libsimple.so tests/test_transl_simple_cs/Simple.cs tests/test_transl_simple_cs/TestSimple.cs
 	@cd tests/test_transl_simple_cs && \
 	dotnet build test_simple_cs.csproj && \
 	dotnet test test_simple_cs.csproj
+
+# I'm not sure why we have to do this manually but otherwise CI fails
+tests/test_transl_simple_cs/bin/Debug/netcoreapp2.1/libsimple.so: examples/simple/lib/csharp/libsimple.x64.so tests/test_transl_simple_cs/bin/Debug/netcoreapp2.1
+	cp $< $@
+
+tests/test_transl_simple_cs/bin/Debug/netcoreapp2.1:
+	mkdir -p $@
 
 tests/test_transl_simple_cs/TestSimple.cs: tests/test_simple.py translate/pytest_translate translate/backend/csharp.py translate/python_to_ir.py translate/ir.py
 	translate/pytest_translate tests/test_simple.py $@
