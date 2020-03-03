@@ -36,6 +36,8 @@ env:
     # - DC=dmd-2.087.1
 
 script:
+  - echo ls to find libs
+  - ls examples/simple/lib/csharp
   - ci/test-all.sh
 
 
