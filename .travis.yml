@@ -29,6 +29,7 @@ env:
     - PYD_LIBPYTHON_DIR=/opt/python/3.8.1/lib
     - PATH=$PYTHON_LIB_DIR:$PATH
     - LD_RUN_PATH=$PYTHON_LIB_DIR:$PYD_LIBPYTHON_DIR:$LD_RUN_PATH
+    - LD_DEBUG=libs
   matrix:
     - DC=dmd-2.089.0
     # - DC=dmd-2.088.1
