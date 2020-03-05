@@ -31,8 +31,8 @@ env:
     - LD_RUN_PATH=$PYTHON_LIB_DIR:$PYD_LIBPYTHON_DIR:$LD_RUN_PATH
   matrix:
     - DC=dmd-2.089.0
-    - DC=dmd-2.088.1
-    - DC=dmd-2.087.1
+    # - DC=dmd-2.088.1
+    # - DC=dmd-2.087.1
 
 script:
   - ci/test-all.sh
