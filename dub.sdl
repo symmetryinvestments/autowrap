@@ -29,6 +29,8 @@ configuration "unittest" {
     versions "XllDummyGetter"
     versions "unitUnthreaded"  # GIL
     versions "TestingAutowrap"
+    dflags "-preview=dip1008"
+
 
     libs "python3.8"
     lflags "-L$PYTHON_LIB_DIR"

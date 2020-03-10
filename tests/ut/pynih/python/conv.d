@@ -25,9 +25,17 @@ private void backAndForth(T)
     bool,
     byte, ubyte, short, ushort, int, uint, long, ulong,  // integral
     float, double,
+)
+void testBackAndForthNoGc(T)()
+{
+    check!((T d) @nogc => d.toPython.to!T == d);
+}
+
+
+@Types!(
     int[], double[],
 )
-void testBackAndForth(T)()
+void testBackAndForthGc(T)()
 {
     check!((T d) => d.toPython.to!T == d);
 }
