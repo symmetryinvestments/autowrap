@@ -100,7 +100,7 @@ private auto pyModuleDef(A...)(auto ref A args) if(isPython3) {
    to Python (by calling std.string.toStringz or manually appending the null
    terminator).
  */
-auto pyMethodDef(string name, int flags = MethodArgs.Var | MethodArgs.Keywords, string doc = "", F)
+auto pyMethodDef(string name, int flags = defaultMethodFlags, string doc = "", F)
                 (F cfunction) pure
 {
     import std.traits: ReturnType, Parameters, isPointer;
