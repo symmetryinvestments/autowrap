@@ -9,7 +9,7 @@ dpp = $(dpp_dir)/bin/d++
 PYTHON_INCLUDE_DIR = $(shell python -c 'from distutils.sysconfig import get_python_inc; print(get_python_inc())')
 
 test: contract/contract.so
-	PYTHONPATH=$(PWD)/contract pytest -s -vv contract/tests
+	PYTHONPATH=$(shell pwd)/contract pytest -s -vv contract/tests
 
 
 contract/contract.so: contract/libcontract.so
