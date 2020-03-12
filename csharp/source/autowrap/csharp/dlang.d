@@ -475,13 +475,18 @@ private void addImports(T...)(ref string[] imports)
 private void addImport(T)(ref string[] imports)
 {
     import std.algorithm.searching : canFind;
-    import std.traits : isBuiltinType, isDynamicArray, moduleName;
-    import autowrap.csharp.common : isSupportedType;
+    import std.traits : isBuiltinType, isDynamicArray, moduleName, ReturnType, Parameters;
+    import autowrap.csharp.common : isSupportedType, isFunctionType;
 
-    static assert(isSupportedType!T, "missing check for supported type");
+    static assert(isSupportedType!T, "missing check for supported type: " ~ T.stringof);
 
     static if(isDynamicArray!T)
         addImport!(ElementType!T)(imports);
+    else static if (isFunctionType!T)
+    {
+        addImport!(ReturnType!T)(imports);
+        addImports!(Parameters!T)(imports);
+    }
     else static if(!isBuiltinType!T)
     {
         enum mod = moduleName!T;

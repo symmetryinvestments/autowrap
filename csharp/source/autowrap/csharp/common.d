@@ -122,10 +122,21 @@ unittest
     static assert(numDefaultArgs!foo11 == 3);
 }
 
+package template isFunctionType(T)
+{
+    static if (is(T == function) || is(T == delegate))
+        enum isFunctionType = true;
+    else
+    {
+        import std.traits : isFunctionPointer;
+        enum isFunctionType = isFunctionPointer!T;
+    }
+}
+
 package template isSupportedType(T)
 {
     import std.range.primitives : ElementType;
-    import std.traits : isBoolean, isDynamicArray, isIntegral, isSomeChar, Unqual;
+    import std.traits : isBoolean, isDynamicArray, isIntegral, isSomeChar, Unqual, ReturnType, Parameters;
 
     static if(isIntegral!T || isBoolean!T || isSomeChar!T ||
               is(Unqual!T == float) || is(Unqual!T == double) || is(T == void))
@@ -144,8 +155,20 @@ package template isSupportedType(T)
         import std.traits : TemplateOf;
         enum isSupportedType = !is(typeof(TemplateOf!T)) && !is(Unqual!T == TimeZone);
     }
+    else static if (isFunctionType!T)
+    {
+        enum isSupportedType = isSupportedType!(ReturnType!T) && isSupportedTypes!(Parameters!T);
+    }
     else
         enum isSupportedType = false;
+}
+
+package template isSupportedTypes(T...)
+{
+    static if (T.length == 0)
+        enum isSupportedTypes = true;
+    else
+        enum isSupportedTypes = isSupportedType!(T[0]) && isSupportedTypes!(T[1..$]);
 }
 
 // Unfortunately, while these tests have been tested on their own, they don't
