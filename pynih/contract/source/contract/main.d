@@ -3,51 +3,60 @@
  */
 module contract.main;
 
-import python;
-import contract.boilerplate;
-import contract.scalars;
-import contract.udt;
-import contract.pyclass;
+import python.raw: PyDateTime_CAPI;
 
-// Creates a Python module named `contract`
-// that can call the following C functions
-// and wraps the named aggregates.
-mixin(
-    createModuleMixin!(
+// To avoid linker errors.
+export __gshared extern(C) PyDateTime_CAPI* PyDateTimeAPI;
+
+
+extern(C) export auto PyInit_contract() {
+    static import contract.scalars;
+    static import contract.udt;
+    static import contract.pyclass;
+    import python.raw: pyDateTimeImport;
+    import python.cooked: createModule;
+    import python.boilerplate: Module, CFunctions, Aggregates;
+    import core.runtime: rt_init;
+
+    rt_init;
+
+    pyDateTimeImport;
+
+    return createModule!(
         Module("contract"),
         CFunctions!(
-            always_none,
-            the_answer,
-            one_bool_param_to_not,
-            one_int_param_to_times_two,
-            one_double_param_to_times_three,
-            one_string_param_to_length,
-            one_string_param_to_string,
-            one_string_param_to_string_manual_mem,
-            one_list_param,
-            one_tuple_param,
-            one_range_param,
-            one_list_param_to_list,
-            one_dict_param,
-            one_dict_param_to_dict,
-            add_days_to_date,
-            add_days_to_datetime,
-            throws_runtime_error,
-            kwargs_count,
+            contract.scalars.always_none,
+            contract.scalars.the_answer,
+            contract.scalars.one_bool_param_to_not,
+            contract.scalars.one_int_param_to_times_two,
+            contract.scalars.one_double_param_to_times_three,
+            contract.scalars.one_string_param_to_length,
+            contract.scalars.one_string_param_to_string,
+            contract.scalars.one_string_param_to_string_manual_mem,
+            contract.scalars.one_list_param,
+            contract.scalars.one_tuple_param,
+            contract.scalars.one_range_param,
+            contract.scalars.one_list_param_to_list,
+            contract.scalars.one_dict_param,
+            contract.scalars.one_dict_param_to_dict,
+            contract.scalars.add_days_to_date,
+            contract.scalars.add_days_to_datetime,
+            contract.scalars.throws_runtime_error,
+            contract.scalars.kwargs_count,
 
-            simple_struct_func,
-            twice_struct_func,
-            struct_getset,
+            contract.udt.simple_struct_func,
+            contract.udt.twice_struct_func,
+            contract.udt.struct_getset,
 
-            pyclass_int_double_struct,
-            pyclass_string_list_struct,
-            pyclass_twice_struct,
-            pyclass_thrice_struct,
-            pyclass_void_struct,
+            contract.pyclass.pyclass_int_double_struct,
+            contract.pyclass.pyclass_string_list_struct,
+            contract.pyclass.pyclass_twice_struct,
+            contract.pyclass.pyclass_thrice_struct,
+            contract.pyclass.pyclass_void_struct,
         ),
         Aggregates!(
-            StructDefaultCtor,
-            StructUserCtor,
+            contract.udt.StructDefaultCtor,
+            contract.udt.StructUserCtor,
         ),
-    )
-);
+    );
+}
