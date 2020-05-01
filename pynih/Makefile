@@ -8,20 +8,21 @@ dpp = $(dpp_dir)/bin/d++
 
 PYTHON_INCLUDE_DIR = $(shell python -c 'from distutils.sysconfig import get_python_inc; print(get_python_inc())')
 
+.PHONY: test
 test: contract/contract.so
 	PYTHONPATH=$(shell pwd)/contract pytest -s -vv contract/tests
-
 
 contract/contract.so: contract/libcontract.so
 	cp $< $@
 
 
+.PHONY: test contract/libcontract.so
 contract/libcontract.so: source/python/raw.d
 	cd contract && dub build -q
 
 
 source/python/raw.d: source/python/raw.dpp $(dpp)
-	$(dpp) --preprocess-only --include-path $(PYTHON_INCLUDE_DIR) source/python/raw.dpp
+	$(dpp) --preprocess-only --include-path $(PYTHON_INCLUDE_DIR) $<
 
 
 $(dpp): $(dpp_lock)
