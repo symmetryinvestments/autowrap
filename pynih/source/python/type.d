@@ -17,7 +17,7 @@ static import core.time;
 
 package enum isPhobos(T) = isDateOrDateTime!T || isTuple!T || is(Unqual!T == core.time.Duration);
 package enum isDateOrDateTime(T) = is(Unqual!T == DateTime) || is(Unqual!T == Date);
-package enum isTuple(T) = is(T: Tuple!A, A...);
+package enum isTuple(T) = is(Unqual!T == Tuple!A, A...);
 package enum isUserAggregate(T) = isAggregateType!T && !isPhobos!(T);
 package enum isNonRangeUDT(T) = isUserAggregate!T && !isInputRange!T;
 
