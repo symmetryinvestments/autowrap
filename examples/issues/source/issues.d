@@ -257,3 +257,11 @@ struct FortyTwos {
         return i.text;
     }
 }
+
+
+union Union {
+    void* ptr;
+    int fd;
+    uint u32;
+    ulong u64;
+}

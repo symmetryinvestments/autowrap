@@ -5,7 +5,7 @@ module python.type;
 
 
 import python.raw: PyObject;
-import mirror.traits: isParameter, BinaryOperator;
+import mirror.meta.traits: isParameter, BinaryOperator;
 import std.traits: Unqual, isArray, isIntegral, isBoolean, isFloatingPoint,
     isAggregateType, isCallable, isAssociativeArray, isSomeFunction;
 import std.datetime: DateTime, Date;
@@ -34,7 +34,7 @@ struct PythonType(T) {
     import std.traits: FieldNameTuple, Fields, Unqual, fullyQualifiedName, BaseClassesTuple;
     import std.meta: Alias, AliasSeq, staticMap;
 
-    static if(is(T == struct)) {
+    static if(is(T == struct) || is(T == union)) {
         alias fieldNames = FieldNameTuple!T;
         alias fieldTypes = Fields!T;
     } else static if(is(T == class)) {
@@ -66,7 +66,7 @@ struct PythonType(T) {
         import python.raw: PyType_GenericNew, PyType_Ready, TypeFlags,
             PyErr_SetString, PyExc_TypeError,
             PyNumberMethods, PySequenceMethods;
-        import mirror.traits: UnaryOperators, BinaryOperators, AssignOperators, functionName;
+        import mirror.meta.traits: UnaryOperators, BinaryOperators, AssignOperators, functionName;
         import std.traits: arity, hasMember, TemplateOf;
         import std.meta: Filter;
         static import std.typecons;
@@ -262,7 +262,7 @@ struct PythonType(T) {
     static if(isUserAggregate!T)
     private static auto getsetDefs() {
         import python.raw: PyGetSetDef;
-        import mirror.traits: isProperty, MemberFunctionsByOverload;
+        import mirror.meta.traits: isProperty, MemberFunctionsByOverload;
         import std.meta: Filter;
         import std.traits: ReturnType;
 
@@ -321,7 +321,7 @@ struct PythonType(T) {
     private static auto methodDefs()() {
         import python.raw: PyMethodDef, MethodArgs;
         import python.cooked: pyMethodDef, defaultMethodFlags;
-        import mirror.traits: isProperty;
+        import mirror.meta.traits: isProperty;
         import std.meta: AliasSeq, Alias, staticMap, Filter, templateNot;
         import std.traits: isSomeFunction;
         import std.algorithm: startsWith;
@@ -415,7 +415,7 @@ struct PythonType(T) {
         return noThrowable!({
             import python.conv: toPython;
             import python.raw: PyTuple_Size;
-            import mirror.traits: isPrivate;
+            import mirror.meta.traits: isPrivate;
             import std.traits: hasMember, fullyQualifiedName;
 
             if(PyTuple_Size(args) == 0) return toPython(userAggregateInit!T);
@@ -695,7 +695,7 @@ private PyObject* callDlangFunction(T, alias F)(PyObject* self, PyObject* args, 
 
     import python.raw: PyTuple_Size;
     import python.conv: toPython, to;
-    import mirror.traits: Parameters, NumDefaultParameters, NumRequiredParameters;
+    import mirror.meta.traits: Parameters, NumDefaultParameters, NumRequiredParameters;
     import std.traits: variadicFunctionStyle, Variadic, functionAttributes,
         FunctionAttribute, moduleName, isCallable, StdParameters = Parameters;
     import std.conv: text;
@@ -1134,7 +1134,7 @@ private template PythonBinaryOperator(T, BinaryOperator operator) {
     static extern(C) PyObject* _py_ter_func(PyObject* lhs_, PyObject* rhs_, PyObject* extra) nothrow {
         import python.conv.python_to_d: to;
         import python.conv.d_to_python: toPython;
-        import mirror.traits: BinOpDir, functionName;
+        import mirror.meta.traits: BinOpDir, functionName;
         import std.traits: Parameters;
         import std.exception: enforce;
         import std.conv: text;
