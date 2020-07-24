@@ -24,7 +24,7 @@ template AllConstants(Modules...) if(allSatisfy!(isModule, Modules)) {
 }
 
 template Constants(Module module_) {
-    import mirror.meta: MirrorModule = Module;
+    import mirror.meta.reflection: MirrorModule = Module;
     import std.meta: Filter;
 
     alias mod = MirrorModule!(module_.name);
@@ -63,7 +63,7 @@ template Functions(Module module_) {
 template Functions(alias module_, Flag!"alwaysExport" alwaysExport = No.alwaysExport, Ignore[] ignoredSymbols = [])
     if(!is(typeof(module_) == string))
 {
-    import mirror.meta: MirrorModule = Module, FunctionSymbol;
+    import mirror.meta.reflection: MirrorModule = Module, FunctionSymbol;
     import std.meta: staticMap, Filter, templateNot;
     import std.traits: moduleName;
     import std.algorithm: canFind;
@@ -103,7 +103,7 @@ template AllAggregates(Modules...) if(allSatisfy!(isModule, Modules)) {
 }
 
 private template AllAggregatesInModule(Module module_) {
-    import mirror.meta: MirrorModule = Module;
+    import mirror.meta.reflection: MirrorModule = Module;
     import std.meta: NoDuplicates, Filter, staticMap, templateNot;
     import std.algorithm: canFind;
 
@@ -133,13 +133,13 @@ template isUserAggregate(A...) if(A.length == 1) {
         !is(Unqual!T == TimeOfDay) &&
         !is(Unqual!T == Duration) &&
         !isInstanceOf!(Tuple, T) &&
-        (is(T == struct) || is(T == class) || is(T == enum));
+        (is(T == struct) || is(T == class) || is(T == enum) || is(T == union));
 }
 
 
 // T -> T, T[] -> T, T[][] -> T, T* -> T
 template PrimordialType(T) {
-    import mirror.traits: FundamentalType;
+    import mirror.meta.traits: FundamentalType;
     import std.traits: Unqual;
     alias PrimordialType = Unqual!(FundamentalType!T);
 }

@@ -61,7 +61,7 @@ void wrapAllAggregates(Modules...)() if(allSatisfy!(isModule, Modules)) {
 auto wrapAggregate(T)() if(isUserAggregate!T) {
 
     import autowrap.python.pyd.class_wrap: MemberFunction;
-    import mirror.traits: isProperty, isStaticMemberFunction, PublicFieldNames;
+    import mirror.meta.traits: isProperty, isStaticMemberFunction, PublicFieldNames;
     import pyd.pyd: wrap_class, Member, Init, StaticDef, Repr, Property;
     import std.meta: staticMap, Filter, templateNot, AliasSeq;
     import std.algorithm: startsWith;

@@ -2,8 +2,10 @@
 # A from scratch Python solution that doesn't depend on pyd
 name "pynih"
 targetType "library"
+
 dependency "autowrap:common" path="../common"
 dependency "autowrap:reflection" path="../reflection"
+dependency "mirror" version="~>0.3.0"
 
 preGenerateCommands "make -C $PACKAGE_DIR source/python/raw.d" platform="posix"
 

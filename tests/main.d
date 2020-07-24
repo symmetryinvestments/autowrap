@@ -11,6 +11,7 @@ alias normalModules = AliasSeq!(
 alias pynihModules = AliasSeq!(
     "pynih.python.conv",
     "pynih.python.util",
+    "pynih.python.type",
 );
 
 

@@ -168,11 +168,8 @@ def test_issue_161():
         def errorFormatter(i):
             return str(i) + 'oops'
 
-        # This fails because conversion to D function pointers isn't
-        # implemented
         with pytest.raises(RuntimeError):
-            # FIXME - test the fields as well
-            Issue161("msg", "file", line, next, err, errorFormatter)
+            _ = Issue161("msg", "file", line, next, err, errorFormatter)
 
 
 def test_issue_163():
@@ -230,3 +227,13 @@ def test_infinite_range():
     _ = FortyTwos(77)
     #  FIXME - this causes a segfault despite the test passing
     # assert list(islice(rng, 4)) == [42, 42, 42, 42]
+
+
+def test_union():
+    import pytest
+
+    if is_pynih:
+        from issues import Union
+    else:
+        with pytest.raises(ImportError):
+            from issues import Union
