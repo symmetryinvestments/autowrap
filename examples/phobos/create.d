@@ -78,9 +78,9 @@ void run(string[] args) @safe {
                 "fileVersion": 1,
                 "versions": {
                     "autowrap": {"path": "../../../"},
-                    "mirror": "0.1.9",
-                    "pyd": "0.13.0",
-                    "unit-threaded": "0.10.5"
+                    "mirror": "0.3.0",
+                    "pyd": "0.13.1",
+                    "unit-threaded": "1.0.4"
                 }
             }
         `.deindent);
