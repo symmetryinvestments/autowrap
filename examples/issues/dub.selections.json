@@ -3,8 +3,8 @@
 	"versions": {
 		"autowrap": {"path":"../../"},
 		"mirror": "0.3.0",
-		"pyd": "0.13.0",
+		"pyd": "0.13.1",
 		"scriptlike": "0.10.3",
-		"unit-threaded": "0.10.3"
+		"unit-threaded": "1.0.4"
 	}
 }

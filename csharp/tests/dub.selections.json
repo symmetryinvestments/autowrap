@@ -4,6 +4,6 @@
 		"autowrap": {"path":"../../"},
 		"mirror": "0.3.0",
 		"scriptlike": "0.10.3",
-		"unit-threaded": "0.10.3"
+		"unit-threaded": "1.0.4"
 	}
 }

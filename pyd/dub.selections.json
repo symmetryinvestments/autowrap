@@ -1,7 +1,8 @@
 {
 	"fileVersion": 1,
 	"versions": {
-		"autowrap": {"path":".."},
-		"pyd": {"path:" "../pyd"}
+		"mirror": "0.3.0",
+		"pyd": "0.13.1",
+		"unit-threaded": "1.0.4"
 	}
 }

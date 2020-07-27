@@ -75,13 +75,13 @@ void run(string[] args) @safe {
         auto selections = File(buildPath(projDir, "dub.selections.json"), "w");
         selections.writeln(`
             {
-                "fileVersion": 1,
-                "versions": {
-                    "autowrap": {"path": "../../../"},
-                    "mirror": "0.1.9",
-                    "pyd": "0.13.0",
-                    "unit-threaded": "0.10.5"
-                }
+            	"fileVersion": 1,
+            	"versions": {
+            		"autowrap": {"path":"../../.."},
+            		"mirror": "0.3.0",
+            		"pyd": "0.13.1",
+            		"unit-threaded": "1.0.4"
+            	}
             }
         `.deindent);
     }
