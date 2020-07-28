@@ -297,7 +297,9 @@ private T toDlangFunction(T)(PyObject* value)
 
     alias UnqualParams = staticMap!(Unqual, Parameters!T);
 
-    return (UnqualParams dArgs) {
+    // FIXME: the @trusted here is due to conversions to @safe
+    // D delegates
+    return (UnqualParams dArgs) @trusted {
         Tuple!UnqualParams dArgsTuple;
         static foreach(i; 0 .. UnqualParams.length) {
             dArgsTuple[i] = dArgs[i];

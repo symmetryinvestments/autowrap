@@ -1,5 +1,6 @@
 name "issues"
 targetType "dynamicLibrary"
+dependency "vibe-d:redis" version="*"
 
 
 configuration "python37" {
