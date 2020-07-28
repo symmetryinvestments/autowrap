@@ -26,7 +26,7 @@ lib/$2/$1.so: lib/$2/lib$1.so
 
 .PHONY: lib/$2/lib$1.so
 lib/$2/lib$1.so:
-	@cd $1 && dub build -q -c $3
+	@cd $1 && dub build -q -c $3 #--compiler=/home/atila/coding/d/dlang/dmd/generated/linux/release/64/dmd
 
 endef
 

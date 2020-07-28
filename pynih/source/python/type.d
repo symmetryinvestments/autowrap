@@ -63,6 +63,7 @@ struct PythonType(T) {
     }
 
     private static void initialise() nothrow {
+        import autowrap.common: AlwaysTry;
         import python.raw: PyType_GenericNew, PyType_Ready, TypeFlags,
             PyErr_SetString, PyExc_TypeError,
             PyNumberMethods, PySequenceMethods;
@@ -84,7 +85,7 @@ struct PythonType(T) {
         static if(isUserAggregate!T) {
             _pyType.tp_basicsize = PythonClass!T.sizeof;
 
-            static if(__traits(compiles, getsetDefs()))
+            static if(AlwaysTry || __traits(compiles, getsetDefs()))
                 _pyType.tp_getset = getsetDefs;
             else
                 pragma(msg, "WARNING: could not generate attribute accessors for ", fullyQualifiedName!T);
@@ -113,12 +114,12 @@ struct PythonType(T) {
             }
 
             static if(hasMember!(T, "opSlice")) {
-                static if(__traits(compiles, &PythonIterViaList!T._py_iter))
+                static if(AlwaysTry || __traits(compiles, &PythonIterViaList!T._py_iter))
                     _pyType.tp_iter = &PythonIterViaList!T._py_iter;
                 else
                     pragma(msg, "WARNING: could not implement Python opSlice for ", fullyQualifiedName!T);
             } else static if(isInputRange!T) {
-                static if(__traits(compiles, &PythonIter!T._py_iter_next)) {
+                static if(AlwaysTry || __traits(compiles, &PythonIter!T._py_iter_next)) {
                     _pyType.tp_iter = &PythonIter!T._py_iter;
                     _pyType.tp_iternext = &PythonIter!T._py_iter_next;
                 } else
@@ -130,7 +131,7 @@ struct PythonType(T) {
             static if(hasMember!(T, "opIndex") || hasMember!(T, "opSlice")) {
                 if(_pyType.tp_as_mapping is null)
                     _pyType.tp_as_mapping = new PyMappingMethods;
-                static if(__traits(compiles, &PythonSubscript!T._py_index))
+                static if(AlwaysTry || __traits(compiles, &PythonSubscript!T._py_index))
                     _pyType.tp_as_mapping.mp_subscript = &PythonSubscript!T._py_index;
                 else
                     pragma(msg, "WARNING: could not implement Python index for ",
@@ -141,7 +142,7 @@ struct PythonType(T) {
                 if(_pyType.tp_as_mapping is null)
                     _pyType.tp_as_mapping = new PyMappingMethods;
 
-                static if(__traits(compiles, &PythonIndexAssign!T._py_index_assign))
+                static if(AlwaysTry || __traits(compiles, &PythonIndexAssign!T._py_index_assign))
                     _pyType.tp_as_mapping.mp_ass_subscript = &PythonIndexAssign!T._py_index_assign;
                 else
                     pragma(msg, "WARNING: could not implement Python index assign for ",
@@ -261,6 +262,7 @@ struct PythonType(T) {
 
     static if(isUserAggregate!T)
     private static auto getsetDefs() {
+        import autowrap.common: AlwaysTry;
         import python.raw: PyGetSetDef;
         import mirror.meta.traits: isProperty, MemberFunctionsByOverload;
         import std.meta: Filter;
@@ -302,15 +304,17 @@ struct PythonType(T) {
 
             static foreach(overload; __traits(getOverloads, T, __traits(identifier, property))) {
                 static if(is(ReturnType!overload == void)) { // setter
-                    static if(__traits(compiles, &PythonClass!T.propertySet!overload))
+                    static if(AlwaysTry || __traits(compiles, &PythonClass!T.propertySet!overload))
                         getsets[i].set = &PythonClass!T.propertySet!overload;
                     else
                         pragma(msg, "Cannot implement ", fullyQualifiedName!T, ".set!", i, " (", __traits(identifier, overload), ")");
                 } else  { // getter
-                    static if(__traits(compiles, &PythonClass!T.propertyGet!overload))
+                    static if(AlwaysTry || __traits(compiles, &PythonClass!T.propertyGet!overload))
                         getsets[i].get = &PythonClass!T.propertyGet!overload;
-                    else
+                    else {
                         pragma(msg, "Cannot implement ", fullyQualifiedName!T, ".get!", i, " (", __traits(identifier, overload), ")");
+                        // getsets[i].get = &PythonClass!T.propertyGet!overload;
+                    }
                 }
             }
         }}
@@ -319,6 +323,7 @@ struct PythonType(T) {
     }
 
     private static auto methodDefs()() {
+        import autowrap.common: AlwaysTry;
         import python.raw: PyMethodDef, MethodArgs;
         import python.cooked: pyMethodDef, defaultMethodFlags;
         import mirror.meta.traits: isProperty;
@@ -354,7 +359,7 @@ struct PythonType(T) {
             else
                 enum flags = defaultMethodFlags;
 
-            static if(__traits(compiles, &PythonMethod!(T, memberFunction)._py_method_impl))
+            static if(AlwaysTry || __traits(compiles, &PythonMethod!(T, memberFunction)._py_method_impl))
                 methods[i] = pyMethodDef!(__traits(identifier, memberFunction), flags)
                                          (&PythonMethod!(T, memberFunction)._py_method_impl);
             else {
@@ -983,11 +988,13 @@ struct PythonClass(T) {//}if(isUserAggregate!T) {
 
     PyObject* getField(int FieldIndex)() {
 
+        import autowrap.common: AlwaysTry;
+
         auto impl()() {
             mixin(`return this.`, fieldNames[FieldIndex], `;`);
         }
 
-        static if(__traits(compiles, impl!()()))
+        static if(AlwaysTry || __traits(compiles, impl!()()))
             return impl;
         else {
             import std.traits: fullyQualifiedName;

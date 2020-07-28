@@ -5,7 +5,7 @@ enum str = wrapDlang!(
     LibraryName("issues"),
     Modules(
         "issues",
-        "external",
+//        "external",
     ),
 );
 // pragma(msg, str);

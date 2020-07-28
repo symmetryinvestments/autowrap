@@ -1,7 +1,9 @@
 name "issues"
 targetType "dynamicLibrary"
+
 dependency "vibe-d:redis" version="*"
 
+versions "AutowrapStrict"
 
 configuration "python37" {
     targetPath "lib/pyd"

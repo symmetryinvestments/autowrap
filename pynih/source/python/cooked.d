@@ -43,12 +43,13 @@ void initModule(Module module_, alias cfunctions, alias aggregates)()
 }
 
 private void addModuleTypes(alias aggregates)(PyObject* module_) {
+    import autowrap.common: AlwaysTry;
     import python.type: PythonType;
     import std.traits: fullyQualifiedName;
 
     static foreach(T; aggregates.Types) {
 
-        static if(__traits(compiles, PythonType!T.pyType)) {
+        static if(AlwaysTry || __traits(compiles, PythonType!T.pyType)) {
             if(PyType_Ready(PythonType!T.pyType) < 0)
                 throw new Exception("Could not get type ready for `" ~ __traits(identifier, T) ~ "`");
 

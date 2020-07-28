@@ -78,7 +78,9 @@ PyObject* toPython(T)(auto ref T value) if(isNonRangeUDT!T) {
 PyObject* toPython(T)(T value)
     if(isPointer!T && !isFunctionPointer!T && !isDelegate!T && !is(Unqual!(PointerTarget!T) == void))
 {
-    static if(__traits(compiles, toPython(*value))) {
+    import autowrap.common: AlwaysTry;
+
+    static if(AlwaysTry || __traits(compiles, toPython(*value))) {
         import std.traits: PointerTarget;
         import std.string: fromStringz;
 

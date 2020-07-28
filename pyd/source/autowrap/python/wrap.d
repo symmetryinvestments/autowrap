@@ -17,12 +17,12 @@ private enum isString(alias T) = is(typeof(T) == string);
 
 ///  Wrap global functions from multiple modules
 void wrapAllFunctions(Modules...)() if(allSatisfy!(isModule, Modules)) {
-    import autowrap.common: toSnakeCase;
+    import autowrap.common: toSnakeCase, AlwaysTry;
     import autowrap.reflection: AllFunctions;
     import pyd.pyd: def, PyName;
 
     static foreach(function_; AllFunctions!Modules) {
-        static if(__traits(compiles, def!(function_.symbol, PyName!(toSnakeCase(function_.identifier)))()))
+        static if(AlwaysTry || __traits(compiles, def!(function_.symbol, PyName!(toSnakeCase(function_.identifier)))()))
             def!(function_.symbol, PyName!(toSnakeCase(function_.identifier)))();
         else {
             pragma(msg, "\nERROR! Autowrap could not wrap function `", function_.identifier, "` for Python\n");
@@ -41,11 +41,12 @@ void wrapAllFunctions(Modules...)() if(allSatisfy!(isModule, Modules)) {
  */
 void wrapAllAggregates(Modules...)() if(allSatisfy!(isModule, Modules)) {
 
+    import autowrap.common: AlwaysTry;
     import autowrap.reflection: AllAggregates;
     import std.traits: fullyQualifiedName;
 
     static foreach(aggregate; AllAggregates!Modules) {
-        static if(__traits(compiles, wrapAggregate!aggregate))
+        static if(AlwaysTry || __traits(compiles, wrapAggregate!aggregate))
             wrapAggregate!aggregate;
         else {
             pragma(msg, "\nERROR! Autowrap could not wrap aggregate `", fullyQualifiedName!aggregate, "` for Python\n");
