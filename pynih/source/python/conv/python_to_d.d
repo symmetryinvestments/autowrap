@@ -47,13 +47,14 @@ auto to(T)(PyObject* value) @trusted if(isUserAggregate!T && is(T == struct)) {
 
 
 private void toStructImpl(T)(PyObject* value, T* ret) {
+    import autowrap.common: AlwaysTry;
     import python.type: PythonClass;
     import std.traits: fullyQualifiedName;
 
     auto pyclass = cast(PythonClass!T*) value;
 
     static foreach(i; 0 .. typeof(*ret).tupleof.length) {
-        static if(__traits(compiles, pyclass.getField!i.to!(typeof(T.tupleof[i]))))
+        static if(AlwaysTry || __traits(compiles, pyclass.getField!i.to!(typeof(T.tupleof[i]))))
             (*ret).tupleof[i] = pyclass.getField!i.to!(typeof(T.tupleof[i]));
         else
             pragma(msg, "WARNING: cannot convert struct field #", i, " of ", fullyQualifiedName!T);
@@ -297,7 +298,9 @@ private T toDlangFunction(T)(PyObject* value)
 
     alias UnqualParams = staticMap!(Unqual, Parameters!T);
 
-    return (UnqualParams dArgs) {
+    // FIXME: the @trusted here is due to conversions to @safe
+    // D delegates
+    return (UnqualParams dArgs) /*@trusted*/ {
         Tuple!UnqualParams dArgsTuple;
         static foreach(i; 0 .. UnqualParams.length) {
             dArgsTuple[i] = dArgs[i];

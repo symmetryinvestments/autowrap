@@ -84,7 +84,7 @@ private string pyInitFuncName(LibraryName libraryName) @safe pure nothrow {
 auto createPythonModule(LibraryName libraryName, modules...)()
     if(allSatisfy!(isModule, modules))
 {
-    import autowrap.common: toSnakeCase;
+    import autowrap.common: toSnakeCase, AlwaysTry;
     import python.type: PythonFunction;
     import python.boilerplate: Module, CFunctions, CFunction, Aggregates;
     import python.raw: PyModule_AddIntConstant, PyModule_AddStringConstant;
@@ -95,7 +95,7 @@ auto createPythonModule(LibraryName libraryName, modules...)()
     static immutable char[1] emptyString = ['\0'];
 
     alias allFunctions = AllFunctions!modules;
-    enum isWrappableFunction(alias functionSymbol) =
+    enum isWrappableFunction(alias functionSymbol) = AlwaysTry ||
         __traits(compiles, &PythonFunction!(functionSymbol.symbol)._py_function_impl);
     alias wrappableFunctions = Filter!(isWrappableFunction, allFunctions);
     alias nonWrappableFunctions = Filter!(templateNot!isWrappableFunction, allFunctions);

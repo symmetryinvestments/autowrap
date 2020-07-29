@@ -74,3 +74,9 @@ string toSnakeCase(in string str) @safe pure {
 
     return ret;
 }
+
+
+version(AutowrapStrict)
+    enum AlwaysTry = true;
+else
+    enum AlwaysTry = false;
