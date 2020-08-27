@@ -341,3 +341,11 @@ unittest {
     // FIXME - cannot deal with repeated field names
     // auto py = (new MyException("oops")).toPython;
 }
+
+
+@("Nullable!Date")
+unittest {
+    import std.typecons: Nullable;
+    import std.datetime: Date;
+    auto py = Nullable!Date.init.toPython;
+}

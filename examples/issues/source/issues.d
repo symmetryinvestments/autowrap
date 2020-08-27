@@ -265,3 +265,12 @@ union Union {
     uint u32;
     ulong u64;
 }
+
+
+struct Issue256 {
+    import std.typecons: Nullable;
+    import std.datetime: Date;
+    Date date;
+    Nullable!int maybeInt;
+    Nullable!Date maybeDate;
+}
