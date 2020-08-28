@@ -1164,7 +1164,7 @@ private template PythonBinaryOperator(T, BinaryOperator operator) {
                 enum funcName = functionName(dir);
 
                 static if(operator.dirs & dir) {
-                    mixin(`alias parameters = Parameters!(T.`, funcName, `!(operator.op));`);
+                    mixin(`alias parameters = Parameters!(T.init.`, funcName, `!(operator.op));`);
                     static assert(parameters.length == 1, "Binary operators must take one parameter");
                     alias Arg = parameters[0];
 
@@ -1198,7 +1198,7 @@ private template PythonAssignOperator(T, string op) {
         import std.traits: Parameters;
 
         PyObject* impl() {
-            alias parameters = Parameters!(T.opOpAssign!op);
+            alias parameters = Parameters!(T.init.opOpAssign!op);
             static assert(parameters.length == 1, "Assignment operators must take one parameter");
 
             auto dObj = lhs.to!T;

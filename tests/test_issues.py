@@ -237,3 +237,20 @@ def test_union():
     else:
         with pytest.raises(ImportError):
             from issues import Union
+
+
+def test_issue_256():
+    import pytest
+    from issues import Issue256
+    from datetime import date
+
+    d = date(2020, 1, 2)
+    i = Issue256(d)
+
+    if is_pynih:
+        assert i.date == d
+    else:
+        with pytest.raises(AssertionError):  # FIXME
+            assert i.date == d
+
+    assert {'date', 'maybeInt', 'maybeDate'} <= set(dir(Issue256))
