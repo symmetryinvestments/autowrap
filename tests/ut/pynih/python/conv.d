@@ -349,3 +349,13 @@ unittest {
     import std.datetime: Date;
     auto py = Nullable!Date.init.toPython;
 }
+
+
+@("method.shared")
+unittest {
+    static struct Oops {
+        int func() shared { return 42; }
+    }
+
+    auto py = (shared Oops()).toPython;
+}

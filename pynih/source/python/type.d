@@ -766,6 +766,8 @@ private PyObject* callDlangFunction(T, alias F)(PyObject* self, PyObject* args, 
             alias Aggregate = const T;
         else static if(functionAttributes!overload & FunctionAttribute.immutable_)
             alias Aggregate = immutable T;
+        else static if(functionAttributes!overload & FunctionAttribute.shared_)
+            alias Aggregate = shared T;
         else
             alias Aggregate = Unqual!T;
 
