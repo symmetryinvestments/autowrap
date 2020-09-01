@@ -29,7 +29,7 @@ T to(T)(PyObject* value) @trusted if(isFloatingPoint!T) {
 
 
 // Returns T if T is copyable, T* otherwise
-auto to(T)(PyObject* value) @trusted if(isUserAggregate!T && is(T == struct)) {
+auto to(T)(PyObject* value) @trusted if(isUserAggregate!T && (is(T == struct) || is(T == union))) {
     import std.traits: Unqual, isCopyable;
 
     static if(isCopyable!T) {
@@ -62,7 +62,7 @@ private void toStructImpl(T)(PyObject* value, T* ret) {
 }
 
 
-T to(T)(PyObject* value) @trusted if(isUserAggregate!T && !is(T == struct))
+T to(T)(PyObject* value) @trusted if(isUserAggregate!T && !is(T == struct) && !is(T == union))
 {
     import python.type: PythonClass, userAggregateInit, gFactory;
     import std.traits: Unqual;
