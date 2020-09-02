@@ -701,8 +701,8 @@ private PyObject* callDlangFunction(T, alias F)(PyObject* self, PyObject* args, 
     import python.raw: PyTuple_Size;
     import python.conv: toPython, to;
     import mirror.meta.traits: Parameters, NumDefaultParameters, NumRequiredParameters;
-    import std.traits: variadicFunctionStyle, Variadic, functionAttributes,
-        FunctionAttribute, moduleName, isCallable, StdParameters = Parameters;
+    import std.traits: variadicFunctionStyle, Variadic,
+        moduleName, isCallable, StdParameters = Parameters;
     import std.conv: text;
     import std.exception: enforce;
     import std.meta: AliasSeq;
@@ -762,14 +762,7 @@ private PyObject* callDlangFunction(T, alias F)(PyObject* self, PyObject* args, 
             assert(self !is null,
                    "Cannot call PythonMethod!" ~ identifier ~ " on null self");
 
-        static if(functionAttributes!overload & FunctionAttribute.const_)
-            alias Aggregate = const T;
-        else static if(functionAttributes!overload & FunctionAttribute.immutable_)
-            alias Aggregate = immutable T;
-        else static if(functionAttributes!overload & FunctionAttribute.shared_)
-            alias Aggregate = shared T;
-        else
-            alias Aggregate = Unqual!T;
+        alias Aggregate = QualifiedType!(T, overload);
 
         static if(isUserAggregate!T) { // member function, static or not
             // self could be null for static member functions
@@ -786,19 +779,38 @@ private PyObject* callDlangFunction(T, alias F)(PyObject* self, PyObject* args, 
                          identifier, " takes ", Parameters!overload.length));
 
             auto dArgs = pythonArgsToDArgs!(isVariadic, Parameters!overload)(args, kwargs);
-            mixin(callMixin);
+            static if(__traits(compiles, mixin(callMixin))) {
 
-            static if(isUserAggregate!T && isMemberFunction && !isConstMemberFunction!overload) {
-                mutateSelf(self, dAggregate);
-            }
+                mixin(callMixin);
 
-            return ret;
+                static if(isUserAggregate!T && isMemberFunction && !isConstMemberFunction!overload) {
+                    mutateSelf(self, dAggregate);
+                }
+
+                return ret;
+            } else
+                throw new Exception("Cannot call function since `" ~ callMixin ~ "` does not compile");
         } catch(ArgumentConversionException _) {
             // only using this to weed out incompatible overloads
         }
     }}
 
     throw new Exception("Could not find suitable overload for `" ~ identifier ~ "`");
+}
+
+
+private template QualifiedType(T, alias overload) {
+
+    import std.traits: functionAttributes, FunctionAttribute;
+
+    static if(functionAttributes!overload & FunctionAttribute.const_)
+        alias QualifiedType = const T;
+    else static if(functionAttributes!overload & FunctionAttribute.immutable_)
+        alias QualifiedType = immutable T;
+    else static if(functionAttributes!overload & FunctionAttribute.shared_)
+        alias QualifiedType = shared T;
+    else
+        alias QualifiedType = Unqual!T;
 }
 
 
