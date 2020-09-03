@@ -779,7 +779,12 @@ private PyObject* callDlangFunction(T, alias F)(PyObject* self, PyObject* args, 
                          identifier, " takes ", Parameters!overload.length));
 
             auto dArgs = pythonArgsToDArgs!(isVariadic, Parameters!overload)(args, kwargs);
-            static if(__traits(compiles, mixin(callMixin))) {
+
+            void testCallMixin()() {
+                mixin(callMixin);
+            }
+
+            static if(is(typeof(testCallMixin!()))) {
 
                 mixin(callMixin);
 
@@ -790,6 +795,7 @@ private PyObject* callDlangFunction(T, alias F)(PyObject* self, PyObject* args, 
                 return ret;
             } else
                 throw new Exception("Cannot call function since `" ~ callMixin ~ "` does not compile");
+
         } catch(ArgumentConversionException _) {
             // only using this to weed out incompatible overloads
         }
