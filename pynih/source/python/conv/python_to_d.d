@@ -49,16 +49,25 @@ auto to(T)(PyObject* value) @trusted if(isUserAggregate!T && (is(T == struct) ||
 private void toStructImpl(T)(PyObject* value, T* ret) {
     import autowrap.common: AlwaysTry;
     import python.type: PythonClass;
-    import std.traits: fullyQualifiedName;
+    import std.traits: fullyQualifiedName, isCopyable, isPointer;
 
     auto pyclass = cast(PythonClass!T*) value;
 
-    static foreach(i; 0 .. typeof(*ret).tupleof.length) {
-        static if(AlwaysTry || __traits(compiles, pyclass.getField!i.to!(typeof(T.tupleof[i]))))
-            (*ret).tupleof[i] = pyclass.getField!i.to!(typeof(T.tupleof[i]));
-        else
+    static foreach(i; 0 .. typeof(*ret).tupleof.length) {{
+        static if(AlwaysTry || __traits(compiles, pyclass.getField!i.to!(typeof(T.tupleof[i])))) {
+
+            auto pythonField = pyclass.getField!i;
+            auto converted = pythonField.to!(typeof(T.tupleof[i]));
+
+            static if(isCopyable!(typeof((*ret).tupleof[i])))
+                (*ret).tupleof[i] = converted;
+            else {
+                static assert(isPointer!(typeof(converted)));
+                toStructImpl(pyclass.getField!i, &((*ret).tupleof[i]));
+            }
+        } else
             pragma(msg, "WARNING: cannot convert struct field #", i, " of ", fullyQualifiedName!T);
-    }
+    }}
 }
 
 

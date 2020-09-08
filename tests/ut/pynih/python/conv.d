@@ -15,7 +15,7 @@ struct IntString {
 
 // helper function to test that converting to python and back yields the same value
 private void backAndForth(T)
-                         (T value, in string file = __FILE__, in size_t line = __LINE__)
+                         (auto ref T value, in string file = __FILE__, in size_t line = __LINE__)
 {
     value.toPython.to!(typeof(value)).shouldEqual(value, file, line);
 }
@@ -358,4 +358,23 @@ unittest {
     }
 
     auto py = (shared Oops()).toPython;
+}
+
+
+@("member.pointer")
+unittest {
+
+    static struct Uncopiable {
+        @disable this(this);
+        @disable void opAssign(Uncopiable);
+        size_t count;
+    }
+
+    static struct Outer {
+        Uncopiable inner;
+    }
+
+    // this was a bug because to!Outer didn't compile
+    const back = Outer(Uncopiable(42)).toPython.to!Outer;
+    back.inner.count.should == 42;
 }
