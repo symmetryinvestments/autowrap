@@ -300,15 +300,24 @@ private T toDlangFunction(T)(PyObject* value)
 
     // FIXME: the @trusted here is due to conversions to @safe
     // D delegates
-    return (UnqualParams dArgs) /*@trusted*/ {
-        Tuple!UnqualParams dArgsTuple;
-        static foreach(i; 0 .. UnqualParams.length) {
-            dArgsTuple[i] = dArgs[i];
+    return (UnqualParams dArgs) @trusted {
+        try {
+            Tuple!UnqualParams dArgsTuple;
+            static foreach(i; 0 .. UnqualParams.length) {
+                dArgsTuple[i] = dArgs[i];
+            }
+            auto pyArgs = dArgsTuple.toPython;
+            auto pyResult = PyObject_CallObject(value, pyArgs);
+            static if(!is(ReturnType!T == void))
+                return pyResult.to!(ReturnType!T);
+            else
+                return;
+        } catch(Exception e) {
+            import python.raw: PyErr_SetString, PyExc_RuntimeError;
+            import std.string: toStringz;
+            PyErr_SetString(PyExc_RuntimeError, e.msg.toStringz);
         }
-        auto pyArgs = dArgsTuple.toPython;
-        auto pyResult = PyObject_CallObject(value, pyArgs);
-        static if(!is(ReturnType!T == void))
-            return pyResult.to!(ReturnType!T);
+        assert(0);
     };
 }
 
