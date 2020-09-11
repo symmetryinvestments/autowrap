@@ -254,3 +254,14 @@ def test_issue_256():
             assert i.date == d
 
     assert {'date', 'maybeInt', 'maybeDate'} <= set(dir(Issue256))
+
+
+def test_method_delegate_safe_scope():
+    import pytest
+    if is_pyd:
+        with pytest.raises(ImportError):
+            from issues import MethodWithScopeSafeDelegate
+    else:
+        from issues import MethodWithScopeSafeDelegate
+        m = MethodWithScopeSafeDelegate()
+        assert m.fun(3, lambda i, d, s: i * 2) == 6

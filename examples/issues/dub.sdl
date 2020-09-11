@@ -37,6 +37,7 @@ configuration "env" {
 
 configuration "pynih" {
     targetPath "lib/pynih"
+    dflags "-preview=dip1000"
     lflags "-L$PYTHON_LIB_DIR"
     dependency "autowrap:pynih" path="../../"
 }
