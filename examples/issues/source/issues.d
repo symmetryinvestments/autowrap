@@ -275,3 +275,12 @@ struct Issue256 {
     Nullable!int maybeInt;
     Nullable!Date maybeDate;
 }
+
+
+struct MethodWithScopeSafeDelegate {
+    // has to have indirection to trigger the issue due to scope
+    static struct Struct { string s; }
+    int fun(int i, int delegate(int, double, scope Struct) nothrow @safe cb) {
+        return cb(i, 33.3, Struct());
+    }
+}
