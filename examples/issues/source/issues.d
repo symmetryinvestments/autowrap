@@ -7,6 +7,7 @@ import core.time: Duration;
 struct Uncopiable {
     @disable this(this);
     double x;
+    double fun() @safe @nogc pure nothrow const { return x * 2; }
 }
 
 /**

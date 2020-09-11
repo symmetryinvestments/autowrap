@@ -765,8 +765,12 @@ private PyObject* callDlangFunction(T, alias F)(PyObject* self, PyObject* args, 
         alias Aggregate = QualifiedType!(T, overload);
 
         static if(isUserAggregate!T) { // member function, static or not
+            // The reason we alias this here is because Aggregate could be a value
+            // type but self.to!Aggregate could return a pointer when the struct
+            // is not copiable.
+            alias typeofConversion = typeof(self.to!Aggregate);
             // self could be null for static member functions
-            auto dAggregate = self is null ? Aggregate.init : self.to!Aggregate;
+            auto dAggregate = self is null ? typeofConversion.init : self.to!Aggregate;
         }
 
         try {
