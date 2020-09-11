@@ -61,3 +61,15 @@ extern(C) void hack1() {
     import std.typecons: Flag;
     auto id = typeid(Region!(MmapAllocator));
 }
+
+
+pragma(mangle, "_D6python4conv11d_to_python__T8toPythonTS3std12experimental9allocator15building_blocks14allocator_list__T13AllocatorListTSQDdQDcQCr8showcase14mmapRegionListFmZ7FactoryTSQEyQExQEmQEf14null_allocator13NullAllocatorZQEe4NodeZQHkFKQHfZPSQIx3raw7_object")
+extern(C) void hack2() {
+
+}
+
+
+pragma(mangle, "_D6python4conv11python_to_d__T2toTxS3std12experimental9allocator15building_blocks14allocator_list__T13AllocatorListTSQDdQDcQCr8showcase14mmapRegionListFmZ7FactoryTSQEyQExQEmQEf14null_allocator13NullAllocatorZQEe4NodeZQHfFNePSQIp3raw7_objectZPxQIa")
+extern(C) void hack3() {
+
+}
