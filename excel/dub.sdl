@@ -5,3 +5,4 @@ license "BSD"
 targetType "sourceLibrary"
 
 dependency "excel-d" version=">=0.5.5"
+dependency "autowrap:common" path="../common"

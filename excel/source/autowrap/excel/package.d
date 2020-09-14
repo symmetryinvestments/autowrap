@@ -29,5 +29,5 @@ string wrapAll(Modules...)(in string mainModule = __MODULE__) {
 
     return
         "import xlld;\n" ~
-        wrapAll_!Modules(Yes.onlyExports, mainModule);
+        wrapAll_!Modules(Yes.onlyExports, Yes.pascalCase, mainModule);
 }
