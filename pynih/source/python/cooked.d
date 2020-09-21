@@ -12,7 +12,7 @@ import python.boilerplate: Module, CFunctions, Aggregates;
    Creates a Python3 module from the given C functions.
    Each function has the same name in Python.
  */
-auto createModule(Module module_, alias cfunctions, alias aggregates)()
+auto createModule(Module module_, alias cfunctions, alias aggregates = Aggregates!())()
     if(isPython3 &&
        is(cfunctions == CFunctions!F, F...) &&
        is(aggregates == Aggregates!T, T...))

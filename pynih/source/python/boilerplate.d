@@ -5,6 +5,44 @@ import python.raw: isPython2, isPython3;
 import std.traits: isFunction;
 
 
+string createModuleRecipe(Module module_, alias cfunctions, alias aggregates = Aggregates!())
+                         ()
+{
+    import std.format: format;
+
+    return q{
+        extern(C) export auto PyInit_%s() nothrow {
+            import python.cooked: createModule;
+            import python.boilerplate: commonInit, Module, CFunctions, Aggregates;
+
+            commonInit;
+
+            return createModule!(
+                Module("%s"),
+                %s,
+                %s,
+            );
+        }
+
+    }.format(
+        module_.name,
+        module_.name,
+        cfunctions.stringof,
+        aggregates.stringof,
+    );
+}
+
+
+void commonInit() nothrow {
+    import python.raw: pyDateTimeImport;
+    import core.runtime: rt_init;
+
+    try
+        rt_init;
+    catch(Exception _)
+        assert(0);
+}
+
 /// For a nicer API
 struct Module {
     string name;
