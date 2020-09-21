@@ -541,7 +541,7 @@ private string dlangAssignOpToPythonSlot(string op) {
 }
 
 
-private auto pythonArgsToDArgs(bool isVariadic, P...)(PyObject* args, PyObject* kwargs)
+auto pythonArgsToDArgs(bool isVariadic, P...)(PyObject* args, PyObject* kwargs)
     if(allSatisfy!(isParameter, P))
 {
     import python.raw: PyTuple_Size, PyTuple_GetItem, PyTuple_GetSlice, pyUnicodeDecodeUTF8, PyDict_GetItem;
@@ -668,7 +668,7 @@ struct PythonFunction(alias F) {
 }
 
 
-private auto noThrowable(alias F, A...)(auto ref A args) {
+auto noThrowable(alias F, A...)(auto ref A args) {
     import python.raw: PyErr_SetString, PyExc_RuntimeError;
     import std.string: toStringz;
     import std.traits: ReturnType;
