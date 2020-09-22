@@ -1,7 +1,6 @@
 module python.boilerplate;
 
 
-import python.raw: isPython2, isPython3;
 import std.traits: isFunction;
 
 
