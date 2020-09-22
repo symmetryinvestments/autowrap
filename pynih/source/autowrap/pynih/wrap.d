@@ -8,7 +8,6 @@ public import std.typecons: Yes, No;
 public import autowrap.types: Modules, Module, isModule,
     LibraryName, PreModuleInitCode, PostModuleInitCode, RootNamespace, Ignore;
 static import python.boilerplate;
-import python.raw: isPython2, isPython3;
 import std.meta: allSatisfy;
 
 
@@ -67,17 +66,9 @@ string createPythonModuleMixin(LibraryName libraryName, Modules modules)
 
 
 private string pyInitFuncName(LibraryName libraryName) @safe pure nothrow {
-
-    string prefix() {
-        static if(isPython2)
-            return "init";
-        else static if(isPython3)
-            return "PyInit_";
-        else
-            static assert(false);
-    }
-
-    return prefix ~ libraryName.value;
+    import python.raw: isPython3;
+    static assert(isPython3, "Python2 no longer supported");
+    return "PyInit_" ~ libraryName.value;
 }
 
 
@@ -144,7 +135,6 @@ auto createPythonModule(LibraryName libraryName, modules...)()
 
 
 mixin template createPythonModule(python.boilerplate.Module module_, alias cfunctions, alias aggregates)
-    if(isPython3)
 {
     static extern(C) export auto _py_init_impl() {  // -> ModuleInitRet
         import python.raw: pyDateTimeImport;
@@ -155,21 +145,5 @@ mixin template createPythonModule(python.boilerplate.Module module_, alias cfunc
 
         pyDateTimeImport;
         return createModule!(module_, cfunctions, aggregates);
-    }
-}
-
-
-mixin template createPythonModule(python.boilerplate.Module module_, alias cfunctions, alias aggregates)
-    if(isPython2)
-{
-    static extern(C) export void _py_init_impl() {
-        import python.raw: pyDateTimeImport;
-        import python.cooked: initModule;
-        import core.runtime: rt_init;
-
-        rt_init;
-
-        pyDateTimeImport;
-        initModule!(module_, cfunctions, aggregates);
     }
 }

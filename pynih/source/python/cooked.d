@@ -13,10 +13,11 @@ import python.boilerplate: Module, CFunctions, Aggregates;
    Each function has the same name in Python.
  */
 auto createModule(Module module_, alias cfunctions, alias aggregates = Aggregates!())()
-    if(isPython3 &&
-       is(cfunctions == CFunctions!F, F...) &&
+    if(is(cfunctions == CFunctions!F, F...) &&
        is(aggregates == Aggregates!T, T...))
 {
+    static assert(isPython3, "Python2 no longer supported");
+
     static PyModuleDef moduleDef;
 
     auto pyMethodDefs = cFunctionsToPyMethodDefs!(cfunctions);
@@ -28,19 +29,6 @@ auto createModule(Module module_, alias cfunctions, alias aggregates = Aggregate
     return module_;
 }
 
-
-/**
-   Calls Py_InitModule. It's the Python2 way of creating a new Python module.
-   Each function has the same name in Python.
- */
-void initModule(Module module_, alias cfunctions, alias aggregates)()
-    if(isPython2 &&
-       is(cfunctions == CFunctions!F, F...) &&
-       is(aggregates == Aggregates!T, T...))
-{
-    auto module_ = pyInitModule(&module_.name[0], cFunctionsToPyMethodDefs!(cfunctions));
-    addModuleTypes!aggregates(module_);
-}
 
 private void addModuleTypes(alias aggregates)(PyObject* module_) {
     import autowrap.common: AlwaysTry;
@@ -85,7 +73,7 @@ private PyMethodDef* cFunctionsToPyMethodDefs(alias cfunctions)()
    Helper function to get around the C syntax problem with
    PyModuleDef_HEAD_INIT - it doesn't compile in D.
 */
-private auto pyModuleDef(A...)(auto ref A args) if(isPython3) {
+private auto pyModuleDef(A...)(auto ref A args) {
     import std.functional: forward;
 
     return PyModuleDef(
