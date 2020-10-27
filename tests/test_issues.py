@@ -265,3 +265,11 @@ def test_method_delegate_safe_scope():
         from issues import MethodWithScopeSafeDelegate
         m = MethodWithScopeSafeDelegate()
         assert m.fun(3, lambda i, d, s: i * 2) == 6
+
+
+def test_issue_268():
+    import pytest
+    from issues import Issue268
+    assert Issue268(1) != Issue268(2)
+    with pytest.raises(AssertionError):
+        assert Issue268(42) == Issue268(42)
