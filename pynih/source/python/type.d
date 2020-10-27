@@ -1467,11 +1467,28 @@ private template PythonIndexAssign(T) {
 
 private template PythonCompare(T) {
 
-    static extern(C) PyObject* tp_richcompare(PyObject* self, PyObject* other, int op) nothrow {
+    static extern(C) PyObject* _py_cmp(PyObject* self, PyObject* other, int op) nothrow {
+
+        PyObject* incAndRet(PyObject* obj) {
+            import python.raw: pyIncRef;
+            pyIncRef(obj);
+            return obj;
+        }
 
         PyObject* impl() {
-            import python.raw: Py_True, Py_False;
-            return Py_False;
+            import python.conv.python_to_d: to;
+            import python.raw: pyIncRef, _Py_TrueStruct, _Py_FalseStruct, _Py_NotImplementedStruct,
+                Py_EQ;
+
+            auto pyTrue = cast(PyObject*) &_Py_TrueStruct;
+            auto pyFalse = cast(PyObject*) &_Py_FalseStruct;
+            auto pyNotImplemented = cast(PyObject*) &_Py_NotImplementedStruct;
+
+            static if(__traits(compiles, T.init == T.init))
+                if(op == Py_EQ)
+                    return self.to!T == other.to!T ? pyTrue : pyFalse;
+
+            return incAndRet(pyNotImplemented);
         }
 
         return noThrowable!impl;
