@@ -215,6 +215,8 @@ struct PythonType(T) {
                 }
             }
 
+            _pyType.tp_richcompare = &PythonCompare!T._py_cmp;
+
         } else static if(isCallable!T) {
             _pyType.tp_basicsize = PythonCallable!T.sizeof;
             _pyType.tp_call = &PythonCallable!T._py_call;
@@ -1456,6 +1458,20 @@ private template PythonIndexAssign(T) {
                 }
             } else
                 return -1;
+        }
+
+        return noThrowable!impl;
+    }
+}
+
+
+private template PythonCompare(T) {
+
+    static extern(C) PyObject* tp_richcompare(PyObject* self, PyObject* other, int op) nothrow {
+
+        PyObject* impl() {
+            import python.raw: Py_True, Py_False;
+            return Py_False;
         }
 
         return noThrowable!impl;

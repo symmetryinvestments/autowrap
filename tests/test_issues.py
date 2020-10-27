@@ -271,5 +271,8 @@ def test_issue_268():
     import pytest
     from issues import Issue268
     assert Issue268(1) != Issue268(2)
-    with pytest.raises(AssertionError):
+    if is_pynih:
         assert Issue268(42) == Issue268(42)
+    else:
+        with pytest.raises(AssertionError):
+            assert Issue268(42) == Issue268(42)
