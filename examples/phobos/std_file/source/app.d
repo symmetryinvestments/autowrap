@@ -21,3 +21,7 @@ void hack() {
     import std.file: dirEntries, SpanMode;
     auto id = typeid(dirEntries("path", "pattern", SpanMode.depth));
 }
+
+
+pragma(mangle, "_D6python4type__T13PythonCompareTS3std8typecons__T10RebindableTyCQBf8datetime8timezone8TimeZoneZQBuZ7_py_cmpUNbPSQEh3raw7_objectQriZQv")
+private void hack1() { assert(0); }
