@@ -73,3 +73,7 @@ pragma(mangle, "_D6python4conv11python_to_d__T2toTxS3std12experimental9allocator
 extern(C) void hack3() {
 
 }
+
+
+pragma(mangle, "_D6python4type__T13PythonCompareTS3std12experimental9allocator15building_blocks14allocator_list__T13AllocatorListTSQDdQDcQCr8showcase14mmapRegionListFmZ7FactoryTSQEyQExQEmQEf14null_allocator13NullAllocatorZQEe4NodeZ7_py_cmpUNbPSQIs3raw7_objectQriZQv")
+private void hack4() { assert(0); }

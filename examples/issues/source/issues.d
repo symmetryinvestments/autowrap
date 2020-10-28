@@ -284,3 +284,8 @@ struct MethodWithScopeSafeDelegate {
         return cb(i, 33.3, Struct());
     }
 }
+
+
+struct Issue268 {
+    int i;
+}

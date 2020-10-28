@@ -109,8 +109,11 @@ struct PythonType(T) {
                     )
                 {
                     _pyType.tp_richcompare = &PythonOpCmp!T._py_cmp;
-                }
-            }
+                } else
+                    _pyType.tp_richcompare = &PythonCompare!T._py_cmp;
+            } else
+                _pyType.tp_richcompare = &PythonCompare!T._py_cmp;
+
 
             static if(hasMember!(T, "opSlice")) {
                 static if(AlwaysTry || __traits(compiles, &PythonIterViaList!T._py_iter))
@@ -1461,6 +1464,52 @@ private template PythonIndexAssign(T) {
         return noThrowable!impl;
     }
 }
+
+
+private template PythonCompare(T) {
+
+    static extern(C) PyObject* _py_cmp(PyObject* self, PyObject* other, int op) nothrow {
+
+        PyObject* impl() {
+            import python.conv.python_to_d: to;
+            import python.conv.d_to_python: toPython;
+            import python.raw: pyIncRef, _Py_NotImplementedStruct, Py_EQ, Py_LT, Py_LE, Py_NE, Py_GT, Py_GE;
+
+            auto pyNotImplemented = cast(PyObject*) &_Py_NotImplementedStruct;
+
+            static if(is(typeof(T.init < T.init) == bool))
+                if(op == Py_LT)
+                    return (self.to!T < other.to!T).toPython;
+
+            static if(is(typeof(T.init <= T.init) == bool))
+                if(op == Py_LE)
+                    return (self.to!T <= other.to!T).toPython;
+
+            static if(is(typeof(T.init == T.init) == bool))
+                if(op == Py_EQ)
+                    return (self.to!T == other.to!T).toPython;
+
+            static if(is(typeof(T.init != T.init) == bool))
+                if(op == Py_NE)
+                    return (self.to!T != other.to!T).toPython;
+
+            static if(is(typeof(T.init > T.init) == bool))
+                if(op == Py_GT)
+                    return (self.to!T > other.to!T).toPython;
+
+            static if(is(typeof(T.init >= T.init) == bool))
+                if(op == Py_GE)
+                    return (self.to!T >= other.to!T).toPython;
+
+
+            pyIncRef(pyNotImplemented);
+            return pyNotImplemented;
+        }
+
+        return noThrowable!impl;
+    }
+}
+
 
 private bool isInstanceOf(T)(PyObject* obj) {
     import python.raw: PyObject_IsInstance;
