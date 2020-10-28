@@ -12,6 +12,21 @@ import std.datetime: Date, DateTime;
 import core.time: Duration;
 
 
+PyObject* toPython(in bool val) @trusted {
+    import python.raw: pyIncRef, _Py_TrueStruct, _Py_FalseStruct;
+
+    auto pyTrue = cast(PyObject*) &_Py_TrueStruct;
+    auto pyFalse = cast(PyObject*) &_Py_FalseStruct;
+
+    static PyObject* incAndRet(PyObject* obj) {
+        pyIncRef(obj);
+        return obj;
+    }
+
+    return val ? incAndRet(pyTrue) : incAndRet(pyFalse);
+}
+
+
 PyObject* toPython(T)(T value) @trusted if(isIntegral!T && !is(T == enum)) {
     import python.raw: PyLong_FromLong;
     return PyLong_FromLong(value);
