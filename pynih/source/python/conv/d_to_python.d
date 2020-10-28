@@ -12,7 +12,7 @@ import std.datetime: Date, DateTime;
 import core.time: Duration;
 
 
-PyObject* toPython(in bool val) @trusted {
+PyObject* toPython(in bool val) @trusted @nogc {
     import python.raw: pyIncRef, _Py_TrueStruct, _Py_FalseStruct;
 
     auto pyTrue = cast(PyObject*) &_Py_TrueStruct;
