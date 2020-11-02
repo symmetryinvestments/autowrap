@@ -81,7 +81,6 @@ export ref const(IssueString) returnsRefConstString() {
     return ret;
 }
 
-
 export const(IssueString) returnsConstString() {
     return const IssueString("toto");
 }
@@ -288,4 +287,10 @@ struct MethodWithScopeSafeDelegate {
 
 struct Issue268 {
     int i;
+}
+
+
+struct Issue271 {
+    string value;
+    alias value this;
 }

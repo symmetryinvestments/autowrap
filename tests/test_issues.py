@@ -276,3 +276,17 @@ def test_issue_268():
     else:
         with pytest.raises(AssertionError):
             assert Issue268(42) == Issue268(42)
+
+
+def test_issue_271():
+    import pytest
+    if is_pyd:
+        with pytest.raises(ImportError):
+            from issues import Issue271
+            i = Issue271("foobar")
+            assert i.length == 6
+    else:
+        from issues import Issue271
+        i = Issue271("foobar")
+        with pytest.raises(AttributeError):
+            assert i.length == 6
