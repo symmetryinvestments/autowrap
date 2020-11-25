@@ -124,10 +124,11 @@ auto createPythonModule(LibraryName libraryName, modules...)()
         PyModule_AddIntConstant(ret, &intConstant.identifier[0], intConstant.value);
     }
     static foreach(strConstant; Filter!(isString, constants)) {
+
         // We can't pass a null pointer if the value of the string constant is empty
         PyModule_AddStringConstant(ret,
-                                   &strConstant.identifier[0],
-                                   strConstant.value.length ? &strConstant.value[0] : &emptyString[0]);
+                                   strConstant.identifier.ptr,
+                                   strConstant.value.length ? strConstant.value.ptr : &emptyString[0]);
     }
 
     return ret;
