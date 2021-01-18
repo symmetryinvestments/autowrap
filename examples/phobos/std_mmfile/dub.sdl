@@ -1,6 +1,13 @@
 name "std_mmfile"
 targetType "dynamicLibrary"
 
+configuration "python38" {
+    targetPath "lib/pyd"
+    lflags "-L$PYTHON_LIB_DIR"
+    dependency "autowrap:python" path="../../"
+    subConfiguration "autowrap:python" "python38"
+}
+
 configuration "python37" {
     targetPath "lib/pyd"
     lflags "-L$PYTHON_LIB_DIR"
