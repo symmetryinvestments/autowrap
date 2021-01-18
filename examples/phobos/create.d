@@ -31,6 +31,13 @@ void run(string[] args) @safe {
             targetType "dynamicLibrary"
 
 
+            configuration "python38" {
+                targetPath "lib/pyd"
+                lflags "-L$PYTHON_LIB_DIR"
+                dependency "autowrap:python" path="../../.."
+                subConfiguration "autowrap:python" "python38"
+            }
+
             configuration "python37" {
                 targetPath "lib/pyd"
                 lflags "-L$PYTHON_LIB_DIR"
@@ -79,7 +86,7 @@ void run(string[] args) @safe {
             	"versions": {
             		"autowrap": {"path":"../../.."},
             		"mirror": "0.3.0",
-            		"pyd": "0.13.1",
+            		"pyd": "0.14.0",
             		"unit-threaded": "1.0.4"
             	}
             }

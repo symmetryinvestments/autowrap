@@ -39,7 +39,7 @@ private template MemberFunctionImpl(alias _fn, string name, fn_t, string docstri
     import pyd.references: PydTypeObject;
     import pyd.def: def_selector;
     import pyd.func_wrap: minArgs, method_wrap;
-    import util.typeinfo: ApplyConstness, constness;
+    import pyd.util.typeinfo: ApplyConstness, constness;
     import deimos.python.methodobject: PyMethodDef, PyCFunction, METH_VARARGS, METH_KEYWORDS;
 
     alias func = def_selector!(_fn, fn_t).FN;
@@ -67,7 +67,7 @@ private template MemberFunctionImpl(alias _fn, string name, fn_t, string docstri
     }
 
     template shim(size_t i, T) {
-        import util.replace: Replace;
+        import pyd.util.replace: Replace;
         import std.traits: functionAttributes, variadicFunctionStyle, Variadic;
 
         enum shim = Replace!(q{
