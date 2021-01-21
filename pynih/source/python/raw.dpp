@@ -83,34 +83,34 @@ static if(isPython3) {
 
 // Demacroify
 bool pyIterCheck(PyObject* obj) @nogc nothrow {
-    return PyIter_Check(obj);
+    return cast(bool) PyIter_Check(obj);
 }
 
 // Demacroify
 bool pyListCheck(PyObject* obj) @nogc nothrow {
-    return PyList_Check(obj);
+    return cast(bool) PyList_Check(obj);
 }
 
 
 // Demacroify
 bool pyTupleCheck(PyObject* obj) @nogc nothrow {
-    return PyTuple_Check(obj);
+    return cast(bool) PyTuple_Check(obj);
 }
 
 
 // Demacroify
 bool pyDictCheck(PyObject *obj) @nogc nothrow {
-    return PyDict_Check(obj);
+    return cast(bool) PyDict_Check(obj);
 }
 
 // Demacroify
 bool pyBoolCheck(PyObject *obj) @nogc nothrow {
-    return PyBool_Check(obj);
+    return cast(bool) PyBool_Check(obj);
 }
 
 // Demacroify
 bool pyUnicodeCheck(PyObject* obj) @nogc nothrow {
-    return PyUnicode_Check(obj);
+    return cast(bool) PyUnicode_Check(obj);
 }
 
 bool pyNumberCheck(PyObject* obj) @nogc nothrow {
@@ -127,19 +127,19 @@ bool pyIntCheck(PyObject* obj) @nogc nothrow {
 }
 
 bool pyLongCheck(PyObject* obj) @nogc nothrow {
-    return PyLong_Check(obj);
+    return cast(bool) PyLong_Check(obj);
 }
 
 bool pyFloatCheck(PyObject* obj) @nogc nothrow {
-    return PyFloat_Check(obj);
+    return cast(bool) PyFloat_Check(obj);
 }
 
 bool pyDateTimeCheck(PyObject* obj) @nogc nothrow {
-    return PyDateTime_Check(obj);
+    return cast(bool) PyDateTime_Check(obj);
 }
 
 bool pyDateCheck(PyObject* obj) @nogc nothrow {
-    return PyDate_Check(obj);
+    return cast(bool) PyDate_Check(obj);
 }
 
 bool pyCallableCheck(PyObject* obj) @nogc nothrow {
