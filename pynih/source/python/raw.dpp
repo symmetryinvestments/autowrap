@@ -61,8 +61,7 @@ mixin template PyObjectHead() {
     PyObject_HEAD;
 }
 
-// Demacroify
-alias ModuleInitRet = PyMODINIT_FUNC;
+alias ModuleInitRet = PyObject*;  // PyMODINIT_FUNC can't be translated
 
 
 // Demacroify for Python2
