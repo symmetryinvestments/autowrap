@@ -1,6 +1,6 @@
 .PHONY: test contract/libcontract.so
 
-dpp_version = 0.4.0
+dpp_version = 0.4.3
 dpp_pkg_dir = $(HOME)/.dub/packages/dpp-$(dpp_version)
 dpp_lock = $(dpp_pkg_dir)/dpp.lock
 dpp_dir = $(dpp_pkg_dir)/dpp
@@ -29,4 +29,4 @@ $(dpp): $(dpp_lock)
 	cd $(dpp_dir) && dub build -q --build=release
 
 $(dpp_lock):
-	dub fetch dpp --version=$(dpp_version)
+	dub fetch dpp@$(dpp_version)
