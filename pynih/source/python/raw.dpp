@@ -273,3 +273,15 @@ auto pyDateTimeFromDateAndTime(int year, int month, int day, int hour = 0, int m
 auto pyDeltaFromDSU(int days, int seconds, int useconds) {
     return PyDelta_FromDSU(days, seconds, useconds);
 }
+
+
+static int PyType_HasFeature(PyTypeObject *type, ulong feature) @safe @nogc pure nothrow {
+    ulong flags;
+    flags = type.tp_flags;
+    return (flags & feature) != 0;
+}
+
+
+static int _Py_IS_TYPE(const PyObject *ob, const PyTypeObject *type) @safe @nogc pure nothrow {
+    return ob.ob_type == type;
+}

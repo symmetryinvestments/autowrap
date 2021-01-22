@@ -1,5 +1,6 @@
 name "pydtests"
 targetType "dynamicLibrary"
+dflags "-allinst"
 
 
 configuration "python37" {

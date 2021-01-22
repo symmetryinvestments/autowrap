@@ -1,5 +1,6 @@
 name "simple"
 targetType "dynamicLibrary"
+dflags "-allinst"
 
 configuration "python37" {
     targetPath "lib/pyd"
