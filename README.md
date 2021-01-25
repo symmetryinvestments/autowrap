@@ -1,6 +1,6 @@
 # autowrap
 
-[![Build Status](https://travis-ci.org/symmetryinvestments/autowrap.svg?branch=master)](https://travis-ci.org/symmetryinvestments/autowrap)
+![CI](https://github.com/symmetryinvestments/autowrap/workflows/CI/badge.svg)
 [![Build Status](https://ci.appveyor.com/api/projects/status/github/atilaneves/autowrap?branch=master&svg=true)](https://ci.appveyor.com/project/atilaneves/autowrap)
 [![Coverage](https://codecov.io/gh/atilaneves/autowrap/branch/master/graph/badge.svg)](https://codecov.io/gh/atilaneves/autowrap)
 
