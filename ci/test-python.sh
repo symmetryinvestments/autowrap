@@ -11,7 +11,7 @@ echo "Testing with $DC compiler"
 # echo 'Testing pynih'
 "$SCRIPT_DIR"/../pynih/ci.sh
 
-# FIXME - Use pythono38 when it exists
+# FIXME - Use python38 when it exists
 # DUB_CONFIGURATION=python38 make -j"$(nproc)" test_python
 
 # FIXME - use env when it works (broken until pyd tags the latest fix)
