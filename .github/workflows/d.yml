@@ -55,3 +55,5 @@ jobs:
           PYD_LIBPYTHON_DIR: /opt/python/3.8.1/lib
           LD_RUN_PATH: $PYTHON_LIB_DIR:$PYD_LIBPYTHON_DIR
           LIBRARY_PATH: /usr/lib/llvm-10/lib
+
+      - uses: codecov/codecov-action@v1
