@@ -60,8 +60,12 @@ UserAggregateReturnType!T to(T)(PyObject* value)
 
 private void toStructImpl(T)(PyObject* value, T* ret) {
     import autowrap.common: AlwaysTry;
+    import python.raw: Py_None;
     import python.type: PythonClass;
     import std.traits: fullyQualifiedName, isCopyable, isPointer;
+
+    if(value == Py_None)
+        throw new Exception("Cannot convert None to " ~ T.stringof);
 
     auto pyclass = cast(PythonClass!T*) value;
 
