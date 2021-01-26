@@ -13,8 +13,6 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
 
-      - run: find /opt/hostedtoolcache/Python -name 'Python.h'
-
       - uses: actions/checkout@v2
 
       - name: Install D compiler
@@ -52,9 +50,10 @@ jobs:
         shell: bash
         run: ci/test-all.sh
         env:
-          PYTHON_INCLUDE_DIR: ~/virtualenv/python3.9/include/python3.9
-          PYTHON_LIB_DIR: /opt/python/3.9.1/lib
+          PYTHON_INCLUDE_DIR: /opt/hostedtoolcache/Python/3.9.1/x64/include/python3.9
+          PYTHON_LIB_DIR: /opt/hostedtoolcache/Python/3.9.1/x64/lib
           PYD_LIBPYTHON_DIR: /opt/python/3.9.1/lib
+          PYD_LIBPYTHON: python3.9
           LD_RUN_PATH: $PYTHON_LIB_DIR:$PYD_LIBPYTHON_DIR
           LIBRARY_PATH: /usr/lib/llvm-10/lib
 
