@@ -216,16 +216,18 @@ class ExpressionVisitor(NodeVisitor):
         self.visit_List(node)
 
     def visit_Subscript(self, node):
-        from ir import Index
+        from ir import Index, NumLiteral
         import ast
 
-        assert type(node.slice) is ast.Index, \
-            f"Can only handle Index slice types"
-
-        name = _run_visitor(node.value, ExpressionVisitor)
-        index = _run_visitor(node.slice.value, ExpressionVisitor)
-
-        self.value = Index(name, index)
+        if type(node.slice) is ast.Index:
+            name = _run_visitor(node.value, ExpressionVisitor)
+            index = _run_visitor(node.slice.value, ExpressionVisitor)
+            self.value = Index(name, index)
+        elif type(node.slice) is ast.Constant:
+            name = _run_visitor(node.value, ExpressionVisitor)
+            self.value = Index(name, NumLiteral(node.slice.value))
+        else:
+            raise TypeError(f"Cannot handle index of type {type(node.slice)}")
 
 
 def _flatten(list_of_lists):

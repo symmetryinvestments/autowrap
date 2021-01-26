@@ -336,7 +336,7 @@ def test_subscript():
     ir = transform("""
 def test_subscript():
     arr = [1, 2, 3]
-    fst = arr[0]
+    fst = arr[1]
 """)
 
     assert ir == [
@@ -349,7 +349,7 @@ def test_subscript():
                                NumLiteral(2),
                                NumLiteral(3),
                            ])),
-                Assignment('fst', Index('arr', NumLiteral(0)))
+                Assignment('fst', Index('arr', NumLiteral(1)))
             ]
         )
     ]
