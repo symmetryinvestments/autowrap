@@ -1,6 +1,8 @@
 name "issues"
 targetType "dynamicLibrary"
 
+dflags "-allinst"
+
 dependency "vibe-d:redis" version="*"
 
 

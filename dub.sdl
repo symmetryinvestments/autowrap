@@ -32,7 +32,7 @@ configuration "unittest" {
     dflags "-preview=dip1008"
 
 
-    libs "python3.8"
+    libs "$PYD_LIBPYTHON"
     lflags "-L$PYTHON_LIB_DIR"
 
     dependency ":common" version="*"
@@ -55,7 +55,7 @@ configuration "unittest-no-pynih" {
     versions "unitUnthreaded"  # GIL
     versions "TestingAutowrap"
 
-    libs "python3.8" platform="posix"
+    libs "$PYD_LIBPYTHON" platform="posix"
     lflags "-L$PYTHON_LIB_DIR" platform="posix"
     libs "python38" platform="windows"
     lflags "\\\"/LIBPATH:$PYTHON_LIB_DIR\\\"" platform="windows"

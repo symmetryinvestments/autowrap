@@ -1,5 +1,6 @@
 name "std_net"
 targetType "dynamicLibrary"
+dflags "-allinst"
 
 
 configuration "python38" {

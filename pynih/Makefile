@@ -21,8 +21,8 @@ contract/libcontract.so: source/python/raw.d
 	cd contract && dub build -q
 
 
-source/python/raw.d: source/python/raw.dpp $(dpp)
-	$(dpp) --preprocess-only --include-path $(PYTHON_INCLUDE_DIR) $<
+source/python/raw.d: source/python/raw.dpp $(dpp) Makefile
+	$(dpp) --ignore-cursor=PyType_HasFeature --ignore-cursor=_Py_IS_TYPE --preprocess-only --include-path $(PYTHON_INCLUDE_DIR) $<
 
 
 $(dpp): $(dpp_lock)
