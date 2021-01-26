@@ -162,14 +162,15 @@ def test_issue_161():
         assert e0.msg == ""
 
         line = 42
-        next = None
+        next_ = None
         err = -1
 
         def errorFormatter(i):
             return str(i) + 'oops'
 
-        with pytest.raises(RuntimeError):
-            _ = Issue161("msg", "file", line, next, err, errorFormatter)
+        e1 = Issue161("msg", "file", line, next_, err, errorFormatter)
+        with pytest.raises(AttributeError):
+            assert e1.err == -1
 
 
 def test_issue_163():
