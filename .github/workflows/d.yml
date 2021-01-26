@@ -47,10 +47,10 @@ jobs:
         shell: bash
         run: ci/test-all.sh
         env:
-          PYTHON_INCLUDE_DIR: /opt/hostedtoolcache/Python/3.9.1/x64/include/python3.9
-          PYTHON_LIB_DIR: /opt/hostedtoolcache/Python/3.9.1/x64/lib
-          PYD_LIBPYTHON_DIR: /opt/hostedtoolcache/Python/3.9.1/x64/lib
-          PYD_LIBPYTHON: python3.9
+          PYTHON_INCLUDE_DIR: /opt/hostedtoolcache/Python/${{ matrix.python-version }}.1/x64/include/python${{ matrix.python-version }}
+          PYTHON_LIB_DIR: /opt/hostedtoolcache/Python/${{ matrix.python-version }}.1/x64/lib
+          PYD_LIBPYTHON_DIR: /opt/hostedtoolcache/Python/${{ matrix.python-version }}.1/x64/lib
+          PYD_LIBPYTHON: python${{ matrix.python-version }}
           LD_RUN_PATH: $PYTHON_LIB_DIR:$PYD_LIBPYTHON_DIR
           LIBRARY_PATH: /usr/lib/llvm-10/lib
 
