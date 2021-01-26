@@ -1,5 +1,6 @@
 name "std_socket"
 targetType "dynamicLibrary"
+dflags "-allinst"
 
 
 configuration "python38" {

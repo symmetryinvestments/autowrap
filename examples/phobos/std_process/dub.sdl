@@ -1,5 +1,6 @@
 name "std_process"
 targetType "dynamicLibrary"
+dflags "-allinst"
 
 
 configuration "python38" {
