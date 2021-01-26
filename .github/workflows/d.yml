@@ -13,7 +13,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
 
-      - run: find /opt/hostedtoolcache/Python -name '*.so'
+      - run: find /opt/hostedtoolcache/Python -name 'Python.h'
 
       - uses: actions/checkout@v2
 
