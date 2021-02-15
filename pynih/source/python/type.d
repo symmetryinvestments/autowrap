@@ -1485,27 +1485,33 @@ private template PythonCompare(T) {
 
             if(!other.isInstanceOf!T) return notImplemented;
 
-            static if(is(typeof(T.init < T.init) == bool))
+            // See https://github.com/symmetryinvestments/autowrap/issues/279
+            static if(is(T == class) || is(T == interface))
+                T _init;
+            else
+                static T _init() { return T.init; }
+
+            static if(is(typeof(_init < _init) == bool))
                 if(op == Py_LT)
                     return (self.to!T < other.to!T).toPython;
 
-            static if(is(typeof(T.init <= T.init) == bool))
+            static if(is(typeof(_init <= _init) == bool))
                 if(op == Py_LE)
                     return (self.to!T <= other.to!T).toPython;
 
-            static if(is(typeof(T.init == T.init) == bool))
+            static if(is(typeof(_init == _init) == bool))
                 if(op == Py_EQ)
                     return (self.to!T == other.to!T).toPython;
 
-            static if(is(typeof(T.init != T.init) == bool))
+            static if(is(typeof(_init != _init) == bool))
                 if(op == Py_NE)
                     return (self.to!T != other.to!T).toPython;
 
-            static if(is(typeof(T.init > T.init) == bool))
+            static if(is(typeof(_init > _init) == bool))
                 if(op == Py_GT)
                     return (self.to!T > other.to!T).toPython;
 
-            static if(is(typeof(T.init >= T.init) == bool))
+            static if(is(typeof(_init >= _init) == bool))
                 if(op == Py_GE)
                     return (self.to!T >= other.to!T).toPython;
 
