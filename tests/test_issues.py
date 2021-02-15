@@ -285,31 +285,26 @@ def test_issue_279():
         with pytest.raises(AssertionError):
             assert Struct279(42) != Struct279(42)
 
-        with pytest.raises(RuntimeError):  # FIXME, should be TypeError
-            assert Struct279(42) != None  # unpythonic but on purpose
-
-        with pytest.raises(RuntimeError):  # FIXME, should be TypeError
-            assert not Struct279(42) == None  # unpythonic but on purpose
-
-        # with pytest.raises(AssertionError):
-        #     assert Struct279(42) == DummyInt(42)
+        assert Struct279(42) != None  # unpythonic but on purpose
+        assert not Struct279(42) == None  # unpythonic but on purpose
 
         with pytest.raises(AssertionError):
-            assert Struct279(42) != DummyInt(42)
+            assert Struct279(42) == DummyInt(42)
 
-        # assert Class279(42) == Class279(42)  FIXME
+        assert Struct279(42) != DummyInt(42)
+
+        # assert Class279(42) == Class279(42)  # FIXME
         with pytest.raises(AssertionError):
             assert Class279(42) == Class279(33)
 
         assert Class279(42) != Class279(33)
         # with pytest.raises(AssertionError):
-        #     assert Class279(42) != Class279(42)  FIXME
+        #     assert Class279(42) != Class279(42)  # FIXME
 
         assert Class279(42) != None  # unpythonic but on purpose
         assert not Class279(42) == None  # unpythonic but on purpose
 
-        # with pytest.raises(AssertionError):
-        #     assert Class279(42) == DummyInt(42)
-
         with pytest.raises(AssertionError):
-            assert Class279(42) != DummyInt(42)
+            assert Class279(42) == DummyInt(42)
+
+        assert Class279(42) != DummyInt(42)

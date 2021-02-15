@@ -1477,7 +1477,13 @@ private template PythonCompare(T) {
             import python.conv.d_to_python: toPython;
             import python.raw: pyIncRef, _Py_NotImplementedStruct, Py_EQ, Py_LT, Py_LE, Py_NE, Py_GT, Py_GE;
 
-            auto pyNotImplemented = cast(PyObject*) &_Py_NotImplementedStruct;
+            static notImplemented() {
+                auto pyNotImplemented = cast(PyObject*) &_Py_NotImplementedStruct;
+                pyIncRef(pyNotImplemented);
+                return pyNotImplemented;
+            }
+
+            if(!other.isInstanceOf!T) return notImplemented;
 
             static if(is(typeof(T.init < T.init) == bool))
                 if(op == Py_LT)
@@ -1503,9 +1509,7 @@ private template PythonCompare(T) {
                 if(op == Py_GE)
                     return (self.to!T >= other.to!T).toPython;
 
-
-            pyIncRef(pyNotImplemented);
-            return pyNotImplemented;
+            return notImplemented;
         }
 
         return noThrowable!impl;
