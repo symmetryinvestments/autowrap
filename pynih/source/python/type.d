@@ -1237,6 +1237,7 @@ private template PythonAssignOperator(T, string op) {
 }
 
 
+// implements _py_cmp for types with opCmp
 private template PythonOpCmp(T) {
     static extern(C) PyObject* _py_cmp(PyObject* lhs, PyObject* rhs, int opId) nothrow {
         import python.raw: Py_LT, Py_LE, Py_EQ, Py_NE, Py_GT, Py_GE;
@@ -1466,6 +1467,7 @@ private template PythonIndexAssign(T) {
 }
 
 
+// implements _py_cmp for types without opCmp
 private template PythonCompare(T) {
 
     static extern(C) PyObject* _py_cmp(PyObject* self, PyObject* other, int op) nothrow {
