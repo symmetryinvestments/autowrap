@@ -1,4 +1,5 @@
 import os
+import pytest
 
 is_pyd = os.environ.get('PYD')
 is_pynih = os.environ.get('PYNIH')
@@ -24,7 +25,6 @@ def test_issue_40_cpp():
 
 def test_issue_42_takes_in():
     from issues import IssueString, takes_in_string
-    import pytest
 
     if is_pyd:
         # pyd can't convert to const
@@ -44,7 +44,6 @@ def test_issue_42_takes_ref():
 
 def test_issue_42_takes_ref_const():
     from issues import IssueString, takes_ref_const_string
-    import pytest
 
     if is_pyd:
         # pyd can't convert to const
@@ -54,7 +53,6 @@ def test_issue_42_takes_ref_const():
 
 def test_issue_42_returns_ref_const():
     from issues import returns_ref_const_string
-    import pytest
 
     if is_pyd:
         # pyd can't convert from const(issues.IssueString*)
@@ -65,7 +63,6 @@ def test_issue_42_returns_ref_const():
 
 def test_issue_42_returns_const():
     from issues import returns_const_string
-    import pytest
 
     if is_pyd:
         # pyd can't convert from const(issues.IssueString*)
@@ -76,8 +73,6 @@ def test_issue_42_returns_const():
 
 
 def test_issue_44():
-    import pytest
-
     if is_pynih:
         with pytest.raises(ImportError):
             from issues import string_ptr
@@ -89,7 +84,6 @@ def test_issue_44():
 
 def test_issue_47():
     from issues import uncopiable_ptr
-    import pytest
 
     if is_pyd:
         with pytest.raises(RuntimeError):
@@ -107,7 +101,6 @@ def test_issue_50():
 
 def test_issue_54():
     from issues import Issue54
-    import pytest
 
     c = Issue54(10)
     if is_pyd:
@@ -120,7 +113,6 @@ def test_issue_54():
 
 def test_issue_153():
     if is_pyd:  # FIXME
-        import pytest
         with pytest.raises(ImportError):
             from issues import Issue153
     else:
@@ -139,7 +131,6 @@ def test_issue_153():
 
 def test_issue_159():
     if is_pyd:  # FIXME
-        import pytest
         with pytest.raises(ImportError):
             from issues import Socket
     else:
@@ -150,8 +141,6 @@ def test_issue_159():
 
 
 def test_issue_161():
-    import pytest
-
     if is_pyd:  # FIXME
         with pytest.raises(ImportError):
             from issues import Issue161
@@ -174,7 +163,6 @@ def test_issue_161():
 
 
 def test_issue_163():
-    import pytest
     from issues import issue163
     ints = [1, 2, 3]
     issue163(ints)
@@ -193,7 +181,6 @@ def test_issue_164():
 
 # FIXME
 def test_issue_166():
-    import pytest
     from issues import issue166_days, issue166_secs, issue166_usecs
     from datetime import timedelta
 
@@ -211,7 +198,6 @@ def test_issue_166():
 
 def test_issue_198():
     from issues import Issue198
-    import pytest
 
     i = Issue198([0, 1, 2, 3, 4, 5])
     if is_pynih:
@@ -231,8 +217,6 @@ def test_infinite_range():
 
 
 def test_union():
-    import pytest
-
     if is_pynih:
         from issues import Union
     else:
@@ -241,7 +225,6 @@ def test_union():
 
 
 def test_issue_256():
-    import pytest
     from issues import Issue256
     from datetime import date
 
@@ -258,7 +241,6 @@ def test_issue_256():
 
 
 def test_method_delegate_safe_scope():
-    import pytest
     if is_pyd:
         with pytest.raises(ImportError):
             from issues import MethodWithScopeSafeDelegate
@@ -269,7 +251,6 @@ def test_method_delegate_safe_scope():
 
 
 def test_issue_268():
-    import pytest
     from issues import Issue268
     assert Issue268(1) != Issue268(2)
     if is_pynih:
@@ -280,7 +261,6 @@ def test_issue_268():
 
 
 def test_issue_271():
-    import pytest
     if is_pyd:
         with pytest.raises(ImportError):
             from issues import Issue271
@@ -291,3 +271,40 @@ def test_issue_271():
         i = Issue271("foobar")
         with pytest.raises(AttributeError):
             assert i.length == 6
+
+
+def test_issue_279():
+    from issues import Struct279, Class279, DummyInt
+
+    if is_pynih:
+        assert Struct279(42) == Struct279(42)
+        with pytest.raises(AssertionError):
+            assert Struct279(42) == Struct279(33)
+
+        assert Struct279(42) != Struct279(33)
+        with pytest.raises(AssertionError):
+            assert Struct279(42) != Struct279(42)
+
+        assert Struct279(42) != None  # unpythonic but on purpose
+        assert not Struct279(42) == None  # unpythonic but on purpose
+
+        with pytest.raises(AssertionError):
+            assert Struct279(42) == DummyInt(42)
+
+        assert Struct279(42) != DummyInt(42)
+
+        assert Class279(42) == Class279(42)
+        with pytest.raises(AssertionError):
+            assert Class279(42) == Class279(33)
+
+        assert Class279(42) != Class279(33)
+        with pytest.raises(AssertionError):
+            assert Class279(42) != Class279(42)
+
+        assert Class279(42) != None  # unpythonic but on purpose
+        assert not Class279(42) == None  # unpythonic but on purpose
+
+        with pytest.raises(AssertionError):
+            assert Class279(42) == DummyInt(42)
+
+        assert Class279(42) != DummyInt(42)

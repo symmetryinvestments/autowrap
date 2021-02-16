@@ -294,3 +294,29 @@ struct Issue271 {
     string value;
     alias value this;
 }
+
+
+struct Struct279 {
+    int i;
+    this(int i) @safe @nogc pure scope { this.i = i; }
+    bool opEquals(typeof(this) other) @safe @nogc pure scope const {
+        return i == other.i;
+    }
+}
+
+
+class Class279 {
+    int i;
+    this(int i) @safe @nogc pure scope { this.i = i; }
+
+    override bool opEquals(Object obj) @safe pure scope const {
+        auto other = cast(typeof(this)) obj;
+        if(other is null) throw new Exception("Can only compare to Class279, not " ~ typeid(obj).toString);
+        return i == other.i;
+    }
+}
+
+struct DummyInt {
+    int i;
+    this(int i) @safe @nogc pure scope { this.i = i; }
+}

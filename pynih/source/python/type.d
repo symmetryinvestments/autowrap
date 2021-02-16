@@ -1237,6 +1237,7 @@ private template PythonAssignOperator(T, string op) {
 }
 
 
+// implements _py_cmp for types with opCmp
 private template PythonOpCmp(T) {
     static extern(C) PyObject* _py_cmp(PyObject* lhs, PyObject* rhs, int opId) nothrow {
         import python.raw: Py_LT, Py_LE, Py_EQ, Py_NE, Py_GT, Py_GE;
@@ -1466,6 +1467,7 @@ private template PythonIndexAssign(T) {
 }
 
 
+// implements _py_cmp for types without opCmp
 private template PythonCompare(T) {
 
     static extern(C) PyObject* _py_cmp(PyObject* self, PyObject* other, int op) nothrow {
@@ -1475,35 +1477,45 @@ private template PythonCompare(T) {
             import python.conv.d_to_python: toPython;
             import python.raw: pyIncRef, _Py_NotImplementedStruct, Py_EQ, Py_LT, Py_LE, Py_NE, Py_GT, Py_GE;
 
-            auto pyNotImplemented = cast(PyObject*) &_Py_NotImplementedStruct;
+            static notImplemented() {
+                auto pyNotImplemented = cast(PyObject*) &_Py_NotImplementedStruct;
+                pyIncRef(pyNotImplemented);
+                return pyNotImplemented;
+            }
 
-            static if(is(typeof(T.init < T.init) == bool))
+            if(!other.isInstanceOf!T) return notImplemented;
+
+            // See https://github.com/symmetryinvestments/autowrap/issues/279
+            static if(is(T == class) || is(T == interface))
+                T _init;
+            else
+                static T _init() { return T.init; }
+
+            static if(is(typeof(_init < _init) == bool))
                 if(op == Py_LT)
                     return (self.to!T < other.to!T).toPython;
 
-            static if(is(typeof(T.init <= T.init) == bool))
+            static if(is(typeof(_init <= _init) == bool))
                 if(op == Py_LE)
                     return (self.to!T <= other.to!T).toPython;
 
-            static if(is(typeof(T.init == T.init) == bool))
+            static if(is(typeof(_init == _init) == bool))
                 if(op == Py_EQ)
                     return (self.to!T == other.to!T).toPython;
 
-            static if(is(typeof(T.init != T.init) == bool))
+            static if(is(typeof(_init != _init) == bool))
                 if(op == Py_NE)
                     return (self.to!T != other.to!T).toPython;
 
-            static if(is(typeof(T.init > T.init) == bool))
+            static if(is(typeof(_init > _init) == bool))
                 if(op == Py_GT)
                     return (self.to!T > other.to!T).toPython;
 
-            static if(is(typeof(T.init >= T.init) == bool))
+            static if(is(typeof(_init >= _init) == bool))
                 if(op == Py_GE)
                     return (self.to!T >= other.to!T).toPython;
 
-
-            pyIncRef(pyNotImplemented);
-            return pyNotImplemented;
+            return notImplemented;
         }
 
         return noThrowable!impl;
