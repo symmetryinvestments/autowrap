@@ -24,14 +24,22 @@ struct PythonObject {
 
     PythonObject str() const {
         import python.raw: PyObject_Str;
-        import python.conv.python_to_d: to;
         return PythonObject(PyObject_Str(cast(PyObject*) _obj));
     }
 
     PythonObject repr() const {
         import python.raw: PyObject_Repr;
-        import python.conv.python_to_d: to;
         return PythonObject(PyObject_Repr(cast(PyObject*) _obj));
+    }
+
+    PythonObject bytes() const {
+        import python.raw: PyObject_Bytes;
+        return PythonObject(PyObject_Bytes(cast(PyObject*) _obj));
+    }
+
+    T to(T)() const {
+        import python.conv.python_to_d: to;
+        return (cast(PyObject*) _obj).to!T;
     }
 
     string toString() const {

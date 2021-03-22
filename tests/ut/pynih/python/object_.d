@@ -103,3 +103,10 @@ unittest {
     PythonObject("foo").toString.should == "foo";
     PythonObject([1: 2]).toString.should == "{1: 2}";
 }
+
+
+@("bytes")
+unittest {
+    int[] ints = ['f', 'o', 'o'];
+    PythonObject(ints).bytes.toString.should == "b'foo'";
+}
