@@ -109,4 +109,8 @@ unittest {
 unittest {
     int[] ints = ['f', 'o', 'o'];
     PythonObject(ints).bytes.toString.should == "b'foo'";
+    PythonObject("oops").bytes
+        .shouldThrowWithMessage!PythonException(
+            "TypeError: cannot convert 'str' object to bytes"
+            );
 }

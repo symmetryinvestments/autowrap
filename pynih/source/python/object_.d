@@ -33,8 +33,12 @@ struct PythonObject {
     }
 
     PythonObject bytes() const {
+        import python.exception: PythonException;
         import python.raw: PyObject_Bytes;
-        return PythonObject(PyObject_Bytes(cast(PyObject*) _obj));
+
+        auto obj = PyObject_Bytes(cast(PyObject*) _obj);
+        if(obj is null) throw new PythonException("Failed to get bytes representation");
+        return PythonObject(obj);
     }
 
     T to(T)() const {
