@@ -67,6 +67,17 @@ struct PythonObject {
         return ret;
     }
 
+    bool not() const {
+        import python.exception: PythonException;
+        import python.raw: PyObject_Not;
+
+        const ret = PyObject_Not(cast(PyObject*) _obj);
+        if(ret == -1)
+            throw new PythonException("Could not negate");
+
+        return cast(bool) ret;
+    }
+
     T to(T)() const {
         import python.conv.python_to_d: to;
         return (cast(PyObject*) _obj).to!T;

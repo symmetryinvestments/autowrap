@@ -149,3 +149,11 @@ unittest {
     PythonObject([1, 2]).len.should == 2;
     PythonObject([1: 2]).len.should == 1;
 }
+
+@("not")
+unittest {
+    PythonObject(false).not.should == true;
+    PythonObject(true).not.should == false;
+    PythonObject(0).not.should == true;
+    PythonObject(1).not.should == false;
+}
