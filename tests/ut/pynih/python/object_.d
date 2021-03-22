@@ -83,15 +83,23 @@ unittest {
 
 @("str")
 unittest {
-    PythonObject(3).str.should == "3";
-    PythonObject("foo").str.should == "foo";
-    PythonObject([1: 2]).str.should == "{1: 2}";
+    PythonObject(3).str.toString.should == "3";
+    PythonObject("foo").str.toString.should == "foo";
+    PythonObject([1: 2]).str.toString.should == "{1: 2}";
 }
 
 
 @("repr")
 unittest {
-    PythonObject(3).repr.should == "3";
-    PythonObject("foo").repr.should == "'foo'";
-    PythonObject([1: 2]).repr.should == "{1: 2}";
+    PythonObject(3).repr.toString.should == "3";
+    PythonObject("foo").repr.toString.should == "'foo'";
+    PythonObject([1: 2]).repr.toString.should == "{1: 2}";
+}
+
+
+@("toString")
+unittest {
+    PythonObject(3).toString.should == "3";
+    PythonObject("foo").toString.should == "foo";
+    PythonObject([1: 2]).toString.should == "{1: 2}";
 }
