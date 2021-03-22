@@ -8,7 +8,7 @@ jobs:
       matrix:
         os: [ubuntu-20.04]
         dc: [dmd-2.095.0]
-        python-version: [3.8.1, 3.9.1]
+        python-version: [3.8, 3.9]
 
     runs-on: ${{ matrix.os }}
     steps:
@@ -47,9 +47,9 @@ jobs:
         shell: bash
         run: ci/test-all.sh
         env:
-          PYTHON_INCLUDE_DIR: /opt/hostedtoolcache/Python/${{ matrix.python-version }}.1/x64/include/python${{ matrix.python-version }}
-          PYTHON_LIB_DIR: /opt/hostedtoolcache/Python/${{ matrix.python-version }}.1/x64/lib
-          PYD_LIBPYTHON_DIR: /opt/hostedtoolcache/Python/${{ matrix.python-version }}.1/x64/lib
+          PYTHON_INCLUDE_DIR: /opt/hostedtoolcache/Python/${{ matrix.python-version }}.2/x64/include/python${{ matrix.python-version }}
+          PYTHON_LIB_DIR: /opt/hostedtoolcache/Python/${{ matrix.python-version }}.2/x64/lib
+          PYD_LIBPYTHON_DIR: /opt/hostedtoolcache/Python/${{ matrix.python-version }}.2/x64/lib
           PYD_LIBPYTHON: python${{ matrix.python-version }}
           LD_RUN_PATH: $PYTHON_LIB_DIR:$PYD_LIBPYTHON_DIR
           LIBRARY_PATH: /usr/lib/llvm-10/lib
