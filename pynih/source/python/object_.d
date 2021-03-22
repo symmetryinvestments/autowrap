@@ -61,30 +61,35 @@ struct PythonObject {
     }
 
     auto hash() const {
-        import python.raw: PyObject_Hash;
-        return PyObject_Hash(cast(PyObject*) _obj);
+        return retDirect!("PyObject_Hash");
     }
 
     auto len() const {
-        import python.exception: PythonException;
-        import python.raw: PyObject_Length;
-
-        const ret = PyObject_Length(cast(PyObject*) _obj);
-        if(ret == -1)
-            throw new PythonException("Could not get length");
-
-        return ret;
+        return retDirect!("PyObject_Length");
     }
 
     bool not() const {
-        import python.exception: PythonException;
-        import python.raw: PyObject_Not;
+        return cast(bool) retDirect!("PyObject_Not");
+    }
 
-        const ret = PyObject_Not(cast(PyObject*) _obj);
-        if(ret == -1)
-            throw new PythonException("Could not negate");
+    private auto retDirect(string cApiFunc)() const {
 
-        return cast(bool) ret;
+        import std.format: format;
+
+        enum code = q{
+
+            import python.exception: PythonException;
+            import python.raw: %s;
+
+            const ret = %s(cast(PyObject*) _obj);
+            if(ret == -1)
+                throw new PythonException("Could not call %s");
+
+            return ret;
+
+        }.format(cApiFunc, cApiFunc, cApiFunc);
+
+        mixin(code);
     }
 
     T to(T)() const {
