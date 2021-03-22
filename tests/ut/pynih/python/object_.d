@@ -13,5 +13,6 @@ unittest {
     (three < five).should == true;
     (five < three).should == false;
 
-    (three < PythonObject("foo")).shouldThrowWithMessage("Error comparing Python objects");
+    (three < PythonObject("foo"))
+        .shouldThrowWithMessage("TypeError: '<' not supported between instances of 'int' and 'str'");
 }
