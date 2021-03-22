@@ -13,9 +13,25 @@ unittest {
     const five = PythonObject(5);
 
     (three < five).should == true;
+    (three < three).should == false;
     (five < three).should == false;
 
     (three < PythonObject("foo"))
+        .shouldThrowWithMessage!PythonException(
+            "TypeError: '<' not supported between instances of 'int' and 'str'");
+}
+
+
+@("le")
+unittest {
+    const three = PythonObject(3);
+    const five = PythonObject(5);
+
+    (three <= five).should == true;
+    (three <= three).should == true;
+    (five <= three).should == false;
+
+    (three <= PythonObject("foo"))
         .shouldThrowWithMessage!PythonException(
             "TypeError: '<' not supported between instances of 'int' and 'str'");
 }
