@@ -41,6 +41,11 @@ struct PythonObject {
         return PythonObject(obj);
     }
 
+    auto hash() const {
+        import python.raw: PyObject_Hash;
+        return PyObject_Hash(cast(PyObject*) _obj);
+    }
+
     T to(T)() const {
         import python.conv.python_to_d: to;
         return (cast(PyObject*) _obj).to!T;

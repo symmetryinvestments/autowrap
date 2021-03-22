@@ -114,3 +114,11 @@ unittest {
             "TypeError: cannot convert 'str' object to bytes"
             );
 }
+
+
+@("hash")
+unittest {
+    PythonObject(42).hash.should == 42;
+    PythonObject(77).hash.should == 77;
+    PythonObject(3.3).hash.should == 691752902764107779;
+}
