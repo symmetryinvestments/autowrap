@@ -23,32 +23,41 @@ struct PythonObject {
     }
 
     PythonObject str() const {
-        import python.raw: PyObject_Str;
-        return PythonObject(PyObject_Str(cast(PyObject*) _obj));
+        return retPyObject!("PyObject_Str");
     }
 
     PythonObject repr() const {
-        import python.raw: PyObject_Repr;
-        return PythonObject(PyObject_Repr(cast(PyObject*) _obj));
+        return retPyObject!("PyObject_Repr");
     }
 
     PythonObject bytes() const {
-        import python.exception: PythonException;
-        import python.raw: PyObject_Bytes;
-
-        auto obj = PyObject_Bytes(cast(PyObject*) _obj);
-        if(obj is null) throw new PythonException("Failed to get bytes representation");
-        return PythonObject(obj);
+        return retPyObject!("PyObject_Bytes");
     }
 
     PythonObject type() const {
-        import python.raw: PyObject_Type;
-        return PythonObject(PyObject_Type(cast(PyObject*) _obj));
+        return retPyObject!("PyObject_Type");
     }
 
     PythonObject dir() const {
-        import python.raw: PyObject_Dir;
-        return PythonObject(PyObject_Dir(cast(PyObject*) _obj));
+        return retPyObject!("PyObject_Dir");
+    }
+
+    private PythonObject retPyObject(string funcName)() const {
+        import std.format: format;
+
+        enum code = q{
+
+            import python.exception: PythonException;
+            import python.raw: %s;
+
+            auto obj = %s(cast(PyObject*) _obj);
+            if(obj is null) throw new PythonException("Failed to call %s");
+
+            return PythonObject(obj);
+
+        }.format(funcName, funcName, funcName);
+
+        mixin(code);
     }
 
     auto hash() const {
