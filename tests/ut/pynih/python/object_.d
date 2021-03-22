@@ -122,3 +122,11 @@ unittest {
     PythonObject(77).hash.should == 77;
     PythonObject(3.3).hash.should == 691752902764107779;
 }
+
+
+@("type")
+unittest {
+    PythonObject(42).type.toString.should == "<class 'int'>";
+    PythonObject("foo").type.toString.should == "<class 'str'>";
+    PythonObject([1: 2]).type.toString.should == "<class 'dict'>";
+}
