@@ -41,11 +41,6 @@ struct PythonObject {
         return PythonObject(obj);
     }
 
-    auto hash() const {
-        import python.raw: PyObject_Hash;
-        return PyObject_Hash(cast(PyObject*) _obj);
-    }
-
     PythonObject type() const {
         import python.raw: PyObject_Type;
         return PythonObject(PyObject_Type(cast(PyObject*) _obj));
@@ -54,6 +49,12 @@ struct PythonObject {
     PythonObject dir() const {
         import python.raw: PyObject_Dir;
         return PythonObject(PyObject_Dir(cast(PyObject*) _obj));
+    }
+
+
+    auto hash() const {
+        import python.raw: PyObject_Hash;
+        return PyObject_Hash(cast(PyObject*) _obj);
     }
 
     T to(T)() const {
