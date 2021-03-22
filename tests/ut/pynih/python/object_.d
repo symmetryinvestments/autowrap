@@ -137,3 +137,15 @@ unittest {
     "real".should.be in dir;
     "imag".should.be in dir;
 }
+
+
+@("len")
+unittest {
+    PythonObject(42).len.shouldThrowWithMessage!PythonException(
+        "TypeError: object of type 'int' has no len()"
+    );
+
+    PythonObject("foo").len.should == 3;
+    PythonObject([1, 2]).len.should == 2;
+    PythonObject([1: 2]).len.should == 1;
+}

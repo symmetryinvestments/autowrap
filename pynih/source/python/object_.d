@@ -51,10 +51,20 @@ struct PythonObject {
         return PythonObject(PyObject_Dir(cast(PyObject*) _obj));
     }
 
-
     auto hash() const {
         import python.raw: PyObject_Hash;
         return PyObject_Hash(cast(PyObject*) _obj);
+    }
+
+    auto len() const {
+        import python.exception: PythonException;
+        import python.raw: PyObject_Length;
+
+        const ret = PyObject_Length(cast(PyObject*) _obj);
+        if(ret == -1)
+            throw new PythonException("Could not get length");
+
+        return ret;
     }
 
     T to(T)() const {
