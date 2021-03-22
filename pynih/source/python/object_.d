@@ -16,24 +16,23 @@ struct PythonObject {
     }
 
     int opCmp(in PythonObject other) @trusted /* cast because of const */ const {
-        import python.raw: PyObject_RichCompareBool, Py_LT, Py_EQ;
+        import python.raw: PyObject_RichCompareBool, Py_LT, Py_EQ, Py_GT;
         import python.exception: PythonException;
 
-        const lt = PyObject_RichCompareBool(cast(PyObject*)_obj, cast(PyObject*)other._obj, Py_LT);
-        if(lt == -1) {
-            throw new PythonException("Error comparing Python objects");
+        static int[int] pyOpToRet;
+        if(pyOpToRet == pyOpToRet.init)
+            pyOpToRet = [Py_LT: -1, Py_EQ: 0, Py_GT: 1];
+
+        foreach(pyOp, ret; pyOpToRet) {
+            const pyRes = PyObject_RichCompareBool(cast(PyObject*)_obj, cast(PyObject*)other._obj, pyOp);
+
+            if(pyRes == -1)
+                throw new PythonException("Error comparing Python objects");
+
+            if(pyRes == 1)
+                return ret;
         }
 
-        if(lt == 1) return -1;
-
-        const eq = PyObject_RichCompareBool(cast(PyObject*)_obj, cast(PyObject*)other._obj, Py_EQ);
-        if(eq == -1) {
-            throw new PythonException("Error comparing Python objects");
-        }
-
-        if(eq == 1) return 0;
-
-
-        return 1;
+        assert(0);
     }
 }
