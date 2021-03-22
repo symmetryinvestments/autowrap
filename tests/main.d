@@ -12,6 +12,7 @@ alias pynihModules = AliasSeq!(
     "pynih.python.conv",
     "pynih.python.util",
     "pynih.python.type",
+    "pynih.python.object_",
 );
 
 
