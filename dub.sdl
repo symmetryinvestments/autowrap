@@ -24,8 +24,8 @@ configuration "unittest" {
 
     mainSourceFile "tests/main.d"
     excludedSourceFiles "pynih/source/autowrap/pynih/package.d"
-    sourcePaths "python/source" "reflection/source" "tests/ut"
-    importPaths "python/source" "tests/ut"
+    sourcePaths "reflection/source" "tests/ut"
+    importPaths "tests/ut"
     versions "XllDummyGetter"
     versions "unitUnthreaded"  # GIL
     versions "TestingAutowrap"
@@ -49,7 +49,7 @@ configuration "unittest-no-pynih" {
 
     mainSourceFile "tests/main.d"
     sourcePaths "python/source" "reflection/source" "tests/ut"
-    excludedSourceFiles "tests/ut/pynih/python/conv.d" "tests/ut/pynih/python/util.d"
+    excludedSourceFiles "tests/ut/pynih/python/conv.d" "tests/ut/pynih/python/util.d" "tests/ut/pynih/python/object_.d"
     importPaths "python/source" "tests/ut"
     versions "XllDummyGetter"
     versions "unitUnthreaded"  # GIL
