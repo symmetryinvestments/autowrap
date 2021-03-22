@@ -15,7 +15,7 @@ struct PythonObject {
         _obj = value.toPython;
     }
 
-    int opCmp(in PythonObject other) @trusted /* cast because of const */ const {
+    int opCmp(in PythonObject other) @system const {
         import python.raw: PyObject_RichCompareBool, Py_LT, Py_EQ, Py_GT;
         import python.exception: PythonException;
 
