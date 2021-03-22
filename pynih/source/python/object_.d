@@ -51,6 +51,11 @@ struct PythonObject {
         return PythonObject(PyObject_Type(cast(PyObject*) _obj));
     }
 
+    PythonObject dir() const {
+        import python.raw: PyObject_Dir;
+        return PythonObject(PyObject_Dir(cast(PyObject*) _obj));
+    }
+
     T to(T)() const {
         import python.conv.python_to_d: to;
         return (cast(PyObject*) _obj).to!T;

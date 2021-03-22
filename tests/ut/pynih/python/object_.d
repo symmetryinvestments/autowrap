@@ -130,3 +130,10 @@ unittest {
     PythonObject("foo").type.toString.should == "<class 'str'>";
     PythonObject([1: 2]).type.toString.should == "<class 'dict'>";
 }
+
+@("dir")
+unittest {
+    const dir = PythonObject(42).dir.to!(string[]);
+    "real".should.be in dir;
+    "imag".should.be in dir;
+}
