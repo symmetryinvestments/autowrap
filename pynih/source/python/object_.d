@@ -80,8 +80,30 @@ struct PythonObject {
 
     bool hasattr(in PythonObject attr) const {
         import python.raw: PyObject_HasAttr;
-        import std.string: toStringz;
         return cast(bool) PyObject_HasAttr(cast(PyObject*) _obj, cast(PyObject*) attr._obj);
+    }
+
+    PythonObject getattr(in string attr) const {
+        import python.exception: PythonException;
+        import python.raw: PyObject_GetAttrString;
+        import std.string: toStringz;
+
+        auto obj = PyObject_GetAttrString(cast(PyObject*) _obj, attr.toStringz);
+
+        if(obj is null) throw new PythonException("Could not get attr " ~ attr);
+
+        return PythonObject(obj);
+    }
+
+    PythonObject getattr(in PythonObject attr) const {
+        import python.exception: PythonException;
+        import python.raw: PyObject_GetAttr;
+
+        auto obj = PyObject_GetAttr(cast(PyObject*) _obj, cast(PyObject*) attr._obj);
+
+        if(obj is null) throw new PythonException("Could not get attr " ~ attr.to!string);
+
+        return PythonObject(obj);
     }
 
     private auto retDirect(string cApiFunc)() const {

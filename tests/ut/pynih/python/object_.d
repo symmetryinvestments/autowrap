@@ -167,3 +167,17 @@ unittest {
     PythonObject(42).hasattr(PythonObject("real")).should == true;
     PythonObject(42).hasattr(PythonObject("foo")).should == false;
 }
+
+
+@("getattr")
+unittest {
+    PythonObject(42).getattr("real").to!int.should == 42;
+    PythonObject(42).getattr("imag").to!int.should == 0;
+    PythonObject(42).getattr("foo").shouldThrowWithMessage!PythonException(
+        "AttributeError: 'int' object has no attribute 'foo'");
+
+    PythonObject(42).getattr(PythonObject("real")).to!int.should == 42;
+    PythonObject(42).getattr(PythonObject("imag")).to!int.should == 0;
+    PythonObject(42).getattr(PythonObject("foo")).shouldThrowWithMessage!PythonException(
+        "AttributeError: 'int' object has no attribute 'foo'");
+}
