@@ -72,6 +72,32 @@ struct PythonObject {
         return retPyObject!"PyObject_GetAttr"(cast(PyObject*) attr._obj);
     }
 
+    void setattr(T)(in string attr, auto ref T val) if(!is(Unqual!T == PythonObject)) {
+        setattr(attr, PythonObject(val));
+    }
+
+    void setattr(in string attr, in PythonObject val) {
+        import python.raw: PyObject_SetAttrString;
+        import python.exception: PythonException;
+        import std.string: toStringz;
+
+        const res = PyObject_SetAttrString(cast(PyObject*) _obj, attr.toStringz, cast(PyObject*) val._obj);
+        if(res == -1) throw new PythonException("Error setting attribute " ~ attr);
+    }
+
+    void setattr(T)(in PythonObject attr, auto ref T val) if(!is(Unqual!T == PythonObject)) {
+        setattr(attr, PythonObject(val));
+    }
+
+    void setattr(in PythonObject attr, in PythonObject val) {
+        import python.raw: PyObject_SetAttr;
+        import python.exception: PythonException;
+
+        const res = PyObject_SetAttr(cast(PyObject*) _obj, cast(PyObject*) attr._obj, cast(PyObject*) val._obj);
+        if(res == -1) throw new PythonException("Error setting attribute ");
+
+    }
+
     T to(T)() const {
         import python.conv.python_to_d: to;
         return (cast(PyObject*) _obj).to!T;
