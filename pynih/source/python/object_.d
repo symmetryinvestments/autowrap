@@ -101,7 +101,7 @@ struct PythonObject {
 
         auto obj = PyObject_GetAttr(cast(PyObject*) _obj, cast(PyObject*) attr._obj);
 
-        if(obj is null) throw new PythonException("Could not get attr " ~ attr.to!string);
+        if(obj is null) throw new PythonException("Could not get attr");
 
         return PythonObject(obj);
     }
