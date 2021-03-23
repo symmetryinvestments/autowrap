@@ -157,3 +157,155 @@ unittest {
     PythonObject(0).not.should == true;
     PythonObject(1).not.should == false;
 }
+
+
+@("hasattr")
+unittest {
+    PythonObject(42).hasattr("real").should == true;
+    PythonObject(42).hasattr("foo").should == false;
+
+    PythonObject(42).hasattr(PythonObject("real")).should == true;
+    PythonObject(42).hasattr(PythonObject("foo")).should == false;
+    PythonObject(42).hasattr(PythonObject(42)).should == false;
+}
+
+
+@("getattr")
+unittest {
+    PythonObject(42).getattr("real").to!int.should == 42;
+    PythonObject(42).getattr("imag").to!int.should == 0;
+    PythonObject(42).getattr("foo").shouldThrowWithMessage!PythonException(
+        "AttributeError: 'int' object has no attribute 'foo'");
+
+    PythonObject(42).getattr(PythonObject("real")).to!int.should == 42;
+    PythonObject(42).getattr(PythonObject("imag")).to!int.should == 0;
+
+    PythonObject(42).getattr(PythonObject("foo")).shouldThrowWithMessage!PythonException(
+        "AttributeError: 'int' object has no attribute 'foo'");
+    PythonObject(42).getattr(PythonObject(42)).shouldThrowWithMessage!PythonException(
+        "TypeError: attribute name must be string, not 'int'");
+}
+
+
+@("setattr")
+unittest {
+    import python.raw: PyRun_StringFlags, Py_file_input, Py_eval_input, PyCompilerFlags, PyDict_New;
+    import std.array: join;
+    import std.string: toStringz;
+
+    static linesToCode(in string[] lines) {
+        return lines.join("\n").toStringz;
+    }
+
+    const define = linesToCode(
+        [
+            `class Foo(object):`,
+            `    pass`,
+            ``,
+        ]
+    );
+
+    PyCompilerFlags flags;
+    auto globals = PyDict_New;
+    auto locals = PyDict_New;
+
+    auto defRes = PyRun_StringFlags(
+        define,
+        Py_file_input,
+        globals,
+        locals,
+        &flags,
+    );
+
+    if(defRes is null) throw new PythonException("oops");
+
+    auto evalRes = PyRun_StringFlags(
+        `Foo()`,
+        Py_eval_input,
+        globals,
+        locals,
+        &flags,
+    );
+
+    if(evalRes is null) throw new PythonException("oops");
+    auto foo = PythonObject(evalRes);
+    "Foo object".should.be in foo.toString;
+
+    foo.hasattr("a1").should == false;
+    foo.setattr("a1", "bar");
+    foo.hasattr("a1").should == true;
+    foo.getattr("a1").to!string.should == "bar";
+    foo.setattr("a1", PythonObject("baz"));
+    foo.getattr("a1").to!string.should == "baz";
+
+    foo.hasattr("a2").should == false;
+    foo.setattr(PythonObject("a2"), "quux");
+    foo.hasattr("a2").should == true;
+    foo.getattr("a2").to!string.should == "quux";
+    foo.setattr(PythonObject("a2"), PythonObject("toto"));
+    foo.hasattr("a2").should == true;
+    foo.getattr("a2").to!string.should == "toto";
+    foo.setattr(PythonObject(42), "oops").shouldThrowWithMessage!PythonException(
+        "TypeError: attribute name must be string, not 'int'");
+}
+
+
+@("delattr")
+unittest {
+    import python.raw: PyRun_StringFlags, Py_file_input, Py_eval_input, PyCompilerFlags, PyDict_New;
+    import std.array: join;
+    import std.string: toStringz;
+
+    static linesToCode(in string[] lines) {
+        return lines.join("\n").toStringz;
+    }
+
+    const define = linesToCode(
+        [
+            `class Foo(object):`,
+            `    pass`,
+            ``,
+        ]
+    );
+
+    PyCompilerFlags flags;
+    auto globals = PyDict_New;
+    auto locals = PyDict_New;
+
+    auto defRes = PyRun_StringFlags(
+        define,
+        Py_file_input,
+        globals,
+        locals,
+        &flags,
+    );
+
+    if(defRes is null) throw new PythonException("oops");
+
+    auto evalRes = PyRun_StringFlags(
+        `Foo()`,
+        Py_eval_input,
+        globals,
+        locals,
+        &flags,
+    );
+
+    if(evalRes is null) throw new PythonException("oops");
+    auto foo = PythonObject(evalRes);
+    "Foo object".should.be in foo.toString;
+
+    foo.delattr("oops").shouldThrowWithMessage!PythonException(
+        "AttributeError: oops");
+    foo.delattr(PythonObject("oopsie")).shouldThrowWithMessage!PythonException(
+        "AttributeError: oopsie");
+
+    foo.setattr("key", "val");
+    foo.hasattr("key").should == true;
+    foo.delattr("key");
+    foo.hasattr("key").should == false;
+
+    foo.setattr(PythonObject("key"), "value");
+    foo.hasattr("key").should == true;
+    foo.delattr(PythonObject("key"));
+    foo.hasattr("key").should == false;
+}

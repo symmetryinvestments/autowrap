@@ -42,54 +42,77 @@ struct PythonObject {
         return retPyObject!("PyObject_Dir");
     }
 
-    private PythonObject retPyObject(string funcName)() const {
-        import std.format: format;
-
-        enum code = q{
-
-            import python.exception: PythonException;
-            import python.raw: %s;
-
-            auto obj = %s(cast(PyObject*) _obj);
-            if(obj is null) throw new PythonException("Failed to call %s");
-
-            return PythonObject(obj);
-
-        }.format(funcName, funcName, funcName);
-
-        mixin(code);
-    }
-
     auto hash() const {
-        return retDirect!("PyObject_Hash");
+        return retDirect!"PyObject_Hash";
     }
 
     auto len() const {
-        return retDirect!("PyObject_Length");
+        return retDirect!"PyObject_Length";
     }
 
     bool not() const {
-        return cast(bool) retDirect!("PyObject_Not");
+        return cast(bool) retDirect!"PyObject_Not";
     }
 
-    private auto retDirect(string cApiFunc)() const {
+    bool hasattr(in string attr) const {
+        import std.string: toStringz;
+        return cast(bool) retDirect!"PyObject_HasAttrString"(attr.toStringz);
+    }
 
-        import std.format: format;
+    bool hasattr(in PythonObject attr) const {
+        return cast(bool) retDirect!"PyObject_HasAttr"(cast(PyObject*) attr._obj);
+    }
 
-        enum code = q{
+    PythonObject getattr(in string attr) const {
+        import std.string: toStringz;
+        return retPyObject!"PyObject_GetAttrString"(attr.toStringz);
+    }
 
-            import python.exception: PythonException;
-            import python.raw: %s;
+    PythonObject getattr(in PythonObject attr) const {
+        return retPyObject!"PyObject_GetAttr"(cast(PyObject*) attr._obj);
+    }
 
-            const ret = %s(cast(PyObject*) _obj);
-            if(ret == -1)
-                throw new PythonException("Could not call %s");
+    void setattr(T)(in string attr, auto ref T val) if(!is(Unqual!T == PythonObject)) {
+        setattr(attr, PythonObject(val));
+    }
 
-            return ret;
+    void setattr(in string attr, in PythonObject val) {
+        import python.raw: PyObject_SetAttrString;
+        import python.exception: PythonException;
+        import std.string: toStringz;
 
-        }.format(cApiFunc, cApiFunc, cApiFunc);
+        const res = PyObject_SetAttrString(cast(PyObject*) _obj, attr.toStringz, cast(PyObject*) val._obj);
+        if(res == -1) throw new PythonException("Error setting attribute " ~ attr);
+    }
 
-        mixin(code);
+    void setattr(T)(in PythonObject attr, auto ref T val) if(!is(Unqual!T == PythonObject)) {
+        setattr(attr, PythonObject(val));
+    }
+
+    void setattr(in PythonObject attr, in PythonObject val) {
+        import python.raw: PyObject_SetAttr;
+        import python.exception: PythonException;
+
+        const res = PyObject_SetAttr(cast(PyObject*) _obj, cast(PyObject*) attr._obj, cast(PyObject*) val._obj);
+        if(res == -1) throw new PythonException("Error setting attribute ");
+
+    }
+
+    void delattr(in string attr) {
+        import python.raw: PyObject_SetAttrString;
+        import python.exception: PythonException;
+        import std.string: toStringz;
+
+        const res = PyObject_SetAttrString(cast(PyObject*) _obj, attr.toStringz, null);
+        if(res == -1) throw new PythonException("Error setting attribute " ~ attr);
+    }
+
+    void delattr(in PythonObject attr) {
+        import python.raw: PyObject_SetAttr;
+        import python.exception: PythonException;
+
+        const res = PyObject_SetAttr(cast(PyObject*) _obj, cast(PyObject*) attr._obj, null);
+        if(res == -1) throw new PythonException("Error setting attribute ");
     }
 
     T to(T)() const {
@@ -128,5 +151,43 @@ struct PythonObject {
         assert(0);
     }
 
+private:
 
+    PythonObject retPyObject(string funcName, A...)(auto ref A args) const {
+        import std.format: format;
+
+        enum code = q{
+
+            import python.exception: PythonException;
+            import python.raw: %s;
+
+            auto obj = %s(cast(PyObject*) _obj, args);
+            if(obj is null) throw new PythonException("Failed to call %s");
+
+            return PythonObject(obj);
+
+        }.format(funcName, funcName, funcName);
+
+        mixin(code);
+    }
+
+    auto retDirect(string cApiFunc, A...)(auto ref A args) const {
+
+        import std.format: format;
+
+        enum code = q{
+
+            import python.exception: PythonException;
+            import python.raw: %s;
+
+            const ret = %s(cast(PyObject*) _obj, args);
+            if(ret == -1)
+                throw new PythonException("Could not call %s");
+
+            return ret;
+
+        }.format(cApiFunc, cApiFunc, cApiFunc);
+
+        mixin(code);
+    }
 }
