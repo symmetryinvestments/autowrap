@@ -42,24 +42,6 @@ struct PythonObject {
         return retPyObject!("PyObject_Dir");
     }
 
-    private PythonObject retPyObject(string funcName, A...)(auto ref A args) const {
-        import std.format: format;
-
-        enum code = q{
-
-            import python.exception: PythonException;
-            import python.raw: %s;
-
-            auto obj = %s(cast(PyObject*) _obj, args);
-            if(obj is null) throw new PythonException("Failed to call %s");
-
-            return PythonObject(obj);
-
-        }.format(funcName, funcName, funcName);
-
-        mixin(code);
-    }
-
     auto hash() const {
         return retDirect!"PyObject_Hash";
     }
@@ -88,26 +70,6 @@ struct PythonObject {
 
     PythonObject getattr(in PythonObject attr) const {
         return retPyObject!"PyObject_GetAttr"(cast(PyObject*) attr._obj);
-    }
-
-    private auto retDirect(string cApiFunc, A...)(auto ref A args) const {
-
-        import std.format: format;
-
-        enum code = q{
-
-            import python.exception: PythonException;
-            import python.raw: %s;
-
-            const ret = %s(cast(PyObject*) _obj, args);
-            if(ret == -1)
-                throw new PythonException("Could not call %s");
-
-            return ret;
-
-        }.format(cApiFunc, cApiFunc, cApiFunc);
-
-        mixin(code);
     }
 
     T to(T)() const {
@@ -146,5 +108,43 @@ struct PythonObject {
         assert(0);
     }
 
+private:
 
+    PythonObject retPyObject(string funcName, A...)(auto ref A args) const {
+        import std.format: format;
+
+        enum code = q{
+
+            import python.exception: PythonException;
+            import python.raw: %s;
+
+            auto obj = %s(cast(PyObject*) _obj, args);
+            if(obj is null) throw new PythonException("Failed to call %s");
+
+            return PythonObject(obj);
+
+        }.format(funcName, funcName, funcName);
+
+        mixin(code);
+    }
+
+    auto retDirect(string cApiFunc, A...)(auto ref A args) const {
+
+        import std.format: format;
+
+        enum code = q{
+
+            import python.exception: PythonException;
+            import python.raw: %s;
+
+            const ret = %s(cast(PyObject*) _obj, args);
+            if(ret == -1)
+                throw new PythonException("Could not call %s");
+
+            return ret;
+
+        }.format(cApiFunc, cApiFunc, cApiFunc);
+
+        mixin(code);
+    }
 }
