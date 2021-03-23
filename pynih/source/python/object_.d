@@ -42,7 +42,7 @@ struct PythonObject {
         return retPyObject!("PyObject_Dir");
     }
 
-    private PythonObject retPyObject(string funcName)() const {
+    private PythonObject retPyObject(string funcName, A...)(auto ref A args) const {
         import std.format: format;
 
         enum code = q{
@@ -50,7 +50,7 @@ struct PythonObject {
             import python.exception: PythonException;
             import python.raw: %s;
 
-            auto obj = %s(cast(PyObject*) _obj);
+            auto obj = %s(cast(PyObject*) _obj, args);
             if(obj is null) throw new PythonException("Failed to call %s");
 
             return PythonObject(obj);
@@ -78,31 +78,16 @@ struct PythonObject {
     }
 
     bool hasattr(in PythonObject attr) const {
-        import python.raw: PyObject_HasAttr;
-        return cast(bool) PyObject_HasAttr(cast(PyObject*) _obj, cast(PyObject*) attr._obj);
+        return cast(bool) retDirect!"PyObject_HasAttr"(cast(PyObject*) attr._obj);
     }
 
     PythonObject getattr(in string attr) const {
-        import python.exception: PythonException;
-        import python.raw: PyObject_GetAttrString;
         import std.string: toStringz;
-
-        auto obj = PyObject_GetAttrString(cast(PyObject*) _obj, attr.toStringz);
-
-        if(obj is null) throw new PythonException("Could not get attr " ~ attr);
-
-        return PythonObject(obj);
+        return retPyObject!"PyObject_GetAttrString"(attr.toStringz);
     }
 
     PythonObject getattr(in PythonObject attr) const {
-        import python.exception: PythonException;
-        import python.raw: PyObject_GetAttr;
-
-        auto obj = PyObject_GetAttr(cast(PyObject*) _obj, cast(PyObject*) attr._obj);
-
-        if(obj is null) throw new PythonException("Could not get attr");
-
-        return PythonObject(obj);
+        return retPyObject!"PyObject_GetAttr"(cast(PyObject*) attr._obj);
     }
 
     private auto retDirect(string cApiFunc, A...)(auto ref A args) const {
