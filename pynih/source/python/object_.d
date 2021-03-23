@@ -72,6 +72,18 @@ struct PythonObject {
         return cast(bool) retDirect!("PyObject_Not");
     }
 
+    bool hasattr(in string attr) const {
+        import python.raw: PyObject_HasAttrString;
+        import std.string: toStringz;
+        return cast(bool) PyObject_HasAttrString(cast(PyObject*) _obj, attr.toStringz);
+    }
+
+    bool hasattr(in PythonObject attr) const {
+        import python.raw: PyObject_HasAttr;
+        import std.string: toStringz;
+        return cast(bool) PyObject_HasAttr(cast(PyObject*) _obj, cast(PyObject*) attr._obj);
+    }
+
     private auto retDirect(string cApiFunc)() const {
 
         import std.format: format;

@@ -157,3 +157,13 @@ unittest {
     PythonObject(0).not.should == true;
     PythonObject(1).not.should == false;
 }
+
+
+@("hasattr")
+unittest {
+    PythonObject(42).hasattr("real").should == true;
+    PythonObject(42).hasattr("foo").should == false;
+
+    PythonObject(42).hasattr(PythonObject("real")).should == true;
+    PythonObject(42).hasattr(PythonObject("foo")).should == false;
+}
