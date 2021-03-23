@@ -61,21 +61,20 @@ struct PythonObject {
     }
 
     auto hash() const {
-        return retDirect!("PyObject_Hash");
+        return retDirect!"PyObject_Hash";
     }
 
     auto len() const {
-        return retDirect!("PyObject_Length");
+        return retDirect!"PyObject_Length";
     }
 
     bool not() const {
-        return cast(bool) retDirect!("PyObject_Not");
+        return cast(bool) retDirect!"PyObject_Not";
     }
 
     bool hasattr(in string attr) const {
-        import python.raw: PyObject_HasAttrString;
         import std.string: toStringz;
-        return cast(bool) PyObject_HasAttrString(cast(PyObject*) _obj, attr.toStringz);
+        return cast(bool) retDirect!"PyObject_HasAttrString"(attr.toStringz);
     }
 
     bool hasattr(in PythonObject attr) const {
@@ -106,7 +105,7 @@ struct PythonObject {
         return PythonObject(obj);
     }
 
-    private auto retDirect(string cApiFunc)() const {
+    private auto retDirect(string cApiFunc, A...)(auto ref A args) const {
 
         import std.format: format;
 
@@ -115,7 +114,7 @@ struct PythonObject {
             import python.exception: PythonException;
             import python.raw: %s;
 
-            const ret = %s(cast(PyObject*) _obj);
+            const ret = %s(cast(PyObject*) _obj, args);
             if(ret == -1)
                 throw new PythonException("Could not call %s");
 
