@@ -248,3 +248,64 @@ unittest {
     foo.setattr(PythonObject(42), "oops").shouldThrowWithMessage!PythonException(
         "TypeError: attribute name must be string, not 'int'");
 }
+
+
+@("delattr")
+unittest {
+    import python.raw: PyRun_StringFlags, Py_file_input, Py_eval_input, PyCompilerFlags, PyDict_New;
+    import std.array: join;
+    import std.string: toStringz;
+
+    static linesToCode(in string[] lines) {
+        return lines.join("\n").toStringz;
+    }
+
+    const define = linesToCode(
+        [
+            `class Foo(object):`,
+            `    pass`,
+            ``,
+        ]
+    );
+
+    PyCompilerFlags flags;
+    auto globals = PyDict_New;
+    auto locals = PyDict_New;
+
+    auto defRes = PyRun_StringFlags(
+        define,
+        Py_file_input,
+        globals,
+        locals,
+        &flags,
+    );
+
+    if(defRes is null) throw new PythonException("oops");
+
+    auto evalRes = PyRun_StringFlags(
+        `Foo()`,
+        Py_eval_input,
+        globals,
+        locals,
+        &flags,
+    );
+
+    if(evalRes is null) throw new PythonException("oops");
+    auto foo = PythonObject(evalRes);
+    "Foo object".should.be in foo.toString;
+
+    foo.delattr("oops").shouldThrowWithMessage!PythonException(
+        "AttributeError: oops");
+    foo.delattr(PythonObject("oopsie")).shouldThrowWithMessage!PythonException(
+        "AttributeError: oopsie");
+
+    foo.setattr("key", "val");
+    foo.hasattr("key").should == true;
+    foo.delattr("key");
+    foo.hasattr("key").should == false;
+
+    foo.setattr(PythonObject("key"), "value");
+    foo.hasattr("key").should == true;
+    foo.delattr(PythonObject("key"));
+    foo.hasattr("key").should == false;
+}

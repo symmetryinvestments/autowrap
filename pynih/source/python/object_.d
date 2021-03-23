@@ -98,6 +98,23 @@ struct PythonObject {
 
     }
 
+    void delattr(in string attr) {
+        import python.raw: PyObject_SetAttrString;
+        import python.exception: PythonException;
+        import std.string: toStringz;
+
+        const res = PyObject_SetAttrString(cast(PyObject*) _obj, attr.toStringz, null);
+        if(res == -1) throw new PythonException("Error setting attribute " ~ attr);
+    }
+
+    void delattr(in PythonObject attr) {
+        import python.raw: PyObject_SetAttr;
+        import python.exception: PythonException;
+
+        const res = PyObject_SetAttr(cast(PyObject*) _obj, cast(PyObject*) attr._obj, null);
+        if(res == -1) throw new PythonException("Error setting attribute ");
+    }
+
     T to(T)() const {
         import python.conv.python_to_d: to;
         return (cast(PyObject*) _obj).to!T;
