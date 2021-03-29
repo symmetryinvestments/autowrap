@@ -12,7 +12,7 @@ numpy==1.17.4
 packaging==19.2
 pluggy==0.13.0
 py==1.8.0
-Pygments==2.4.2
+Pygments==2.7.4
 pyparsing==2.4.5
 pytest==5.3.0
 requests==2.22.0
