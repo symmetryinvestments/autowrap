@@ -170,7 +170,10 @@ struct PythonObject {
         }
     }
 
-    PythonObject opCall(A...)(auto ref A args) {
+    import std.meta: anySatisfy, allSatisfy;
+    private enum isPythonObject(T) = is(Unqual!T == PythonObject);
+
+    PythonObject opCall(A...)(auto ref A args) if(!anySatisfy!(isPythonObject, A)) {
         import python.raw: PyTuple_New, PyTuple_SetItem, PyObject_CallObject, pyDecRef;
         import python.conv.d_to_python: toPython;
         import python.exception: PythonException;
@@ -183,6 +186,16 @@ struct PythonObject {
         }
 
         auto ret = PyObject_CallObject(_obj, pyArgs);
+        if(ret is null) throw new PythonException("Could not call callable");
+
+        return PythonObject(ret);
+    }
+
+    PythonObject opCall(PythonObject args) {
+        import python.raw: PyObject_CallObject;
+        import python.exception: PythonException;
+
+        auto ret = PyObject_CallObject(_obj, args._obj);
         if(ret is null) throw new PythonException("Could not call callable");
 
         return PythonObject(ret);
