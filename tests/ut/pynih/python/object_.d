@@ -361,7 +361,12 @@ unittest {
 
     foo.meth(1, 2).to!string.should == "7_1_2_foo_bar";
     foo.meth(3, 4).to!string.should == "7_3_4_foo_bar";
+    foo.meth(1, 2, 0).to!string.should == "7_1_2_0_bar";
+    foo.meth(3, 4, 5, 6).to!string.should == "7_3_4_5_6";
+
     foo.i.to!int.should == 7;
     foo.i(1, 2).shouldThrowWithMessage!PythonException(
         "`i` is not a callable");
+    foo.nope.shouldThrowWithMessage!PythonException(
+        "AttributeError: 'Foo' object has no attribute 'nope'");
 }
