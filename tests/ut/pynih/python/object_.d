@@ -381,3 +381,12 @@ unittest {
     foo.nope.shouldThrowWithMessage!PythonException(
         "AttributeError: 'Foo' object has no attribute 'nope'");
 }
+
+
+@("opIndex")
+unittest {
+    PythonObject([1, 2, 3])[1].to!int.should == 2;
+    PythonObject([1, 2, 3])[2].to!int.should == 3;
+    PythonObject([1: 2, 3: 4])[1].shouldThrowWithMessage!PythonException(
+        "TypeError: dict is not a sequence");
+}

@@ -211,6 +211,9 @@ struct PythonObject {
         return PythonObject(ret);
     }
 
+    PythonObject opIndex(size_t idx) const {
+        return retPyObject!"PySequence_GetItem"(idx);
+    }
 
 private:
 
