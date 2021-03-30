@@ -126,6 +126,11 @@ struct PythonObject {
         return PyObject_Str(cast(PyObject*) _obj).to!string;
     }
 
+    bool callable() const {
+        import python.raw: pyCallableCheck;
+        return retDirect!"pyCallableCheck";
+    }
+
     int opCmp(in PythonObject other) const {
         import python.raw: PyObject_RichCompareBool, Py_LT, Py_EQ, Py_GT;
         import python.exception: PythonException;
@@ -151,9 +156,22 @@ struct PythonObject {
         assert(0);
     }
 
-    auto opDispatch(string identifier, A...)(auto ref A args) {
-        import python.raw: PyTuple_New, PyTuple_SetItem, PyObject_CallObject, pyDecRef,
-            pyCallableCheck;
+    PythonObject opDispatch(string identifier, A...)(auto ref A args) {
+        import python.exception: PythonException;
+
+        auto value = getattr(identifier);
+
+        if(value.callable) {
+            return value(args);
+        } else {
+            if(args.length > 0)
+                throw new PythonException("`" ~ identifier ~ "`" ~ " is not a callable");
+            return value;
+        }
+    }
+
+    PythonObject opCall(A...)(auto ref A args) {
+        import python.raw: PyTuple_New, PyTuple_SetItem, PyObject_CallObject, pyDecRef;
         import python.conv.d_to_python: toPython;
         import python.exception: PythonException;
 
@@ -164,17 +182,10 @@ struct PythonObject {
             PyTuple_SetItem(pyArgs, i, args[i].toPython);
         }
 
-        auto value = getattr(identifier);
+        auto ret = PyObject_CallObject(_obj, pyArgs);
+        if(ret is null) throw new PythonException("Could not call callable");
 
-        if(pyCallableCheck(value._obj)) {
-            auto ret = PyObject_CallObject(value._obj, pyArgs);
-            if(ret is null) throw new PythonException("Could not call " ~ identifier);
-            return PythonObject(ret);
-        } else {
-            if(args.length > 0)
-                throw new PythonException("`" ~ identifier ~ "`" ~ " is not a callable");
-            return value;
-        }
+        return PythonObject(ret);
     }
 
 private:
