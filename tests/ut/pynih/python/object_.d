@@ -364,7 +364,14 @@ unittest {
     foo.meth(3, 4).to!string.should == "7_3_4_foo_bar";
     foo.meth(1, 2, 0).to!string.should == "7_1_2_0_bar";
     foo.meth(3, 4, 5, 6).to!string.should == "7_3_4_5_6";
+
     foo.meth(PythonObject(tuple(1, 2))).to!string.should == "7_1_2_foo_bar";
+    foo.meth(PythonObject(tuple(1, 2)), PythonObject(["c": 5, "d": 6]))
+        .to!string.should == "7_1_2_5_6";
+    foo.meth(PythonObject(tuple(1, 2)), PythonObject(["oops": 6]))
+        .shouldThrowWithMessage!PythonException(
+            "TypeError: meth() got an unexpected keyword argument 'oops'");
+
     foo.meth(PythonObject([1, 2])).shouldThrowWithMessage!PythonException(
         "TypeError: argument list must be a tuple");
 

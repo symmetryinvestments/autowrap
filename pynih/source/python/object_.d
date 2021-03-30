@@ -201,6 +201,17 @@ struct PythonObject {
         return PythonObject(ret);
     }
 
+    PythonObject opCall(PythonObject args, PythonObject kwargs) {
+        import python.raw: PyObject_Call;
+        import python.exception: PythonException;
+
+        auto ret = PyObject_Call(_obj, args._obj, kwargs._obj);
+        if(ret is null) throw new PythonException("Could not call callable");
+
+        return PythonObject(ret);
+    }
+
+
 private:
 
     PythonObject retPyObject(string funcName, A...)(auto ref A args) const {
