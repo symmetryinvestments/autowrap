@@ -409,3 +409,11 @@ unittest {
     dict[PythonObject("foo")] = 77;
     dict["foo"].to!int.should == 77;
 }
+
+
+@("del")
+unittest {
+    auto lst = PythonObject([1, 2, 3]);
+    lst.del(1);
+    lst.to!(int[]).should == [1, 3];
+}

@@ -127,8 +127,11 @@ struct PythonObject {
     }
 
     bool callable() const {
-        import python.raw: pyCallableCheck;
         return retDirect!"pyCallableCheck";
+    }
+
+    void del(size_t idx) {
+        retDirect!"PySequence_DelItem"(idx);
     }
 
     int opCmp(in PythonObject other) const {
