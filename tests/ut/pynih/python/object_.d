@@ -396,4 +396,8 @@ unittest {
     PythonObject([1, 2, 3])["oops"].shouldThrowWithMessage!PythonException(
         "TypeError: list indices must be integers or slices, not str");
 
+
+    auto lst = PythonObject([1, 2, 3]);
+    lst[1] = 42;
+    lst[1].to!int.should == 42;
 }

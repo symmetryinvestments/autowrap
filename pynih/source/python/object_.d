@@ -232,6 +232,13 @@ struct PythonObject {
         return retPyObject!"PyObject_GetItem"(cast(PyObject*) key._obj);
     }
 
+    void opIndexAssign(in int value, in size_t idx) {
+        retPyObject!"PySequence_SetItem"(
+            idx,
+            cast(PyObject*) PythonObject(value)._obj,
+        );
+    }
+
 private:
 
     PythonObject retPyObject(string funcName, A...)(auto ref A args) const {
@@ -241,9 +248,11 @@ private:
 
             import python.exception: PythonException;
             import python.raw: %s;
+            import std.traits: isPointer;
 
             auto obj = %s(cast(PyObject*) _obj, args);
-            if(obj is null) throw new PythonException("Failed to call %s");
+            static if(isPointer!(typeof(obj)))
+                if(obj is null) throw new PythonException("Failed to call %s");
 
             return PythonObject(obj);
 
