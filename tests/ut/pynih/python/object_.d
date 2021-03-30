@@ -309,3 +309,75 @@ unittest {
     foo.delattr(PythonObject("key"));
     foo.hasattr("key").should == false;
 }
+
+
+@("opDispatch")
+unittest {
+    import python.raw: PyRun_StringFlags, Py_file_input, Py_eval_input, PyCompilerFlags,
+        PyDict_New;
+    import std.array: join;
+    import std.string: toStringz;
+    import std.typecons: tuple;
+
+    static linesToCode(in string[] lines) {
+        return lines.join("\n").toStringz;
+    }
+
+    const define = linesToCode(
+        [
+            `class Foo(object):`,
+            `    def __init__(self, i):`,
+            `        self.i = i`,
+            `    def meth(self, a, b, c='foo', d='bar'):`,
+            `        return f"{self.i}_{a}_{b}_{c}_{d}"`,
+            ``,
+        ]
+    );
+
+    PyCompilerFlags flags;
+    auto globals = PyDict_New;
+    auto locals = PyDict_New;
+
+    auto defRes = PyRun_StringFlags(
+        define,
+        Py_file_input,
+        globals,
+        locals,
+        &flags,
+    );
+
+    if(defRes is null) throw new PythonException("oops");
+
+    auto evalRes = PyRun_StringFlags(
+        `Foo(7)`,
+        Py_eval_input,
+        globals,
+        locals,
+        &flags,
+    );
+
+    if(evalRes is null) throw new PythonException("oops");
+    auto foo = PythonObject(evalRes);
+    "Foo object".should.be in foo.toString;
+
+    foo.meth(1, 2).to!string.should == "7_1_2_foo_bar";
+    foo.meth(3, 4).to!string.should == "7_3_4_foo_bar";
+    foo.meth(1, 2, 0).to!string.should == "7_1_2_0_bar";
+    foo.meth(3, 4, 5, 6).to!string.should == "7_3_4_5_6";
+
+    foo.meth(PythonObject(tuple(1, 2))).to!string.should == "7_1_2_foo_bar";
+    foo.meth(PythonObject(tuple(1, 2)), PythonObject(["c": 5, "d": 6]))
+        .to!string.should == "7_1_2_5_6";
+    foo.meth(PythonObject(tuple(1, 2)), PythonObject(["oops": 6]))
+        .shouldThrowWithMessage!PythonException(
+            "TypeError: meth() got an unexpected keyword argument 'oops'");
+
+    foo.meth(PythonObject([1, 2])).shouldThrowWithMessage!PythonException(
+        "TypeError: argument list must be a tuple");
+
+    foo.i.to!int.should == 7;
+    foo.i(1, 2).shouldThrowWithMessage!PythonException(
+        "`i` is not a callable");
+    foo.nope.shouldThrowWithMessage!PythonException(
+        "AttributeError: 'Foo' object has no attribute 'nope'");
+}

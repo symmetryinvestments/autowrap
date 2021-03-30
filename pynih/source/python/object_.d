@@ -126,6 +126,11 @@ struct PythonObject {
         return PyObject_Str(cast(PyObject*) _obj).to!string;
     }
 
+    bool callable() const {
+        import python.raw: pyCallableCheck;
+        return retDirect!"pyCallableCheck";
+    }
+
     int opCmp(in PythonObject other) const {
         import python.raw: PyObject_RichCompareBool, Py_LT, Py_EQ, Py_GT;
         import python.exception: PythonException;
@@ -150,6 +155,62 @@ struct PythonObject {
 
         assert(0);
     }
+
+    PythonObject opDispatch(string identifier, A...)(auto ref A args) {
+        import python.exception: PythonException;
+
+        auto value = getattr(identifier);
+
+        if(value.callable) {
+            return value(args);
+        } else {
+            if(args.length > 0)
+                throw new PythonException("`" ~ identifier ~ "`" ~ " is not a callable");
+            return value;
+        }
+    }
+
+    import std.meta: anySatisfy, allSatisfy;
+    private enum isPythonObject(T) = is(Unqual!T == PythonObject);
+
+    PythonObject opCall(A...)(auto ref A args) if(!anySatisfy!(isPythonObject, A)) {
+        import python.raw: PyTuple_New, PyTuple_SetItem, PyObject_CallObject, pyDecRef;
+        import python.conv.d_to_python: toPython;
+        import python.exception: PythonException;
+
+        auto pyArgs = PyTuple_New(args.length);
+        scope(exit) pyDecRef(pyArgs);
+
+        static foreach(i; 0 .. args.length) {
+            PyTuple_SetItem(pyArgs, i, args[i].toPython);
+        }
+
+        auto ret = PyObject_CallObject(_obj, pyArgs);
+        if(ret is null) throw new PythonException("Could not call callable");
+
+        return PythonObject(ret);
+    }
+
+    PythonObject opCall(PythonObject args) {
+        import python.raw: PyObject_CallObject;
+        import python.exception: PythonException;
+
+        auto ret = PyObject_CallObject(_obj, args._obj);
+        if(ret is null) throw new PythonException("Could not call callable");
+
+        return PythonObject(ret);
+    }
+
+    PythonObject opCall(PythonObject args, PythonObject kwargs) {
+        import python.raw: PyObject_Call;
+        import python.exception: PythonException;
+
+        auto ret = PyObject_Call(_obj, args._obj, kwargs._obj);
+        if(ret is null) throw new PythonException("Could not call callable");
+
+        return PythonObject(ret);
+    }
+
 
 private:
 
