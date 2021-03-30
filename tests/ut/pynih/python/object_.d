@@ -381,3 +381,45 @@ unittest {
     foo.nope.shouldThrowWithMessage!PythonException(
         "AttributeError: 'Foo' object has no attribute 'nope'");
 }
+
+
+@("opIndex")
+unittest {
+    PythonObject([1, 2, 3])[1].to!int.should == 2;
+    PythonObject([1, 2, 3])[2].to!int.should == 3;
+    PythonObject([1, 2, 3])[PythonObject(2)].to!int.should == 3;
+    PythonObject([1: 2, 3: 4])[1].shouldThrowWithMessage!PythonException(
+        "TypeError: dict is not a sequence");
+
+    PythonObject(["foo": 1, "bar": 2])["foo"].to!int.should == 1;
+    PythonObject(["foo": 1, "bar": 2])[PythonObject("bar")].to!int.should == 2;
+    PythonObject([1, 2, 3])["oops"].shouldThrowWithMessage!PythonException(
+        "TypeError: list indices must be integers or slices, not str");
+
+
+    auto lst = PythonObject([1, 2, 3]);
+    lst[1] = 42;
+    lst[1].to!int.should == 42;
+    lst[PythonObject(2)] = 9;
+    lst[2].to!int.should == 9;
+
+    auto dict = PythonObject(["foo": 1, "bar": 2]);
+    dict["bar"] = 42;
+    dict["bar"].to!int.should == 42;
+    dict[PythonObject("foo")] = 77;
+    dict["foo"].to!int.should == 77;
+}
+
+
+@("del")
+unittest {
+    auto lst = PythonObject([1, 2, 3]);
+    lst.del(1);
+    lst.to!(int[]).should == [1, 3];
+
+    auto dict = PythonObject(["foo": 1, "bar": 2, "baz": 3]);
+    dict.del("foo");
+    dict.to!(int[string]).should == ["bar": 2, "baz": 3];
+    dict.del(PythonObject("bar"));
+    dict.to!(int[string]).should == ["baz": 3];
+}

@@ -127,9 +127,22 @@ struct PythonObject {
     }
 
     bool callable() const {
-        import python.raw: pyCallableCheck;
         return retDirect!"pyCallableCheck";
     }
+
+    void del(in size_t idx) {
+        retDirect!"PySequence_DelItem"(idx);
+    }
+
+    void del(in string key) {
+        import std.string: toStringz;
+        retDirect!"PyObject_DelItemString"(key.toStringz);
+    }
+
+    void del(in PythonObject key) {
+        retDirect!"PyObject_DelItem"(cast(PyObject*) key._obj);
+    }
+
 
     int opCmp(in PythonObject other) const {
         import python.raw: PyObject_RichCompareBool, Py_LT, Py_EQ, Py_GT;
@@ -211,6 +224,54 @@ struct PythonObject {
         return PythonObject(ret);
     }
 
+    PythonObject opIndex(in size_t idx) const {
+        return retPyObject!"PySequence_GetItem"(idx);
+    }
+
+    PythonObject opIndex(in string key) const {
+        import python.raw: pyDictCheck;
+        import std.string: toStringz;
+
+        const keyz = key.toStringz;
+
+        if(pyDictCheck(cast(PyObject*) _obj))
+            return retPyObject!"PyDict_GetItemString"(keyz);
+        else
+            return retPyObject!"PyMapping_GetItemString"(keyz);
+    }
+
+    PythonObject opIndex(in PythonObject key) const {
+        import std.string: toStringz;
+        return retPyObject!"PyObject_GetItem"(cast(PyObject*) key._obj);
+    }
+
+    void opIndexAssign(K, V)(auto ref V _value, auto ref K _key) {
+
+        import std.traits: isIntegral;
+
+        static if(isPythonObject!V)
+            alias value = _value;
+        else
+            auto value = PythonObject(_value);
+
+        static if(isIntegral!K) {
+            retPyObject!"PySequence_SetItem"(
+                _key,
+                cast(PyObject*) value._obj,
+            );
+        } else {
+
+            static if(isPythonObject!K)
+                alias key = _key;
+            else
+                auto key = PythonObject(_key);
+
+            retPyObject!"PyObject_SetItem"(
+                cast(PyObject*) key._obj,
+                cast(PyObject*) value._obj,
+            );
+        }
+    }
 
 private:
 
@@ -221,9 +282,11 @@ private:
 
             import python.exception: PythonException;
             import python.raw: %s;
+            import std.traits: isPointer;
 
             auto obj = %s(cast(PyObject*) _obj, args);
-            if(obj is null) throw new PythonException("Failed to call %s");
+            static if(isPointer!(typeof(obj)))
+                if(obj is null) throw new PythonException("Failed to call %s");
 
             return PythonObject(obj);
 
