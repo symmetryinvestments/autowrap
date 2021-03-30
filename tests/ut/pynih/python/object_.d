@@ -361,4 +361,7 @@ unittest {
 
     foo.meth(1, 2).to!string.should == "7_1_2_foo_bar";
     foo.meth(3, 4).to!string.should == "7_3_4_foo_bar";
+    foo.i.to!int.should == 7;
+    foo.i(1, 2).shouldThrowWithMessage!PythonException(
+        "`i` is not a callable");
 }
