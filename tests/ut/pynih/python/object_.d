@@ -400,4 +400,12 @@ unittest {
     auto lst = PythonObject([1, 2, 3]);
     lst[1] = 42;
     lst[1].to!int.should == 42;
+    lst[PythonObject(2)] = 9;
+    lst[2].to!int.should == 9;
+
+    auto dict = PythonObject(["foo": 1, "bar": 2]);
+    dict["bar"] = 42;
+    dict["bar"].to!int.should == 42;
+    dict[PythonObject("foo")] = 77;
+    dict["foo"].to!int.should == 77;
 }

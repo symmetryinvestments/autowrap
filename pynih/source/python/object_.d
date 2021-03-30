@@ -232,11 +232,32 @@ struct PythonObject {
         return retPyObject!"PyObject_GetItem"(cast(PyObject*) key._obj);
     }
 
-    void opIndexAssign(in int value, in size_t idx) {
-        retPyObject!"PySequence_SetItem"(
-            idx,
-            cast(PyObject*) PythonObject(value)._obj,
-        );
+    void opIndexAssign(K, V)(auto ref V _value, auto ref K _key) {
+
+        import std.traits: isIntegral;
+
+        static if(isPythonObject!V)
+            alias value = _value;
+        else
+            auto value = PythonObject(_value);
+
+        static if(isIntegral!K) {
+            retPyObject!"PySequence_SetItem"(
+                _key,
+                cast(PyObject*) value._obj,
+            );
+        } else {
+
+            static if(isPythonObject!K)
+                alias key = _key;
+            else
+                auto key = PythonObject(_key);
+
+            retPyObject!"PyObject_SetItem"(
+                cast(PyObject*) key._obj,
+                cast(PyObject*) value._obj,
+            );
+        }
     }
 
 private:
