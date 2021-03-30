@@ -211,8 +211,20 @@ struct PythonObject {
         return PythonObject(ret);
     }
 
-    PythonObject opIndex(size_t idx) const {
+    PythonObject opIndex(in size_t idx) const {
         return retPyObject!"PySequence_GetItem"(idx);
+    }
+
+    PythonObject opIndex(in string key) const {
+        import python.raw: pyDictCheck;
+        import std.string: toStringz;
+
+        const keyz = key.toStringz;
+
+        if(pyDictCheck(cast(PyObject*) _obj))
+            return retPyObject!"PyDict_GetItemString"(keyz);
+        else
+            return retPyObject!"PyMapping_GetItemString"(keyz);
     }
 
 private:
