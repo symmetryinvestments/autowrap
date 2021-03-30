@@ -130,9 +130,19 @@ struct PythonObject {
         return retDirect!"pyCallableCheck";
     }
 
-    void del(size_t idx) {
+    void del(in size_t idx) {
         retDirect!"PySequence_DelItem"(idx);
     }
+
+    void del(in string key) {
+        import std.string: toStringz;
+        retDirect!"PyObject_DelItemString"(key.toStringz);
+    }
+
+    void del(in PythonObject key) {
+        retDirect!"PyObject_DelItem"(cast(PyObject*) key._obj);
+    }
+
 
     int opCmp(in PythonObject other) const {
         import python.raw: PyObject_RichCompareBool, Py_LT, Py_EQ, Py_GT;

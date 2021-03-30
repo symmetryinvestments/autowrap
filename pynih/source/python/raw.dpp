@@ -8,6 +8,7 @@ module python.raw;
 #include "datetime.h"
 #include "structmember.h"
 #include "enumobject.h"
+#include "abstract.h"
 
 
 enum isPython3 = is(PyModuleDef);
