@@ -309,3 +309,56 @@ unittest {
     foo.delattr(PythonObject("key"));
     foo.hasattr("key").should == false;
 }
+
+
+@("opDispatch")
+unittest {
+    import python.raw: PyRun_StringFlags, Py_file_input, Py_eval_input, PyCompilerFlags,
+        PyDict_New;
+    import std.array: join;
+    import std.string: toStringz;
+
+    static linesToCode(in string[] lines) {
+        return lines.join("\n").toStringz;
+    }
+
+    const define = linesToCode(
+        [
+            `class Foo(object):`,
+            `    def __init__(self, i):`,
+            `        self.i = i`,
+            `    def meth(self, a, b, c='foo', d='bar'):`,
+            `        return f"{self.i}_{a}_{b}_{c}_{d}"`,
+            ``,
+        ]
+    );
+
+    PyCompilerFlags flags;
+    auto globals = PyDict_New;
+    auto locals = PyDict_New;
+
+    auto defRes = PyRun_StringFlags(
+        define,
+        Py_file_input,
+        globals,
+        locals,
+        &flags,
+    );
+
+    if(defRes is null) throw new PythonException("oops");
+
+    auto evalRes = PyRun_StringFlags(
+        `Foo(7)`,
+        Py_eval_input,
+        globals,
+        locals,
+        &flags,
+    );
+
+    if(evalRes is null) throw new PythonException("oops");
+    auto foo = PythonObject(evalRes);
+    "Foo object".should.be in foo.toString;
+
+    foo.meth(1, 2).to!string.should == "7_1_2_foo_bar";
+    foo.meth(3, 4).to!string.should == "7_3_4_foo_bar";
+}
