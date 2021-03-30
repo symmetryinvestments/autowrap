@@ -227,6 +227,11 @@ struct PythonObject {
             return retPyObject!"PyMapping_GetItemString"(keyz);
     }
 
+    PythonObject opIndex(in PythonObject key) const {
+        import std.string: toStringz;
+        return retPyObject!"PyObject_GetItem"(cast(PyObject*) key._obj);
+    }
+
 private:
 
     PythonObject retPyObject(string funcName, A...)(auto ref A args) const {

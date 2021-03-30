@@ -387,10 +387,12 @@ unittest {
 unittest {
     PythonObject([1, 2, 3])[1].to!int.should == 2;
     PythonObject([1, 2, 3])[2].to!int.should == 3;
+    PythonObject([1, 2, 3])[PythonObject(2)].to!int.should == 3;
     PythonObject([1: 2, 3: 4])[1].shouldThrowWithMessage!PythonException(
         "TypeError: dict is not a sequence");
 
     PythonObject(["foo": 1, "bar": 2])["foo"].to!int.should == 1;
+    PythonObject(["foo": 1, "bar": 2])[PythonObject("bar")].to!int.should == 2;
     PythonObject([1, 2, 3])["oops"].shouldThrowWithMessage!PythonException(
         "TypeError: list indices must be integers or slices, not str");
 
