@@ -518,4 +518,9 @@ unittest {
 unittest {
     PythonObject([1, 2, 3, 4, 5])[1..3].to!(int[]).should == [2, 3];
     PythonObject([1, 2, 3, 4, 5])[].to!(int[]).should == [1, 2, 3, 4, 5];
+    auto lst = PythonObject([1, 2, 3, 4, 5]);
+    lst[1..3] = PythonObject([42]);
+    lst.to!(int[]).should == [1, 42, 4, 5];
+    (lst[1..3] = PythonObject(-1)).shouldThrowWithMessage!PythonException(
+        "TypeError: can only assign an iterable");
 }
