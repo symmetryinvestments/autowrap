@@ -293,6 +293,10 @@ struct PythonObject {
         retDirect!"PySequence_SetSlice"(i0, i1, cast(PyObject*) val._obj);
     }
 
+    void opSliceAssign(in PythonObject val) {
+        retDirect!"PySequence_SetSlice"(0, len, cast(PyObject*) val._obj);
+    }
+
 
 private:
 
