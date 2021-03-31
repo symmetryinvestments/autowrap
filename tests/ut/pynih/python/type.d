@@ -6,10 +6,12 @@ import unit_threaded;
 import python.type;
 
 
+@("union")
 @safe pure unittest {
     static union Union {}
     alias Type = PythonType!Union;
 }
+
 
 @("const method but shared type")
 @safe pure unittest {
