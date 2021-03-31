@@ -423,3 +423,77 @@ unittest {
     dict.del(PythonObject("bar"));
     dict.to!(int[string]).should == ["baz": 3];
 }
+
+
+@("inheritance")
+unittest {
+    import python.raw: PyRun_StringFlags, Py_file_input, Py_eval_input, PyCompilerFlags,
+        PyDict_New;
+    import std.array: join;
+    import std.string: toStringz;
+    import std.typecons: tuple;
+
+    static linesToCode(in string[] lines) {
+        return lines.join("\n").toStringz;
+    }
+
+    const define = linesToCode(
+        [
+            `class Foo(object):`,
+            `    pass`,
+            `class Bar(object):`,
+            `    pass`,
+            ``
+        ]
+    );
+
+    PyCompilerFlags flags;
+    auto globals = PyDict_New;
+    auto locals = PyDict_New;
+
+    auto defRes = PyRun_StringFlags(
+        define,
+        Py_file_input,
+        globals,
+        locals,
+        &flags,
+    );
+
+    if(defRes is null) throw new PythonException("oops");
+
+    {
+        auto instRes = PyRun_StringFlags(
+            `Foo()`,
+            Py_eval_input,
+            globals,
+            locals,
+            &flags,
+        );
+        if(instRes is null) throw new PythonException("oops");
+
+        auto FooRes = PyRun_StringFlags(
+            `Foo`,
+            Py_eval_input,
+            globals,
+            locals,
+            &flags,
+        );
+        if(FooRes is null) throw new PythonException("oops");
+
+        auto BarRes = PyRun_StringFlags(
+            `Bar`,
+            Py_eval_input,
+            globals,
+            locals,
+            &flags,
+        );
+        if(BarRes is null) throw new PythonException("oops");
+
+        const foo = PythonObject(instRes);
+        const Foo = PythonObject(FooRes);
+        const Bar = PythonObject(BarRes);
+
+        foo.isInstance(Foo).should == true;
+        foo.isInstance(Bar).should == false;
+    }
+}
