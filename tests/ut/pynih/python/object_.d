@@ -413,9 +413,11 @@ unittest {
 
 @("del")
 unittest {
-    auto lst = PythonObject([1, 2, 3]);
+    auto lst = PythonObject([1, 2, 3, 4, 5]);
     lst.del(1);
-    lst.to!(int[]).should == [1, 3];
+    lst.to!(int[]).should == [1, 3, 4, 5];
+    lst.del(0, 2);
+    lst.to!(int[]).should == [4, 5];
 
     auto dict = PythonObject(["foo": 1, "bar": 2, "baz": 3]);
     dict.del("foo");

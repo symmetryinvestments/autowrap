@@ -135,6 +135,10 @@ struct PythonObject {
         retDirect!"PySequence_DelItem"(idx);
     }
 
+    void del(in size_t i0, in size_t i1) {
+        retDirect!"PySequence_DelSlice"(i0, i1);
+    }
+
     void del(in string key) {
         import std.string: toStringz;
         retDirect!"PyObject_DelItemString"(key.toStringz);
