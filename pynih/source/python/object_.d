@@ -49,6 +49,7 @@ struct PythonObject {
     auto len() const {
         return retDirect!"PyObject_Length";
     }
+    alias length = len;
 
     bool not() const {
         return cast(bool) retDirect!"PyObject_Not";
@@ -130,8 +131,16 @@ struct PythonObject {
         return retDirect!"pyCallableCheck";
     }
 
+    void del() {
+        del(0, len);
+    }
+
     void del(in size_t idx) {
         retDirect!"PySequence_DelItem"(idx);
+    }
+
+    void del(in size_t i0, in size_t i1) {
+        retDirect!"PySequence_DelSlice"(i0, i1);
     }
 
     void del(in string key) {
@@ -279,6 +288,23 @@ struct PythonObject {
             );
         }
     }
+
+    PythonObject opSlice(size_t i0, size_t i1) const {
+        return retPyObject!"PySequence_GetSlice"(i0, i1);
+    }
+
+    PythonObject opSlice() const {
+        return this[0 .. len];
+    }
+
+    void opSliceAssign(in PythonObject val, in size_t i0, in size_t i1) {
+        retDirect!"PySequence_SetSlice"(i0, i1, cast(PyObject*) val._obj);
+    }
+
+    void opSliceAssign(in PythonObject val) {
+        retDirect!"PySequence_SetSlice"(0, len, cast(PyObject*) val._obj);
+    }
+
 
 private:
 

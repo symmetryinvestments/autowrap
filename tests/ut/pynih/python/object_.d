@@ -413,9 +413,14 @@ unittest {
 
 @("del")
 unittest {
-    auto lst = PythonObject([1, 2, 3]);
+    auto lst = PythonObject([1, 2, 3, 4, 5]);
     lst.del(1);
-    lst.to!(int[]).should == [1, 3];
+    lst.to!(int[]).should == [1, 3, 4, 5];
+    lst.del(0, 2);
+    lst.to!(int[]).should == [4, 5];
+    lst.del();
+    int[] empty;
+    lst.to!(int[]).should == empty;
 
     auto dict = PythonObject(["foo": 1, "bar": 2, "baz": 3]);
     dict.del("foo");
@@ -511,4 +516,23 @@ unittest {
     BabyFoo.isSubClass(BabyFoo).should == true;
     BabyFoo.isSubClass(Bar).should == false;
 
+}
+
+
+@("slice")
+unittest {
+    PythonObject([1, 2, 3, 4, 5])[1..3].to!(int[]).should == [2, 3];
+    PythonObject([1, 2, 3, 4, 5])[].to!(int[]).should == [1, 2, 3, 4, 5];
+
+    auto lst = PythonObject([1, 2, 3, 4, 5]);
+    lst[1..3] = PythonObject([42]);
+    lst.to!(int[]).should == [1, 42, 4, 5];
+
+    lst[] = PythonObject([77]);
+    lst.to!(int[]).should == [77];
+
+    (lst[1..3] = PythonObject(-1)).shouldThrowWithMessage!PythonException(
+        "TypeError: can only assign an iterable");
+    PythonObject(1)[1..2].shouldThrowWithMessage!PythonException(
+        "TypeError: 'int' object is unsliceable");
 }
