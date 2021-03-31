@@ -280,6 +280,10 @@ struct PythonObject {
         }
     }
 
+    PythonObject opSlice(size_t i0, size_t i1) const {
+        return retPyObject!"PySequence_GetSlice"(i0, i1);
+    }
+
 private:
 
     PythonObject retPyObject(string funcName, A...)(auto ref A args) const {

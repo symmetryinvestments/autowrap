@@ -512,3 +512,9 @@ unittest {
     BabyFoo.isSubClass(Bar).should == false;
 
 }
+
+
+@("slice")
+unittest {
+    PythonObject([1, 2, 3, 4, 5])[1..3].to!(int[]).should == [2, 3];
+}
