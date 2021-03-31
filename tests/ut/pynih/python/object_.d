@@ -418,6 +418,9 @@ unittest {
     lst.to!(int[]).should == [1, 3, 4, 5];
     lst.del(0, 2);
     lst.to!(int[]).should == [4, 5];
+    lst.del();
+    int[] empty;
+    lst.to!(int[]).should == empty;
 
     auto dict = PythonObject(["foo": 1, "bar": 2, "baz": 3]);
     dict.del("foo");

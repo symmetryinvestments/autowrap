@@ -131,6 +131,10 @@ struct PythonObject {
         return retDirect!"pyCallableCheck";
     }
 
+    void del() {
+        del(0, len);
+    }
+
     void del(in size_t idx) {
         retDirect!"PySequence_DelItem"(idx);
     }
