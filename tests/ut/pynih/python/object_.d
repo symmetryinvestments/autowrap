@@ -443,6 +443,8 @@ unittest {
             `    pass`,
             `class Bar(object):`,
             `    pass`,
+            `class BabyFoo(Foo):`,
+            `    pass`,
             ``
         ]
     );
@@ -461,39 +463,52 @@ unittest {
 
     if(defRes is null) throw new PythonException("oops");
 
-    {
-        auto instRes = PyRun_StringFlags(
-            `Foo()`,
-            Py_eval_input,
-            globals,
-            locals,
-            &flags,
-        );
-        if(instRes is null) throw new PythonException("oops");
+    auto instRes = PyRun_StringFlags(
+        `Foo()`,
+        Py_eval_input,
+        globals,
+        locals,
+        &flags,
+    );
+    if(instRes is null) throw new PythonException("oops");
 
-        auto FooRes = PyRun_StringFlags(
-            `Foo`,
-            Py_eval_input,
-            globals,
-            locals,
-            &flags,
-        );
-        if(FooRes is null) throw new PythonException("oops");
+    auto FooRes = PyRun_StringFlags(
+        `Foo`,
+        Py_eval_input,
+        globals,
+        locals,
+        &flags,
+    );
+    if(FooRes is null) throw new PythonException("oops");
 
-        auto BarRes = PyRun_StringFlags(
-            `Bar`,
-            Py_eval_input,
-            globals,
-            locals,
-            &flags,
-        );
-        if(BarRes is null) throw new PythonException("oops");
+    auto BarRes = PyRun_StringFlags(
+        `Bar`,
+        Py_eval_input,
+        globals,
+        locals,
+        &flags,
+    );
+    if(BarRes is null) throw new PythonException("oops");
 
-        const foo = PythonObject(instRes);
-        const Foo = PythonObject(FooRes);
-        const Bar = PythonObject(BarRes);
+    auto BabyFooRes = PyRun_StringFlags(
+        `BabyFoo`,
+        Py_eval_input,
+        globals,
+        locals,
+        &flags,
+    );
+    if(BabyFooRes is null) throw new PythonException("oops");
 
-        foo.isInstance(Foo).should == true;
-        foo.isInstance(Bar).should == false;
-    }
+    const foo = PythonObject(instRes);
+    const Foo = PythonObject(FooRes);
+    const Bar = PythonObject(BarRes);
+
+    foo.isInstance(Foo).should == true;
+    foo.isInstance(Bar).should == false;
+
+    const BabyFoo = PythonObject(BabyFooRes);
+    BabyFoo.isSubClass(Foo).should == true;
+    BabyFoo.isSubClass(BabyFoo).should == true;
+    BabyFoo.isSubClass(Bar).should == false;
+
 }

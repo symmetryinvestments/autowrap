@@ -147,6 +147,10 @@ struct PythonObject {
         return cast(bool) retDirect!"PyObject_IsInstance"(cast(PyObject*) klass._obj);
     }
 
+    bool isSubClass(in PythonObject klass) const {
+        return cast(bool) retDirect!"PyObject_IsSubclass"(cast(PyObject*) klass._obj);
+    }
+
     int opCmp(in PythonObject other) const {
         import python.raw: PyObject_RichCompareBool, Py_LT, Py_EQ, Py_GT;
         import python.exception: PythonException;
