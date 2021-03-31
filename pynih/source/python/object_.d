@@ -49,6 +49,7 @@ struct PythonObject {
     auto len() const {
         return retDirect!"PyObject_Length";
     }
+    alias length = len;
 
     bool not() const {
         return cast(bool) retDirect!"PyObject_Not";
@@ -283,6 +284,11 @@ struct PythonObject {
     PythonObject opSlice(size_t i0, size_t i1) const {
         return retPyObject!"PySequence_GetSlice"(i0, i1);
     }
+
+    PythonObject opSlice() const {
+        return this[0 .. len];
+    }
+
 
 private:
 

@@ -517,4 +517,5 @@ unittest {
 @("slice")
 unittest {
     PythonObject([1, 2, 3, 4, 5])[1..3].to!(int[]).should == [2, 3];
+    PythonObject([1, 2, 3, 4, 5])[].to!(int[]).should == [1, 2, 3, 4, 5];
 }
