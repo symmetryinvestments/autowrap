@@ -528,4 +528,6 @@ unittest {
 
     (lst[1..3] = PythonObject(-1)).shouldThrowWithMessage!PythonException(
         "TypeError: can only assign an iterable");
+    PythonObject(1)[1..2].shouldThrowWithMessage!PythonException(
+        "TypeError: 'int' object is unsliceable");
 }
