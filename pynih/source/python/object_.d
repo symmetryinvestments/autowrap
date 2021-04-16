@@ -8,7 +8,7 @@ struct PythonObject {
     private PyObject* _obj;
 
     invariant {
-        assert(_obj !is null);
+        //   assert(_obj !is null);
     }
 
     this(T)(auto ref T value) if(!is(Unqual!T == PyObject*)) {
@@ -158,6 +158,19 @@ struct PythonObject {
 
     bool isSubClass(in PythonObject klass) const {
         return cast(bool) retDirect!"PyObject_IsSubclass"(cast(PyObject*) klass._obj);
+    }
+
+    InputRange range() {
+        return InputRange(iter);
+    }
+
+    PythonObject iter() const {
+        return retPyObject!"PyObject_GetIter"();
+    }
+
+    PythonObject next() const {
+        import python.raw: PyIter_Next;
+        return PythonObject(PyIter_Next(cast(PyObject*) _obj));
     }
 
     int opCmp(in PythonObject other) const {
@@ -319,7 +332,7 @@ private:
 
             auto obj = %s(cast(PyObject*) _obj, args);
             static if(isPointer!(typeof(obj)))
-                if(obj is null) throw new PythonException("Failed to call %s");
+                if(obj is null) throw new PythonException("%s returned null");
 
             return PythonObject(obj);
 
@@ -346,5 +359,41 @@ private:
         }.format(cApiFunc, cApiFunc, cApiFunc);
 
         mixin(code);
+    }
+}
+
+
+struct InputRange {
+    import python.raw: PyObject;
+
+    private PythonObject _iter;
+    private PythonObject _front;
+
+    private this(PythonObject iter) {
+        import python.raw: PyObject_GetIter;
+        import python.exception: PythonException;
+
+        _iter._obj = iter._obj;
+        if (_iter._obj is null)
+            throw new PythonException("No iterable for object");
+
+        popFront;
+    }
+
+    // ~this() {
+    //     import python.raw: pyDecRef;
+    //     pyDecRef(_iter);
+    // }
+
+    void popFront() {
+        _front = _iter.next;
+    }
+
+    bool empty() const {
+        return _front._obj is null;
+    }
+
+    auto front() inout {
+        return _front;
     }
 }
