@@ -536,3 +536,15 @@ unittest {
     PythonObject(1)[1..2].shouldThrowWithMessage!PythonException(
         "TypeError: 'int' object is unsliceable");
 }
+
+
+@("range")
+unittest {
+    import std.array: array;
+    import std.algorithm: map;
+
+    PythonObject([1, 2, 3])
+        .range
+        .map!(x => x.to!int * 2)
+        .should == [2, 4, 6];
+}
