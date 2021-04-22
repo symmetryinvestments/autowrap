@@ -3,7 +3,7 @@ iniconfig==1.1.1
 numpy==1.20.2
 packaging==20.7
 pluggy==0.13.1
-py==1.9.0
+py==1.10.0
 pyparsing==2.4.7
 pytest==6.1.2
 toml==0.10.2
