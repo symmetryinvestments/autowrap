@@ -18,6 +18,8 @@ struct PythonObject {
         _obj = obj;
     }
 
+    // FIXME destructor should dec ref
+
     PythonObject str() const {
         return retPyObject!("PyObject_Str");
     }
@@ -376,6 +378,7 @@ struct InputRange {
         popFront;
     }
 
+    // FIXME
     // ~this() {
     //     import python.raw: pyDecRef;
     //     pyDecRef(_iter);
