@@ -14,6 +14,10 @@ subPackage "excel"
 subPackage "csharp"
 
 
+buildType "unittest-cov" {
+    dflags "-cov=ctfe"
+}
+
 # The reason it's done like this is because `dub test` fails to even
 # compile in the python subpackage directory because of its dependency
 # on the reflection subpackage.
