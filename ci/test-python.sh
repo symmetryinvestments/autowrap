@@ -27,6 +27,3 @@ echo "Testing with $DC compiler"
 echo 'Running Python makefile test'
 echo "And the lib dir is $PYTHON_LIB_DIR"
 make -j"$(nproc)" test_python  # FIXME - restore the two above instad of this line
-
-echo 'Running autowrap unit tests'
-PYTHON_LIB_DIR="$PYTHON_LIB_DIR" dub test -q --build=unittest-cov --compiler="$DC"
