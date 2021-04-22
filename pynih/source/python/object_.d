@@ -7,10 +7,6 @@ struct PythonObject {
 
     private PyObject* _obj;
 
-    invariant {
-        //   assert(_obj !is null);
-    }
-
     this(T)(auto ref T value) if(!is(Unqual!T == PyObject*)) {
         import python.conv.d_to_python: toPython;
         _obj = value.toPython;
