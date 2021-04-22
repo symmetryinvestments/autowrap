@@ -40,7 +40,7 @@ test_translation_ut:
 	cd translate && PYTHONPATH=$(PWD)/translate pytest -s -vv
 .PHONY: ut
 ut:
-	dub test -q
+	dub test --build=unittest-cov -q
 
 .PHONY: clean
 clean:
