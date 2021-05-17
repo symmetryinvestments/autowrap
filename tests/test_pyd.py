@@ -1,4 +1,5 @@
 import os
+import pytest
 
 is_pyd = os.environ.get('PYD')
 is_pynih = os.environ.get('PYNIH')
@@ -248,6 +249,14 @@ def test_class_wrap_bizzy():
 
     bizzy += 2
     assert bizzy.m() == 24
+
+    if is_pynih:
+        assert bizzy._m == 24
+    else:
+        # FIXME - See https://github.com/symmetryinvestments/autowrap/issues/54
+        with pytest.raises(AttributeError):
+            assert bizzy._m == 24
+
     bizzy %= 3
     assert bizzy.m() == 36
     bizzy **= 4
