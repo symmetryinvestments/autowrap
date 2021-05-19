@@ -75,11 +75,7 @@ auto wrapAggregate(T)() if(isUserAggregate!T) {
     enum isOperator(alias F) = __traits(identifier, F).startsWith("op");
     alias regularMemberFunctions = Filter!(templateNot!isOperator, Filter!(templateNot!isProperty, nonStaticMemberFunctions));
     alias properties = Filter!(isProperty, nonStaticMemberFunctions);
-    // FIXME - See https://github.com/symmetryinvestments/autowrap/issues/54
-    static if(is(T == class))
-        alias publicFieldNames = AliasSeq!();
-    else
-        alias publicFieldNames = PublicFieldNames!T;
+    alias publicFieldNames = PublicFieldNames!T;
 
     enum isToString(alias F) = __traits(identifier, F) == "toString";
 

@@ -373,7 +373,7 @@ def test_int_to_string():
 
 
 def test_immutable_fields():
-    if is_python:  # FIXME C# (ImmutableFields not found)
+    if is_pynih:  # FIXME C# (ImmutableFields not found)
         from wrap_all import ImmutableFields
         i = ImmutableFields("foobar")
         if is_pyd:  # FIXME
