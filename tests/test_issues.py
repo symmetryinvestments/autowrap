@@ -101,14 +101,8 @@ def test_issue_50():
 
 def test_issue_54():
     from issues import Issue54
-
     c = Issue54(10)
-    if is_pyd:
-        # FIXME
-        with pytest.raises(AttributeError):
-            assert c.i == 10
-    else:
-        assert c.i == 10
+    assert c.i == 10
 
 
 def test_issue_153():
