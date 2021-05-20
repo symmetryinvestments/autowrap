@@ -18,7 +18,7 @@ jobs:
       - name: Install package dependencies
         run: |
           sudo apt-get update -y -qq
-          sudo apt-get install -y -qq libclang-10-dev
+          sudo apt-get install -y -qq libclang-10-dev clang
 
       - name: Install D compiler
         # must go before setting LD_LIBRARY_PATH for Python since this overrides it
