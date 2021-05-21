@@ -11,7 +11,7 @@
 		"mir-linux-kernel": "1.0.1",
 		"mirror": "0.3.0",
 		"openssl": "1.1.6+1.0.1g",
-		"pyd": "0.14.0",
+		"pyd": "0.14.1",
 		"scriptlike": "0.10.3",
 		"stdx-allocator": "2.77.5",
 		"taggedalgebraic": "0.11.16",

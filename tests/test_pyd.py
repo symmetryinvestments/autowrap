@@ -10,31 +10,16 @@ def test_array():
     from pyd import Foo, get, set, test
 
     f = Foo(2)
-    # the bug only exists for pyd, not pynih
-    if is_pyd:
-        # FIXME - see #54
-        with pytest.raises(AttributeError):
-            assert f.i == 2
-    else:
-        assert f.i == 2
+    assert f.i == 2
 
     assert get() == []
 
     set([Foo(10), Foo(20)])
     assert [f.value() for f in get()] == [10, 20]
-
-    if is_pyd:
-        with pytest.raises(AttributeError):  # See #54
-            assert [f.i for f in get()] == [10, 20]
-    else:
-        assert [f.i for f in get()] == [10, 20]
+    assert [f.i for f in get()] == [10, 20]
 
     t = test()
-    if is_pyd:
-        with pytest.raises(AttributeError):  # See #54
-            assert t.i == 10
-    else:
-        assert t.i == 10
+    assert t.i == 10
 
     # bar can't be tested due to side-effects
     t.bar()
@@ -250,12 +235,7 @@ def test_class_wrap_bizzy():
     bizzy += 2
     assert bizzy.m() == 24
 
-    if is_pynih:
-        assert bizzy._m == 24
-    else:
-        # FIXME - See https://github.com/symmetryinvestments/autowrap/issues/54
-        with pytest.raises(AttributeError):
-            assert bizzy._m == 24
+    assert bizzy._m == 24
 
     bizzy %= 3
     assert bizzy.m() == 36
