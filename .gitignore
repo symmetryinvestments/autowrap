@@ -18,3 +18,4 @@ examples/simple/simple
 examples/simple/Simple.cs
 obj
 .ropeproject
+.direnv
