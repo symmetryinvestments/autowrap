@@ -65,20 +65,9 @@ mixin template PyObjectHead() {
 alias ModuleInitRet = PyObject*;  // PyMODINIT_FUNC can't be translated
 
 
-// Demacroify for Python2
-static if(isPython2) {
-
-    auto pyInitModule(const(char)* name, PyMethodDef* methods) {
-        return Py_InitModule(name, methods);
-    }
-}
-
-
-// Demacroify for Python3
-static if(isPython3) {
-    auto pyModuleCreate(PyModuleDef* moduleDef) @nogc nothrow {
-        return PyModule_Create(moduleDef);
-    }
+// Demacroify
+auto pyModuleCreate(PyModuleDef* moduleDef) @nogc nothrow {
+    return PyModule_Create(moduleDef);
 }
 
 
