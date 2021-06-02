@@ -324,6 +324,10 @@ struct PythonObject {
         return retPyObject!"PyNumber_Subtract"(other._obj);
     }
 
+    PythonObject opBinary(string op)(PythonObject other) if(op == "*") {
+        return retPyObject!"PyNumber_Multiply"(other._obj);
+    }
+
 
 private:
 
