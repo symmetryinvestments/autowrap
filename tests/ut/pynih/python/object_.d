@@ -574,11 +574,17 @@ unittest {
 
 @("%")
 unittest {
-    (PythonObject(5) % PythonObject(2)).to!double.should == 1;
-    (PythonObject(4) % PythonObject(2)).to!double.should == 0;
+    (PythonObject(5) % PythonObject(2)).to!int.should == 1;
+    (PythonObject(4) % PythonObject(2)).to!int.should == 0;
 }
 
 @("^^")
 unittest {
-    (PythonObject(2) ^^ PythonObject(3)).to!double.should == 8;
+    (PythonObject(2) ^^ PythonObject(3)).to!int.should == 8;
+}
+
+
+@("<<")
+unittest {
+    (PythonObject(2) << PythonObject(4)).to!int.should == 32;
 }

@@ -342,6 +342,9 @@ struct PythonObject {
         return retPyObject!"PyNumber_Power"(other._obj, pyNone);
     }
 
+    PythonObject opBinary(string op)(PythonObject other) if(op == "<<") {
+        return retPyObject!"PyNumber_Lshift"(other._obj);
+    }
 
 private:
 
