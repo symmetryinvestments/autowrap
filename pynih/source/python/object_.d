@@ -336,6 +336,12 @@ struct PythonObject {
         return retPyObject!"PyNumber_Remainder"(other._obj);
     }
 
+    PythonObject opBinary(string op)(PythonObject other) if(op == "^^") {
+        import python.raw: pyIncRef, pyNone;
+        pyIncRef(pyNone);
+        return retPyObject!"PyNumber_Power"(other._obj, pyNone);
+    }
+
 
 private:
 
