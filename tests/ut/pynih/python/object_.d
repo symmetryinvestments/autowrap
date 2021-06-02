@@ -564,3 +564,9 @@ unittest {
 unittest {
     (PythonObject(2) * PythonObject(3)).to!int.should == 6;
 }
+
+
+@("/")
+unittest {
+    (PythonObject(5) / PythonObject(2)).to!double.should == 2.5;
+}

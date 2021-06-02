@@ -328,6 +328,10 @@ struct PythonObject {
         return retPyObject!"PyNumber_Multiply"(other._obj);
     }
 
+    PythonObject opBinary(string op)(PythonObject other) if(op == "/") {
+        return retPyObject!"PyNumber_TrueDivide"(other._obj);
+    }
+
 
 private:
 
