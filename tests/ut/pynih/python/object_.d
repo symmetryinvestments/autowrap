@@ -570,3 +570,10 @@ unittest {
 unittest {
     (PythonObject(5) / PythonObject(2)).to!double.should == 2.5;
 }
+
+
+@("%")
+unittest {
+    (PythonObject(5) % PythonObject(2)).to!double.should == 1;
+    (PythonObject(4) % PythonObject(2)).to!double.should == 0;
+}

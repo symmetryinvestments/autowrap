@@ -332,6 +332,10 @@ struct PythonObject {
         return retPyObject!"PyNumber_TrueDivide"(other._obj);
     }
 
+    PythonObject opBinary(string op)(PythonObject other) if(op == "%") {
+        return retPyObject!"PyNumber_Remainder"(other._obj);
+    }
+
 
 private:
 
