@@ -328,6 +328,10 @@ struct PythonObject {
         return retPyObject!"PyNumber_Multiply"(other._obj);
     }
 
+    PythonObject opBinary(string op)(int i) if(op == "*") {
+        return retPyObject!"PySequence_Repeat"(i);
+    }
+
     PythonObject opBinary(string op)(PythonObject other) if(op == "/") {
         return retPyObject!"PyNumber_TrueDivide"(other._obj);
     }
@@ -361,6 +365,11 @@ struct PythonObject {
     PythonObject opBinary(string op)(PythonObject other) if(op == "^") {
         return retPyObject!"PyNumber_Xor"(other._obj);
     }
+
+    PythonObject opBinary(string op)(PythonObject other) if(op == "~") {
+        return retPyObject!"PySequence_Concat"(other._obj);
+    }
+
 
 private:
 

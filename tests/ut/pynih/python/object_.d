@@ -560,7 +560,7 @@ unittest {
     (PythonObject(5) - PythonObject(3)).to!int.should == 2;
 }
 
-@("*")
+@("*.int")
 unittest {
     (PythonObject(2) * PythonObject(3)).to!int.should == 6;
 }
@@ -618,4 +618,14 @@ unittest {
     (PythonObject(0) ^ PythonObject(1)).to!int.should == 1;
     (PythonObject(1) ^ PythonObject(0)).to!int.should == 1;
     (PythonObject(1) ^ PythonObject(1)).to!int.should == 0;
+}
+
+@("~")
+unittest {
+    (PythonObject([1, 2, 3]) ~ PythonObject([4, 5])).to!(int[]).should == [1, 2, 3, 4, 5];
+}
+
+@("*.seq")
+unittest {
+    (PythonObject([1]) * 3).to!(int[]).should == [1, 1, 1];
 }
