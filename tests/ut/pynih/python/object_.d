@@ -588,3 +588,9 @@ unittest {
 unittest {
     (PythonObject(2) << PythonObject(4)).to!int.should == 32;
 }
+
+
+@(">>")
+unittest {
+    (PythonObject(32) >> PythonObject(4)).to!int.should == 2;
+}
