@@ -350,6 +350,10 @@ struct PythonObject {
         return retPyObject!"PyNumber_Rshift"(other._obj);
     }
 
+    PythonObject opBinary(string op)(PythonObject other) if(op == "&") {
+        return retPyObject!"PyNumber_And"(other._obj);
+    }
+
 private:
 
     PythonObject retPyObject(string funcName, A...)(auto ref A args) const {
