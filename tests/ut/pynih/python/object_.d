@@ -611,3 +611,11 @@ unittest {
     (PythonObject(1) | PythonObject(0)).to!int.should == 1;
     (PythonObject(1) | PythonObject(1)).to!int.should == 1;
 }
+
+@("^")
+unittest {
+    (PythonObject(0) ^ PythonObject(0)).to!int.should == 0;
+    (PythonObject(0) ^ PythonObject(1)).to!int.should == 1;
+    (PythonObject(1) ^ PythonObject(0)).to!int.should == 1;
+    (PythonObject(1) ^ PythonObject(1)).to!int.should == 0;
+}
