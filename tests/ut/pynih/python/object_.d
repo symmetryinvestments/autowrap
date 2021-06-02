@@ -553,3 +553,9 @@ unittest {
 unittest {
     (PythonObject(2) + PythonObject(3)).to!int.should == 5;
 }
+
+
+@("-")
+unittest {
+    (PythonObject(5) - PythonObject(3)).to!int.should == 2;
+}

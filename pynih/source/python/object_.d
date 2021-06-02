@@ -320,6 +320,11 @@ struct PythonObject {
         return retPyObject!"PyNumber_Add"(other._obj);
     }
 
+    PythonObject opBinary(string op)(PythonObject other) if(op == "-") {
+        return retPyObject!"PyNumber_Subtract"(other._obj);
+    }
+
+
 private:
 
     PythonObject retPyObject(string funcName, A...)(auto ref A args) const {
