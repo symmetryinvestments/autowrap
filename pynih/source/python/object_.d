@@ -316,6 +316,60 @@ struct PythonObject {
         retDirect!"PySequence_SetSlice"(0, len, cast(PyObject*) val._obj);
     }
 
+    PythonObject opBinary(string op)(PythonObject other) if(op == "+") {
+        return retPyObject!"PyNumber_Add"(other._obj);
+    }
+
+    PythonObject opBinary(string op)(PythonObject other) if(op == "-") {
+        return retPyObject!"PyNumber_Subtract"(other._obj);
+    }
+
+    PythonObject opBinary(string op)(PythonObject other) if(op == "*") {
+        return retPyObject!"PyNumber_Multiply"(other._obj);
+    }
+
+    PythonObject opBinary(string op)(int i) if(op == "*") {
+        return retPyObject!"PySequence_Repeat"(i);
+    }
+
+    PythonObject opBinary(string op)(PythonObject other) if(op == "/") {
+        return retPyObject!"PyNumber_TrueDivide"(other._obj);
+    }
+
+    PythonObject opBinary(string op)(PythonObject other) if(op == "%") {
+        return retPyObject!"PyNumber_Remainder"(other._obj);
+    }
+
+    PythonObject opBinary(string op)(PythonObject other) if(op == "^^") {
+        import python.raw: pyIncRef, pyNone;
+        pyIncRef(pyNone);
+        return retPyObject!"PyNumber_Power"(other._obj, pyNone);
+    }
+
+    PythonObject opBinary(string op)(PythonObject other) if(op == "<<") {
+        return retPyObject!"PyNumber_Lshift"(other._obj);
+    }
+
+    PythonObject opBinary(string op)(PythonObject other) if(op == ">>") {
+        return retPyObject!"PyNumber_Rshift"(other._obj);
+    }
+
+    PythonObject opBinary(string op)(PythonObject other) if(op == "&") {
+        return retPyObject!"PyNumber_And"(other._obj);
+    }
+
+    PythonObject opBinary(string op)(PythonObject other) if(op == "|") {
+        return retPyObject!"PyNumber_Or"(other._obj);
+    }
+
+    PythonObject opBinary(string op)(PythonObject other) if(op == "^") {
+        return retPyObject!"PyNumber_Xor"(other._obj);
+    }
+
+    PythonObject opBinary(string op)(PythonObject other) if(op == "~") {
+        return retPyObject!"PySequence_Concat"(other._obj);
+    }
+
 
 private:
 
