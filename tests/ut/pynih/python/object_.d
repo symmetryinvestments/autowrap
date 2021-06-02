@@ -548,3 +548,8 @@ unittest {
         .map!(x => x.to!int * 2)
         .should == [2, 4, 6];
 }
+
+@("+")
+unittest {
+    (PythonObject(2) + PythonObject(3)).to!int.should == 5;
+}

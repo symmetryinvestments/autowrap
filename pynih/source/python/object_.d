@@ -316,6 +316,9 @@ struct PythonObject {
         retDirect!"PySequence_SetSlice"(0, len, cast(PyObject*) val._obj);
     }
 
+    PythonObject opBinary(string op)(PythonObject other) if(op == "+") {
+        return retPyObject!"PyNumber_Add"(other._obj);
+    }
 
 private:
 
