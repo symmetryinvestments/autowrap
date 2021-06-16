@@ -685,3 +685,20 @@ unittest {
     g.keys.to!(string[]).should == ["a", "c"];
     g2.keys.to!(string[]).should == ["a"];
 }
+
+
+@("pyd.dict.merge.noovverride")
+unittest {
+    auto dict = PythonObject(["a": "1", "b": "2"]);
+    dict.merge(PythonObject(["x": "1", "y": "2", "a": "3"]));
+    dict.to!(string[string]).should == ["a": "3", "b": "2", "x": "1", "y": "2"];
+}
+
+
+@("pyd.dict.merge.override")
+unittest {
+    auto dict = PythonObject(["a": "1", "b": "2"]);
+    dict.merge(PythonObject(["x": "1", "y": "2", "a": "3"]), false);
+    dict.to!(string[string]).should == ["a": "1", "b": "2", "x": "1", "y": "2"];
+
+}

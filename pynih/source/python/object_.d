@@ -209,6 +209,16 @@ struct PythonObject {
             return getattr("copy");
     }
 
+    bool merge(in PythonObject other, bool override_ = true) {
+        import python.raw: pyDictCheck;
+        import python.exception: PythonException;
+
+        if(pyDictCheck(_obj))
+            return cast(bool) retDirect!"PyDict_Merge"(cast(PyObject*) other._obj, cast(int) override_);
+        else
+            throw new PythonException("Cannot merge a non-dict");
+    }
+
     int opCmp(in PythonObject other) const {
         import python.raw: PyObject_RichCompareBool, Py_LT, Py_EQ, Py_GT;
         import python.exception: PythonException;
