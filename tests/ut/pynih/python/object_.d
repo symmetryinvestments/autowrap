@@ -667,4 +667,21 @@ unittest {
     auto items = g.items;
     items[0][0].to!string.should == "a";
     items[0][1].to!string.should == "b";
+
+    g["a"].to!string.should == "b";
+    g["b"] = "c";
+    g.keys.to!(string[]).should ~ ["a", "b"];
+    g.values.to!(string[]).should ~ ["b", "c"];
+    g["c"] = PythonObject("d");
+    g.keys.to!(string[]).should ~ ["a", "b", "c"];
+    g.values.to!(string[]).should ~ ["b", "c", "d"];
+    g.del("b");
+    g.keys.to!(string[]).should ~ ["a", "c"];
+    g.values.to!(string[]).should ~ ["b", "d"];
+
+    auto g2 = g.copy;
+    g.keys.to!(string[]).should == g2.keys.to!(string[]);
+    g2.del("c");
+    g.keys.to!(string[]).should == ["a", "c"];
+    g2.keys.to!(string[]).should == ["a"];
 }

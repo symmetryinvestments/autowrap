@@ -201,6 +201,13 @@ struct PythonObject {
             return getattr("items");
     }
 
+    PythonObject copy() const {
+        import python.raw: pyDictCheck;
+        if(pyDictCheck(cast(PyObject*) _obj))
+            return retPyObject!"PyDict_Copy"();
+        else
+            return getattr("copy");
+    }
 
     int opCmp(in PythonObject other) const {
         import python.raw: PyObject_RichCompareBool, Py_LT, Py_EQ, Py_GT;
@@ -227,7 +234,7 @@ struct PythonObject {
         assert(0);
     }
 
-    PythonObject opDispatch(string identifier, A...)(auto ref A args) {
+    PythonObject opDispatch(string identifier, A...)(auto ref A args) inout {
         import python.exception: PythonException;
 
         auto value = getattr(identifier);
