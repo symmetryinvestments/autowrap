@@ -430,6 +430,14 @@ struct PythonObject {
         return retPyObject!"PyNumber_Invert"();
     }
 
+    bool opBinaryRight(string op)(in PythonObject key) if(op == "in") {
+        return cast(bool) retDirect!"PySequence_Contains"(cast(PyObject*) key._obj);
+    }
+
+    bool opBinaryRight(string op, T)(auto ref T key) if(op == "in" && !is(Unqual!T == PythonObject)) {
+        return cast(bool) retDirect!"PySequence_Contains"(cast(PyObject*) PythonObject(key)._obj);
+    }
+
 private:
 
     PythonObject retPyObject(string funcName, A...)(auto ref A args) const {
