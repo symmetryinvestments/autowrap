@@ -635,3 +635,10 @@ unittest {
     (+PythonObject( 3)).to!int.should ==  3;
     (+PythonObject(-3)).to!int.should == -3;
 }
+
+
+@("opUnary.-")
+unittest {
+    (-PythonObject( 3)).to!int.should == -3;
+    (-PythonObject(-3)).to!int.should ==  3;
+}

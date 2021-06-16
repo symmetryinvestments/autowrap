@@ -374,6 +374,10 @@ struct PythonObject {
         return retPyObject!"PyNumber_Positive"();
     }
 
+    PythonObject opUnary(string op)() if(op == "-") {
+        return retPyObject!"PyNumber_Negative"();
+    }
+
 private:
 
     PythonObject retPyObject(string funcName, A...)(auto ref A args) const {
