@@ -652,8 +652,13 @@ unittest {
 
 @("pyd.dict")
 unittest {
-    auto g = PythonObject(["a": "b"]);
-    g.keys.to!(string[]).should == ["a"];
     PythonObject(42).keys.shouldThrowWithMessage!PythonException(
         "AttributeError: 'int' object has no attribute 'keys'");
+
+    PythonObject(42).values.shouldThrowWithMessage!PythonException(
+        "AttributeError: 'int' object has no attribute 'values'");
+
+    auto g = PythonObject(["a": "b"]);
+    g.keys.to!(string[]).should == ["a"];
+    g.values.to!(string[]).should == ["b"];
 }
