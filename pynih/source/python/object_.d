@@ -378,6 +378,10 @@ struct PythonObject {
         return retPyObject!"PyNumber_Negative"();
     }
 
+    PythonObject opUnary(string op)() if(op == "~") {
+        return retPyObject!"PyNumber_Invert"();
+    }
+
 private:
 
     PythonObject retPyObject(string funcName, A...)(auto ref A args) const {
