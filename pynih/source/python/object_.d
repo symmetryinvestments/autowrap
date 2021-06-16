@@ -191,6 +191,17 @@ struct PythonObject {
             return getattr("values");
     }
 
+    PythonObject items() const {
+        import python.raw: pyDictCheck, PyMapping_Items;
+        if(pyDictCheck(cast(PyObject*) _obj))
+            return retPyObject!"PyDict_Items"();
+        else if(auto keys = PyMapping_Items(cast(PyObject*) _obj))
+            return PythonObject(keys);
+        else
+            return getattr("items");
+    }
+
+
     int opCmp(in PythonObject other) const {
         import python.raw: PyObject_RichCompareBool, Py_LT, Py_EQ, Py_GT;
         import python.exception: PythonException;

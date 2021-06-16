@@ -658,7 +658,13 @@ unittest {
     PythonObject(42).values.shouldThrowWithMessage!PythonException(
         "AttributeError: 'int' object has no attribute 'values'");
 
+    PythonObject(42).items.shouldThrowWithMessage!PythonException(
+        "AttributeError: 'int' object has no attribute 'items'");
+
     auto g = PythonObject(["a": "b"]);
     g.keys.to!(string[]).should == ["a"];
     g.values.to!(string[]).should == ["b"];
+    auto items = g.items;
+    items[0][0].to!string.should == "a";
+    items[0][1].to!string.should == "b";
 }
