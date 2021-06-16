@@ -648,3 +648,66 @@ unittest {
 unittest {
     (~PythonObject(0xf)).to!int.should == 0xfffffff0;
 }
+
+
+@("pyd.dict")
+unittest {
+    PythonObject(42).keys.shouldThrowWithMessage!PythonException(
+        "AttributeError: 'int' object has no attribute 'keys'");
+
+    PythonObject(42).values.shouldThrowWithMessage!PythonException(
+        "AttributeError: 'int' object has no attribute 'values'");
+
+    PythonObject(42).items.shouldThrowWithMessage!PythonException(
+        "AttributeError: 'int' object has no attribute 'items'");
+
+    auto g = PythonObject(["a": "b"]);
+    g.keys.to!(string[]).should == ["a"];
+    g.values.to!(string[]).should == ["b"];
+    auto items = g.items;
+    items[0][0].to!string.should == "a";
+    items[0][1].to!string.should == "b";
+
+    g["a"].to!string.should == "b";
+    g["b"] = "c";
+    g.keys.to!(string[]).should ~ ["a", "b"];
+    g.values.to!(string[]).should ~ ["b", "c"];
+    g["c"] = PythonObject("d");
+    g.keys.to!(string[]).should ~ ["a", "b", "c"];
+    g.values.to!(string[]).should ~ ["b", "c", "d"];
+    g.del("b");
+    g.keys.to!(string[]).should ~ ["a", "c"];
+    g.values.to!(string[]).should ~ ["b", "d"];
+
+    auto g2 = g.copy;
+    g.keys.to!(string[]).should == g2.keys.to!(string[]);
+    g2.del("c");
+    g.keys.to!(string[]).should == ["a", "c"];
+    g2.keys.to!(string[]).should == ["a"];
+}
+
+
+@("pyd.dict.merge.noovverride")
+unittest {
+    auto dict = PythonObject(["a": "1", "b": "2"]);
+    dict.merge(PythonObject(["x": "1", "y": "2", "a": "3"]));
+    dict.to!(string[string]).should == ["a": "3", "b": "2", "x": "1", "y": "2"];
+}
+
+
+@("pyd.dict.merge.override")
+unittest {
+    auto dict = PythonObject(["a": "1", "b": "2"]);
+    dict.merge(PythonObject(["x": "1", "y": "2", "a": "3"]), false);
+    dict.to!(string[string]).should == ["a": "1", "b": "2", "x": "1", "y": "2"];
+}
+
+
+@("pyd.dict.in")
+unittest {
+    auto dict = PythonObject(["a": "1", "b": "2"]);
+    assert("a" in dict);
+    assert("z" !in dict);
+    assert(PythonObject("a") in dict);
+    assert(PythonObject("z") !in dict);
+}

@@ -171,6 +171,54 @@ struct PythonObject {
         return PythonObject(PyIter_Next(cast(PyObject*) _obj));
     }
 
+    PythonObject keys() const {
+        import python.raw: pyDictCheck, PyMapping_Keys;
+        if(pyDictCheck(cast(PyObject*) _obj))
+            return retPyObject!"PyDict_Keys"();
+        else if(auto keys = PyMapping_Keys(cast(PyObject*) _obj))
+            return PythonObject(keys);
+        else
+            return getattr("keys");
+    }
+
+    PythonObject values() const {
+        import python.raw: pyDictCheck, PyMapping_Values;
+        if(pyDictCheck(cast(PyObject*) _obj))
+            return retPyObject!"PyDict_Values"();
+        else if(auto keys = PyMapping_Values(cast(PyObject*) _obj))
+            return PythonObject(keys);
+        else
+            return getattr("values");
+    }
+
+    PythonObject items() const {
+        import python.raw: pyDictCheck, PyMapping_Items;
+        if(pyDictCheck(cast(PyObject*) _obj))
+            return retPyObject!"PyDict_Items"();
+        else if(auto keys = PyMapping_Items(cast(PyObject*) _obj))
+            return PythonObject(keys);
+        else
+            return getattr("items");
+    }
+
+    PythonObject copy() const {
+        import python.raw: pyDictCheck;
+        if(pyDictCheck(cast(PyObject*) _obj))
+            return retPyObject!"PyDict_Copy"();
+        else
+            return getattr("copy");
+    }
+
+    bool merge(in PythonObject other, bool override_ = true) {
+        import python.raw: pyDictCheck;
+        import python.exception: PythonException;
+
+        if(pyDictCheck(_obj))
+            return cast(bool) retDirect!"PyDict_Merge"(cast(PyObject*) other._obj, cast(int) override_);
+        else
+            throw new PythonException("Cannot merge a non-dict");
+    }
+
     int opCmp(in PythonObject other) const {
         import python.raw: PyObject_RichCompareBool, Py_LT, Py_EQ, Py_GT;
         import python.exception: PythonException;
@@ -196,7 +244,7 @@ struct PythonObject {
         assert(0);
     }
 
-    PythonObject opDispatch(string identifier, A...)(auto ref A args) {
+    PythonObject opDispatch(string identifier, A...)(auto ref A args) inout {
         import python.exception: PythonException;
 
         auto value = getattr(identifier);
@@ -380,6 +428,14 @@ struct PythonObject {
 
     PythonObject opUnary(string op)() if(op == "~") {
         return retPyObject!"PyNumber_Invert"();
+    }
+
+    bool opBinaryRight(string op)(in PythonObject key) if(op == "in") {
+        return cast(bool) retDirect!"PySequence_Contains"(cast(PyObject*) key._obj);
+    }
+
+    bool opBinaryRight(string op, T)(auto ref T key) if(op == "in" && !is(Unqual!T == PythonObject)) {
+        return cast(bool) retDirect!"PySequence_Contains"(cast(PyObject*) PythonObject(key)._obj);
     }
 
 private:
