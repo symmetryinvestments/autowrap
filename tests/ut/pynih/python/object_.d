@@ -648,3 +648,12 @@ unittest {
 unittest {
     (~PythonObject(0xf)).to!int.should == 0xfffffff0;
 }
+
+
+@("pyd.dict")
+unittest {
+    auto g = PythonObject(["a": "b"]);
+    g.keys.to!(string[]).should == ["a"];
+    PythonObject(42).keys.shouldThrowWithMessage!PythonException(
+        "AttributeError: 'int' object has no attribute 'keys'");
+}

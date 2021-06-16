@@ -171,6 +171,16 @@ struct PythonObject {
         return PythonObject(PyIter_Next(cast(PyObject*) _obj));
     }
 
+    PythonObject keys() const {
+        import python.raw: pyDictCheck, PyMapping_Keys;
+        if(pyDictCheck(cast(PyObject*) _obj))
+            return retPyObject!"PyDict_Keys"();
+        else if(auto keys = PyMapping_Keys(cast(PyObject*) _obj))
+            return PythonObject(keys);
+        else
+            return getattr("keys");
+    }
+
     int opCmp(in PythonObject other) const {
         import python.raw: PyObject_RichCompareBool, Py_LT, Py_EQ, Py_GT;
         import python.exception: PythonException;
