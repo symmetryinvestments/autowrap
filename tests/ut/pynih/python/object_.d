@@ -549,54 +549,54 @@ unittest {
         .should == [2, 4, 6];
 }
 
-@("+")
+@("opBinary.+")
 unittest {
     (PythonObject(2) + PythonObject(3)).to!int.should == 5;
 }
 
 
-@("-")
+@("opBinary.-")
 unittest {
     (PythonObject(5) - PythonObject(3)).to!int.should == 2;
 }
 
-@("*.int")
+@("opBinary.*.int")
 unittest {
     (PythonObject(2) * PythonObject(3)).to!int.should == 6;
 }
 
 
-@("/")
+@("opBinary./")
 unittest {
     (PythonObject(5) / PythonObject(2)).to!double.should == 2.5;
 }
 
 
-@("%")
+@("opBinary.%")
 unittest {
     (PythonObject(5) % PythonObject(2)).to!int.should == 1;
     (PythonObject(4) % PythonObject(2)).to!int.should == 0;
 }
 
-@("^^")
+@("opBinary.^^")
 unittest {
     (PythonObject(2) ^^ PythonObject(3)).to!int.should == 8;
 }
 
 
-@("<<")
+@("opBinary.<<")
 unittest {
     (PythonObject(2) << PythonObject(4)).to!int.should == 32;
 }
 
 
-@(">>")
+@("opBinary.>>")
 unittest {
     (PythonObject(32) >> PythonObject(4)).to!int.should == 2;
 }
 
 
-@("&")
+@("opBinary.&")
 unittest {
     (PythonObject(0) & PythonObject(0)).to!int.should == 0;
     (PythonObject(0) & PythonObject(1)).to!int.should == 0;
@@ -604,7 +604,7 @@ unittest {
     (PythonObject(1) & PythonObject(1)).to!int.should == 1;
 }
 
-@("|")
+@("opBinary.|")
 unittest {
     (PythonObject(0) | PythonObject(0)).to!int.should == 0;
     (PythonObject(0) | PythonObject(1)).to!int.should == 1;
@@ -612,7 +612,7 @@ unittest {
     (PythonObject(1) | PythonObject(1)).to!int.should == 1;
 }
 
-@("^")
+@("opBinary.^")
 unittest {
     (PythonObject(0) ^ PythonObject(0)).to!int.should == 0;
     (PythonObject(0) ^ PythonObject(1)).to!int.should == 1;
@@ -620,12 +620,18 @@ unittest {
     (PythonObject(1) ^ PythonObject(1)).to!int.should == 0;
 }
 
-@("~")
+@("opBinary.~")
 unittest {
     (PythonObject([1, 2, 3]) ~ PythonObject([4, 5])).to!(int[]).should == [1, 2, 3, 4, 5];
 }
 
-@("*.seq")
+@("opBinary.*.seq")
 unittest {
     (PythonObject([1]) * 3).to!(int[]).should == [1, 1, 1];
+}
+
+@("opUnary.+")
+unittest {
+    (+PythonObject( 3)).to!int.should ==  3;
+    (+PythonObject(-3)).to!int.should == -3;
 }
