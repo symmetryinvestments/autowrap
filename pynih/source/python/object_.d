@@ -370,6 +370,17 @@ struct PythonObject {
         return retPyObject!"PySequence_Concat"(other._obj);
     }
 
+    PythonObject opUnary(string op)() if(op == "+") {
+        return retPyObject!"PyNumber_Positive"();
+    }
+
+    PythonObject opUnary(string op)() if(op == "-") {
+        return retPyObject!"PyNumber_Negative"();
+    }
+
+    PythonObject opUnary(string op)() if(op == "~") {
+        return retPyObject!"PyNumber_Invert"();
+    }
 
 private:
 
