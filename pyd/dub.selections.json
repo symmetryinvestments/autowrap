@@ -1,8 +1,8 @@
 {
 	"fileVersion": 1,
 	"versions": {
-		"mirror": "0.3.0",
-		"pyd": "0.14.1",
+		"mirror": "0.3.1",
+		"pyd": "0.14.3",
 		"unit-threaded": "1.0.4"
 	}
 }

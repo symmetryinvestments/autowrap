@@ -5,7 +5,7 @@ targetType "library"
 
 dependency "autowrap:common" path="../common"
 dependency "autowrap:reflection" path="../reflection"
-dependency "mirror" version="~>0.3.0"
+dependency "mirror" version="~>0.3.1"
 
 preGenerateCommands "make -C $PACKAGE_DIR source/python/raw.d" platform="posix"
 

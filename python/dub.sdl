@@ -11,6 +11,10 @@ configuration "env" {
     subConfiguration "autowrap:pyd" "env"
 }
 
+configuration "python39" {
+    subConfiguration "autowrap:pyd" "python39"
+}
+
 configuration "python38" {
     subConfiguration "autowrap:pyd" "python38"
 }
