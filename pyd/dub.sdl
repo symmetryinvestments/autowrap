@@ -12,6 +12,10 @@ configuration "env" {
     subConfiguration "pyd" "env"
 }
 
+configuration "python39" {
+    subConfiguration "pyd" "python39"
+}
+
 configuration "python38" {
     subConfiguration "pyd" "python38"
 }
