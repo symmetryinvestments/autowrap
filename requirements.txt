@@ -8,7 +8,7 @@ cwcwidth==0.1.4
 greenlet==1.1.0
 idna==2.10
 iniconfig==1.1.1
-numpy==1.20.3
+numpy==1.22.0
 packaging==20.9
 pluggy==0.13.1
 py==1.10.0
