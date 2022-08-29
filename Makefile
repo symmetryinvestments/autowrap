@@ -23,8 +23,7 @@ all: test
 .PHONY: test
 test: test_python test_cs test_translation test_phobos
 .PHONY: test_python
-#test_python: ut test_python_pyd test_python_pynih
-test_python: test_python_pyd test_python_pynih
+test_python: ut test_python_pyd test_python_pynih
 .PHONY: test_python_pyd
 test_python_pyd:   test_simple_pyd   test_pyd_pyd   test_issues_pyd   test_numpy_pyd
 .PHONY: test_python_pynih

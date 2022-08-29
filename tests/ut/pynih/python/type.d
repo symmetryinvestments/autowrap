@@ -1,4 +1,4 @@
-module pynih.python.type;
+module ut.pynih.python.type;
 
 version(Have_autowrap_pynih):
 

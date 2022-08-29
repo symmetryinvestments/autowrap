@@ -3,16 +3,16 @@ import std.meta: AliasSeq;
 
 
 alias normalModules = AliasSeq!(
-    "common",
-    "reflection",
-    "issues",
+    "ut.common",
+    "ut.reflection",
+    "ut.issues",
 );
 
 alias pynihModules = AliasSeq!(
-    "pynih.python.conv",
-    "pynih.python.util",
-    "pynih.python.type",
-    "pynih.python.object_",
+    "ut.pynih.python.conv",
+    "ut.pynih.python.util",
+    "ut.pynih.python.type",
+    "ut.pynih.python.object_",
 );
 
 

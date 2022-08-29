@@ -1,4 +1,4 @@
-module common;
+module ut.common;
 
 
 import autowrap.common;
