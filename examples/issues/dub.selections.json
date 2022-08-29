@@ -4,19 +4,19 @@
 		"autowrap": {"path":"../../"},
 		"botan": "1.12.18",
 		"botan-math": "1.0.3",
-		"diet-ng": "1.7.2",
-		"eventcore": "0.9.6",
+		"diet-ng": "1.8.1",
+		"eventcore": "0.9.20",
 		"libasync": "0.8.6",
 		"memutils": "1.0.4",
 		"mir-linux-kernel": "1.0.1",
-		"mirror": "0.3.0",
-		"openssl": "1.1.6+1.0.1g",
+		"mirror": "0.3.2",
+		"openssl": "3.2.2",
 		"pyd": "0.14.3",
 		"scriptlike": "0.10.3",
 		"stdx-allocator": "2.77.5",
-		"taggedalgebraic": "0.11.16",
-		"unit-threaded": "1.0.4",
-		"vibe-core": "1.9.2",
-		"vibe-d": "0.9.0"
+		"taggedalgebraic": "0.11.22",
+		"unit-threaded": "2.1.2",
+		"vibe-core": "1.22.4",
+		"vibe-d": "0.9.5"
 	}
 }

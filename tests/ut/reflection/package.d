@@ -1,4 +1,4 @@
-module reflection;
+module ut.reflection;
 
 
 import autowrap.reflection;

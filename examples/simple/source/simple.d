@@ -1,7 +1,5 @@
-version(Have_autowrap_csharp)  // very weird dmd bug mixed with weirder C# mixin strings
+version(Have_autowrap_csharp):  // very weird dmd bug mixed with weirder C# mixin strings
     import autowrap.csharp;
-else
-    import autowrap;
 
 
 enum modules = Modules(Module("prefix"),

@@ -21,12 +21,17 @@ TEST_SIMPLE_PY := $(shell pwd)/../../tests/test_simple.py
 
 define python-module
 
+# stupid dub hard links
 lib/$2/$1.so: lib/$2/lib$1.so
 	@cp $$^ $$@
+	@mv $$@ the_temp_name
+	@cp the_temp_name $$@
+	@rm the_temp_name
+
 
 .PHONY: lib/$2/lib$1.so
 lib/$2/lib$1.so:
-	@cd $1 && dub build -q -c $3 #--compiler=/home/atila/coding/d/dlang/dmd/generated/linux/release/64/dmd
+	@cd $1 && dub build -q -c $3
 
 endef
 

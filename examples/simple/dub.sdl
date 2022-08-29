@@ -16,6 +16,7 @@ configuration "python27" {
 }
 
 configuration "env" {
+    targetType "sourceLibrary"
     targetPath "lib/pyd"
     dependency "autowrap:python" path="../../"
     subConfiguration "autowrap:python" "env"

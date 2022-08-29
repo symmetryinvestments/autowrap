@@ -40,7 +40,7 @@ To wrap for Python, make a dub dynamicLibrary project with one file:
 ```d
 import autowrap.python;
 mixin(
-    wrapAll(
+    wrapDlang!(
         LibraryName("mylibrary"),
         Modules("my.module1", "my.module2", /* ... */),
     )
