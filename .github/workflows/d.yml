@@ -13,7 +13,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
 
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Install package dependencies
         run: |
@@ -22,12 +22,12 @@ jobs:
 
       - name: Install D compiler
         # must go before setting LD_LIBRARY_PATH for Python since this overrides it
-        uses: dlang-community/setup-dlang@v1
+        uses: dlang-community/setup-dlang@v1.1.1
         with:
           compiler: ${{ matrix.dc }}
 
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
 
@@ -59,4 +59,4 @@ jobs:
           LD_RUN_PATH: $PYTHON_LIB_DIR
           LIBRARY_PATH: /usr/lib/llvm-10/lib
 
-      - uses: codecov/codecov-action@v1
+      - uses: codecov/codecov-action@v3
