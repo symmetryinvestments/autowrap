@@ -53,6 +53,13 @@ unittest {
 }
 
 
+@("TimeOfDay")
+unittest {
+    import std.datetime : TimeOfDay;
+    backAndForth(TimeOfDay(15, 49, 34));
+}
+
+
 // FIXME - crashes dmd 2.100.1
 // @Values("foobar", "quux")
 // @("string.ascii")
