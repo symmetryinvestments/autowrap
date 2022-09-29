@@ -1,13 +1,13 @@
 module python.conv.python_to_d;
 
 
-import python.raw: PyObject, pyListCheck, pyTupleCheck, PyTuple_Size, pyCallableCheck;
+import python.raw: PyObject, pyListCheck, pyTupleCheck, PyTuple_Size, pyCallableCheck, pyTimeCheck;
 import python.type: isUserAggregate, isTuple;
 import std.traits: Unqual, isIntegral, isFloatingPoint, isAggregateType, isArray,
     isStaticArray, isAssociativeArray, isPointer, PointerTarget, isSomeChar, isSomeString,
     isDelegate, isFunctionPointer;
 import std.range: isInputRange;
-import std.datetime: DateTime, Date;
+import std.datetime: DateTime, Date, TimeOfDay;
 import core.time: Duration;
 
 
@@ -15,7 +15,8 @@ T to(T)(PyObject* value) @trusted if(isIntegral!T && !is(T == enum)) {
     import python.raw: PyLong_AsLong;
 
     const ret = PyLong_AsLong(value);
-    if(ret > T.max || ret < T.min) throw new Exception("Overflow");
+    if(ret > T.max || ret < T.min)
+        throw new Exception("Overflow converting PyObject to " ~ T.stringof);
 
     return cast(T) ret;
 }
@@ -153,7 +154,6 @@ T to(T)(PyObject* value) if(is(Unqual!T == DateTime)) {
                     pyDateTimeHour(value),
                     pyDateTimeMinute(value),
                     pyDateTimeSecond(value));
-
 }
 
 
@@ -163,6 +163,17 @@ T to(T)(PyObject* value) if(is(Unqual!T == Date)) {
     return Date(pyDateTimeYear(value),
                 pyDateTimeMonth(value),
                 pyDateTimeDay(value));
+}
+
+T to(T)(PyObject* value) if(is(Unqual!T == TimeOfDay)) {
+    import python.raw;
+
+    if(!pyTimeCheck(value))
+        throw new Exception("Can only convert time objects to TimeOfDay");
+
+    return TimeOfDay(pyTimeHour(value),
+                     pyTimeMinute(value),
+                     pyTimeSecond(value));
 }
 
 

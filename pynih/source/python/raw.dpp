@@ -156,6 +156,10 @@ bool pyBytesCheck(PyObject* obj) @nogc nothrow {
     return cast(bool) PyBytes_Check(obj);
 }
 
+bool pyTimeCheck(PyObject* obj) @nogc nothrow {
+    return cast(bool) PyTime_Check(obj);
+}
+
 
 // Demacroify
 auto pyTrue() {
@@ -254,14 +258,31 @@ auto pyDateFromDate(int year, int month, int day) {
     return PyDate_FromDate(year, month, day);
 }
 
-
 auto pyDateTimeFromDateAndTime(int year, int month, int day, int hour = 0, int minute = 0, int second = 0, int usec = 0) {
     return PyDateTime_FromDateAndTime(year, month, day, hour, minute, second, usec);
 }
 
-
 auto pyDeltaFromDSU(int days, int seconds, int useconds) {
     return PyDelta_FromDSU(days, seconds, useconds);
+}
+
+auto pyTimeHour(PyObject* obj) @nogc nothrow {
+    return PyDateTime_TIME_GET_HOUR(obj);
+}
+
+auto pyTimeMinute(PyObject* obj) @nogc nothrow {
+    return PyDateTime_TIME_GET_MINUTE(obj);
+}
+
+auto pyTimeSecond(PyObject* obj) @nogc nothrow {
+    return PyDateTime_TIME_GET_SECOND(obj);
+}
+
+auto pyTimeFromTime(int hour, int minute, int second, int usecond) @trusted nothrow {
+    try
+        return PyTime_FromTime(hour, minute, second, usecond);
+    catch(Exception _)
+        assert(0);
 }
 
 

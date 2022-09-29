@@ -8,7 +8,7 @@ import python.raw: PyObject;
 import mirror.meta.traits: isParameter, BinaryOperator;
 import std.traits: Unqual, isArray, isIntegral, isBoolean, isFloatingPoint,
     isAggregateType, isCallable, isAssociativeArray, isSomeFunction;
-import std.datetime: DateTime, Date;
+import std.datetime: DateTime, Date, TimeOfDay;
 import std.typecons: Tuple;
 import std.range.primitives: isInputRange;
 import std.meta: allSatisfy;
@@ -16,7 +16,7 @@ static import core.time;
 
 
 package enum isPhobos(T) = isDateOrDateTime!T || isTuple!T || is(Unqual!T == core.time.Duration);
-package enum isDateOrDateTime(T) = is(Unqual!T == DateTime) || is(Unqual!T == Date);
+package enum isDateOrDateTime(T) = is(Unqual!T == DateTime) || is(Unqual!T == Date) || is(Unqual!T == TimeOfDay);
 package enum isTuple(T) = is(Unqual!T == Tuple!A, A...);
 package enum isUserAggregate(T) = isAggregateType!T && !isPhobos!(T);
 package enum isNonRangeUDT(T) = isUserAggregate!T && !isInputRange!T;

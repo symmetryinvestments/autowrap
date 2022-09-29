@@ -8,7 +8,7 @@ import std.traits: Unqual, isIntegral, isFloatingPoint, isAggregateType,
     isCallable, isSomeString, isFunctionPointer, isDelegate,
     PointerTarget;
 import std.range: isInputRange, isInfinite;
-import std.datetime: Date, DateTime;
+import std.datetime: Date, DateTime, TimeOfDay;
 import core.time: Duration;
 
 
@@ -125,10 +125,14 @@ PyObject* toPython(T)(T value) if(is(Unqual!T == DateTime)) {
                                      value.hour, value.minute, value.second);
 }
 
-
 PyObject* toPython(T)(T value) if(is(Unqual!T == Date)) {
     import python.raw: pyDateFromDate;
     return pyDateFromDate(value.year, value.month, value.day);
+}
+
+PyObject* toPython(T)(T value) if(is(Unqual!T == TimeOfDay)) {
+    import python.raw: pyTimeFromTime;
+    return pyTimeFromTime(value.hour, value.minute, value.second, 0 /*usec*/);
 }
 
 
