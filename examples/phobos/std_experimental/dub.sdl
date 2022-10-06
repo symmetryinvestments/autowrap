@@ -5,39 +5,39 @@ targetType "dynamicLibrary"
 configuration "python38" {
     targetPath "lib/pyd"
     lflags "-L$PYTHON_LIB_DIR"
-    dependency "autowrap:python" path="../../"
-    subConfiguration "autowrap:python" "python38"
+    dependency "autowrap:pyd" path="../../"
+    subConfiguration "autowrap:pyd" "python38"
 }
 
 configuration "python37" {
     targetPath "lib/pyd"
     lflags "-L$PYTHON_LIB_DIR"
-    dependency "autowrap:python" path="../../.."
-    subConfiguration "autowrap:python" "python37"
+    dependency "autowrap:pyd" path="../../.."
+    subConfiguration "autowrap:pyd" "python37"
 }
 
 configuration "python36" {
     targetPath "lib/pyd"
-    dependency "autowrap:python" path="../../.."
-    subConfiguration "autowrap:python" "python36"
+    dependency "autowrap:pyd" path="../../.."
+    subConfiguration "autowrap:pyd" "python36"
 }
 
 configuration "python33" {
     targetPath "lib/pyd"
-    dependency "autowrap:python" path="../../.."
-    subConfiguration "autowrap:python" "python33"
+    dependency "autowrap:pyd" path="../../.."
+    subConfiguration "autowrap:pyd" "python33"
 }
 
 configuration "python27" {
     targetPath "lib/pyd"
-    dependency "autowrap:python" path="../../.."
-    subConfiguration "autowrap:python" "python27"
+    dependency "autowrap:pyd" path="../../.."
+    subConfiguration "autowrap:pyd" "python27"
 }
 
 configuration "env" {
     targetPath "lib/pyd"
-    dependency "autowrap:python" path="../../.."
-    subConfiguration "autowrap:python" "env"
+    dependency "autowrap:pyd" path="../../.."
+    subConfiguration "autowrap:pyd" "env"
 }
 
 configuration "pynih" {
