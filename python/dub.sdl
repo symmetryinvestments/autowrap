@@ -4,37 +4,4 @@ authors "Atila Neves"
 license "BSD"
 targetType "none"
 
-dependency "autowrap:pyd" path="../pyd"
-
-
-configuration "env" {
-    subConfiguration "autowrap:pyd" "env"
-}
-
-configuration "python38" {
-    subConfiguration "autowrap:pyd" "python38"
-}
-
-configuration "python37" {
-    subConfiguration "autowrap:pyd" "python37"
-}
-
-configuration "python36" {
-    subConfiguration "autowrap:pyd" "python36"
-}
-
-configuration "python35" {
-    subConfiguration "autowrap:pyd" "python35"
-}
-
-configuration "python34" {
-    subConfiguration "autowrap:pyd" "python34"
-}
-
-configuration "python33" {
-    subConfiguration "autowrap:pyd" "python33"
-}
-
-configuration "python27" {
-    subConfiguration "autowrap:pyd" "python27"
-}
+dependency "autowrap:pynih" path="../pynih"
