@@ -116,7 +116,13 @@ void addConstants(modules...)(PyObject* pythonModule) {
     }
 }
 
-private template cfunctions(modules...) {
+/**
+   The C functions that Python is actually going to call, of the type
+   PyObject* (PyObject* args, PyObject* kwargs). "Returned" as `python.boilerplate.CFunctions`,
+   obtained by reflecting on the passed-in modules and synthethising the necessary functions
+   by doing all conversions automatically.
+ */
+template cfunctions(modules...) {
     import python.boilerplate: CFunctions;
     import std.meta: staticMap;
     alias cfunctions = CFunctions!(staticMap!(toCFunction, wrappableFunctions!modules));
@@ -144,7 +150,11 @@ private template wrappableFunctions(modules...) {
     alias wrappableFunctions = Filter!(isWrappableFunction, allFunctions);
 }
 
-private template aggregates(modules...) {
+/**
+   The D aggregates (structs/classes/enums) to be wrapped for Python.
+   "Returned" as `python.boilerplate.Aggregates`
+ */
+template aggregates(modules...) {
     import python.boilerplate: Aggregates;
     import autowrap.reflection: AllAggregates;
     alias aggregates = Aggregates!(AllAggregates!modules);

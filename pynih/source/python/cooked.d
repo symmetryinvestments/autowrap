@@ -25,18 +25,23 @@ auto createModule(Module module_, alias cfunctions, alias aggregates = Aggregate
     moduleDef = pyModuleDef(module_.name.ptr, null /*doc*/, -1 /*size*/, pyMethodDefs);
 
     auto module_ = pyModuleCreate(&moduleDef);
-    addModuleTypes!aggregates(module_);
+    addModuleTypes!(aggregates.Types)(module_);
 
     return module_;
 }
 
 
-private void addModuleTypes(alias aggregates)(PyObject* module_) {
+/**
+   Takes a variadic sequence of D aggregate types and adds equivalent Python types
+   to the passed-in module.
+ */
+void addModuleTypes(aggregates...)(PyObject* module_)
+{
     import autowrap.common: AlwaysTry;
     import python.type: PythonType;
     import std.traits: fullyQualifiedName;
 
-    static foreach(T; aggregates.Types) {
+    static foreach(T; aggregates) {
 
         static if(AlwaysTry || __traits(compiles, PythonType!T.pyType)) {
             if(PyType_Ready(PythonType!T.pyType) < 0)
