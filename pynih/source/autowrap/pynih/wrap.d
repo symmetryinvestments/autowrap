@@ -32,9 +32,8 @@ string wrapDlang(
     )
     ()
 {
-    return __ctfe
-        ? createPythonModuleMixin!(libraryName, modules)
-        : null;
+    assert(__ctfe);
+    return createPythonModuleMixin!(libraryName, modules);
 }
 
 
@@ -45,7 +44,7 @@ string createPythonModuleMixin(LibraryName libraryName, Modules modules)
     import std.algorithm: map;
     import std.array: join;
 
-    if(!__ctfe) return null;
+    assert(__ctfe);
 
     const modulesList = modules.value.map!(a => a.toString).join(", ");
 
