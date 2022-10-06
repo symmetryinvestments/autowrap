@@ -4,11 +4,18 @@
 module autowrap.pynih.wrap;
 
 
-public import std.typecons: Yes, No;
 public import autowrap.types: Modules, Module, isModule,
     LibraryName, PreModuleInitCode, PostModuleInitCode, RootNamespace, Ignore;
+public import std.typecons : Yes, No;
+
+import python.raw: PyDateTime_CAPI;
 static import python.boilerplate;
 import std.meta: allSatisfy;
+
+// This is required to avoid linker errors. Before it was in the string mixin,
+// but there's no need for it there, instead we declare it here in the library
+// instead.
+export __gshared extern(C) PyDateTime_CAPI* PyDateTimeAPI;
 
 
 /**
@@ -43,12 +50,6 @@ string createPythonModuleMixin(LibraryName libraryName, Modules modules)
     const modulesList = modules.value.map!(a => a.toString).join(", ");
 
     return q{
-        import python.raw: PyDateTime_CAPI;
-
-        // This is declared as an extern C variable in python.bindings.
-        // We declare it here to avoid linker errors.
-        export __gshared extern(C) PyDateTime_CAPI* PyDateTimeAPI;
-
         extern(C) export auto %s() { // -> ModuleInitRet
             import autowrap.pynih.wrap: createPythonModule, LibraryName;
             import autowrap.types: Module;
