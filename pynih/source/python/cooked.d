@@ -127,7 +127,7 @@ void addStringConstant(string key, string val)(PyObject* module_) {
     );
 }
 
-void addIntConstant(string key, int val)(PyObject* module_) {
+void addIntConstant(string key, long val)(PyObject* module_) {
     import python.raw: PyModule_AddIntConstant;
     PyModule_AddIntConstant(module_, &key[0], val);
 }

@@ -64,16 +64,13 @@ extern(C) void hack1() {
 
 
 pragma(mangle, "_D6python4conv11d_to_python__T8toPythonTS3std12experimental9allocator15building_blocks14allocator_list__T13AllocatorListTSQDdQDcQCr8showcase14mmapRegionListFmZ7FactoryTSQEyQExQEmQEf14null_allocator13NullAllocatorZQEe4NodeZQHkFKQHfZPSQIx3raw7_object")
-extern(C) void hack2() {
-
-}
-
+extern(C) void hack2() { assert(0); }
 
 pragma(mangle, "_D6python4conv11python_to_d__T2toTxS3std12experimental9allocator15building_blocks14allocator_list__T13AllocatorListTSQDdQDcQCr8showcase14mmapRegionListFmZ7FactoryTSQEyQExQEmQEf14null_allocator13NullAllocatorZQEe4NodeZQHfFNePSQIp3raw7_objectZPxQIa")
-extern(C) void hack3() {
-
-}
-
+extern(C) void hack3() { assert(0); }
 
 pragma(mangle, "_D6python4type__T13PythonCompareTS3std12experimental9allocator15building_blocks14allocator_list__T13AllocatorListTSQDdQDcQCr8showcase14mmapRegionListFmZ7FactoryTSQEyQExQEmQEf14null_allocator13NullAllocatorZQEe4NodeZ7_py_cmpUNbPSQIs3raw7_objectQriZQv")
 private void hack4() { assert(0); }
+
+pragma(mangle, "_D6python4type__T10PythonTypeTS3std12experimental9allocator15building_blocks14allocator_list__T13AllocatorListTSQDdQDcQCr8showcase14mmapRegionListFmZ7FactoryTSQEyQExQEmQEf14null_allocator13NullAllocatorZQEe4NodeZQHn__T10methodDefsZQnFNbNiZPSQJf3raw11PyMethodDef")
+private void hack5() { assert(0); }
