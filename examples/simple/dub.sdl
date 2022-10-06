@@ -5,21 +5,21 @@ dflags "-allinst"
 configuration "python37" {
     targetPath "lib/pyd"
     lflags "-L$PYTHON_LIB_DIR"
-    dependency "autowrap:python" path="../../"
-    subConfiguration "autowrap:python" "python37"
+    dependency "autowrap:pyd" path="../../"
+    subConfiguration "autowrap:pyd" "python37"
 }
 
 configuration "python27" {
     targetPath "lib/pyd"
-    dependency "autowrap:python" path="../../"
-    subConfiguration "autowrap:python" "python27"
+    dependency "autowrap:pyd" path="../../"
+    subConfiguration "autowrap:pyd" "python27"
 }
 
 configuration "env" {
     targetType "sourceLibrary"
     targetPath "lib/pyd"
-    dependency "autowrap:python" path="../../"
-    subConfiguration "autowrap:python" "env"
+    dependency "autowrap:pyd" path="../../"
+    subConfiguration "autowrap:pyd" "env"
 }
 
 configuration "pynih" {
