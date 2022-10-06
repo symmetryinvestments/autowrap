@@ -9,8 +9,9 @@ import python.boilerplate: Module, CFunctions, Aggregates;
 
 
 /**
-   Creates a Python3 module from the given C functions.
-   Each function has the same name in Python.
+   Creates a Python3 extension module from the given C functions, which must
+   be of type `PyObject* (PyObject* args, PyObject* kwargs)`. `kwargs` is optional.
+   The aggregates are the D structs/classes/enums to be wrapped.
  */
 auto createModule(Module module_, alias cfunctions, alias aggregates = Aggregates!())()
     if(is(cfunctions == CFunctions!F, F...) &&
@@ -107,3 +108,21 @@ auto pyMethodDef(string name, int flags = defaultMethodFlags, string doc = "", F
 
 
 enum defaultMethodFlags = MethodArgs.Var | MethodArgs.Keywords;
+
+void addStringConstant(string key, string val)(PyObject* module_) {
+    import python.raw: PyModule_AddStringConstant;
+
+    static immutable char[1] emptyString = ['\0'];
+
+    // We can't pass a null pointer if the value of the string constant is empty
+    PyModule_AddStringConstant(
+        module_,
+        &key[0],
+        val.length ? val.ptr : &emptyString[0],
+    );
+}
+
+void addIntConstant(string key, int val)(PyObject* module_) {
+    import python.raw: PyModule_AddIntConstant;
+    PyModule_AddIntConstant(module_, &key[0], val);
+}

@@ -8,9 +8,12 @@ public import autowrap.types: Modules, Module, isModule,
     LibraryName, PreModuleInitCode, PostModuleInitCode, RootNamespace, Ignore;
 public import std.typecons : Yes, No;
 
-import python.raw: PyDateTime_CAPI;
+import python.raw: PyDateTime_CAPI, PyObject;
 static import python.boilerplate;
+import autowrap.common: toSnakeCase;
+import mirror.meta.reflection : FunctionSymbol;
 import std.meta: allSatisfy;
+import std.traits: isInstanceOf;
 
 // This is required to avoid linker errors. Before it was in the string mixin,
 // but there's no need for it there, instead we declare it here in the library
@@ -37,6 +40,15 @@ string wrapDlang(
 }
 
 
+/**
+   Returns a string with the module creation function for Python, i.e.
+   the Python extension module's entry point. Needs to be a string mixin
+   since Python knows which function is the entry point by name convention,
+   where an extension module called "foo" needs to export a function
+   `PyInit_foo`. "All" this function does is create a function with the
+   appropriate name and stringify the arguments to pass to the function
+   doing the heavy lifting: createPythonModule.
+ */
 string createPythonModuleMixin(LibraryName libraryName, Modules modules)
                               ()
 {
@@ -45,8 +57,6 @@ string createPythonModuleMixin(LibraryName libraryName, Modules modules)
     import std.array: join;
 
     assert(__ctfe);
-
-    const modulesList = modules.value.map!(a => a.toString).join(", ");
 
     return q{
         extern(C) export auto PyInit_%s() { // -> ModuleInitRet
@@ -60,7 +70,7 @@ string createPythonModuleMixin(LibraryName libraryName, Modules modules)
     }.format(
         libraryName.value,
         libraryName.value,
-        modulesList,
+        modules.value.map!(a => a.toString).join(", ")
     );
 }
 
@@ -72,76 +82,99 @@ string createPythonModuleMixin(LibraryName libraryName, Modules modules)
 auto createPythonModule(LibraryName libraryName, modules...)()
     if(allSatisfy!(isModule, modules))
 {
-    import autowrap.common: toSnakeCase, AlwaysTry;
-    import python.type: PythonFunction;
-    import python.boilerplate: Module, CFunctions, CFunction, Aggregates;
-    import python.raw: PyModule_AddIntConstant, PyModule_AddStringConstant;
-    import autowrap.reflection: AllAggregates, AllFunctions, AllConstants;
-    import std.meta: Filter, templateNot, staticMap;
-    import std.traits: fullyQualifiedName;
+    import python.boilerplate: Module;
 
-    static immutable char[1] emptyString = ['\0'];
-
-    alias allFunctions = AllFunctions!modules;
-    enum isWrappableFunction(alias functionSymbol) = AlwaysTry ||
-        __traits(compiles, &PythonFunction!(functionSymbol.symbol)._py_function_impl);
-    alias wrappableFunctions = Filter!(isWrappableFunction, allFunctions);
-    alias nonWrappableFunctions = Filter!(templateNot!isWrappableFunction, allFunctions);
-
-    static foreach(nonWrappableFunction; nonWrappableFunctions) {{
-            pragma(msg, "autowrap WARNING: Could not wrap function ",
-                   fullyQualifiedName!(nonWrappableFunction.symbol));
-        // uncomment to see the compiler error
-        // auto ptr = &PythonFunction!(nonWrappableFunction.symbol)._py_function_impl;
-    }}
-
-    alias toCFunction(alias functionSymbol) = CFunction!(
-        PythonFunction!(functionSymbol.symbol)._py_function_impl,
-        functionSymbol.identifier.toSnakeCase,
+    auto ret = createDlangPythonModule!(
+        Module(libraryName.value),
+        cfunctions!modules,
+        aggregates!modules
     );
-    alias cfunctions = CFunctions!(staticMap!(toCFunction, wrappableFunctions));
 
-    alias allAggregates = AllAggregates!modules;
-    alias aggregates = Aggregates!allAggregates;
+    addConstants!modules(ret);
 
-    enum pythonModule = python.boilerplate.Module(libraryName.value);
+    return ret;
+}
 
-    mixin createPythonModule!(pythonModule, cfunctions, aggregates);
-    auto ret = _py_init_impl();
+void addConstants(modules...)(PyObject* pythonModule) {
+    import python.cooked : addStringConstant, addIntConstant;
+    import autowrap.reflection: AllConstants;
+    import std.meta: Filter;
+
+    alias constants = AllConstants!modules;
 
     template isIntegral(alias var) {
         import std.traits: _isIntegral = isIntegral;
         enum isIntegral = _isIntegral!(var.Type);
     }
+    static foreach(intConstant; Filter!(isIntegral, constants)) {
+        addIntConstant!(intConstant.identifier, intConstant.value)(pythonModule);
+    }
 
     enum isString(alias var) = is(var.Type == string);
-
-    alias constants = AllConstants!modules;
-    static foreach(intConstant; Filter!(isIntegral, constants)) {
-        PyModule_AddIntConstant(ret, &intConstant.identifier[0], intConstant.value);
-    }
     static foreach(strConstant; Filter!(isString, constants)) {
-
-        // We can't pass a null pointer if the value of the string constant is empty
-        PyModule_AddStringConstant(ret,
-                                   strConstant.identifier.ptr,
-                                   strConstant.value.length ? strConstant.value.ptr : &emptyString[0]);
+        addStringConstant!(strConstant.identifier, strConstant.value)(pythonModule);
     }
-
-    return ret;
 }
 
+private template cfunctions(modules...) {
+    import python.boilerplate: CFunctions;
+    import std.meta: staticMap;
+    alias cfunctions = CFunctions!(staticMap!(toCFunction, wrappableFunctions!modules));
+}
 
-mixin template createPythonModule(python.boilerplate.Module module_, alias cfunctions, alias aggregates)
-{
-    static extern(C) export auto _py_init_impl() {  // -> ModuleInitRet
-        import python.raw: pyDateTimeImport;
-        import python.cooked: createModule;
-        import core.runtime: rt_init;
+private template wrappableFunctions(modules...) {
+    import autowrap.common: AlwaysTry;
+    import python.type: PythonFunction;
+    import autowrap.reflection: AllFunctions;
+    import std.meta: Filter, templateNot;
+    import std.traits: fullyQualifiedName;
 
-        rt_init;
+    alias allFunctions = AllFunctions!modules;
+    enum isWrappableFunction(alias functionSymbol) = AlwaysTry ||
+        __traits(compiles, &PythonFunction!(functionSymbol.symbol)._py_function_impl);
+    alias nonWrappableFunctions = Filter!(templateNot!isWrappableFunction, allFunctions);
 
-        pyDateTimeImport;
-        return createModule!(module_, cfunctions, aggregates);
+    static foreach(nonWrappableFunction; nonWrappableFunctions) {
+            pragma(msg, "autowrap WARNING: Could not wrap function ",
+                   fullyQualifiedName!(nonWrappableFunction.symbol));
+        // uncomment to see the compiler error
+        // &PythonFunction!(nonWrappableFunction.symbol)._py_function_impl;
     }
+
+    alias wrappableFunctions = Filter!(isWrappableFunction, allFunctions);
+}
+
+private template aggregates(modules...) {
+    import python.boilerplate: Aggregates;
+    import autowrap.reflection: AllAggregates;
+    alias aggregates = Aggregates!(AllAggregates!modules);
+}
+
+/**
+   Converts from mirror.meta.reflection.FunctionSymbol to the template CFunction from python.boilerplate
+ */
+template toCFunction(alias functionSymbol, string identifier = functionSymbol.identifier.toSnakeCase)
+    if(isInstanceOf!(FunctionSymbol, functionSymbol))
+{
+    import python.type: PythonFunction;
+    import python.boilerplate: CFunction;
+
+    alias toCFunction = CFunction!(
+        PythonFunction!(functionSymbol.symbol)._py_function_impl,
+        functionSymbol.identifier.toSnakeCase,
+    );
+}
+
+/**
+   Initialises the Python DateTime API, the druntime, and creates the Python extension module
+ */
+auto createDlangPythonModule(python.boilerplate.Module module_, alias cfunctions, alias aggregates)() {
+    import python.raw: pyDateTimeImport;
+    import python.cooked: createModule;
+    import core.runtime: rt_init;
+
+    rt_init;
+    pyDateTimeImport;
+
+    return createModule!(module_, cfunctions, aggregates);
 }
