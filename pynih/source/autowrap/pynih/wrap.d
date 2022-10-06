@@ -49,7 +49,7 @@ string createPythonModuleMixin(LibraryName libraryName, Modules modules)
     const modulesList = modules.value.map!(a => a.toString).join(", ");
 
     return q{
-        extern(C) export auto %s() { // -> ModuleInitRet
+        extern(C) export auto PyInit_%s() { // -> ModuleInitRet
             import autowrap.pynih.wrap: createPythonModule, LibraryName;
             import autowrap.types: Module;
             return createPythonModule!(
@@ -58,20 +58,17 @@ string createPythonModuleMixin(LibraryName libraryName, Modules modules)
             );
         }
     }.format(
-        pyInitFuncName(libraryName),  // extern(C) function name
+        libraryName.value,
         libraryName.value,
         modulesList,
     );
 }
 
 
-private string pyInitFuncName(LibraryName libraryName) @safe pure nothrow {
-    import python.raw: isPython3;
-    static assert(isPython3, "Python2 no longer supported");
-    return "PyInit_" ~ libraryName.value;
-}
-
-
+/**
+   Reflects on the modules given and creates a Python module called `libraryName`
+   with wrappers for all of the functions and types in each of the modules.
+ */
 auto createPythonModule(LibraryName libraryName, modules...)()
     if(allSatisfy!(isModule, modules))
 {
