@@ -13,7 +13,7 @@ static import python.boilerplate;
 import autowrap.common: toSnakeCase;
 import mirror.meta.reflection : FunctionSymbol;
 import std.meta: allSatisfy;
-import std.traits: isInstanceOf;
+import std.traits: isInstanceOf, isSomeFunction;
 
 // This is required to avoid linker errors. Before it was in the string mixin,
 // but there's no need for it there, instead we declare it here in the library
@@ -161,17 +161,33 @@ template aggregates(modules...) {
 }
 
 /**
-   Converts from mirror.meta.reflection.FunctionSymbol to the template CFunction from python.boilerplate
+   Converts from mirror.meta.reflection.FunctionSymbol to the template CFunction from python.boilerplate.
+   The reason identifier defaults to an empty string is because otherwise it doesn't compile
+   if a regular D function symbol is passed.
  */
-template toCFunction(alias functionSymbol, string identifier = functionSymbol.identifier.toSnakeCase)
+template toCFunction(alias functionSymbol, string identifier = "")
     if(isInstanceOf!(FunctionSymbol, functionSymbol))
 {
     import python.type: PythonFunction;
     import python.boilerplate: CFunction;
 
+    private enum id = identifier == "" ? functionSymbol.identifier.toSnakeCase : identifier;
+
     alias toCFunction = CFunction!(
         PythonFunction!(functionSymbol.symbol)._py_function_impl,
-        functionSymbol.identifier.toSnakeCase,
+        id,
+    );
+}
+
+template toCFunction(alias F, string identifier = __traits(identifier, F).toSnakeCase)
+    if(isSomeFunction!F)
+{
+    import python.type: PythonFunction;
+    import python.boilerplate: CFunction;
+
+    alias toCFunction = CFunction!(
+        PythonFunction!F._py_function_impl,
+        identifier,
     );
 }
 
