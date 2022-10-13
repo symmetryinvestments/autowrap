@@ -368,9 +368,12 @@ unittest {
     foo.meth(PythonObject(tuple(1, 2))).to!string.should == "7_1_2_foo_bar";
     foo.meth(PythonObject(tuple(1, 2)), PythonObject(["c": 5, "d": 6]))
         .to!string.should == "7_1_2_5_6";
-    foo.meth(PythonObject(tuple(1, 2)), PythonObject(["oops": 6]))
-        .shouldThrowWithMessage!PythonException(
-            "TypeError: meth() got an unexpected keyword argument 'oops'");
+    {
+        import std.string : replace;
+        auto ex = foo.meth(PythonObject(tuple(1, 2)), PythonObject(["oops": 6]))
+            .shouldThrow!PythonException;
+        ex.msg.replace("Foo.meth", "meth").should == "TypeError: meth() got an unexpected keyword argument 'oops'";
+    }
 
     foo.meth(PythonObject([1, 2])).shouldThrowWithMessage!PythonException(
         "TypeError: argument list must be a tuple");
