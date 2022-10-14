@@ -3,11 +3,6 @@
  */
 module contract.main;
 
-import python.raw: PyDateTime_CAPI;
-
-// To avoid linker errors.
-export __gshared extern(C) PyDateTime_CAPI* PyDateTimeAPI;
-
 
 extern(C) export auto PyInit_contract() {
     static import contract.scalars;

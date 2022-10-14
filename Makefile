@@ -1,5 +1,6 @@
 # Makefile to drive the tests
 
+DC ?= dmd
 export PYTHON_LIB_DIR ?= /usr/lib
 export DUB_CONFIGURATION ?= env
 export PYD_LIBPYTHON_DIR ?= /usr/lib
@@ -40,7 +41,7 @@ test_translation_ut:
 	cd translate && PYTHONPATH=$(PWD)/translate pytest -s -vv
 .PHONY: ut
 ut:
-	dub test -q
+	dub test -q --compiler=${DC}
 
 .PHONY: clean
 clean:
@@ -81,11 +82,11 @@ test_wrapper_cs: csharp/tests/Wrapper.cs csharp/tests/libcsharp-tests.x64.so
 	cd csharp/tests && dotnet build && dotnet test
 
 csharp/tests/Wrapper.cs: csharp/tests/dub.sdl csharp/tests/dub.selections.json csharp/tests/source/app.d csharp/tests/source/test.d
-	cd csharp/tests && dub run -q --config=emitCSharp
+	cd csharp/tests && dub run -q --config=emitCSharp --compiler=${DC}
 
 .PHONY: csharp/tests/libcsharp-tests.x64.so
 csharp/tests/libcsharp-tests.x64.so:
-	cd csharp/tests && dub build -q && cp libcsharp-tests.so libcsharp-tests.x64.so
+	cd csharp/tests && dub build -q --compiler=${DC} && cp libcsharp-tests.so libcsharp-tests.x64.so
 
 
 .PHONY: test_simple_cs
@@ -99,10 +100,10 @@ examples/simple/lib/csharp/libsimple.x64.so: examples/simple/lib/csharp/libsimpl
 
 .PHONY: examples/simple/lib/csharp/libsimple.so
 examples/simple/lib/csharp/libsimple.so: examples/simple/dub.sdl examples/simple/dub.selections.json
-	@cd examples/simple && dub build -q -c csharp
+	@cd examples/simple && dub build --compiler=${DC} -q -c csharp
 
 examples/simple/Simple.cs: examples/simple/lib/csharp/libsimple.so
-	@cd examples/simple && dub run -q -c emitCSharp
+	@cd examples/simple && dub run -q -c emitCSharp --compiler=${DC}
 
 pynih/source/python/raw.d: pynih/Makefile pynih/source/python/raw.dpp
 	make -C pynih source/python/raw.d
@@ -117,7 +118,7 @@ examples/issues/lib/pyd/issues.so: examples/issues/lib/pyd/libissues.so
 
 .PHONY: examples/issues/lib/pyd/libissues.so
 examples/issues/lib/pyd/libissues.so:
-	@cd examples/issues && dub build -q -c $(DUB_CONFIGURATION)
+	@cd examples/issues && dub build -q -c $(DUB_CONFIGURATION) --compiler=${DC}
 
 .PHONY: test_issues_pynih
 test_issues_pynih: tests/test_issues.py examples/issues/lib/pynih/issues.so
@@ -128,7 +129,7 @@ examples/issues/lib/pynih/issues.so: examples/issues/lib/pynih/libissues.so
 
 .PHONY: examples/issues/lib/pynih/libissues.so
 examples/issues/lib/pynih/libissues.so: pynih/source/python/raw.d
-	@cd examples/issues && dub build -q -c pynih
+	@cd examples/issues && dub build -q -c pynih --compiler=${DC}
 
 
 examples/issues/dub.selections.json:
@@ -143,7 +144,7 @@ examples/pyd/lib/pyd/pyd.so: examples/pyd/lib/pyd/libpydtests.so
 
 .PHONY: examples/pyd/lib/pyd/libpydtests.so
 examples/pyd/lib/pyd/libpydtests.so:
-	@cd examples/pyd && dub build -q -c $(DUB_CONFIGURATION)
+	@cd examples/pyd && dub build -q -c $(DUB_CONFIGURATION) --compiler=${DC}
 
 .PHONY: test_pyd_pynih
 test_pyd_pynih: tests/test_pyd.py examples/pyd/lib/pynih/pyd.so
@@ -154,7 +155,7 @@ examples/pyd/lib/pynih/pyd.so: examples/pyd/lib/pynih/libpydtests.so
 
 .PHONY: examples/pyd/lib/pynih/libpydtests.so
 examples/pyd/lib/pynih/libpydtests.so: pynih/source/python/raw.d
-	@cd examples/pyd && dub build -q -c pynih
+	@cd examples/pyd && dub build -q -c pynih --compiler=${DC}
 
 .PHONY: test_numpy_pyd
 test_numpy_pyd: tests/test_numpy.py examples/numpy/lib/pyd/numpytests.so
@@ -165,7 +166,7 @@ examples/numpy/lib/pyd/numpytests.so: examples/numpy/lib/pyd/libnumpy.so
 
 .PHONY: examples/numpy/lib/pyd/libnumpy.so
 examples/numpy/lib/pyd/libnumpy.so:
-	@cd examples/numpy && dub build -q -c $(DUB_CONFIGURATION)
+	@cd examples/numpy && dub build -q -c $(DUB_CONFIGURATION) --compiler=${DC}
 
 examples/numpy/dub.selections.json:
 	@cd examples/numpy && dub upgrade -q
@@ -179,4 +180,4 @@ examples/numpy/lib/pynih/numpytests.so: examples/numpy/lib/pynih/libnumpy.so
 
 .PHONY: examples/numpy/lib/pynih/libnumpy.so
 examples/numpy/lib/pynih/libnumpy.so: pynih/source/python/raw.d
-	@cd examples/numpy && dub build -q -c pynih
+	@cd examples/numpy && dub build -q -c pynih --compiler=${DC}

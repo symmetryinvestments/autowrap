@@ -1,10 +1,5 @@
-.PHONY: test contract/libcontract.so
-
+DC ?= dmd
 dpp_version = 0.4.13
-dpp_pkg_dir = $(HOME)/.dub/packages/dpp-$(dpp_version)
-dpp_lock = $(dpp_pkg_dir)/dpp.lock
-dpp_dir = $(dpp_pkg_dir)/dpp
-dpp = $(dpp_dir)/bin/d++
 
 PYTHON_INCLUDE_DIR = $(shell python -c 'from distutils.sysconfig import get_python_inc; print(get_python_inc())')
 
@@ -18,15 +13,8 @@ contract/contract.so: contract/libcontract.so
 
 .PHONY: test contract/libcontract.so
 contract/libcontract.so: source/python/raw.d
-	cd contract && dub build -q
+	cd contract && dub build -q --compiler=${DC}
 
 
 source/python/raw.d: source/python/raw.dpp $(dpp) Makefile
-	$(dpp) --ignore-cursor=PyType_HasFeature --preprocess-only --include-path $(PYTHON_INCLUDE_DIR) $<
-
-
-$(dpp): $(dpp_lock)
-	cd $(dpp_dir) && dub build -q --build=release
-
-$(dpp_lock):
-	dub fetch dpp@$(dpp_version)
+	dub run dpp@$(dpp_version) --build=release --compiler=${DC} -- --ignore-cursor=PyType_HasFeature --ignore-cursor=stat64 --preprocess-only --include-path $(PYTHON_INCLUDE_DIR) $<

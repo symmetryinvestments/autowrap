@@ -12,6 +12,10 @@ enum str = wrapDlang!(
 // pragma(msg, str);
 mixin(str);
 
+version(Have_autowrap_pynih):
+
+import python.raw;
+
 /**
    Without this there is a linker error about an undefined symbol corrensponding
    to the .init value for the TypeInfo object for the return type of this
@@ -24,4 +28,4 @@ void hack() {
 
 
 pragma(mangle, "_D6python4type__T13PythonCompareTS3std8typecons__T10RebindableTyCQBf8datetime8timezone8TimeZoneZQBuZ7_py_cmpUNbPSQEh3raw7_objectQriZQv")
-private void hack1() { assert(0); }
+private PyObject* hack1(PyObject*, PyObject*, int) { assert(0); }
