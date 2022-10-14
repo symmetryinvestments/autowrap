@@ -1,3 +1,4 @@
+DC ?= dmd
 export PYTHON_LIB_DIR ?= /usr/lib
 export DUB_CONFIGURATION ?= env
 export PYD_LIBPYTHON_DIR ?= /usr/lib
@@ -31,7 +32,7 @@ lib/$2/$1.so: lib/$2/lib$1.so
 
 .PHONY: lib/$2/lib$1.so
 lib/$2/lib$1.so:
-	@cd $1 && dub build -q -c $3
+	@cd $1 && dub build -q -c $3 --compiler=${DC}
 
 endef
 

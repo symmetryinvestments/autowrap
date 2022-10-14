@@ -1,3 +1,4 @@
+DC ?= dmd
 export PYTHON_LIB_DIR ?= /usr/lib
 export DUB_CONFIGURATION ?= env
 export PYD_LIBPYTHON_DIR ?= /usr/lib
@@ -30,7 +31,7 @@ std_$1/lib/pyd/std_$1.so: std_$1/lib/pyd/libstd_$1.so
 
 .PHONY: std_$1/lib/pyd/libstd_$1.so
 std_$1/lib/pyd/libstd_$1.so:
-	@cd std_$1 && dub build -q -c $(DUB_CONFIGURATION)
+	@cd std_$1 && dub build -q -c $(DUB_CONFIGURATION) --compiler=${DC}
 
 std_$1/dub.selections.json:
 	@cd std_$1 && dub upgrade -q
@@ -44,7 +45,7 @@ std_$1/lib/pynih/std_$1.so: std_$1/lib/pynih/libstd_$1.so
 
 .PHONY: std_$1/lib/pynih/libstd_$1.so
 std_$1/lib/pynih/libstd_$1.so: ../../pynih/source/python/raw.d
-	@cd std_$1 && dub build -q -c pynih
+	@cd std_$1 && dub build -q -c pynih --compiler=${DC}
 endef
 
 

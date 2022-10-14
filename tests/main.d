@@ -21,9 +21,7 @@ version(NoPynih) {
 } else {
     alias testModules = AliasSeq!(normalModules, pynihModules);
 
-    import python;
-    export __gshared extern(C) PyDateTime_CAPI* PyDateTimeAPI;
-
+    import python: Py_Initialize, Py_Finalize, pyDateTimeImport;
 
     shared static this() {
         Py_Initialize;
