@@ -7,10 +7,9 @@ TRAVIS="${TRAVIS:-}"
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" > /dev/null && pwd )"
 
 
-if [ "$DC" = "ldc2" ]; then
-    # skip tests for ldc 1.12.0
-    exit 0
-fi
-
 cd "$SCRIPT_DIR"
-make -j"$(nproc)"
+if [ -z "$CI" ]; then
+    make -j"$(nproc)"
+else
+    make
+fi

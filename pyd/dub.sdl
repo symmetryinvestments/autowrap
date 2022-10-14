@@ -4,12 +4,16 @@ authors "Atila Neves"
 license "BSD"
 targetType "library"
 dependency "pyd" version="~>0.14.0"
-dependency "autowrap:common" path="../common"
-dependency "autowrap:reflection" path="../reflection"
+dependency "autowrap:common" path=".."
+dependency "autowrap:reflection" path=".."
 versions "PydPythonExtension"
 
 configuration "env" {
     subConfiguration "pyd" "env"
+}
+
+configuration "python310" {
+    subConfiguration "pyd" "python310"
 }
 
 configuration "python39" {

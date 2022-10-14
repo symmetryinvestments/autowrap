@@ -4,4 +4,4 @@ authors "Atila Neves"
 license "BSD"
 targetType "none"
 
-dependency "autowrap:pynih" path="../pynih"
+dependency "autowrap:pynih" path=".."
