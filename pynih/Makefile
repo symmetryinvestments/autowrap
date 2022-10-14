@@ -1,6 +1,6 @@
 .PHONY: test contract/libcontract.so
 
-dpp_version = 0.4.11
+dpp_version = 0.4.13
 dpp_pkg_dir = $(HOME)/.dub/packages/dpp-$(dpp_version)
 dpp_lock = $(dpp_pkg_dir)/dpp.lock
 dpp_dir = $(dpp_pkg_dir)/dpp
@@ -22,7 +22,7 @@ contract/libcontract.so: source/python/raw.d
 
 
 source/python/raw.d: source/python/raw.dpp $(dpp) Makefile
-	$(dpp) --ignore-cursor=PyType_HasFeature --ignore-cursor=_Py_IS_TYPE --preprocess-only --include-path $(PYTHON_INCLUDE_DIR) $<
+	$(dpp) --ignore-cursor=PyType_HasFeature --preprocess-only --include-path $(PYTHON_INCLUDE_DIR) $<
 
 
 $(dpp): $(dpp_lock)

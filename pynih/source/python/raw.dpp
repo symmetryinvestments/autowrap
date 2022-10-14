@@ -1,5 +1,7 @@
 /**
    Python.d + D symbols instead of C macros
+   Nothing here is @nogc nothrow because of the datetime API and the fact
+   that it's in a struct and won't recurse.
  */
 module python.raw;
 
@@ -120,15 +122,15 @@ bool pyLongCheck(PyObject* obj) @nogc nothrow {
     return cast(bool) PyLong_Check(obj);
 }
 
-bool pyFloatCheck(PyObject* obj) @nogc nothrow {
+bool pyFloatCheck(PyObject* obj) nothrow {
     return cast(bool) PyFloat_Check(obj);
 }
 
-bool pyDateTimeCheck(PyObject* obj) @nogc nothrow {
+bool pyDateTimeCheck(PyObject* obj) nothrow {
     return cast(bool) PyDateTime_Check(obj);
 }
 
-bool pyDateCheck(PyObject* obj) @nogc nothrow {
+bool pyDateCheck(PyObject* obj) nothrow {
     return cast(bool) PyDate_Check(obj);
 }
 
@@ -156,7 +158,7 @@ bool pyBytesCheck(PyObject* obj) @nogc nothrow {
     return cast(bool) PyBytes_Check(obj);
 }
 
-bool pyTimeCheck(PyObject* obj) @nogc nothrow {
+bool pyTimeCheck(PyObject* obj) nothrow {
     return cast(bool) PyTime_Check(obj);
 }
 
@@ -295,4 +297,12 @@ static int PyType_HasFeature(PyTypeObject *type, ulong feature) @safe @nogc pure
 
 static int _Py_IS_TYPE(const PyObject *ob, const PyTypeObject *type) @safe @nogc pure nothrow {
     return ob.ob_type == type;
+}
+
+// the check is here since this doesn't exist in Python 3.8
+static if(is(typeof(Py_IS_TYPE(null, null)))) {
+    // copied from 3.10 object.h
+    private int _PyObject_TypeCheck(PyObject *ob, PyTypeObject *type) @trusted nothrow {
+        return Py_IS_TYPE(ob, type) || PyType_IsSubtype(( ( cast( PyObject * ) ( ob ) ) . ob_type ), type);
+    }
 }
