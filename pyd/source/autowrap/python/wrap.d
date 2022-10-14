@@ -46,11 +46,15 @@ void wrapAllAggregates(Modules...)() if(allSatisfy!(isModule, Modules)) {
     import std.traits: fullyQualifiedName;
 
     static foreach(aggregate; AllAggregates!Modules) {
-        static if(AlwaysTry || __traits(compiles, wrapAggregate!aggregate))
-            wrapAggregate!aggregate;
-        else {
-            pragma(msg, "\nERROR! Autowrap could not wrap aggregate `", fullyQualifiedName!aggregate, "` for Python\n");
-            // wrapAggregate!aggregate; // uncomment to see the error messages from the compiler
+        static if(is(T == enum)) {
+            pragma(msg, "WARNING! Could not wrap `", fullyQualifiedName!aggregate, "` since pyd doesn't support enums");
+        } else {
+            static if(AlwaysTry || __traits(compiles, wrapAggregate!aggregate))
+                wrapAggregate!aggregate;
+            else {
+                pragma(msg, "\nERROR! Autowrap could not wrap aggregate `", fullyQualifiedName!aggregate, "` for Python\n");
+                //wrapAggregate!aggregate; // uncomment to see the error messages from the compiler
+            }
         }
     }
 }

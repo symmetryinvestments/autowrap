@@ -7,5 +7,5 @@ targetType "library"
 stringImportPaths "source/autowrap/csharp"
 
 dependency "scriptlike" version="~>0.10.3"
-dependency "autowrap:common" path="../common"
-dependency "autowrap:reflection" path="../reflection"
+dependency "autowrap:common" path=".."
+dependency "autowrap:reflection" path=".."

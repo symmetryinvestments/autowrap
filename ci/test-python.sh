@@ -26,4 +26,6 @@ echo "Testing with $DC compiler"
 
 echo 'Running Python makefile test'
 echo "And the lib dir is $PYTHON_LIB_DIR"
-make -j"$(nproc)" test_python  # FIXME - restore the two above instad of this line
+# Do NOT add -j to the make command - the dependencies aren't even remotely
+# properly specified
+make test_python # FIXME - restore the two above instad of this line
