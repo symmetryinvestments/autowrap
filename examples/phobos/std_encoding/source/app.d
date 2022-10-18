@@ -10,3 +10,10 @@ enum str = wrapDlang!(
 
 // pragma(msg, str);
 mixin(str);
+
+
+import std.encoding;
+pragma(mangle, "_D3std8encoding14EncodingScheme8toStringMxFZAya")
+private string dummy0(EncodingScheme) {
+    assert(0);
+}
