@@ -302,3 +302,6 @@ def test_issue_279():
             assert Class279(42) == DummyInt(42)
 
         assert Class279(42) != DummyInt(42)
+
+def test_issue_307():
+    from issues import Issue307

@@ -70,6 +70,7 @@ auto wrapAggregate(T)() if(isUserAggregate!T) {
     import pyd.pyd: wrap_class, Member, Init, StaticDef, Repr, Property;
     import std.meta: staticMap, Filter, templateNot, AliasSeq;
     import std.algorithm: startsWith;
+    import std.traits : isAbstractFunction;
 
     alias AggMember(string memberName) = Symbol!(T, memberName);
     alias members = staticMap!(AggMember, __traits(allMembers, T));
@@ -77,7 +78,11 @@ auto wrapAggregate(T)() if(isUserAggregate!T) {
     alias staticMemberFunctions = Filter!(isStaticMemberFunction, memberFunctions);
     alias nonStaticMemberFunctions = Filter!(templateNot!isStaticMemberFunction, memberFunctions);
     enum isOperator(alias F) = __traits(identifier, F).startsWith("op");
-    alias regularMemberFunctions = Filter!(templateNot!isOperator, Filter!(templateNot!isProperty, nonStaticMemberFunctions));
+    alias regularMemberFunctions =
+        Filter!(templateNot!isOperator,
+                Filter!(templateNot!isAbstractFunction,
+                        Filter!(templateNot!isProperty,
+                                nonStaticMemberFunctions)));
     alias properties = Filter!(isProperty, nonStaticMemberFunctions);
     alias publicFieldNames = PublicFieldNames!T;
 

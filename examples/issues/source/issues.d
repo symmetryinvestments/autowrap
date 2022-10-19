@@ -320,3 +320,7 @@ struct DummyInt {
     int i;
     this(int i) @safe @nogc pure scope { this.i = i; }
 }
+
+class Issue307 {
+    abstract void foo();
+}
