@@ -66,13 +66,17 @@ mixin template PyObjectHead() {
 
 alias ModuleInitRet = PyObject*;  // PyMODINIT_FUNC can't be translated
 
-// Demacroify
+
 auto pyTrue() {
+    // This doesn't work as a manifest constant because there's a cast that the CTFE
+    // engine doesn't like
     return Py_True;
 }
 
 // Demacroify
 auto pyFalse() {
+    // This doesn't work as a manifest constant because there's a cast that the CTFE
+    // engine doesn't like
     return Py_False;
 }
 
