@@ -13,27 +13,6 @@ module python.raw;
 #include "abstract.h"
 
 
-enum MemberType {
-    Short = T_SHORT,
-    Int = T_INT,
-    Long = T_LONG,
-    Float = T_FLOAT,
-    Double = T_DOUBLE,
-    String = T_STRING,
-    Object = T_OBJECT,
-    ObjectEx = T_OBJECT_EX,
-    Char = T_CHAR,
-    Byte = T_BYTE,
-    UByte = T_UBYTE,
-    UInt = T_UINT,
-    UShort = T_USHORT,
-    ULong = T_ULONG,
-    Bool = T_BOOL,
-    LongLong = T_LONGLONG,
-    ULongLong = T_ULONGLONG,
-    PySSizeT = T_PYSSIZET,
-}
-
 enum TypeFlags {
     BaseType = Py_TPFLAGS_BASETYPE,
     Default = Py_TPFLAGS_DEFAULT,
