@@ -17,8 +17,6 @@ auto createModule(Module module_, alias cfunctions, alias aggregates = Aggregate
     if(is(cfunctions == CFunctions!F, F...) &&
        is(aggregates == Aggregates!T, T...))
 {
-    static assert(isPython3, "Python2 no longer supported");
-
     static PyModuleDef moduleDef;
 
     auto pyMethodDefs = cFunctionsToPyMethodDefs!(cfunctions);

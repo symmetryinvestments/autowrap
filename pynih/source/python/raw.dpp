@@ -12,9 +12,6 @@ module python.raw;
 #include "enumobject.h"
 #include "abstract.h"
 
-enum isPython3 = is(PyModuleDef);
-enum isPython2 = !isPython3;
-
 
 /**
     All of the enum cases are macros instead of values in an enum
@@ -57,9 +54,7 @@ enum TypeFlags {
 
 // Demacroify
 mixin template PyObjectHead() {
-    import python.raw: PyObject, Py_ssize_t, isPython2;
-    static if(isPython2)
-        import python.raw: _typeobject;
+    import python.raw: PyObject, Py_ssize_t;
     PyObject_HEAD;
 }
 
