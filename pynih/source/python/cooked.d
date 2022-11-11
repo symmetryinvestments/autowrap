@@ -110,7 +110,7 @@ auto pyMethodDef(string name, int flags = defaultMethodFlags, string doc = "", F
 }
 
 
-enum defaultMethodFlags = MethodArgs.Var | MethodArgs.Keywords;
+enum defaultMethodFlags = METH_VARARGS | METH_KEYWORDS;
 
 void addStringConstant(string key, string val)(PyObject* module_) {
     import python.raw: PyModule_AddStringConstant;

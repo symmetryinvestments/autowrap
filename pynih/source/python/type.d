@@ -326,7 +326,7 @@ struct PythonType(T) {
 
     private static auto methodDefs()() {
         import autowrap.common: AlwaysTry;
-        import python.raw: PyMethodDef, MethodArgs;
+        import python.raw: PyMethodDef, METH_STATIC;
         import python.cooked: pyMethodDef, defaultMethodFlags;
         import mirror.meta.traits: isProperty;
         import std.meta: AliasSeq, Alias, staticMap, Filter, templateNot;
@@ -357,7 +357,7 @@ struct PythonType(T) {
         static foreach(i, memberFunction; memberFunctions) {{
 
             static if(__traits(isStaticFunction, memberFunction))
-                enum flags = defaultMethodFlags | MethodArgs.Static;
+                enum flags = defaultMethodFlags | METH_STATIC;
             else
                 enum flags = defaultMethodFlags;
 
