@@ -96,24 +96,24 @@ package PyObject* one_string_param_to_string(PyObject* self, PyObject *args) not
         return null;
     }
 
-    if(!PyUnicode_Check(arg)) arg = pyObjectUnicode(arg);
+    assert(PyUnicode_Check(arg));
 
     if(!PyUnicode_Check(arg)) {
         PyErr_SetString(PyExc_TypeError, &"Argument not a unicode string"[0]);
         return null;
     }
 
-    auto unicodeArg = pyUnicodeAsUtf8String(arg);
+    auto unicodeArg = PyUnicode_AsUTF8String(arg);
     if(!unicodeArg) {
         PyErr_SetString(PyExc_TypeError, &"Could not decode UTF8"[0]);
         return null;
     }
 
-    const ptr = pyBytesAsString(unicodeArg);
+    const ptr = PyBytes_AsString(unicodeArg);
 
     const ret = ptr.fromStringz ~ "_suffix";
 
-    return pyUnicodeDecodeUTF8(&ret[0], ret.length, null /*errors*/);
+    return PyUnicode_DecodeUTF8(&ret[0], ret.length, null /*errors*/);
 }
 
 
@@ -134,20 +134,20 @@ package PyObject* one_string_param_to_string_manual_mem(PyObject* self, PyObject
         return null;
     }
 
-    if(!PyUnicode_Check(arg)) arg = pyObjectUnicode(arg);
+    assert(PyUnicode_Check(arg));
 
     if(!PyUnicode_Check(arg)) {
         PyErr_SetString(PyExc_TypeError, &"Argument not a unicode string"[0]);
         return null;
     }
 
-    auto unicodeArg = pyUnicodeAsUtf8String(arg);
+    auto unicodeArg = PyUnicode_AsUTF8String(arg);
     if(!unicodeArg) {
         PyErr_SetString(PyExc_TypeError, &"Could not decode UTF8"[0]);
         return null;
     }
 
-    const ptr = pyBytesAsString(unicodeArg);
+    const ptr = PyBytes_AsString(unicodeArg);
 
     enum suffix = "_suffix";
     const ptrLen = strlen(ptr);
@@ -158,7 +158,7 @@ package PyObject* one_string_param_to_string_manual_mem(PyObject* self, PyObject
     ret[0 .. ptrLen] = ptr[0 .. ptrLen];
     ret[ptrLen .. retLength] = suffix[];
 
-    return pyUnicodeDecodeUTF8(&ret[0], retLength, null /*errors*/);
+    return PyUnicode_DecodeUTF8(&ret[0], retLength, null /*errors*/);
 }
 
 
@@ -264,8 +264,8 @@ package PyObject* one_dict_param_to_dict(PyObject* self, PyObject *args) nothrow
     const oops = "oops";
     const no = "noooo";
 
-    auto pyOops = pyUnicodeDecodeUTF8(&oops[0], oops.length, null /*errors*/);
-    auto pyNo = pyUnicodeDecodeUTF8(&no[0], no.length, null /*errors*/);
+    auto pyOops = PyUnicode_DecodeUTF8(&oops[0], oops.length, null /*errors*/);
+    auto pyNo = PyUnicode_DecodeUTF8(&no[0], no.length, null /*errors*/);
 
     PyDict_SetItem(ret, pyOops, pyNo);
 

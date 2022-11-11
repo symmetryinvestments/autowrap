@@ -391,7 +391,7 @@ struct PythonType(T) {
 
         return noThrowable!({
 
-            import python: pyUnicodeDecodeUTF8;
+            import python: PyUnicode_DecodeUTF8;
             import python.conv: to;
             import std.string: toStringz;
             import std.conv: text;
@@ -401,7 +401,7 @@ struct PythonType(T) {
 
             static if(__traits(compiles, text(self_.to!T))) {
                 auto ret = text(self_.to!T);
-                return pyUnicodeDecodeUTF8(ret.ptr, ret.length, null /*errors*/);
+                return PyUnicode_DecodeUTF8(ret.ptr, ret.length, null /*errors*/);
             } else {
                 pragma(msg, "WARNING: cannot generate repr for ", fullyQualifiedName!T);
                 PyObject* impl() {
@@ -547,7 +547,7 @@ private string dlangAssignOpToPythonSlot(string op) {
 auto pythonArgsToDArgs(bool isVariadic, P...)(PyObject* args, PyObject* kwargs)
     if(allSatisfy!(isParameter, P))
 {
-    import python.raw: PyTuple_Size, PyTuple_GetItem, PyTuple_GetSlice, pyUnicodeDecodeUTF8, PyDict_GetItem;
+    import python.raw: PyTuple_Size, PyTuple_GetItem, PyTuple_GetSlice, PyUnicode_DecodeUTF8, PyDict_GetItem;
     import python.conv: to;
     import std.typecons: Tuple;
     import std.meta: staticMap;
@@ -608,9 +608,9 @@ auto pythonArgsToDArgs(bool isVariadic, P...)(PyObject* args, PyObject* kwargs)
             } else {
                 // Here it gets tricky. The user could have supplied it in
                 // args positionally or via kwargs
-                auto key = pyUnicodeDecodeUTF8(&P[i].identifier[0],
-                                               P[i].identifier.length,
-                                               null /*errors*/);
+                auto key = PyUnicode_DecodeUTF8(&P[i].identifier[0],
+                                                P[i].identifier.length,
+                                                null /*errors*/);
                 enforce(key, "Errors converting '" ~ P[i].identifier ~ "' to Python object");
                 auto val = kwargs ? PyDict_GetItem(kwargs, key) : null;
                 dArgs[i] = val

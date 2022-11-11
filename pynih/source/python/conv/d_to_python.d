@@ -137,10 +137,10 @@ PyObject* toPython(T)(T value) if(is(Unqual!T == TimeOfDay)) {
 
 
 PyObject* toPython(T)(T value) if(isSomeString!T) {
-    import python.raw: pyUnicodeFromStringAndSize;
+    import python.raw: PyUnicode_FromStringAndSize;
     import std.conv: to;
     auto str = value.to!string;
-    return pyUnicodeFromStringAndSize(str.ptr, str.length);
+    return PyUnicode_FromStringAndSize(str.ptr, str.length);
 }
 
 

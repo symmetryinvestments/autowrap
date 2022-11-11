@@ -186,7 +186,7 @@ package PyObject* struct_getset(PyObject* self, PyObject *args) nothrow @nogc {
         auto self = cast(StructGetSet*) self_;
         auto ret = text(*self);
 
-        return pyUnicodeDecodeUTF8(ret.ptr, ret.length, null /*errors*/);
+        return PyUnicode_DecodeUTF8(ret.ptr, ret.length, null /*errors*/);
     }
 
     extern(C) static PyObject* reprInner(PyObject* self_) {
@@ -195,7 +195,7 @@ package PyObject* struct_getset(PyObject* self, PyObject *args) nothrow @nogc {
         auto self = cast(StructGetSet.Inner*) self_;
         auto ret = text(*self);
 
-        return pyUnicodeDecodeUTF8(ret.ptr, ret.length, null /*errors*/);
+        return PyUnicode_DecodeUTF8(ret.ptr, ret.length, null /*errors*/);
     }
 
     static PyTypeObject outerType;

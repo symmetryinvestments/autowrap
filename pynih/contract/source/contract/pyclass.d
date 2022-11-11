@@ -66,21 +66,21 @@ package PyObject* pyclass_string_list_struct(PyObject* self, PyObject *args) {
     foreach(i; 0 .. PyList_Size(arg)) {
 
         auto item = PyList_GetItem(arg, i);
-        if(PyUnicode_Check(item)) item = pyObjectUnicode(item);
+        assert(PyUnicode_Check(item));
 
         if(!PyUnicode_Check(item)) {
             PyErr_SetString(PyExc_TypeError, &"All arguments must be strings"[0]);
             return null;
         }
 
-        auto unicode = pyUnicodeAsUtf8String(item);
+        auto unicode = PyUnicode_AsUTF8String(item);
         if(!unicode) {
             PyErr_SetString(PyExc_TypeError, &"Could not decode UTF8"[0]);
             return null;
         }
 
-        const length = pyUnicodeGetSize(item);
-        auto ptr = pyBytesAsString(unicode);
+        const length = PyUnicode_GetSize(item);
+        auto ptr = PyBytes_AsString(unicode);
         auto str = ptr is null ? null : ptr[0 .. length];
 
         strings ~= str;

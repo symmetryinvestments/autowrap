@@ -233,19 +233,17 @@ T to(T)(PyObject* value) if(isArray!T && !isSomeString!T)
 
 T to(T)(PyObject* value) if(isSomeString!T) {
 
-    import python.raw: pyUnicodeGetSize, PyUnicode_Check,
-        pyBytesAsString, pyObjectUnicode, pyUnicodeAsUtf8String, Py_ssize_t;
+    import python.raw: PyUnicode_GetSize, PyUnicode_Check,
+        PyBytes_AsString, PyUnicode_AsUTF8String, Py_ssize_t;
     import std.conv: to;
 
-    value = pyObjectUnicode(value);
-
-    const length = pyUnicodeGetSize(value);
+    const length = PyUnicode_GetSize(value);
     if(length == 0) return T.init;
 
-    auto str = pyUnicodeAsUtf8String(value);
+    auto str = PyUnicode_AsUTF8String(value);
     if(str is null) throw new Exception("Tried to convert a non-string Python value to D string");
 
-    auto ptr = pyBytesAsString(str);
+    auto ptr = PyBytes_AsString(str);
     assert(length == 0 || ptr !is null);
 
     auto slice = ptr[0 .. length];

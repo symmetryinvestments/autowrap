@@ -80,33 +80,6 @@ auto pyFalse() {
     return Py_False;
 }
 
-auto pyUnicodeDecodeUTF8(const(char)* str, c_long length, const(char)* errors = null) @nogc nothrow {
-    return PyUnicode_DecodeUTF8(str, length, errors);
-}
-
-auto pyUnicodeAsUtf8String(PyObject* obj) @nogc nothrow {
-    return PyUnicode_AsUTF8String(obj);
-}
-
-auto pyBytesAsString(PyObject* obj) @nogc nothrow {
-    return PyBytes_AsString(obj);
-}
-
-auto pyObjectUnicode(PyObject* obj) @nogc nothrow {
-    static if(isPython2)
-        return PyObject_Unicode(obj);
-    else
-        return obj;
-}
-
-auto pyUnicodeGetSize(PyObject* obj) @nogc nothrow {
-    return PyUnicode_GetSize(obj);
-}
-
-auto pyUnicodeFromStringAndSize(const(char)* ptr, Py_ssize_t size) {
-    return PyUnicode_FromStringAndSize(ptr, size);
-}
-
 auto pyObjectNew(T)(PyTypeObject* typeobj) {
     return cast(T*) _PyObject_New(typeobj);
 }
