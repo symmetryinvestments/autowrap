@@ -1274,7 +1274,7 @@ private template PythonOpCmp(T) {
 private template PythonSubscript(T) {
 
     static extern(C) PyObject* _py_index(PyObject* self, PyObject* key) nothrow {
-        import python.raw: pyIndexCheck, pySliceCheck, PyObject_Repr, PyObject_Length,
+        import python.raw: PyIndex_Check, PySlice_Check, PyObject_Repr, PyObject_Length,
             Py_ssize_t, PySlice_GetIndices;
         import python.conv.python_to_d: to;
         import python.conv.d_to_python: toPython;
@@ -1285,7 +1285,7 @@ private template PythonSubscript(T) {
             static if(!hasMember!(T, "opIndex") && !hasMember!(T, "opSlice")) {
                 throw new Exception(fullyQualifiedName!T ~ " has no opIndex or opSlice");
             } else {
-                if(pyIndexCheck(key)) {
+                if(PyIndex_Check(key)) {
                     static if(__traits(compiles, Parameters!(T.opIndex))) {
                         alias parameters = Parameters!(T.opIndex);
                         static if(parameters.length == 1)
@@ -1293,7 +1293,7 @@ private template PythonSubscript(T) {
                         else
                             throw new Exception("Don't know how to handle opIndex with more than one parameter");
                     }
-                } else if(pySliceCheck(key)) {
+                } else if(PySlice_Check(key)) {
 
                     enum hasTwoParams(alias F) = Parameters!F.length == 2;
 
@@ -1328,7 +1328,7 @@ private template PythonSubscript(T) {
                         assert(0, "Error in slicing " ~ T.stringof ~ " with " ~ PyObject_Repr(key).to!string);
                     }
                 } else
-                    throw new Exception(T.stringof ~ " failed pyIndexCheck and pySliceCheck for key '" ~ PyObject_Repr(key).to!string ~ "'");
+                    throw new Exception(T.stringof ~ " failed PyIndex_Check and PySlice_Check for key '" ~ PyObject_Repr(key).to!string ~ "'");
                 assert(0);
             }
         }
@@ -1406,13 +1406,13 @@ private template PythonIndexAssign(T) {
 
         import python.conv.python_to_d: to;
         import python.conv.d_to_python: toPython;
-        import python.raw: pyIndexCheck, pySliceCheck, PyObject_Repr, PyObject_Length, PySlice_GetIndices, Py_ssize_t;
+        import python.raw: PyIndex_Check, PySlice_Check, PyObject_Repr, PyObject_Length, PySlice_GetIndices, Py_ssize_t;
         import std.traits: Parameters, Unqual;
         import std.conv: to;
         import std.meta: Filter, AliasSeq;
 
         int impl() {
-            if(pyIndexCheck(key)) {
+            if(PyIndex_Check(key)) {
                 static if(__traits(compiles, Parameters!(T.opIndexAssign))) {
                     alias parameters = Parameters!(T.opIndexAssign);
                     static if(parameters.length == 2) {
@@ -1425,7 +1425,7 @@ private template PythonIndexAssign(T) {
                         return -1;
                 } else
                     return -1;
-            } else if(pySliceCheck(key)) {
+            } else if(PySlice_Check(key)) {
 
                 enum hasThreeParams(alias F) = Parameters!F.length == 3;
                 alias threeParamOps = Filter!(hasThreeParams,
@@ -1530,61 +1530,61 @@ private bool isInstanceOf(T)(PyObject* obj) {
 
 
 private bool checkPythonType(T)(PyObject* value) if(isArray!T) {
-    import python.raw: pySequenceCheck;
-    const ret = pySequenceCheck(value);
+    import python.raw: PySequence_Check;
+    const ret = cast(bool) PySequence_Check(value);
     if(!ret) setPyErrTypeString!"sequence";
     return ret;
 }
 
 
 private bool checkPythonType(T)(PyObject* value) if(isIntegral!T) {
-    import python.raw: pyIntCheck, pyLongCheck;
-    const ret = pyLongCheck(value) || pyIntCheck(value);
+    import python.raw: PyLong_Check;
+    const ret = cast(bool) PyLong_Check(value);
     if(!ret) setPyErrTypeString!"long";
     return ret;
 }
 
 
 private bool checkPythonType(T)(PyObject* value) if(isFloatingPoint!T) {
-    import python.raw: pyFloatCheck;
-    const ret = pyFloatCheck(value);
+    import python.raw: PyFloat_Check;
+    const ret = cast(bool) PyFloat_Check(value);
     if(!ret) setPyErrTypeString!"float";
     return ret;
 }
 
 
 private bool checkPythonType(T)(PyObject* value) if(is(T == DateTime)) {
-    import python.raw: pyDateTimeCheck;
-    const ret = pyDateTimeCheck(value);
+    import python.raw: PyDateTime_Check;
+    const ret = cast(bool) PyDateTime_Check(value);
     if(!ret) setPyErrTypeString!"DateTime";
     return ret;
 }
 
 
 private bool checkPythonType(T)(PyObject* value) if(is(T == Date)) {
-    import python.raw: pyDateCheck;
-    const ret = pyDateCheck(value);
+    import python.raw: PyDate_Check;
+    const ret = cast(bool) PyDate_Check(value);
     if(!ret) setPyErrTypeString!"Date";
     return ret;
 }
 
 
 private bool checkPythonType(T)(PyObject* value) if(isAssociativeArray!T) {
-    import python.raw: pyMappingCheck;
-    const ret = pyMappingCheck(value);
+    import python.raw: PyMapping_Check;
+    const ret = cast(bool) PyMapping_Check(value);
     if(!ret) setPyErrTypeString!"dict";
     return ret;
 }
 
 
 private bool checkPythonType(T)(PyObject* value) if(isUserAggregate!T) {
-    return true;  // FIXMME
+    return true;  // FIXME
 }
 
 
 private bool checkPythonType(T)(PyObject* value) if(isSomeFunction!T) {
-    import python.raw: pyCallableCheck;
-    const ret = pyCallableCheck(value);
+    import python.raw: PyCallable_Check;
+    const ret = cast(bool) PyCallable_Check(value);
     if(!ret) setPyErrTypeString!"callable";
     return ret;
 }

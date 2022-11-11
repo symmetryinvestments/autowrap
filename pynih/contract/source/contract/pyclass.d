@@ -56,7 +56,7 @@ package PyObject* pyclass_string_list_struct(PyObject* self, PyObject *args) {
         return null;
     }
 
-    if(!pyListCheck(arg)) {
+    if(!PyList_Check(arg)) {
         PyErr_SetString(PyExc_TypeError, &"Argument not a list"[0]);
         return null;
     }
@@ -66,9 +66,9 @@ package PyObject* pyclass_string_list_struct(PyObject* self, PyObject *args) {
     foreach(i; 0 .. PyList_Size(arg)) {
 
         auto item = PyList_GetItem(arg, i);
-        if(pyUnicodeCheck(item)) item = pyObjectUnicode(item);
+        if(PyUnicode_Check(item)) item = pyObjectUnicode(item);
 
-        if(!pyUnicodeCheck(item)) {
+        if(!PyUnicode_Check(item)) {
             PyErr_SetString(PyExc_TypeError, &"All arguments must be strings"[0]);
             return null;
         }

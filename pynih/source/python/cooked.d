@@ -24,7 +24,7 @@ auto createModule(Module module_, alias cfunctions, alias aggregates = Aggregate
     auto pyMethodDefs = cFunctionsToPyMethodDefs!(cfunctions);
     moduleDef = pyModuleDef(module_.name.ptr, null /*doc*/, -1 /*size*/, pyMethodDefs);
 
-    auto module_ = pyModuleCreate(&moduleDef);
+    auto module_ = PyModule_Create(&moduleDef);
     addModuleTypes!(aggregates.Types)(module_);
 
     return module_;

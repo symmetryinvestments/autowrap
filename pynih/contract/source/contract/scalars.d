@@ -36,7 +36,7 @@ package PyObject* one_bool_param_to_not(PyObject* self, PyObject *args) nothrow 
     auto arg = PyTuple_GetItem(args, 0);
     if(arg is null) return null;
 
-    if(!pyBoolCheck(arg)) return null;
+    if(!PyBool_Check(arg)) return null;
     const dArg = arg == pyTrue;
 
     return PyBool_FromLong(!dArg);
@@ -96,9 +96,9 @@ package PyObject* one_string_param_to_string(PyObject* self, PyObject *args) not
         return null;
     }
 
-    if(!pyUnicodeCheck(arg)) arg = pyObjectUnicode(arg);
+    if(!PyUnicode_Check(arg)) arg = pyObjectUnicode(arg);
 
-    if(!pyUnicodeCheck(arg)) {
+    if(!PyUnicode_Check(arg)) {
         PyErr_SetString(PyExc_TypeError, &"Argument not a unicode string"[0]);
         return null;
     }
@@ -134,9 +134,9 @@ package PyObject* one_string_param_to_string_manual_mem(PyObject* self, PyObject
         return null;
     }
 
-    if(!pyUnicodeCheck(arg)) arg = pyObjectUnicode(arg);
+    if(!PyUnicode_Check(arg)) arg = pyObjectUnicode(arg);
 
-    if(!pyUnicodeCheck(arg)) {
+    if(!PyUnicode_Check(arg)) {
         PyErr_SetString(PyExc_TypeError, &"Argument not a unicode string"[0]);
         return null;
     }
@@ -169,7 +169,7 @@ package PyObject* one_list_param(PyObject* self, PyObject *args) nothrow {
     auto arg = PyTuple_GetItem(args, 0);
     if(arg is null) return null;
 
-    if(!pyListCheck(arg)) return null;
+    if(!PyList_Check(arg)) return null;
     // lists have iterators
     if(PyObject_GetIter(arg) is null) return null;
 
@@ -184,7 +184,7 @@ package PyObject* one_list_param_to_list(PyObject* self, PyObject *args) nothrow
     auto arg = PyTuple_GetItem(args, 0);
     if(arg is null) return null;
 
-    if(!pyListCheck(arg)) return null;
+    if(!PyList_Check(arg)) return null;
 
     auto ret = PyList_New(PyList_Size(arg));
 
@@ -205,7 +205,7 @@ package PyObject* one_tuple_param(PyObject* self, PyObject *args) nothrow {
     auto arg = PyTuple_GetItem(args, 0);
     if(arg is null) return null;
 
-    if(!pyTupleCheck(arg)) return null;
+    if(!PyTuple_Check(arg)) return null;
     // tuples have iterators
     if(PyObject_GetIter(arg) is null) return null;
 
@@ -236,7 +236,7 @@ package PyObject* one_dict_param(PyObject* self, PyObject *args) nothrow {
     auto arg = PyTuple_GetItem(args, 0);
     if(arg is null) return null;
 
-    if(!pyDictCheck(arg)) return null;
+    if(!PyDict_Check(arg)) return null;
 
     return PyLong_FromLong(PyDict_Size(arg));
 }
@@ -249,7 +249,7 @@ package PyObject* one_dict_param_to_dict(PyObject* self, PyObject *args) nothrow
     auto arg = PyTuple_GetItem(args, 0);
     if(arg is null) return null;
 
-    if(!pyDictCheck(arg)) return null;
+    if(!PyDict_Check(arg)) return null;
 
     auto ret = PyDict_New;
 

@@ -21,7 +21,7 @@ class PythonException: Exception {
 
 private string pythonExceptionMsg() {
     import python.raw: PyErr_Occurred, PyErr_Fetch, PyErr_NormalizeException,
-        PyObject_GetAttrString, pyTupleCheck, PyTuple_GetItem;
+        PyObject_GetAttrString, PyTuple_Check, PyTuple_GetItem;
     import python.conv.python_to_d: to;
 
     assert(PyErr_Occurred);
@@ -32,7 +32,7 @@ private string pythonExceptionMsg() {
 
     auto args = PyObject_GetAttrString(value, "args");
     assert(args !is null);
-    assert(pyTupleCheck(args));
+    assert(PyTuple_Check(args));
     const msg = PyTuple_GetItem(args, 0).to!string;
 
     return pyExceptionTypeToString(type) ~ ": " ~ msg;
