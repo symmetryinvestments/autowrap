@@ -13,6 +13,7 @@ module python.raw;
 #include "abstract.h"
 
 
+// FIXME: The two macros below aren't showing up for some reason
 enum TypeFlags {
     BaseType = Py_TPFLAGS_BASETYPE,
     Default = Py_TPFLAGS_DEFAULT,
@@ -27,6 +28,7 @@ mixin template PyObjectHead() {
 
 
 auto pyTrue() {
+    // FIXME:
     // This doesn't work as a manifest constant because there's a cast that the CTFE
     // engine doesn't like
     return Py_True;
@@ -34,6 +36,7 @@ auto pyTrue() {
 
 // Demacroify
 auto pyFalse() {
+    // FIXME:
     // This doesn't work as a manifest constant because there's a cast that the CTFE
     // engine doesn't like
     return Py_False;
@@ -44,6 +47,7 @@ auto pyObjectNew(T)(PyTypeObject* typeobj) {
 }
 
 // Demacroify
+// FIXME:
 // This fails due to some weird is(typeof) check for the date time capsule
 void pyDateTimeImport() @nogc nothrow {
     PyDateTime_IMPORT;
