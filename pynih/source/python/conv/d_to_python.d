@@ -13,13 +13,13 @@ import core.time: Duration;
 
 
 PyObject* toPython(in bool val) @trusted @nogc {
-    import python.raw: pyIncRef, _Py_TrueStruct, _Py_FalseStruct;
+    import python.raw: Py_IncRef, _Py_TrueStruct, _Py_FalseStruct;
 
     auto pyTrue = cast(PyObject*) &_Py_TrueStruct;
     auto pyFalse = cast(PyObject*) &_Py_FalseStruct;
 
     static PyObject* incAndRet(PyObject* obj) {
-        pyIncRef(obj);
+        Py_IncRef(obj);
         return obj;
     }
 
@@ -120,27 +120,27 @@ PyObject* toPython(T)(T value)
 
 
 PyObject* toPython(T)(T value) if(is(Unqual!T == DateTime)) {
-    import python.raw: pyDateTimeFromDateAndTime;
-    return pyDateTimeFromDateAndTime(value.year, value.month, value.day,
-                                     value.hour, value.minute, value.second);
+    import python.raw: PyDateTime_FromDateAndTime;
+    return PyDateTime_FromDateAndTime(value.year, value.month, value.day,
+                                      value.hour, value.minute, value.second, 0 /*usec*/);
 }
 
 PyObject* toPython(T)(T value) if(is(Unqual!T == Date)) {
-    import python.raw: pyDateFromDate;
-    return pyDateFromDate(value.year, value.month, value.day);
+    import python.raw: PyDate_FromDate;
+    return PyDate_FromDate(value.year, value.month, value.day);
 }
 
 PyObject* toPython(T)(T value) if(is(Unqual!T == TimeOfDay)) {
-    import python.raw: pyTimeFromTime;
-    return pyTimeFromTime(value.hour, value.minute, value.second, 0 /*usec*/);
+    import python.raw: PyTime_FromTime;
+    return PyTime_FromTime(value.hour, value.minute, value.second, 0 /*usec*/);
 }
 
 
 PyObject* toPython(T)(T value) if(isSomeString!T) {
-    import python.raw: pyUnicodeFromStringAndSize;
+    import python.raw: PyUnicode_FromStringAndSize;
     import std.conv: to;
     auto str = value.to!string;
-    return pyUnicodeFromStringAndSize(str.ptr, str.length);
+    return PyUnicode_FromStringAndSize(str.ptr, str.length);
 }
 
 
@@ -192,10 +192,10 @@ PyObject* toPython(T)(T value) if(isCallable!T && !isUserAggregate!T) {
 
 
 PyObject* toPython(T)(T value) if(is(Unqual!T == Duration)) {
-    import python.raw: pyDeltaFromDSU;
+    import python.raw: PyDelta_FromDSU;
     int days, seconds, useconds;
     value.split!("days", "seconds", "usecs")(days, seconds, useconds);
-    return pyDeltaFromDSU(days, seconds, useconds);
+    return PyDelta_FromDSU(days, seconds, useconds);
 }
 
 

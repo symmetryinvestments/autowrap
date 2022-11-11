@@ -326,7 +326,7 @@ struct PythonType(T) {
 
     private static auto methodDefs()() {
         import autowrap.common: AlwaysTry;
-        import python.raw: PyMethodDef, MethodArgs;
+        import python.raw: PyMethodDef, METH_STATIC;
         import python.cooked: pyMethodDef, defaultMethodFlags;
         import mirror.meta.traits: isProperty;
         import std.meta: AliasSeq, Alias, staticMap, Filter, templateNot;
@@ -357,7 +357,7 @@ struct PythonType(T) {
         static foreach(i, memberFunction; memberFunctions) {{
 
             static if(__traits(isStaticFunction, memberFunction))
-                enum flags = defaultMethodFlags | MethodArgs.Static;
+                enum flags = defaultMethodFlags | METH_STATIC;
             else
                 enum flags = defaultMethodFlags;
 
@@ -391,7 +391,7 @@ struct PythonType(T) {
 
         return noThrowable!({
 
-            import python: pyUnicodeDecodeUTF8;
+            import python: PyUnicode_DecodeUTF8;
             import python.conv: to;
             import std.string: toStringz;
             import std.conv: text;
@@ -401,7 +401,7 @@ struct PythonType(T) {
 
             static if(__traits(compiles, text(self_.to!T))) {
                 auto ret = text(self_.to!T);
-                return pyUnicodeDecodeUTF8(ret.ptr, ret.length, null /*errors*/);
+                return PyUnicode_DecodeUTF8(ret.ptr, ret.length, null /*errors*/);
             } else {
                 pragma(msg, "WARNING: cannot generate repr for ", fullyQualifiedName!T);
                 PyObject* impl() {
@@ -547,7 +547,7 @@ private string dlangAssignOpToPythonSlot(string op) {
 auto pythonArgsToDArgs(bool isVariadic, P...)(PyObject* args, PyObject* kwargs)
     if(allSatisfy!(isParameter, P))
 {
-    import python.raw: PyTuple_Size, PyTuple_GetItem, PyTuple_GetSlice, pyUnicodeDecodeUTF8, PyDict_GetItem;
+    import python.raw: PyTuple_Size, PyTuple_GetItem, PyTuple_GetSlice, PyUnicode_DecodeUTF8, PyDict_GetItem;
     import python.conv: to;
     import std.typecons: Tuple;
     import std.meta: staticMap;
@@ -608,9 +608,9 @@ auto pythonArgsToDArgs(bool isVariadic, P...)(PyObject* args, PyObject* kwargs)
             } else {
                 // Here it gets tricky. The user could have supplied it in
                 // args positionally or via kwargs
-                auto key = pyUnicodeDecodeUTF8(&P[i].identifier[0],
-                                               P[i].identifier.length,
-                                               null /*errors*/);
+                auto key = PyUnicode_DecodeUTF8(&P[i].identifier[0],
+                                                P[i].identifier.length,
+                                                null /*errors*/);
                 enforce(key, "Errors converting '" ~ P[i].identifier ~ "' to Python object");
                 auto val = kwargs ? PyDict_GetItem(kwargs, key) : null;
                 dArgs[i] = val
@@ -644,11 +644,11 @@ struct PythonMethod(T, alias F) {
 private void mutateSelf(T)(PyObject* self, auto ref T dAggregate) {
 
     import python.conv.d_to_python: toPython;
-    import python.raw: pyDecRef;
+    import python.raw: Py_DecRef;
 
     auto newSelf = self is null ? self : toPython(dAggregate);
     scope(exit) {
-        if(self !is null) pyDecRef(newSelf);
+        if(self !is null) Py_DecRef(newSelf);
     }
     auto pyClassSelf = cast(PythonClass!T*) self;
     auto pyClassNewSelf = cast(PythonClass!T*) newSelf;
@@ -833,15 +833,15 @@ class ArgumentConversionException: Exception {
 
 
 private PyObject* callDlangFunction(alias F, A)(auto ref A argTuple) {
-    import python.raw: pyIncRef, pyNone;
+    import python.raw: Py_IncRef, Py_None;
     import python.conv: toPython;
     import std.traits: ReturnType;
 
     // TODO - side-effects on parameters?
     static if(is(ReturnType!F == void)) {
         F(argTuple.expand);
-        pyIncRef(pyNone);
-        return pyNone;
+        Py_IncRef(Py_None);
+        return Py_None;
     } else {
         auto dret = F(argTuple.expand);
         return dret.toPython;
@@ -957,14 +957,14 @@ struct PythonClass(T) {//}if(isUserAggregate!T) {
         nothrow
         in(self_ !is null)
     {
-        import python.raw: pyIncRef;
+        import python.raw: Py_IncRef;
 
         auto self = cast(PythonClass*) self_;
 
         auto impl() {
             auto field = self.getField!FieldIndex;
             assert(field !is null, "Cannot increase reference count on null field");
-            pyIncRef(field);
+            Py_IncRef(field);
 
             return field;
         }
@@ -978,7 +978,7 @@ struct PythonClass(T) {//}if(isUserAggregate!T) {
         nothrow
         in(self_ !is null)
     {
-        import python.raw: pyIncRef, pyDecRef, PyErr_SetString, PyExc_TypeError;
+        import python.raw: Py_IncRef, Py_DecRef, PyErr_SetString, PyExc_TypeError;
 
         if(value is null) {
             enum deleteErrStr = "Cannot delete " ~ fieldNames[FieldIndex];
@@ -1002,9 +1002,9 @@ struct PythonClass(T) {//}if(isUserAggregate!T) {
             auto self = cast(PythonClass!T*) self_;
             auto tmp = self.getField!FieldIndex;
 
-            pyIncRef(value);
+            Py_IncRef(value);
             mixin(`self.`, fieldNames[FieldIndex], ` = value;`);
-            pyDecRef(tmp);
+            Py_DecRef(tmp);
 
             return 0;
         }
@@ -1045,11 +1045,11 @@ struct PythonClass(T) {//}if(isUserAggregate!T) {
         nothrow
         in(self_ !is null)
     {
-        import python.raw: PyTuple_New, PyTuple_SetItem, pyDecRef;
+        import python.raw: PyTuple_New, PyTuple_SetItem, Py_DecRef;
 
         auto args = PyTuple_New(1);
         PyTuple_SetItem(args, 0, value);
-        scope(exit) pyDecRef(args);
+        scope(exit) Py_DecRef(args);
 
         PythonMethod!(T, F)._py_method_impl(self_, args, null /*kwargs*/);
 
@@ -1274,7 +1274,7 @@ private template PythonOpCmp(T) {
 private template PythonSubscript(T) {
 
     static extern(C) PyObject* _py_index(PyObject* self, PyObject* key) nothrow {
-        import python.raw: pyIndexCheck, pySliceCheck, PyObject_Repr, PyObject_Length,
+        import python.raw: PyIndex_Check, PySlice_Check, PyObject_Repr, PyObject_Length,
             Py_ssize_t, PySlice_GetIndices;
         import python.conv.python_to_d: to;
         import python.conv.d_to_python: toPython;
@@ -1285,7 +1285,7 @@ private template PythonSubscript(T) {
             static if(!hasMember!(T, "opIndex") && !hasMember!(T, "opSlice")) {
                 throw new Exception(fullyQualifiedName!T ~ " has no opIndex or opSlice");
             } else {
-                if(pyIndexCheck(key)) {
+                if(PyIndex_Check(key)) {
                     static if(__traits(compiles, Parameters!(T.opIndex))) {
                         alias parameters = Parameters!(T.opIndex);
                         static if(parameters.length == 1)
@@ -1293,7 +1293,7 @@ private template PythonSubscript(T) {
                         else
                             throw new Exception("Don't know how to handle opIndex with more than one parameter");
                     }
-                } else if(pySliceCheck(key)) {
+                } else if(PySlice_Check(key)) {
 
                     enum hasTwoParams(alias F) = Parameters!F.length == 2;
 
@@ -1328,7 +1328,7 @@ private template PythonSubscript(T) {
                         assert(0, "Error in slicing " ~ T.stringof ~ " with " ~ PyObject_Repr(key).to!string);
                     }
                 } else
-                    throw new Exception(T.stringof ~ " failed pyIndexCheck and pySliceCheck for key '" ~ PyObject_Repr(key).to!string ~ "'");
+                    throw new Exception(T.stringof ~ " failed PyIndex_Check and PySlice_Check for key '" ~ PyObject_Repr(key).to!string ~ "'");
                 assert(0);
             }
         }
@@ -1406,13 +1406,13 @@ private template PythonIndexAssign(T) {
 
         import python.conv.python_to_d: to;
         import python.conv.d_to_python: toPython;
-        import python.raw: pyIndexCheck, pySliceCheck, PyObject_Repr, PyObject_Length, PySlice_GetIndices, Py_ssize_t;
+        import python.raw: PyIndex_Check, PySlice_Check, PyObject_Repr, PyObject_Length, PySlice_GetIndices, Py_ssize_t;
         import std.traits: Parameters, Unqual;
         import std.conv: to;
         import std.meta: Filter, AliasSeq;
 
         int impl() {
-            if(pyIndexCheck(key)) {
+            if(PyIndex_Check(key)) {
                 static if(__traits(compiles, Parameters!(T.opIndexAssign))) {
                     alias parameters = Parameters!(T.opIndexAssign);
                     static if(parameters.length == 2) {
@@ -1425,7 +1425,7 @@ private template PythonIndexAssign(T) {
                         return -1;
                 } else
                     return -1;
-            } else if(pySliceCheck(key)) {
+            } else if(PySlice_Check(key)) {
 
                 enum hasThreeParams(alias F) = Parameters!F.length == 3;
                 alias threeParamOps = Filter!(hasThreeParams,
@@ -1475,11 +1475,11 @@ private template PythonCompare(T) {
         PyObject* impl() {
             import python.conv.python_to_d: to;
             import python.conv.d_to_python: toPython;
-            import python.raw: pyIncRef, _Py_NotImplementedStruct, Py_EQ, Py_LT, Py_LE, Py_NE, Py_GT, Py_GE;
+            import python.raw: Py_IncRef, _Py_NotImplementedStruct, Py_EQ, Py_LT, Py_LE, Py_NE, Py_GT, Py_GE;
 
             static notImplemented() {
                 auto pyNotImplemented = cast(PyObject*) &_Py_NotImplementedStruct;
-                pyIncRef(pyNotImplemented);
+                Py_IncRef(pyNotImplemented);
                 return pyNotImplemented;
             }
 
@@ -1530,61 +1530,61 @@ private bool isInstanceOf(T)(PyObject* obj) {
 
 
 private bool checkPythonType(T)(PyObject* value) if(isArray!T) {
-    import python.raw: pySequenceCheck;
-    const ret = pySequenceCheck(value);
+    import python.raw: PySequence_Check;
+    const ret = cast(bool) PySequence_Check(value);
     if(!ret) setPyErrTypeString!"sequence";
     return ret;
 }
 
 
 private bool checkPythonType(T)(PyObject* value) if(isIntegral!T) {
-    import python.raw: pyIntCheck, pyLongCheck;
-    const ret = pyLongCheck(value) || pyIntCheck(value);
+    import python.raw: PyLong_Check;
+    const ret = cast(bool) PyLong_Check(value);
     if(!ret) setPyErrTypeString!"long";
     return ret;
 }
 
 
 private bool checkPythonType(T)(PyObject* value) if(isFloatingPoint!T) {
-    import python.raw: pyFloatCheck;
-    const ret = pyFloatCheck(value);
+    import python.raw: PyFloat_Check;
+    const ret = cast(bool) PyFloat_Check(value);
     if(!ret) setPyErrTypeString!"float";
     return ret;
 }
 
 
 private bool checkPythonType(T)(PyObject* value) if(is(T == DateTime)) {
-    import python.raw: pyDateTimeCheck;
-    const ret = pyDateTimeCheck(value);
+    import python.raw: PyDateTime_Check;
+    const ret = cast(bool) PyDateTime_Check(value);
     if(!ret) setPyErrTypeString!"DateTime";
     return ret;
 }
 
 
 private bool checkPythonType(T)(PyObject* value) if(is(T == Date)) {
-    import python.raw: pyDateCheck;
-    const ret = pyDateCheck(value);
+    import python.raw: PyDate_Check;
+    const ret = cast(bool) PyDate_Check(value);
     if(!ret) setPyErrTypeString!"Date";
     return ret;
 }
 
 
 private bool checkPythonType(T)(PyObject* value) if(isAssociativeArray!T) {
-    import python.raw: pyMappingCheck;
-    const ret = pyMappingCheck(value);
+    import python.raw: PyMapping_Check;
+    const ret = cast(bool) PyMapping_Check(value);
     if(!ret) setPyErrTypeString!"dict";
     return ret;
 }
 
 
 private bool checkPythonType(T)(PyObject* value) if(isUserAggregate!T) {
-    return true;  // FIXMME
+    return true;  // FIXME
 }
 
 
 private bool checkPythonType(T)(PyObject* value) if(isSomeFunction!T) {
-    import python.raw: pyCallableCheck;
-    const ret = pyCallableCheck(value);
+    import python.raw: PyCallable_Check;
+    const ret = cast(bool) PyCallable_Check(value);
     if(!ret) setPyErrTypeString!"callable";
     return ret;
 }

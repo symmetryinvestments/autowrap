@@ -13,43 +13,7 @@ module python.raw;
 #include "abstract.h"
 
 
-enum isPython3 = is(PyModuleDef);
-enum isPython2 = !isPython3;
-
-
-/**
-    All of the enum cases are macros instead of values in an enum
-    so we make them available to D code with MethodArgs instead.
-*/
-enum MethodArgs {
-    Var = METH_VARARGS,
-    Keywords = METH_KEYWORDS,
-    Static = METH_STATIC,
-    None = METH_NOARGS,
-    O = METH_O,
-}
-
-enum MemberType {
-    Short = T_SHORT,
-    Int = T_INT,
-    Long = T_LONG,
-    Float = T_FLOAT,
-    Double = T_DOUBLE,
-    String = T_STRING,
-    Object = T_OBJECT,
-    ObjectEx = T_OBJECT_EX,
-    Char = T_CHAR,
-    Byte = T_BYTE,
-    UByte = T_UBYTE,
-    UInt = T_UINT,
-    UShort = T_USHORT,
-    ULong = T_ULONG,
-    Bool = T_BOOL,
-    LongLong = T_LONGLONG,
-    ULongLong = T_ULONGLONG,
-    PySSizeT = T_PYSSIZET,
-}
-
+// FIXME: The two macros below aren't showing up for some reason
 enum TypeFlags {
     BaseType = Py_TPFLAGS_BASETYPE,
     Default = Py_TPFLAGS_DEFAULT,
@@ -58,243 +22,46 @@ enum TypeFlags {
 
 // Demacroify
 mixin template PyObjectHead() {
-    import python.raw: PyObject, Py_ssize_t, isPython2;
-    static if(isPython2)
-        import python.raw: _typeobject;
+    import python.raw: PyObject, Py_ssize_t;
     PyObject_HEAD;
 }
 
-alias ModuleInitRet = PyObject*;  // PyMODINIT_FUNC can't be translated
 
-
-// Demacroify
-auto pyModuleCreate(PyModuleDef* moduleDef) @nogc nothrow {
-    return PyModule_Create(moduleDef);
-}
-
-
-// Demacroify
-bool pyIterCheck(PyObject* obj) @nogc nothrow {
-    return cast(bool) PyIter_Check(obj);
-}
-
-// Demacroify
-bool pyListCheck(PyObject* obj) @nogc nothrow {
-    return cast(bool) PyList_Check(obj);
-}
-
-
-// Demacroify
-bool pyTupleCheck(PyObject* obj) @nogc nothrow {
-    return cast(bool) PyTuple_Check(obj);
-}
-
-
-// Demacroify
-bool pyDictCheck(PyObject *obj) @nogc nothrow {
-    return cast(bool) PyDict_Check(obj);
-}
-
-// Demacroify
-bool pyBoolCheck(PyObject *obj) @nogc nothrow {
-    return cast(bool) PyBool_Check(obj);
-}
-
-// Demacroify
-bool pyUnicodeCheck(PyObject* obj) @nogc nothrow {
-    return cast(bool) PyUnicode_Check(obj);
-}
-
-bool pyNumberCheck(PyObject* obj) @nogc nothrow {
-    return cast(bool) PyNumber_Check(obj);
-}
-
-bool pyIntCheck(PyObject* obj) @nogc nothrow {
-    static if(isPython3)
-        return pyLongCheck(obj);
-    else static if(isPython2)
-        return PyInt_Check(obj);
-    else
-        static assert(false);
-}
-
-bool pyLongCheck(PyObject* obj) @nogc nothrow {
-    return cast(bool) PyLong_Check(obj);
-}
-
-bool pyFloatCheck(PyObject* obj) nothrow {
-    return cast(bool) PyFloat_Check(obj);
-}
-
-bool pyDateTimeCheck(PyObject* obj) nothrow {
-    return cast(bool) PyDateTime_Check(obj);
-}
-
-bool pyDateCheck(PyObject* obj) nothrow {
-    return cast(bool) PyDate_Check(obj);
-}
-
-bool pyCallableCheck(PyObject* obj) @nogc nothrow {
-    return cast(bool) PyCallable_Check(obj);
-}
-
-bool pyIndexCheck(PyObject* obj) @nogc nothrow {
-    return cast(bool) PyIndex_Check(obj);
-}
-
-bool pySliceCheck(PyObject* obj) @nogc nothrow {
-    return cast(bool) PySlice_Check(obj);
-}
-
-bool pySequenceCheck(PyObject* obj) @nogc nothrow {
-    return cast(bool) PySequence_Check(obj);
-}
-
-bool pyMappingCheck(PyObject* obj) @nogc nothrow {
-    return cast(bool) PyMapping_Check(obj);
-}
-
-bool pyBytesCheck(PyObject* obj) @nogc nothrow {
-    return cast(bool) PyBytes_Check(obj);
-}
-
-bool pyTimeCheck(PyObject* obj) nothrow {
-    return cast(bool) PyTime_Check(obj);
-}
-
-
-// Demacroify
 auto pyTrue() {
+    // FIXME:
+    // This doesn't work as a manifest constant because there's a cast that the CTFE
+    // engine doesn't like
     return Py_True;
 }
 
 // Demacroify
 auto pyFalse() {
+    // FIXME:
+    // This doesn't work as a manifest constant because there's a cast that the CTFE
+    // engine doesn't like
     return Py_False;
-}
-
-
-// Demacroify
-void pyIncRef(PyObject* obj) @nogc nothrow {
-    // had to hand translate due to static inline C function
-    obj.ob_refcnt++;
-}
-
-// Demacroify
-void pyDecRef(PyObject* obj) @nogc nothrow {
-    // FIXME: d++ can't translate this due to `;` for an empty statement
-    // Py_DECREF(obj);
-}
-
-// Demacroify
-auto pyNone() @nogc nothrow {
-    return Py_None;
-}
-
-auto pyUnicodeDecodeUTF8(const(char)* str, c_long length, const(char)* errors = null) @nogc nothrow {
-    return PyUnicode_DecodeUTF8(str, length, errors);
-}
-
-auto pyUnicodeAsUtf8String(PyObject* obj) @nogc nothrow {
-    return PyUnicode_AsUTF8String(obj);
-}
-
-auto pyBytesAsString(PyObject* obj) @nogc nothrow {
-    return PyBytes_AsString(obj);
-}
-
-auto pyObjectUnicode(PyObject* obj) @nogc nothrow {
-    static if(isPython2)
-        return PyObject_Unicode(obj);
-    else
-        return obj;
-}
-
-auto pyUnicodeGetSize(PyObject* obj) @nogc nothrow {
-    return PyUnicode_GetSize(obj);
-}
-
-auto pyUnicodeFromStringAndSize(const(char)* ptr, Py_ssize_t size) {
-    return PyUnicode_FromStringAndSize(ptr, size);
 }
 
 auto pyObjectNew(T)(PyTypeObject* typeobj) {
     return cast(T*) _PyObject_New(typeobj);
 }
 
-
 // Demacroify
+// FIXME:
+// This fails due to some weird is(typeof) check for the date time capsule
 void pyDateTimeImport() @nogc nothrow {
     PyDateTime_IMPORT;
 }
 
-auto pyDateTimeYear(PyObject* obj) @nogc nothrow {
-    return PyDateTime_GET_YEAR(obj);
-}
 
-auto pyDateTimeMonth(PyObject* obj) @nogc nothrow {
-    return PyDateTime_GET_MONTH(obj);
-}
-
-auto pyDateTimeDay(PyObject* obj) @nogc nothrow {
-    return PyDateTime_GET_DAY(obj);
-}
-
-auto pyDateTimeHour(PyObject* obj) @nogc nothrow {
-    return PyDateTime_DATE_GET_HOUR(obj);
-}
-
-auto pyDateTimeMinute(PyObject* obj) @nogc nothrow {
-    return PyDateTime_DATE_GET_MINUTE(obj);
-}
-
-auto pyDateTimeSecond(PyObject* obj) @nogc nothrow {
-    return PyDateTime_DATE_GET_SECOND(obj);
-}
-
-auto pyDateTimeUsec(PyObject* obj) @nogc nothrow {
-    return PyDateTime_DATE_GET_MICROSECOND(obj);
-}
-
-auto pyDateFromDate(int year, int month, int day) {
-    return PyDate_FromDate(year, month, day);
-}
-
-auto pyDateTimeFromDateAndTime(int year, int month, int day, int hour = 0, int minute = 0, int second = 0, int usec = 0) {
-    return PyDateTime_FromDateAndTime(year, month, day, hour, minute, second, usec);
-}
-
-auto pyDeltaFromDSU(int days, int seconds, int useconds) {
-    return PyDelta_FromDSU(days, seconds, useconds);
-}
-
-auto pyTimeHour(PyObject* obj) @nogc nothrow {
-    return PyDateTime_TIME_GET_HOUR(obj);
-}
-
-auto pyTimeMinute(PyObject* obj) @nogc nothrow {
-    return PyDateTime_TIME_GET_MINUTE(obj);
-}
-
-auto pyTimeSecond(PyObject* obj) @nogc nothrow {
-    return PyDateTime_TIME_GET_SECOND(obj);
-}
-
-auto pyTimeFromTime(int hour, int minute, int second, int usecond) @trusted nothrow {
-    try
-        return PyTime_FromTime(hour, minute, second, usecond);
-    catch(Exception _)
-        assert(0);
-}
-
-
+// static inline function in the header
 static int PyType_HasFeature(PyTypeObject *type, ulong feature) @safe @nogc pure nothrow {
     ulong flags;
     flags = type.tp_flags;
     return (flags & feature) != 0;
 }
 
-
+// static inline function in the header
 static int _Py_IS_TYPE(const PyObject *ob, const PyTypeObject *type) @safe @nogc pure nothrow {
     return ob.ob_type == type;
 }

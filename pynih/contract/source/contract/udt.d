@@ -22,10 +22,10 @@ package PyObject* simple_struct_func(PyObject* self, PyObject *args) nothrow @no
     // either this of PyGetSetDef
     static PyMemberDef[3] members;
     members[0].name = cast(typeof(PyMemberDef.name)) &"the_int"[0];
-    members[0].type = MemberType.Int;
+    members[0].type = T_INT;
     members[0].offset = MyType.i.offsetof;
     members[1].name = cast(typeof(PyMemberDef.name)) &"the_double"[0];
-    members[1].type = MemberType.Double;
+    members[1].type = T_DOUBLE;
     members[1].offset = MyType.d.offsetof;
 
     static PyTypeObject type;
@@ -186,7 +186,7 @@ package PyObject* struct_getset(PyObject* self, PyObject *args) nothrow @nogc {
         auto self = cast(StructGetSet*) self_;
         auto ret = text(*self);
 
-        return pyUnicodeDecodeUTF8(ret.ptr, ret.length, null /*errors*/);
+        return PyUnicode_DecodeUTF8(ret.ptr, ret.length, null /*errors*/);
     }
 
     extern(C) static PyObject* reprInner(PyObject* self_) {
@@ -195,7 +195,7 @@ package PyObject* struct_getset(PyObject* self, PyObject *args) nothrow @nogc {
         auto self = cast(StructGetSet.Inner*) self_;
         auto ret = text(*self);
 
-        return pyUnicodeDecodeUTF8(ret.ptr, ret.length, null /*errors*/);
+        return PyUnicode_DecodeUTF8(ret.ptr, ret.length, null /*errors*/);
     }
 
     static PyTypeObject outerType;
@@ -204,7 +204,7 @@ package PyObject* struct_getset(PyObject* self, PyObject *args) nothrow @nogc {
     static extern(C) PyObject* getInner(PyObject* self_, void*) {
         auto self = cast(StructGetSet*) self_;
         auto innerObj = cast(PyObject*) &self.inner;
-        pyIncRef(innerObj);
+        Py_IncRef(innerObj);
         return innerObj;
     }
 

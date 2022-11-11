@@ -17,4 +17,4 @@ contract/libcontract.so: source/python/raw.d
 
 
 source/python/raw.d: source/python/raw.dpp $(dpp) Makefile
-	dub run dpp@$(dpp_version) --build=release --compiler=${DC} -- --ignore-cursor=PyType_HasFeature --ignore-cursor=stat64 --preprocess-only --include-path $(PYTHON_INCLUDE_DIR) $<
+	dub run dpp@$(dpp_version) --build=release --compiler=${DC} -- --ignore-cursor=PyType_HasFeature --ignore-cursor=stat64 --function-macros --preprocess-only --include-path $(PYTHON_INCLUDE_DIR) $<

@@ -13,8 +13,8 @@ extern(C):
 
 
 package PyObject* always_none(PyObject* self, PyObject *args) nothrow @nogc {
-    pyIncRef(pyNone);
-    return pyNone;
+    Py_IncRef(Py_None);
+    return Py_None;
 }
 
 
@@ -36,7 +36,7 @@ package PyObject* one_bool_param_to_not(PyObject* self, PyObject *args) nothrow 
     auto arg = PyTuple_GetItem(args, 0);
     if(arg is null) return null;
 
-    if(!pyBoolCheck(arg)) return null;
+    if(!PyBool_Check(arg)) return null;
     const dArg = arg == pyTrue;
 
     return PyBool_FromLong(!dArg);
@@ -96,24 +96,24 @@ package PyObject* one_string_param_to_string(PyObject* self, PyObject *args) not
         return null;
     }
 
-    if(!pyUnicodeCheck(arg)) arg = pyObjectUnicode(arg);
+    assert(PyUnicode_Check(arg));
 
-    if(!pyUnicodeCheck(arg)) {
+    if(!PyUnicode_Check(arg)) {
         PyErr_SetString(PyExc_TypeError, &"Argument not a unicode string"[0]);
         return null;
     }
 
-    auto unicodeArg = pyUnicodeAsUtf8String(arg);
+    auto unicodeArg = PyUnicode_AsUTF8String(arg);
     if(!unicodeArg) {
         PyErr_SetString(PyExc_TypeError, &"Could not decode UTF8"[0]);
         return null;
     }
 
-    const ptr = pyBytesAsString(unicodeArg);
+    const ptr = PyBytes_AsString(unicodeArg);
 
     const ret = ptr.fromStringz ~ "_suffix";
 
-    return pyUnicodeDecodeUTF8(&ret[0], ret.length, null /*errors*/);
+    return PyUnicode_DecodeUTF8(&ret[0], ret.length, null /*errors*/);
 }
 
 
@@ -134,20 +134,20 @@ package PyObject* one_string_param_to_string_manual_mem(PyObject* self, PyObject
         return null;
     }
 
-    if(!pyUnicodeCheck(arg)) arg = pyObjectUnicode(arg);
+    assert(PyUnicode_Check(arg));
 
-    if(!pyUnicodeCheck(arg)) {
+    if(!PyUnicode_Check(arg)) {
         PyErr_SetString(PyExc_TypeError, &"Argument not a unicode string"[0]);
         return null;
     }
 
-    auto unicodeArg = pyUnicodeAsUtf8String(arg);
+    auto unicodeArg = PyUnicode_AsUTF8String(arg);
     if(!unicodeArg) {
         PyErr_SetString(PyExc_TypeError, &"Could not decode UTF8"[0]);
         return null;
     }
 
-    const ptr = pyBytesAsString(unicodeArg);
+    const ptr = PyBytes_AsString(unicodeArg);
 
     enum suffix = "_suffix";
     const ptrLen = strlen(ptr);
@@ -158,7 +158,7 @@ package PyObject* one_string_param_to_string_manual_mem(PyObject* self, PyObject
     ret[0 .. ptrLen] = ptr[0 .. ptrLen];
     ret[ptrLen .. retLength] = suffix[];
 
-    return pyUnicodeDecodeUTF8(&ret[0], retLength, null /*errors*/);
+    return PyUnicode_DecodeUTF8(&ret[0], retLength, null /*errors*/);
 }
 
 
@@ -169,7 +169,7 @@ package PyObject* one_list_param(PyObject* self, PyObject *args) nothrow {
     auto arg = PyTuple_GetItem(args, 0);
     if(arg is null) return null;
 
-    if(!pyListCheck(arg)) return null;
+    if(!PyList_Check(arg)) return null;
     // lists have iterators
     if(PyObject_GetIter(arg) is null) return null;
 
@@ -184,7 +184,7 @@ package PyObject* one_list_param_to_list(PyObject* self, PyObject *args) nothrow
     auto arg = PyTuple_GetItem(args, 0);
     if(arg is null) return null;
 
-    if(!pyListCheck(arg)) return null;
+    if(!PyList_Check(arg)) return null;
 
     auto ret = PyList_New(PyList_Size(arg));
 
@@ -205,7 +205,7 @@ package PyObject* one_tuple_param(PyObject* self, PyObject *args) nothrow {
     auto arg = PyTuple_GetItem(args, 0);
     if(arg is null) return null;
 
-    if(!pyTupleCheck(arg)) return null;
+    if(!PyTuple_Check(arg)) return null;
     // tuples have iterators
     if(PyObject_GetIter(arg) is null) return null;
 
@@ -236,7 +236,7 @@ package PyObject* one_dict_param(PyObject* self, PyObject *args) nothrow {
     auto arg = PyTuple_GetItem(args, 0);
     if(arg is null) return null;
 
-    if(!pyDictCheck(arg)) return null;
+    if(!PyDict_Check(arg)) return null;
 
     return PyLong_FromLong(PyDict_Size(arg));
 }
@@ -249,7 +249,7 @@ package PyObject* one_dict_param_to_dict(PyObject* self, PyObject *args) nothrow
     auto arg = PyTuple_GetItem(args, 0);
     if(arg is null) return null;
 
-    if(!pyDictCheck(arg)) return null;
+    if(!PyDict_Check(arg)) return null;
 
     auto ret = PyDict_New;
 
@@ -264,8 +264,8 @@ package PyObject* one_dict_param_to_dict(PyObject* self, PyObject *args) nothrow
     const oops = "oops";
     const no = "noooo";
 
-    auto pyOops = pyUnicodeDecodeUTF8(&oops[0], oops.length, null /*errors*/);
-    auto pyNo = pyUnicodeDecodeUTF8(&no[0], no.length, null /*errors*/);
+    auto pyOops = PyUnicode_DecodeUTF8(&oops[0], oops.length, null /*errors*/);
+    auto pyNo = PyUnicode_DecodeUTF8(&no[0], no.length, null /*errors*/);
 
     PyDict_SetItem(ret, pyOops, pyNo);
 
@@ -285,14 +285,14 @@ package PyObject* add_days_to_date(PyObject* self, PyObject *args) {
     auto deltaArg = PyTuple_GetItem(args, 1);
     if(deltaArg is null) return null;
 
-    const year = pyDateTimeYear(dateArg);
-    const month = pyDateTimeMonth(dateArg);
-    const day = pyDateTimeDay(dateArg);
+    const year = PyDateTime_GET_YEAR(dateArg);
+    const month = PyDateTime_GET_MONTH(dateArg);
+    const day = PyDateTime_GET_DAY(dateArg);
 
     auto date = Date(year, month, day);
     date += PyLong_AsLong(deltaArg).days;
 
-    return pyDateFromDate(date.year, date.month, date.day);
+    return PyDate_FromDate(date.year, date.month, date.day);
 }
 
 
@@ -308,18 +308,18 @@ package PyObject* add_days_to_datetime(PyObject* self, PyObject *args) {
     auto deltaArg = PyTuple_GetItem(args, 1);
     if(deltaArg is null) return null;
 
-    const year = pyDateTimeYear(dateArg);
-    const month = pyDateTimeMonth(dateArg);
-    const day = pyDateTimeDay(dateArg);
-    const hour = pyDateTimeHour(dateArg);
-    const minute = pyDateTimeMinute(dateArg);
-    const second = pyDateTimeSecond(dateArg);
+    const year = PyDateTime_GET_YEAR(dateArg);
+    const month = PyDateTime_GET_MONTH(dateArg);
+    const day = PyDateTime_GET_DAY(dateArg);
+    const hour = PyDateTime_DATE_GET_HOUR(dateArg);
+    const minute = PyDateTime_DATE_GET_MINUTE(dateArg);
+    const second = PyDateTime_DATE_GET_SECOND(dateArg);
 
     auto date = DateTime(year, month, day, hour, minute, second);
     date += PyLong_AsLong(deltaArg).days;
 
-    return pyDateTimeFromDateAndTime(date.year, date.month, date.day,
-                                     date.hour, date.minute, date.second);
+    return PyDateTime_FromDateAndTime(date.year, date.month, date.day,
+                                      date.hour, date.minute, date.second, 0 /*usec*/);
 }
 
 

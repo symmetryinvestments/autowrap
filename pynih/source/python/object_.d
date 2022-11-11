@@ -126,7 +126,7 @@ struct PythonObject {
     }
 
     bool callable() const {
-        return retDirect!"pyCallableCheck";
+        return cast(bool) retDirect!"PyCallable_Check";
     }
 
     void del() {
@@ -172,8 +172,8 @@ struct PythonObject {
     }
 
     PythonObject keys() const {
-        import python.raw: pyDictCheck, PyMapping_Keys;
-        if(pyDictCheck(cast(PyObject*) _obj))
+        import python.raw: PyDict_Check, PyMapping_Keys;
+        if(PyDict_Check(cast(PyObject*) _obj))
             return retPyObject!"PyDict_Keys"();
         else if(auto keys = PyMapping_Keys(cast(PyObject*) _obj))
             return PythonObject(keys);
@@ -182,8 +182,8 @@ struct PythonObject {
     }
 
     PythonObject values() const {
-        import python.raw: pyDictCheck, PyMapping_Values;
-        if(pyDictCheck(cast(PyObject*) _obj))
+        import python.raw: PyDict_Check, PyMapping_Values;
+        if(PyDict_Check(cast(PyObject*) _obj))
             return retPyObject!"PyDict_Values"();
         else if(auto keys = PyMapping_Values(cast(PyObject*) _obj))
             return PythonObject(keys);
@@ -192,8 +192,8 @@ struct PythonObject {
     }
 
     PythonObject items() const {
-        import python.raw: pyDictCheck, PyMapping_Items;
-        if(pyDictCheck(cast(PyObject*) _obj))
+        import python.raw: PyDict_Check, PyMapping_Items;
+        if(PyDict_Check(cast(PyObject*) _obj))
             return retPyObject!"PyDict_Items"();
         else if(auto keys = PyMapping_Items(cast(PyObject*) _obj))
             return PythonObject(keys);
@@ -202,18 +202,18 @@ struct PythonObject {
     }
 
     PythonObject copy() const {
-        import python.raw: pyDictCheck;
-        if(pyDictCheck(cast(PyObject*) _obj))
+        import python.raw: PyDict_Check;
+        if(PyDict_Check(cast(PyObject*) _obj))
             return retPyObject!"PyDict_Copy"();
         else
             return getattr("copy");
     }
 
     bool merge(in PythonObject other, bool override_ = true) {
-        import python.raw: pyDictCheck;
+        import python.raw: PyDict_Check;
         import python.exception: PythonException;
 
-        if(pyDictCheck(_obj))
+        if(PyDict_Check(_obj))
             return cast(bool) retDirect!"PyDict_Merge"(cast(PyObject*) other._obj, cast(int) override_);
         else
             throw new PythonException("Cannot merge a non-dict");
@@ -262,12 +262,12 @@ struct PythonObject {
     private enum isPythonObject(T) = is(Unqual!T == PythonObject);
 
     PythonObject opCall(A...)(auto ref A args) if(!anySatisfy!(isPythonObject, A)) {
-        import python.raw: PyTuple_New, PyTuple_SetItem, PyObject_CallObject, pyDecRef;
+        import python.raw: PyTuple_New, PyTuple_SetItem, PyObject_CallObject, Py_DecRef;
         import python.conv.d_to_python: toPython;
         import python.exception: PythonException;
 
         auto pyArgs = PyTuple_New(args.length);
-        scope(exit) pyDecRef(pyArgs);
+        scope(exit) Py_DecRef(pyArgs);
 
         static foreach(i; 0 .. args.length) {
             PyTuple_SetItem(pyArgs, i, args[i].toPython);
@@ -304,12 +304,12 @@ struct PythonObject {
     }
 
     PythonObject opIndex(in string key) const {
-        import python.raw: pyDictCheck;
+        import python.raw: PyDict_Check;
         import std.string: toStringz;
 
         const keyz = key.toStringz;
 
-        if(pyDictCheck(cast(PyObject*) _obj))
+        if(PyDict_Check(cast(PyObject*) _obj))
             return retPyObject!"PyDict_GetItemString"(keyz);
         else
             return retPyObject!"PyMapping_GetItemString"(keyz);
@@ -389,9 +389,9 @@ struct PythonObject {
     }
 
     PythonObject opBinary(string op)(PythonObject other) if(op == "^^") {
-        import python.raw: pyIncRef, pyNone;
-        pyIncRef(pyNone);
-        return retPyObject!"PyNumber_Power"(other._obj, pyNone);
+        import python.raw: Py_IncRef, Py_None;
+        Py_IncRef(Py_None);
+        return retPyObject!"PyNumber_Power"(other._obj, Py_None);
     }
 
     PythonObject opBinary(string op)(PythonObject other) if(op == "<<") {
@@ -501,8 +501,8 @@ struct InputRange {
 
     // FIXME
     // ~this() {
-    //     import python.raw: pyDecRef;
-    //     pyDecRef(_iter);
+    //     import python.raw: Py_DecRef;
+    //     Py_DecRef(_iter);
     // }
 
     void popFront() {

@@ -33,7 +33,6 @@ string createModuleRecipe(Module module_, alias cfunctions, alias aggregates = A
 
 
 void commonInit() nothrow {
-    import python.raw: pyDateTimeImport;
     import core.runtime: rt_init;
 
     try

@@ -1,7 +1,7 @@
 module python.conv.python_to_d;
 
 
-import python.raw: PyObject, pyListCheck, pyTupleCheck, PyTuple_Size, pyCallableCheck, pyTimeCheck;
+import python.raw: PyObject, PyList_Check, PyTuple_Check, PyTuple_Size, PyCallable_Check, PyTime_Check;
 import python.type: isUserAggregate, isTuple;
 import std.traits: Unqual, isIntegral, isFloatingPoint, isAggregateType, isArray,
     isStaticArray, isAssociativeArray, isPointer, PointerTarget, isSomeChar, isSomeString,
@@ -119,13 +119,13 @@ T to(T)(PyObject* value)
        !isFunctionPointer!T && !isDelegate!T &&
        !is(Unqual!(PointerTarget!T) == void))
 {
-    import python.raw: pyUnicodeCheck;
+    import python.raw: PyUnicode_Check;
     import std.traits: Unqual, PointerTarget;
     import std.string: toStringz;
 
     enum isStringz = is(PointerTarget!T == const(char)) || is(PointerTarget!T == immutable(char));
 
-    if(isStringz && pyUnicodeCheck(value))
+    if(isStringz && PyUnicode_Check(value))
         return value.to!string.toStringz.maybeCast!T;
     else {
         auto ret = new Unqual!(PointerTarget!T);
@@ -137,10 +137,10 @@ T to(T)(PyObject* value)
 
 T to(T)(PyObject* value) if(isPointer!T && is(Unqual!(PointerTarget!T) == void))
 {
-    import python.raw: pyBytesCheck, PyBytes_AsString;
+    import python.raw: PyBytes_Check, PyBytes_AsString;
     import std.exception: enforce;
 
-    enforce(pyBytesCheck(value), "Can only convert Python bytes object to void*");
+    enforce(PyBytes_Check(value), "Can only convert Python bytes object to void*");
     return cast(void*) PyBytes_AsString(value);
 }
 
@@ -148,37 +148,37 @@ T to(T)(PyObject* value) if(isPointer!T && is(Unqual!(PointerTarget!T) == void))
 T to(T)(PyObject* value) if(is(Unqual!T == DateTime)) {
     import python.raw;
 
-    return DateTime(pyDateTimeYear(value),
-                    pyDateTimeMonth(value),
-                    pyDateTimeDay(value),
-                    pyDateTimeHour(value),
-                    pyDateTimeMinute(value),
-                    pyDateTimeSecond(value));
+    return DateTime(PyDateTime_GET_YEAR(value),
+                    PyDateTime_GET_MONTH(value),
+                    PyDateTime_GET_DAY(value),
+                    PyDateTime_DATE_GET_HOUR(value),
+                    PyDateTime_DATE_GET_MINUTE(value),
+                    PyDateTime_DATE_GET_SECOND(value));
 }
 
 
 T to(T)(PyObject* value) if(is(Unqual!T == Date)) {
     import python.raw;
 
-    return Date(pyDateTimeYear(value),
-                pyDateTimeMonth(value),
-                pyDateTimeDay(value));
+    return Date(PyDateTime_GET_YEAR(value),
+                PyDateTime_GET_MONTH(value),
+                PyDateTime_GET_DAY(value));
 }
 
 T to(T)(PyObject* value) if(is(Unqual!T == TimeOfDay)) {
     import python.raw;
 
-    if(!pyTimeCheck(value))
+    if(!PyTime_Check(value))
         throw new Exception("Can only convert time objects to TimeOfDay");
 
-    return TimeOfDay(pyTimeHour(value),
-                     pyTimeMinute(value),
-                     pyTimeSecond(value));
+    return TimeOfDay(PyDateTime_TIME_GET_HOUR(value),
+                     PyDateTime_TIME_GET_MINUTE(value),
+                     PyDateTime_TIME_GET_SECOND(value));
 }
 
 
 T to(T)(PyObject* value) if(isArray!T && !isSomeString!T)
-    in(pyListCheck(value) || pyTupleCheck(value))
+    in(PyList_Check(value) || PyTuple_Check(value))
 {
     import python.raw: PyList_Size, PyList_GetItem, PyTuple_Size, PyTuple_GetItem;
     import std.range: ElementEncodingType;
@@ -204,9 +204,9 @@ T to(T)(PyObject* value) if(isArray!T && !isSomeString!T)
 
     static if(__traits(compiles, ret.length = 1)) {
         const valueLength = {
-            if(pyListCheck(value))
+            if(PyList_Check(value))
                 return PyList_Size(value);
-            else if(pyTupleCheck(value))
+            else if(PyTuple_Check(value))
                 return PyTuple_Size(value);
             else
                 assert(0);
@@ -217,9 +217,9 @@ T to(T)(PyObject* value) if(isArray!T && !isSomeString!T)
 
     foreach(i, ref elt; ret) {
         auto pythonItem = {
-            if(pyListCheck(value))
+            if(PyList_Check(value))
                 return PyList_GetItem(value, i);
-            else if(pyTupleCheck(value))
+            else if(PyTuple_Check(value))
                 return PyTuple_GetItem(value, i);
             else
                 assert(0);
@@ -233,19 +233,17 @@ T to(T)(PyObject* value) if(isArray!T && !isSomeString!T)
 
 T to(T)(PyObject* value) if(isSomeString!T) {
 
-    import python.raw: pyUnicodeGetSize, pyUnicodeCheck,
-        pyBytesAsString, pyObjectUnicode, pyUnicodeAsUtf8String, Py_ssize_t;
+    import python.raw: PyUnicode_GetSize, PyUnicode_Check,
+        PyBytes_AsString, PyUnicode_AsUTF8String, Py_ssize_t;
     import std.conv: to;
 
-    value = pyObjectUnicode(value);
-
-    const length = pyUnicodeGetSize(value);
+    const length = PyUnicode_GetSize(value);
     if(length == 0) return T.init;
 
-    auto str = pyUnicodeAsUtf8String(value);
+    auto str = PyUnicode_AsUTF8String(value);
     if(str is null) throw new Exception("Tried to convert a non-string Python value to D string");
 
-    auto ptr = pyBytesAsString(str);
+    auto ptr = PyBytes_AsString(str);
     assert(length == 0 || ptr !is null);
 
     auto slice = ptr[0 .. length];
@@ -262,9 +260,9 @@ T to(T)(PyObject* value) if(is(Unqual!T == bool)) {
 
 T to(T)(PyObject* value) if(isAssociativeArray!T)
 {
-    import python.raw: pyDictCheck, PyDict_Keys, PyList_Size, PyList_GetItem, PyDict_GetItem;
+    import python.raw: PyDict_Check, PyDict_Keys, PyList_Size, PyList_GetItem, PyDict_GetItem;
 
-    assert(pyDictCheck(value));
+    assert(PyDict_Check(value));
 
     // this enum is to get K and V whilst avoiding auto-decoding, which is why we're not using
     // std.traits
@@ -290,11 +288,11 @@ T to(T)(PyObject* value) if(isAssociativeArray!T)
 
 
 T to(T)(PyObject* value) if(isTuple!T)
-    in(pyTupleCheck(value))
+    in(PyTuple_Check(value))
     in(PyTuple_Size(value) == T.length)
     do
 {
-    import python.raw: pyTupleCheck, PyTuple_Size, PyTuple_GetItem;
+    import python.raw: PyTuple_Check, PyTuple_Size, PyTuple_GetItem;
 
     T ret;
 
@@ -322,7 +320,7 @@ T to(T)(PyObject* value) if(isFunctionPointer!T) {
 
 
 private T toDlangFunction(T)(PyObject* value)
-    in(pyCallableCheck(value))
+    in(PyCallable_Check(value))
     do
 {
     import python.raw: PyObject_CallObject;

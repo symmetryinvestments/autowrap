@@ -59,7 +59,7 @@ string createPythonModuleMixin(LibraryName libraryName, Modules modules)
     assert(__ctfe);
 
     return q{
-        extern(C) export auto PyInit_%s() { // -> ModuleInitRet
+        extern(C) export auto PyInit_%s() { // -> PyObject*
             import autowrap.pynih.wrap: createPythonModule, LibraryName;
             import autowrap.types: Module;
             return createPythonModule!(
