@@ -13,8 +13,8 @@ extern(C):
 
 
 package PyObject* always_none(PyObject* self, PyObject *args) nothrow @nogc {
-    Py_IncRef(pyNone);
-    return pyNone;
+    Py_IncRef(Py_None);
+    return Py_None;
 }
 
 

@@ -833,15 +833,15 @@ class ArgumentConversionException: Exception {
 
 
 private PyObject* callDlangFunction(alias F, A)(auto ref A argTuple) {
-    import python.raw: Py_IncRef, pyNone;
+    import python.raw: Py_IncRef, Py_None;
     import python.conv: toPython;
     import std.traits: ReturnType;
 
     // TODO - side-effects on parameters?
     static if(is(ReturnType!F == void)) {
         F(argTuple.expand);
-        Py_IncRef(pyNone);
-        return pyNone;
+        Py_IncRef(Py_None);
+        return Py_None;
     } else {
         auto dret = F(argTuple.expand);
         return dret.toPython;

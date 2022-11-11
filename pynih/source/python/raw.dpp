@@ -76,11 +76,6 @@ auto pyFalse() {
     return Py_False;
 }
 
-// Demacroify
-auto pyNone() @nogc nothrow {
-    return Py_None;
-}
-
 auto pyUnicodeDecodeUTF8(const(char)* str, c_long length, const(char)* errors = null) @nogc nothrow {
     return PyUnicode_DecodeUTF8(str, length, errors);
 }

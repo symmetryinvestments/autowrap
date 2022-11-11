@@ -389,9 +389,9 @@ struct PythonObject {
     }
 
     PythonObject opBinary(string op)(PythonObject other) if(op == "^^") {
-        import python.raw: Py_IncRef, pyNone;
-        Py_IncRef(pyNone);
-        return retPyObject!"PyNumber_Power"(other._obj, pyNone);
+        import python.raw: Py_IncRef, Py_None;
+        Py_IncRef(Py_None);
+        return retPyObject!"PyNumber_Power"(other._obj, Py_None);
     }
 
     PythonObject opBinary(string op)(PythonObject other) if(op == "<<") {
