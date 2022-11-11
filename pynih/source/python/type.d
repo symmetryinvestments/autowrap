@@ -644,11 +644,11 @@ struct PythonMethod(T, alias F) {
 private void mutateSelf(T)(PyObject* self, auto ref T dAggregate) {
 
     import python.conv.d_to_python: toPython;
-    import python.raw: pyDecRef;
+    import python.raw: Py_DecRef;
 
     auto newSelf = self is null ? self : toPython(dAggregate);
     scope(exit) {
-        if(self !is null) pyDecRef(newSelf);
+        if(self !is null) Py_DecRef(newSelf);
     }
     auto pyClassSelf = cast(PythonClass!T*) self;
     auto pyClassNewSelf = cast(PythonClass!T*) newSelf;
@@ -833,14 +833,14 @@ class ArgumentConversionException: Exception {
 
 
 private PyObject* callDlangFunction(alias F, A)(auto ref A argTuple) {
-    import python.raw: pyIncRef, pyNone;
+    import python.raw: Py_IncRef, pyNone;
     import python.conv: toPython;
     import std.traits: ReturnType;
 
     // TODO - side-effects on parameters?
     static if(is(ReturnType!F == void)) {
         F(argTuple.expand);
-        pyIncRef(pyNone);
+        Py_IncRef(pyNone);
         return pyNone;
     } else {
         auto dret = F(argTuple.expand);
@@ -957,14 +957,14 @@ struct PythonClass(T) {//}if(isUserAggregate!T) {
         nothrow
         in(self_ !is null)
     {
-        import python.raw: pyIncRef;
+        import python.raw: Py_IncRef;
 
         auto self = cast(PythonClass*) self_;
 
         auto impl() {
             auto field = self.getField!FieldIndex;
             assert(field !is null, "Cannot increase reference count on null field");
-            pyIncRef(field);
+            Py_IncRef(field);
 
             return field;
         }
@@ -978,7 +978,7 @@ struct PythonClass(T) {//}if(isUserAggregate!T) {
         nothrow
         in(self_ !is null)
     {
-        import python.raw: pyIncRef, pyDecRef, PyErr_SetString, PyExc_TypeError;
+        import python.raw: Py_IncRef, Py_DecRef, PyErr_SetString, PyExc_TypeError;
 
         if(value is null) {
             enum deleteErrStr = "Cannot delete " ~ fieldNames[FieldIndex];
@@ -1002,9 +1002,9 @@ struct PythonClass(T) {//}if(isUserAggregate!T) {
             auto self = cast(PythonClass!T*) self_;
             auto tmp = self.getField!FieldIndex;
 
-            pyIncRef(value);
+            Py_IncRef(value);
             mixin(`self.`, fieldNames[FieldIndex], ` = value;`);
-            pyDecRef(tmp);
+            Py_DecRef(tmp);
 
             return 0;
         }
@@ -1045,11 +1045,11 @@ struct PythonClass(T) {//}if(isUserAggregate!T) {
         nothrow
         in(self_ !is null)
     {
-        import python.raw: PyTuple_New, PyTuple_SetItem, pyDecRef;
+        import python.raw: PyTuple_New, PyTuple_SetItem, Py_DecRef;
 
         auto args = PyTuple_New(1);
         PyTuple_SetItem(args, 0, value);
-        scope(exit) pyDecRef(args);
+        scope(exit) Py_DecRef(args);
 
         PythonMethod!(T, F)._py_method_impl(self_, args, null /*kwargs*/);
 
@@ -1475,11 +1475,11 @@ private template PythonCompare(T) {
         PyObject* impl() {
             import python.conv.python_to_d: to;
             import python.conv.d_to_python: toPython;
-            import python.raw: pyIncRef, _Py_NotImplementedStruct, Py_EQ, Py_LT, Py_LE, Py_NE, Py_GT, Py_GE;
+            import python.raw: Py_IncRef, _Py_NotImplementedStruct, Py_EQ, Py_LT, Py_LE, Py_NE, Py_GT, Py_GE;
 
             static notImplemented() {
                 auto pyNotImplemented = cast(PyObject*) &_Py_NotImplementedStruct;
-                pyIncRef(pyNotImplemented);
+                Py_IncRef(pyNotImplemented);
                 return pyNotImplemented;
             }
 

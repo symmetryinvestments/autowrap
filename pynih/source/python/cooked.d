@@ -47,7 +47,7 @@ void addModuleTypes(aggregates...)(PyObject* module_)
             if(PyType_Ready(PythonType!T.pyType) < 0)
                 throw new Exception("Could not get type ready for `" ~ __traits(identifier, T) ~ "`");
 
-            pyIncRef(PythonType!T.pyObject);
+            Py_IncRef(PythonType!T.pyObject);
             PyModule_AddObject(module_, __traits(identifier, T), PythonType!T.pyObject);
         } else
             pragma(msg, "WARNING: could not wrap aggregate ", fullyQualifiedName!T);

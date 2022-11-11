@@ -262,12 +262,12 @@ struct PythonObject {
     private enum isPythonObject(T) = is(Unqual!T == PythonObject);
 
     PythonObject opCall(A...)(auto ref A args) if(!anySatisfy!(isPythonObject, A)) {
-        import python.raw: PyTuple_New, PyTuple_SetItem, PyObject_CallObject, pyDecRef;
+        import python.raw: PyTuple_New, PyTuple_SetItem, PyObject_CallObject, Py_DecRef;
         import python.conv.d_to_python: toPython;
         import python.exception: PythonException;
 
         auto pyArgs = PyTuple_New(args.length);
-        scope(exit) pyDecRef(pyArgs);
+        scope(exit) Py_DecRef(pyArgs);
 
         static foreach(i; 0 .. args.length) {
             PyTuple_SetItem(pyArgs, i, args[i].toPython);
@@ -389,8 +389,8 @@ struct PythonObject {
     }
 
     PythonObject opBinary(string op)(PythonObject other) if(op == "^^") {
-        import python.raw: pyIncRef, pyNone;
-        pyIncRef(pyNone);
+        import python.raw: Py_IncRef, pyNone;
+        Py_IncRef(pyNone);
         return retPyObject!"PyNumber_Power"(other._obj, pyNone);
     }
 
@@ -501,8 +501,8 @@ struct InputRange {
 
     // FIXME
     // ~this() {
-    //     import python.raw: pyDecRef;
-    //     pyDecRef(_iter);
+    //     import python.raw: Py_DecRef;
+    //     Py_DecRef(_iter);
     // }
 
     void popFront() {

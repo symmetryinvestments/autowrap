@@ -13,13 +13,13 @@ import core.time: Duration;
 
 
 PyObject* toPython(in bool val) @trusted @nogc {
-    import python.raw: pyIncRef, _Py_TrueStruct, _Py_FalseStruct;
+    import python.raw: Py_IncRef, _Py_TrueStruct, _Py_FalseStruct;
 
     auto pyTrue = cast(PyObject*) &_Py_TrueStruct;
     auto pyFalse = cast(PyObject*) &_Py_FalseStruct;
 
     static PyObject* incAndRet(PyObject* obj) {
-        pyIncRef(obj);
+        Py_IncRef(obj);
         return obj;
     }
 

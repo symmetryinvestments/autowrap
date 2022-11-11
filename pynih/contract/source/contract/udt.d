@@ -204,7 +204,7 @@ package PyObject* struct_getset(PyObject* self, PyObject *args) nothrow @nogc {
     static extern(C) PyObject* getInner(PyObject* self_, void*) {
         auto self = cast(StructGetSet*) self_;
         auto innerObj = cast(PyObject*) &self.inner;
-        pyIncRef(innerObj);
+        Py_IncRef(innerObj);
         return innerObj;
     }
 
