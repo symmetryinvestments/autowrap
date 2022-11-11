@@ -148,21 +148,21 @@ T to(T)(PyObject* value) if(isPointer!T && is(Unqual!(PointerTarget!T) == void))
 T to(T)(PyObject* value) if(is(Unqual!T == DateTime)) {
     import python.raw;
 
-    return DateTime(pyDateTimeYear(value),
-                    pyDateTimeMonth(value),
-                    pyDateTimeDay(value),
-                    pyDateTimeHour(value),
-                    pyDateTimeMinute(value),
-                    pyDateTimeSecond(value));
+    return DateTime(PyDateTime_GET_YEAR(value),
+                    PyDateTime_GET_MONTH(value),
+                    PyDateTime_GET_DAY(value),
+                    PyDateTime_DATE_GET_HOUR(value),
+                    PyDateTime_DATE_GET_MINUTE(value),
+                    PyDateTime_DATE_GET_SECOND(value));
 }
 
 
 T to(T)(PyObject* value) if(is(Unqual!T == Date)) {
     import python.raw;
 
-    return Date(pyDateTimeYear(value),
-                pyDateTimeMonth(value),
-                pyDateTimeDay(value));
+    return Date(PyDateTime_GET_YEAR(value),
+                PyDateTime_GET_MONTH(value),
+                PyDateTime_GET_DAY(value));
 }
 
 T to(T)(PyObject* value) if(is(Unqual!T == TimeOfDay)) {
@@ -171,9 +171,9 @@ T to(T)(PyObject* value) if(is(Unqual!T == TimeOfDay)) {
     if(!PyTime_Check(value))
         throw new Exception("Can only convert time objects to TimeOfDay");
 
-    return TimeOfDay(pyTimeHour(value),
-                     pyTimeMinute(value),
-                     pyTimeSecond(value));
+    return TimeOfDay(PyDateTime_TIME_GET_HOUR(value),
+                     PyDateTime_TIME_GET_MINUTE(value),
+                     PyDateTime_TIME_GET_SECOND(value));
 }
 
 

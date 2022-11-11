@@ -12,7 +12,6 @@ module python.raw;
 #include "enumobject.h"
 #include "abstract.h"
 
-
 enum isPython3 = is(PyModuleDef);
 enum isPython2 = !isPython3;
 
@@ -64,8 +63,6 @@ mixin template PyObjectHead() {
     PyObject_HEAD;
 }
 
-alias ModuleInitRet = PyObject*;  // PyMODINIT_FUNC can't be translated
-
 
 auto pyTrue() {
     // This doesn't work as a manifest constant because there's a cast that the CTFE
@@ -84,79 +81,21 @@ auto pyObjectNew(T)(PyTypeObject* typeobj) {
     return cast(T*) _PyObject_New(typeobj);
 }
 
-
 // Demacroify
+// This fails due to some weird is(typeof) check for the date time capsule
 void pyDateTimeImport() @nogc nothrow {
     PyDateTime_IMPORT;
 }
 
-auto pyDateTimeYear(PyObject* obj) @nogc nothrow {
-    return PyDateTime_GET_YEAR(obj);
-}
 
-auto pyDateTimeMonth(PyObject* obj) @nogc nothrow {
-    return PyDateTime_GET_MONTH(obj);
-}
-
-auto pyDateTimeDay(PyObject* obj) @nogc nothrow {
-    return PyDateTime_GET_DAY(obj);
-}
-
-auto pyDateTimeHour(PyObject* obj) @nogc nothrow {
-    return PyDateTime_DATE_GET_HOUR(obj);
-}
-
-auto pyDateTimeMinute(PyObject* obj) @nogc nothrow {
-    return PyDateTime_DATE_GET_MINUTE(obj);
-}
-
-auto pyDateTimeSecond(PyObject* obj) @nogc nothrow {
-    return PyDateTime_DATE_GET_SECOND(obj);
-}
-
-auto pyDateTimeUsec(PyObject* obj) @nogc nothrow {
-    return PyDateTime_DATE_GET_MICROSECOND(obj);
-}
-
-auto pyDateFromDate(int year, int month, int day) {
-    return PyDate_FromDate(year, month, day);
-}
-
-auto pyDateTimeFromDateAndTime(int year, int month, int day, int hour = 0, int minute = 0, int second = 0, int usec = 0) {
-    return PyDateTime_FromDateAndTime(year, month, day, hour, minute, second, usec);
-}
-
-auto pyDeltaFromDSU(int days, int seconds, int useconds) {
-    return PyDelta_FromDSU(days, seconds, useconds);
-}
-
-auto pyTimeHour(PyObject* obj) @nogc nothrow {
-    return PyDateTime_TIME_GET_HOUR(obj);
-}
-
-auto pyTimeMinute(PyObject* obj) @nogc nothrow {
-    return PyDateTime_TIME_GET_MINUTE(obj);
-}
-
-auto pyTimeSecond(PyObject* obj) @nogc nothrow {
-    return PyDateTime_TIME_GET_SECOND(obj);
-}
-
-auto pyTimeFromTime(int hour, int minute, int second, int usecond) @trusted nothrow {
-    try
-        return PyTime_FromTime(hour, minute, second, usecond);
-    catch(Exception _)
-        assert(0);
-}
-
-
+// static inline function in the header
 static int PyType_HasFeature(PyTypeObject *type, ulong feature) @safe @nogc pure nothrow {
     ulong flags;
     flags = type.tp_flags;
     return (flags & feature) != 0;
 }
 
-
+// static inline function in the header
 static int _Py_IS_TYPE(const PyObject *ob, const PyTypeObject *type) @safe @nogc pure nothrow {
     return ob.ob_type == type;
 }

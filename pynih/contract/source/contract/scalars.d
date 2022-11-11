@@ -285,14 +285,14 @@ package PyObject* add_days_to_date(PyObject* self, PyObject *args) {
     auto deltaArg = PyTuple_GetItem(args, 1);
     if(deltaArg is null) return null;
 
-    const year = pyDateTimeYear(dateArg);
-    const month = pyDateTimeMonth(dateArg);
-    const day = pyDateTimeDay(dateArg);
+    const year = PyDateTime_GET_YEAR(dateArg);
+    const month = PyDateTime_GET_MONTH(dateArg);
+    const day = PyDateTime_GET_DAY(dateArg);
 
     auto date = Date(year, month, day);
     date += PyLong_AsLong(deltaArg).days;
 
-    return pyDateFromDate(date.year, date.month, date.day);
+    return PyDate_FromDate(date.year, date.month, date.day);
 }
 
 
@@ -308,18 +308,18 @@ package PyObject* add_days_to_datetime(PyObject* self, PyObject *args) {
     auto deltaArg = PyTuple_GetItem(args, 1);
     if(deltaArg is null) return null;
 
-    const year = pyDateTimeYear(dateArg);
-    const month = pyDateTimeMonth(dateArg);
-    const day = pyDateTimeDay(dateArg);
-    const hour = pyDateTimeHour(dateArg);
-    const minute = pyDateTimeMinute(dateArg);
-    const second = pyDateTimeSecond(dateArg);
+    const year = PyDateTime_GET_YEAR(dateArg);
+    const month = PyDateTime_GET_MONTH(dateArg);
+    const day = PyDateTime_GET_DAY(dateArg);
+    const hour = PyDateTime_DATE_GET_HOUR(dateArg);
+    const minute = PyDateTime_DATE_GET_MINUTE(dateArg);
+    const second = PyDateTime_DATE_GET_SECOND(dateArg);
 
     auto date = DateTime(year, month, day, hour, minute, second);
     date += PyLong_AsLong(deltaArg).days;
 
-    return pyDateTimeFromDateAndTime(date.year, date.month, date.day,
-                                     date.hour, date.minute, date.second);
+    return PyDateTime_FromDateAndTime(date.year, date.month, date.day,
+                                      date.hour, date.minute, date.second, 0 /*usec*/);
 }
 
 
