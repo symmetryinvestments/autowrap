@@ -7,7 +7,7 @@
  */
 module contract.scalars;
 
-import python;
+import autowrap.pynih.python;
 
 extern(C):
 

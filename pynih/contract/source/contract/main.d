@@ -8,9 +8,9 @@ extern(C) export auto PyInit_contract() {
     static import contract.scalars;
     static import contract.udt;
     static import contract.pyclass;
-    import python.raw: pyDateTimeImport;
-    import python.cooked: createModule;
-    import python.boilerplate: Module, CFunctions, Aggregates;
+    import autowrap.pynih.python.raw: pyDateTimeImport;
+    import autowrap.pynih.python.cooked: createModule;
+    import autowrap.pynih.python.boilerplate: Module, CFunctions, Aggregates;
     import core.runtime: rt_init;
 
     rt_init;

@@ -4,9 +4,9 @@
 module contract.pyclass;
 
 
-import python.raw;
-import python.cooked;
-import python.type;
+import autowrap.pynih.python.raw;
+import autowrap.pynih.python.cooked;
+import autowrap.pynih.python.type;
 
 
 extern(C):

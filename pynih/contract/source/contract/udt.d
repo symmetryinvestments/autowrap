@@ -5,7 +5,7 @@
 module contract.udt;
 
 
-import python;
+import autowrap.pynih.python;
 
 
 extern(C):
@@ -52,7 +52,7 @@ package PyObject* simple_struct_func(PyObject* self, PyObject *args) nothrow @no
 
 package PyObject* twice_struct_func(PyObject* self, PyObject *args) nothrow @nogc {
 
-    import python.cooked: pyMethodDef;
+    import autowrap.pynih.python.cooked: pyMethodDef;
 
     static struct Twice {
         mixin PyObjectHead;

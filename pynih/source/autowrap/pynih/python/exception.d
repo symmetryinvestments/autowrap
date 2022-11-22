@@ -1,14 +1,14 @@
-module python.exception;
+module autowrap.pynih.python.exception;
 
 
-import python.raw: PyObject;
+import autowrap.pynih.python.raw: PyObject;
 
 
 class PythonException: Exception {
 
     this(in string backupMsg, in string file = __FILE__, in size_t line = __LINE__) {
 
-        import python.raw: PyErr_Occurred;
+        import autowrap.pynih.python.raw: PyErr_Occurred;
 
         if(PyErr_Occurred is null)
             super(backupMsg, file, line);
@@ -20,9 +20,9 @@ class PythonException: Exception {
 
 
 private string pythonExceptionMsg() {
-    import python.raw: PyErr_Occurred, PyErr_Fetch, PyErr_NormalizeException,
+    import autowrap.pynih.python.raw: PyErr_Occurred, PyErr_Fetch, PyErr_NormalizeException,
         PyObject_GetAttrString, PyTuple_Check, PyTuple_GetItem;
-    import python.conv.python_to_d: to;
+    import autowrap.pynih.python.conv.python_to_d: to;
 
     assert(PyErr_Occurred);
 
@@ -40,8 +40,8 @@ private string pythonExceptionMsg() {
 
 
 private string pyExceptionTypeToString(PyObject* type) {
-    import python.raw: PyObject_Str;
-    import python.conv.python_to_d: to;
+    import autowrap.pynih.python.raw: PyObject_Str;
+    import autowrap.pynih.python.conv.python_to_d: to;
 
     enum prefix = "class <'";
     enum suffix = "'>";

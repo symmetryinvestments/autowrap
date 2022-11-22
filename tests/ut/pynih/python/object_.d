@@ -2,9 +2,9 @@ module ut.pynih.python.object_;
 
 
 import unit_threaded;
-import python.object_;
-import python.conv;
-import python.exception;
+import autowrap.pynih.python.object_;
+import autowrap.pynih.python.conv;
+import autowrap.pynih.python.exception;
 
 
 @("lt")
@@ -189,7 +189,7 @@ unittest {
 
 @("setattr")
 unittest {
-    import python.raw: PyRun_StringFlags, Py_file_input, Py_eval_input, PyCompilerFlags, PyDict_New;
+    import autowrap.pynih.python.raw: PyRun_StringFlags, Py_file_input, Py_eval_input, PyCompilerFlags, PyDict_New;
     import std.array: join;
     import std.string: toStringz;
 
@@ -252,7 +252,7 @@ unittest {
 
 @("delattr")
 unittest {
-    import python.raw: PyRun_StringFlags, Py_file_input, Py_eval_input, PyCompilerFlags, PyDict_New;
+    import autowrap.pynih.python.raw: PyRun_StringFlags, Py_file_input, Py_eval_input, PyCompilerFlags, PyDict_New;
     import std.array: join;
     import std.string: toStringz;
 
@@ -313,7 +313,7 @@ unittest {
 
 @("opDispatch")
 unittest {
-    import python.raw: PyRun_StringFlags, Py_file_input, Py_eval_input, PyCompilerFlags,
+    import autowrap.pynih.python.raw: PyRun_StringFlags, Py_file_input, Py_eval_input, PyCompilerFlags,
         PyDict_New;
     import std.array: join;
     import std.string: toStringz;
@@ -435,7 +435,7 @@ unittest {
 
 @("inheritance")
 unittest {
-    import python.raw: PyRun_StringFlags, Py_file_input, Py_eval_input, PyCompilerFlags,
+    import autowrap.pynih.python.raw: PyRun_StringFlags, Py_file_input, Py_eval_input, PyCompilerFlags,
         PyDict_New;
     import std.array: join;
     import std.string: toStringz;

@@ -3,7 +3,7 @@
    Nothing here is @nogc nothrow because of the datetime API and the fact
    that it's in a struct and won't recurse.
  */
-module python.raw;
+module autowrap.pynih.python.raw;
 
 
 #include "Python.h"
@@ -22,7 +22,7 @@ enum TypeFlags {
 
 // Demacroify
 mixin template PyObjectHead() {
-    import python.raw: PyObject, Py_ssize_t;
+    import autowrap.pynih.python.raw: PyObject, Py_ssize_t;
     PyObject_HEAD;
 }
 

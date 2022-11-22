@@ -2,7 +2,7 @@ module ut.pynih.python.conv;
 
 
 import unit_threaded;
-import python.conv;
+import autowrap.pynih.python.conv;
 import std.datetime: Date, DateTime;
 import std.typecons: tuple;
 

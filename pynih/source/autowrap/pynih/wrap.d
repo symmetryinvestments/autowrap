@@ -8,8 +8,8 @@ public import autowrap.types: Modules, Module, isModule,
     LibraryName, PreModuleInitCode, PostModuleInitCode, RootNamespace, Ignore;
 public import std.typecons : Yes, No;
 
-import python.raw: PyDateTime_CAPI, PyObject;
-static import python.boilerplate;
+import autowrap.pynih.python.raw: PyDateTime_CAPI, PyObject;
+static import autowrap.pynih.python.boilerplate;
 import autowrap.common: toSnakeCase;
 import mirror.meta.reflection : FunctionSymbol;
 import std.meta: allSatisfy;
@@ -82,7 +82,7 @@ string createPythonModuleMixin(LibraryName libraryName, Modules modules)
 auto createPythonModule(LibraryName libraryName, modules...)()
     if(allSatisfy!(isModule, modules))
 {
-    import python.boilerplate: Module;
+    import autowrap.pynih.python.boilerplate: Module;
 
     auto ret = createDlangPythonModule!(
         Module(libraryName.value),
@@ -96,7 +96,7 @@ auto createPythonModule(LibraryName libraryName, modules...)()
 }
 
 void addConstants(modules...)(PyObject* pythonModule) {
-    import python.cooked : addStringConstant, addIntConstant;
+    import autowrap.pynih.python.cooked : addStringConstant, addIntConstant;
     import autowrap.reflection: AllConstants;
     import std.meta: Filter;
 
@@ -123,14 +123,14 @@ void addConstants(modules...)(PyObject* pythonModule) {
    by doing all conversions automatically.
  */
 template cfunctions(modules...) {
-    import python.boilerplate: CFunctions;
+    import autowrap.pynih.python.boilerplate: CFunctions;
     import std.meta: staticMap;
     alias cfunctions = CFunctions!(staticMap!(toCFunction, wrappableFunctions!modules));
 }
 
 private template wrappableFunctions(modules...) {
     import autowrap.common: AlwaysTry;
-    import python.type: PythonFunction;
+    import autowrap.pynih.python.type: PythonFunction;
     import autowrap.reflection: AllFunctions;
     import std.meta: Filter, templateNot;
     import std.traits: fullyQualifiedName;
@@ -155,7 +155,7 @@ private template wrappableFunctions(modules...) {
    "Returned" as `python.boilerplate.Aggregates`
  */
 template aggregates(modules...) {
-    import python.boilerplate: Aggregates;
+    import autowrap.pynih.python.boilerplate: Aggregates;
     import autowrap.reflection: AllAggregates;
     alias aggregates = Aggregates!(AllAggregates!modules);
 }
@@ -168,8 +168,8 @@ template aggregates(modules...) {
 template toCFunction(alias functionSymbol, string identifier = "")
     if(isInstanceOf!(FunctionSymbol, functionSymbol))
 {
-    import python.type: PythonFunction;
-    import python.boilerplate: CFunction;
+    import autowrap.pynih.python.type: PythonFunction;
+    import autowrap.pynih.python.boilerplate: CFunction;
 
     private enum id = identifier == "" ? functionSymbol.identifier.toSnakeCase : identifier;
 
@@ -182,8 +182,8 @@ template toCFunction(alias functionSymbol, string identifier = "")
 template toCFunction(alias F, string identifier = __traits(identifier, F).toSnakeCase)
     if(isSomeFunction!F)
 {
-    import python.type: PythonFunction;
-    import python.boilerplate: CFunction;
+    import autowrap.pynih.python.type: PythonFunction;
+    import autowrap.pynih.python.boilerplate: CFunction;
 
     alias toCFunction = CFunction!(
         PythonFunction!F._py_function_impl,
@@ -194,9 +194,9 @@ template toCFunction(alias F, string identifier = __traits(identifier, F).toSnak
 /**
    Initialises the Python DateTime API, the druntime, and creates the Python extension module
  */
-auto createDlangPythonModule(python.boilerplate.Module module_, alias cfunctions, alias aggregates)() {
-    import python.raw: pyDateTimeImport;
-    import python.cooked: createModule;
+auto createDlangPythonModule(autowrap.pynih.python.boilerplate.Module module_, alias cfunctions, alias aggregates)() {
+    import autowrap.pynih.python.raw: pyDateTimeImport;
+    import autowrap.pynih.python.cooked: createModule;
     import core.runtime: rt_init;
 
     rt_init;
