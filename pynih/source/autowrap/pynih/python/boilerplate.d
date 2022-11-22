@@ -1,4 +1,4 @@
-module python.boilerplate;
+module autowrap.pynih.python.boilerplate;
 
 
 import std.traits: isFunction;
@@ -11,8 +11,8 @@ string createModuleRecipe(Module module_, alias cfunctions, alias aggregates = A
 
     return q{
         extern(C) export auto PyInit_%s() nothrow {
-            import python.cooked: createModule;
-            import python.boilerplate: commonInit, Module, CFunctions, Aggregates;
+            import autowrap.pynih.python.cooked: createModule;
+            import autowrap.pynih.python.boilerplate: commonInit, Module, CFunctions, Aggregates;
 
             commonInit;
 

@@ -57,7 +57,7 @@ test_simple_pyd: $(TEST_SIMPLE_PY) lib/pyd/prefix.so lib/pyd/adder.so lib/pyd/st
 	PYTHONPATH=$(shell pwd)/lib/pyd PYD=1 pytest -s -vv $<
 
 .PHONY: test_simple_pynih
-test_simple_pynih: $(TEST_SIMPLE_PY) $(shell pwd)/../../pynih/source/python/raw.d lib/pynih/prefix.so lib/pynih/adder.so lib/pynih/structs.so lib/pynih/api.so lib/pynih/wrap_all.so
+test_simple_pynih: $(TEST_SIMPLE_PY) $(shell pwd)/../../pynih/source/autowrap/pynih/python/raw.d lib/pynih/prefix.so lib/pynih/adder.so lib/pynih/structs.so lib/pynih/api.so lib/pynih/wrap_all.so
 	PYTHONPATH=$(shell pwd)/lib/pynih PYNIH=1 pytest -s -vv $<
 
 

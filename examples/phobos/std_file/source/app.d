@@ -14,7 +14,7 @@ mixin(str);
 
 version(Have_autowrap_pynih):
 
-import python.raw;
+import autowrap.pynih.python.raw;
 
 /**
    Without this there is a linker error about an undefined symbol corrensponding

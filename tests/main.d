@@ -21,7 +21,7 @@ version(NoPynih) {
 } else {
     alias testModules = AliasSeq!(normalModules, pynihModules);
 
-    import python: Py_Initialize, Py_Finalize, pyDateTimeImport;
+    import autowrap.pynih.python: Py_Initialize, Py_Finalize, pyDateTimeImport;
 
     shared static this() {
         Py_Initialize;

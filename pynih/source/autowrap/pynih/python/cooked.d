@@ -1,11 +1,11 @@
 /**
    Helper functions to interact with the Python C API
  */
-module python.cooked;
+module autowrap.pynih.python.cooked;
 
 
-import python.raw;
-import python.boilerplate: Module, CFunctions, Aggregates;
+import autowrap.pynih.python.raw;
+import autowrap.pynih.python.boilerplate: Module, CFunctions, Aggregates;
 
 
 /**
@@ -36,7 +36,7 @@ auto createModule(Module module_, alias cfunctions, alias aggregates = Aggregate
 void addModuleTypes(aggregates...)(PyObject* module_)
 {
     import autowrap.common: AlwaysTry;
-    import python.type: PythonType;
+    import autowrap.pynih.python.type: PythonType;
     import std.traits: fullyQualifiedName;
 
     static foreach(T; aggregates) {
@@ -113,7 +113,7 @@ auto pyMethodDef(string name, int flags = defaultMethodFlags, string doc = "", F
 enum defaultMethodFlags = METH_VARARGS | METH_KEYWORDS;
 
 void addStringConstant(string key, string val)(PyObject* module_) {
-    import python.raw: PyModule_AddStringConstant;
+    import autowrap.pynih.python.raw: PyModule_AddStringConstant;
 
     static immutable char[1] emptyString = ['\0'];
 
@@ -126,6 +126,6 @@ void addStringConstant(string key, string val)(PyObject* module_) {
 }
 
 void addIntConstant(string key, long val)(PyObject* module_) {
-    import python.raw: PyModule_AddIntConstant;
+    import autowrap.pynih.python.raw: PyModule_AddIntConstant;
     PyModule_AddIntConstant(module_, &key[0], val);
 }

@@ -12,9 +12,9 @@ contract/contract.so: contract/libcontract.so
 
 
 .PHONY: test contract/libcontract.so
-contract/libcontract.so: source/python/raw.d
+contract/libcontract.so: source/autowrap/pynih/python/raw.d
 	cd contract && dub build -q --compiler=${DC}
 
 
-source/python/raw.d: source/python/raw.dpp $(dpp) Makefile
+source/autowrap/pynih/python/raw.d: source/autowrap/pynih/python/raw.dpp $(dpp) Makefile
 	dub run dpp@$(dpp_version) --build=release --compiler=${DC} -- --ignore-cursor=PyType_HasFeature --ignore-cursor=stat64 --function-macros --preprocess-only --include-path $(PYTHON_INCLUDE_DIR) $<

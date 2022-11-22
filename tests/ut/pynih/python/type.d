@@ -3,7 +3,7 @@ module ut.pynih.python.type;
 version(Have_autowrap_pynih):
 
 import unit_threaded;
-import python.type;
+import autowrap.pynih.python.type;
 
 
 @("union")
