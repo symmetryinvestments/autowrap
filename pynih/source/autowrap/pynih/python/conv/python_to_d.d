@@ -1,7 +1,7 @@
 module autowrap.pynih.python.conv.python_to_d;
 
 
-import autowrap.pynih.python.raw: PyObject, PyList_Check, PyTuple_Check, PyTuple_Size, PyCallable_Check, PyTime_Check;
+import python.c: PyObject, PyList_Check, PyTuple_Check, PyTuple_Size, PyCallable_Check, PyTime_Check;
 import autowrap.pynih.python.type: isUserAggregate, isTuple;
 import std.traits: Unqual, isIntegral, isFloatingPoint, isAggregateType, isArray,
     isStaticArray, isAssociativeArray, isPointer, PointerTarget, isSomeChar, isSomeString,
@@ -12,7 +12,7 @@ import core.time: Duration;
 
 
 T to(T)(PyObject* value) @trusted if(isIntegral!T && !is(T == enum)) {
-    import autowrap.pynih.python.raw: PyLong_AsLong;
+    import python.c: PyLong_AsLong;
 
     const ret = PyLong_AsLong(value);
     if(ret > T.max || ret < T.min)
@@ -23,7 +23,7 @@ T to(T)(PyObject* value) @trusted if(isIntegral!T && !is(T == enum)) {
 
 
 T to(T)(PyObject* value) @trusted if(isFloatingPoint!T) {
-    import autowrap.pynih.python.raw: PyFloat_AsDouble;
+    import python.c: PyFloat_AsDouble;
     auto ret = PyFloat_AsDouble(value);
     return cast(T) ret;
 }
@@ -61,7 +61,7 @@ UserAggregateReturnType!T to(T)(PyObject* value)
 
 private void toStructImpl(T)(PyObject* value, T* ret) {
     import autowrap.common: AlwaysTry;
-    import autowrap.pynih.python.raw: Py_None;
+    import python.c: Py_None;
     import autowrap.pynih.python.type: PythonClass;
     import std.traits: fullyQualifiedName, isCopyable, isPointer;
 
@@ -119,7 +119,7 @@ T to(T)(PyObject* value)
        !isFunctionPointer!T && !isDelegate!T &&
        !is(Unqual!(PointerTarget!T) == void))
 {
-    import autowrap.pynih.python.raw: PyUnicode_Check;
+    import python.c: PyUnicode_Check;
     import std.traits: Unqual, PointerTarget;
     import std.string: toStringz;
 
@@ -137,7 +137,7 @@ T to(T)(PyObject* value)
 
 T to(T)(PyObject* value) if(isPointer!T && is(Unqual!(PointerTarget!T) == void))
 {
-    import autowrap.pynih.python.raw: PyBytes_Check, PyBytes_AsString;
+    import python.c: PyBytes_Check, PyBytes_AsString;
     import std.exception: enforce;
 
     enforce(PyBytes_Check(value), "Can only convert Python bytes object to void*");
@@ -146,7 +146,7 @@ T to(T)(PyObject* value) if(isPointer!T && is(Unqual!(PointerTarget!T) == void))
 
 
 T to(T)(PyObject* value) if(is(Unqual!T == DateTime)) {
-    import autowrap.pynih.python.raw;
+    import python.c;
 
     return DateTime(PyDateTime_GET_YEAR(value),
                     PyDateTime_GET_MONTH(value),
@@ -158,7 +158,7 @@ T to(T)(PyObject* value) if(is(Unqual!T == DateTime)) {
 
 
 T to(T)(PyObject* value) if(is(Unqual!T == Date)) {
-    import autowrap.pynih.python.raw;
+    import python.c;
 
     return Date(PyDateTime_GET_YEAR(value),
                 PyDateTime_GET_MONTH(value),
@@ -166,7 +166,7 @@ T to(T)(PyObject* value) if(is(Unqual!T == Date)) {
 }
 
 T to(T)(PyObject* value) if(is(Unqual!T == TimeOfDay)) {
-    import autowrap.pynih.python.raw;
+    import python.c;
 
     if(!PyTime_Check(value))
         throw new Exception("Can only convert time objects to TimeOfDay");
@@ -180,7 +180,7 @@ T to(T)(PyObject* value) if(is(Unqual!T == TimeOfDay)) {
 T to(T)(PyObject* value) if(isArray!T && !isSomeString!T)
     in(PyList_Check(value) || PyTuple_Check(value))
 {
-    import autowrap.pynih.python.raw: PyList_Size, PyList_GetItem, PyTuple_Size, PyTuple_GetItem;
+    import python.c: PyList_Size, PyList_GetItem, PyTuple_Size, PyTuple_GetItem;
     import std.range: ElementEncodingType;
     import std.traits: Unqual, isDynamicArray;
     import std.exception: enforce;
@@ -233,7 +233,7 @@ T to(T)(PyObject* value) if(isArray!T && !isSomeString!T)
 
 T to(T)(PyObject* value) if(isSomeString!T) {
 
-    import autowrap.pynih.python.raw: PyUnicode_GetSize, PyUnicode_Check,
+    import python.c: PyUnicode_GetSize, PyUnicode_Check,
         PyBytes_AsString, PyUnicode_AsUTF8String, Py_ssize_t;
     import std.conv: to;
 
@@ -253,14 +253,14 @@ T to(T)(PyObject* value) if(isSomeString!T) {
 
 
 T to(T)(PyObject* value) if(is(Unqual!T == bool)) {
-    import autowrap.pynih.python.raw: pyTrue;
+    import python.c: pyTrue;
     return value is pyTrue;
 }
 
 
 T to(T)(PyObject* value) if(isAssociativeArray!T)
 {
-    import autowrap.pynih.python.raw: PyDict_Check, PyDict_Keys, PyList_Size, PyList_GetItem, PyDict_GetItem;
+    import python.c: PyDict_Check, PyDict_Keys, PyList_Size, PyList_GetItem, PyDict_GetItem;
 
     assert(PyDict_Check(value));
 
@@ -292,7 +292,7 @@ T to(T)(PyObject* value) if(isTuple!T)
     in(PyTuple_Size(value) == T.length)
     do
 {
-    import autowrap.pynih.python.raw: PyTuple_Check, PyTuple_Size, PyTuple_GetItem;
+    import python.c: PyTuple_Check, PyTuple_Size, PyTuple_GetItem;
 
     T ret;
 
@@ -323,7 +323,7 @@ private T toDlangFunction(T)(PyObject* value)
     in(PyCallable_Check(value))
     do
 {
-    import autowrap.pynih.python.raw: PyObject_CallObject;
+    import python.c: PyObject_CallObject;
     import autowrap.pynih.python.conv.d_to_python: toPython;
     import autowrap.pynih.python.conv.python_to_d: to;
     import std.traits: ReturnType, Unqual;
@@ -352,7 +352,7 @@ private T toDlangFunction(T)(PyObject* value)
                     else
                         return;
                 } catch(Exception e) {
-                    import autowrap.pynih.python.raw: PyErr_SetString, PyExc_RuntimeError;
+                    import python.c: PyErr_SetString, PyExc_RuntimeError;
                     import std.string: toStringz;
                     PyErr_SetString(PyExc_RuntimeError, e.msg.toStringz);
                 }
@@ -415,7 +415,7 @@ private string parameterRecipe(alias F, size_t i)(in string symbol)
 
 
 T to(T)(PyObject* value) if(is(Unqual!T == Duration)) {
-    import autowrap.pynih.python.raw: PyDateTime_Delta;
+    import python.c: PyDateTime_Delta;
     import core.time: days, seconds, usecs;
 
     const delta = cast(PyDateTime_Delta*) value;

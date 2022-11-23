@@ -52,7 +52,7 @@ test_simple_pyd:
 	make -C examples/simple test_simple_pyd
 
 .PHONY: test_simple_pynih
-test_simple_pynih: pynih/source/autowrap/pynih/python/raw.d
+test_simple_pynih:
 	make -C examples/simple test_simple_pynih
 
 
@@ -105,10 +105,6 @@ examples/simple/lib/csharp/libsimple.so: examples/simple/dub.sdl examples/simple
 examples/simple/Simple.cs: examples/simple/lib/csharp/libsimple.so
 	@cd examples/simple && dub run -q -c emitCSharp --compiler=${DC}
 
-pynih/source/autowrap/pynih/python/raw.d: pynih/Makefile pynih/source/autowrap/pynih/python/raw.dpp
-	make -C pynih source/autowrap/pynih/python/raw.d
-
-
 .PHONY: test_issues_pyd
 test_issues_pyd: tests/test_issues.py examples/issues/lib/pyd/issues.so
 	PYTHONPATH=$(PWD)/examples/issues/lib/pyd PYD=1 pytest -s -vv $<
@@ -128,7 +124,7 @@ examples/issues/lib/pynih/issues.so: examples/issues/lib/pynih/libissues.so
 	@cp $^ $@
 
 .PHONY: examples/issues/lib/pynih/libissues.so
-examples/issues/lib/pynih/libissues.so: pynih/source/autowrap/pynih/python/raw.d
+examples/issues/lib/pynih/libissues.so:
 	@cd examples/issues && dub build -q -c pynih --compiler=${DC}
 
 
@@ -154,7 +150,7 @@ examples/pyd/lib/pynih/pyd.so: examples/pyd/lib/pynih/libpydtests.so
 	@cp $^ $@
 
 .PHONY: examples/pyd/lib/pynih/libpydtests.so
-examples/pyd/lib/pynih/libpydtests.so: pynih/source/autowrap/pynih/python/raw.d
+examples/pyd/lib/pynih/libpydtests.so:
 	@cd examples/pyd && dub build -q -c pynih --compiler=${DC}
 
 .PHONY: test_numpy_pyd
@@ -179,5 +175,5 @@ examples/numpy/lib/pynih/numpytests.so: examples/numpy/lib/pynih/libnumpy.so
 	@cp $^ $@
 
 .PHONY: examples/numpy/lib/pynih/libnumpy.so
-examples/numpy/lib/pynih/libnumpy.so: pynih/autowrap/pynih/source/autowrap/pynih/python/raw.d
+examples/numpy/lib/pynih/libnumpy.so:
 	@cd examples/numpy && dub build -q -c pynih --compiler=${DC}

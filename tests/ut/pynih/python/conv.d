@@ -5,6 +5,7 @@ import unit_threaded;
 import autowrap.pynih.python.conv;
 import std.datetime: Date, DateTime;
 import std.typecons: tuple;
+import std.meta: AliasSeq;
 
 
 struct IntString {
@@ -21,23 +22,27 @@ private void backAndForth(T)
 }
 
 
-@Types!(
+alias nogcTypes = AliasSeq!(
     bool,
     byte, ubyte, short, ushort, int, uint, long, ulong,  // integral
     float, double,
-)
-void testBackAndForthNoGc(T)()
-{
-    check!((T d) @nogc => d.toPython.to!T == d);
+);
+static foreach(T; nogcTypes) {
+    @("back_and_forth.nogc." ~ T.stringof)
+    unittest {
+        check!((T d) @nogc => d.toPython.to!T == d);
+    }
 }
 
 
-@Types!(
+alias gcTypes = AliasSeq!(
     int[], double[],
-)
-void testBackAndForthGc(T)()
-{
-    check!((T d) => d.toPython.to!T == d);
+);
+static foreach(T; gcTypes) {
+    @("back_and_forth.gc." ~ T.stringof)
+    unittest {
+        check!((T d) => d.toPython.to!T == d);
+    }
 }
 
 

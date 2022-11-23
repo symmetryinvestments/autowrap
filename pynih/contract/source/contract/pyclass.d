@@ -4,7 +4,7 @@
 module contract.pyclass;
 
 
-import autowrap.pynih.python.raw;
+import python.c;
 import autowrap.pynih.python.cooked;
 import autowrap.pynih.python.type;
 

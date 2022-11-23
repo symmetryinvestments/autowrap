@@ -6,8 +6,7 @@ targetType "library"
 dependency "autowrap:common" path=".."
 dependency "autowrap:reflection" path=".."
 dependency "mirror" version="~>0.3.0"
-
-preGenerateCommands "make -C $PACKAGE_DIR source/autowrap/pynih/python/raw.d" platform="posix"
+dependency "monty" version="~>0.0.1"
 
 configuration "default" {
 

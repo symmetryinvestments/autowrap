@@ -10,6 +10,7 @@
 		"memutils": "1.0.4",
 		"mir-linux-kernel": "1.0.1",
 		"mirror": "0.3.2",
+		"monty": "0.0.1",
 		"openssl": "3.2.2",
 		"pyd": "0.14.3",
 		"scriptlike": "0.10.3",

@@ -2,7 +2,7 @@ module autowrap.pynih.python.object_;
 
 
 struct PythonObject {
-    import autowrap.pynih.python.raw: PyObject;
+    import python.c: PyObject;
     import std.traits: Unqual;
 
     private PyObject* _obj;
@@ -76,7 +76,7 @@ struct PythonObject {
     }
 
     void setattr(in string attr, in PythonObject val) {
-        import autowrap.pynih.python.raw: PyObject_SetAttrString;
+        import python.c: PyObject_SetAttrString;
         import autowrap.pynih.python.exception: PythonException;
         import std.string: toStringz;
 
@@ -89,7 +89,7 @@ struct PythonObject {
     }
 
     void setattr(in PythonObject attr, in PythonObject val) {
-        import autowrap.pynih.python.raw: PyObject_SetAttr;
+        import python.c: PyObject_SetAttr;
         import autowrap.pynih.python.exception: PythonException;
 
         const res = PyObject_SetAttr(cast(PyObject*) _obj, cast(PyObject*) attr._obj, cast(PyObject*) val._obj);
@@ -98,7 +98,7 @@ struct PythonObject {
     }
 
     void delattr(in string attr) {
-        import autowrap.pynih.python.raw: PyObject_SetAttrString;
+        import python.c: PyObject_SetAttrString;
         import autowrap.pynih.python.exception: PythonException;
         import std.string: toStringz;
 
@@ -107,7 +107,7 @@ struct PythonObject {
     }
 
     void delattr(in PythonObject attr) {
-        import autowrap.pynih.python.raw: PyObject_SetAttr;
+        import python.c: PyObject_SetAttr;
         import autowrap.pynih.python.exception: PythonException;
 
         const res = PyObject_SetAttr(cast(PyObject*) _obj, cast(PyObject*) attr._obj, null);
@@ -120,7 +120,7 @@ struct PythonObject {
     }
 
     string toString() const {
-        import autowrap.pynih.python.raw: PyObject_Str;
+        import python.c: PyObject_Str;
         import autowrap.pynih.python.conv.python_to_d: to;
         return PyObject_Str(cast(PyObject*) _obj).to!string;
     }
@@ -167,12 +167,12 @@ struct PythonObject {
     }
 
     PythonObject next() const {
-        import autowrap.pynih.python.raw: PyIter_Next;
+        import python.c: PyIter_Next;
         return PythonObject(PyIter_Next(cast(PyObject*) _obj));
     }
 
     PythonObject keys() const {
-        import autowrap.pynih.python.raw: PyDict_Check, PyMapping_Keys;
+        import python.c: PyDict_Check, PyMapping_Keys;
         if(PyDict_Check(cast(PyObject*) _obj))
             return retPyObject!"PyDict_Keys"();
         else if(auto keys = PyMapping_Keys(cast(PyObject*) _obj))
@@ -182,7 +182,7 @@ struct PythonObject {
     }
 
     PythonObject values() const {
-        import autowrap.pynih.python.raw: PyDict_Check, PyMapping_Values;
+        import python.c: PyDict_Check, PyMapping_Values;
         if(PyDict_Check(cast(PyObject*) _obj))
             return retPyObject!"PyDict_Values"();
         else if(auto keys = PyMapping_Values(cast(PyObject*) _obj))
@@ -192,7 +192,7 @@ struct PythonObject {
     }
 
     PythonObject items() const {
-        import autowrap.pynih.python.raw: PyDict_Check, PyMapping_Items;
+        import python.c: PyDict_Check, PyMapping_Items;
         if(PyDict_Check(cast(PyObject*) _obj))
             return retPyObject!"PyDict_Items"();
         else if(auto keys = PyMapping_Items(cast(PyObject*) _obj))
@@ -202,7 +202,7 @@ struct PythonObject {
     }
 
     PythonObject copy() const {
-        import autowrap.pynih.python.raw: PyDict_Check;
+        import python.c: PyDict_Check;
         if(PyDict_Check(cast(PyObject*) _obj))
             return retPyObject!"PyDict_Copy"();
         else
@@ -210,7 +210,7 @@ struct PythonObject {
     }
 
     bool merge(in PythonObject other, bool override_ = true) {
-        import autowrap.pynih.python.raw: PyDict_Check;
+        import python.c: PyDict_Check;
         import autowrap.pynih.python.exception: PythonException;
 
         if(PyDict_Check(_obj))
@@ -220,7 +220,7 @@ struct PythonObject {
     }
 
     int opCmp(in PythonObject other) const {
-        import autowrap.pynih.python.raw: PyObject_RichCompareBool, Py_LT, Py_EQ, Py_GT;
+        import python.c: PyObject_RichCompareBool, Py_LT, Py_EQ, Py_GT;
         import autowrap.pynih.python.exception: PythonException;
 
         static int[int] pyOpToRet;
@@ -262,7 +262,7 @@ struct PythonObject {
     private enum isPythonObject(T) = is(Unqual!T == PythonObject);
 
     PythonObject opCall(A...)(auto ref A args) if(!anySatisfy!(isPythonObject, A)) {
-        import autowrap.pynih.python.raw: PyTuple_New, PyTuple_SetItem, PyObject_CallObject, Py_DecRef;
+        import python.c: PyTuple_New, PyTuple_SetItem, PyObject_CallObject, Py_DecRef;
         import autowrap.pynih.python.conv.d_to_python: toPython;
         import autowrap.pynih.python.exception: PythonException;
 
@@ -280,7 +280,7 @@ struct PythonObject {
     }
 
     PythonObject opCall(PythonObject args) {
-        import autowrap.pynih.python.raw: PyObject_CallObject;
+        import python.c: PyObject_CallObject;
         import autowrap.pynih.python.exception: PythonException;
 
         auto ret = PyObject_CallObject(_obj, args._obj);
@@ -290,7 +290,7 @@ struct PythonObject {
     }
 
     PythonObject opCall(PythonObject args, PythonObject kwargs) {
-        import autowrap.pynih.python.raw: PyObject_Call;
+        import python.c: PyObject_Call;
         import autowrap.pynih.python.exception: PythonException;
 
         auto ret = PyObject_Call(_obj, args._obj, kwargs._obj);
@@ -304,7 +304,7 @@ struct PythonObject {
     }
 
     PythonObject opIndex(in string key) const {
-        import autowrap.pynih.python.raw: PyDict_Check;
+        import python.c: PyDict_Check;
         import std.string: toStringz;
 
         const keyz = key.toStringz;
@@ -389,7 +389,7 @@ struct PythonObject {
     }
 
     PythonObject opBinary(string op)(PythonObject other) if(op == "^^") {
-        import autowrap.pynih.python.raw: Py_IncRef, Py_None;
+        import python.c: Py_IncRef, Py_None;
         Py_IncRef(Py_None);
         return retPyObject!"PyNumber_Power"(other._obj, Py_None);
     }
@@ -446,7 +446,7 @@ private:
         enum code = q{
 
             import autowrap.pynih.python.exception: PythonException;
-            import autowrap.pynih.python.raw: %s;
+            import python.c: %s;
             import std.traits: isPointer;
 
             auto obj = %s(cast(PyObject*) _obj, args);
@@ -467,7 +467,7 @@ private:
         enum code = q{
 
             import autowrap.pynih.python.exception: PythonException;
-            import autowrap.pynih.python.raw: %s;
+            import python.c: %s;
 
             const ret = %s(cast(PyObject*) _obj, args);
             if(ret == -1)
@@ -483,13 +483,13 @@ private:
 
 
 struct InputRange {
-    import autowrap.pynih.python.raw: PyObject;
+    import python.c: PyObject;
 
     private PythonObject _iter;
     private PythonObject _front;
 
     private this(PythonObject iter) {
-        import autowrap.pynih.python.raw: PyObject_GetIter;
+        import python.c: PyObject_GetIter;
         import autowrap.pynih.python.exception: PythonException;
 
         _iter._obj = iter._obj;
@@ -501,7 +501,7 @@ struct InputRange {
 
     // FIXME
     // ~this() {
-    //     import autowrap.pynih.python.raw: Py_DecRef;
+    //     import python.c: Py_DecRef;
     //     Py_DecRef(_iter);
     // }
 

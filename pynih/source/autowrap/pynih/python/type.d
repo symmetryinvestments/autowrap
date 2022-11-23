@@ -4,7 +4,7 @@
 module autowrap.pynih.python.type;
 
 
-import autowrap.pynih.python.raw: PyObject;
+import python.c: PyObject;
 import mirror.meta.traits: isParameter, BinaryOperator;
 import std.traits: Unqual, isArray, isIntegral, isBoolean, isFloatingPoint,
     isAggregateType, isCallable, isAssociativeArray, isSomeFunction;
@@ -30,7 +30,7 @@ enum isNonRangeUDT(T) = isUserAggregate!T && !isInputRange!T;
    type `T`.
  */
 struct PythonType(T) {
-    import autowrap.pynih.python.raw: PyTypeObject, PySequenceMethods, PyMappingMethods;
+    import python.c: PyTypeObject, PySequenceMethods, PyMappingMethods;
     import std.traits: FieldNameTuple, Fields, Unqual, fullyQualifiedName, BaseClassesTuple;
     import std.meta: Alias, AliasSeq, staticMap;
 
@@ -63,7 +63,7 @@ struct PythonType(T) {
 
     private static void initialise() nothrow {
         import autowrap.common: AlwaysTry;
-        import autowrap.pynih.python.raw: PyType_GenericNew, PyType_Ready, TypeFlags,
+        import python.c: PyType_GenericNew, PyType_Ready, TypeFlags,
             PyErr_SetString, PyExc_TypeError,
             PyNumberMethods, PySequenceMethods;
         import mirror.meta.traits: UnaryOperators, BinaryOperators, AssignOperators, functionName;
@@ -222,7 +222,7 @@ struct PythonType(T) {
             _pyType.tp_basicsize = PythonCallable!T.sizeof;
             _pyType.tp_call = &PythonCallable!T._py_call;
         } else static if(is(T == enum)) {
-            import autowrap.pynih.python.raw: PyEnum_Type;
+            import python.c: PyEnum_Type;
             _pyType.tp_basicsize = 0;
             _pyType.tp_base = &PyEnum_Type;
             try
@@ -265,7 +265,7 @@ struct PythonType(T) {
     static if(isUserAggregate!T)
     private static auto getsetDefs() {
         import autowrap.common: AlwaysTry;
-        import autowrap.pynih.python.raw: PyGetSetDef;
+        import python.c: PyGetSetDef;
         import mirror.meta.traits: isProperty, MemberFunctionsByOverload;
         import std.meta: Filter;
         import std.traits: ReturnType;
@@ -326,7 +326,7 @@ struct PythonType(T) {
 
     private static auto methodDefs()() {
         import autowrap.common: AlwaysTry;
-        import autowrap.pynih.python.raw: PyMethodDef, METH_STATIC;
+        import python.c: PyMethodDef, METH_STATIC;
         import autowrap.pynih.python.cooked: pyMethodDef, defaultMethodFlags;
         import mirror.meta.traits: isProperty;
         import std.meta: AliasSeq, Alias, staticMap, Filter, templateNot;
@@ -374,7 +374,7 @@ struct PythonType(T) {
         return &methods[0];
     }
 
-    import autowrap.pynih.python.raw: Py_ssize_t;
+    import python.c: Py_ssize_t;
     private static extern(C) Py_ssize_t _py_length(PyObject* self_) nothrow {
 
         return noThrowable!({
@@ -421,7 +421,7 @@ struct PythonType(T) {
     private static extern(C) PyObject* _py_new(PyTypeObject *type, PyObject* args, PyObject* kwargs) nothrow {
         return noThrowable!({
             import autowrap.pynih.python.conv: toPython;
-            import autowrap.pynih.python.raw: PyTuple_Size;
+            import python.c: PyTuple_Size;
             import mirror.meta.traits: isPrivate;
             import std.traits: hasMember, fullyQualifiedName;
 
@@ -547,7 +547,7 @@ private string dlangAssignOpToPythonSlot(string op) {
 auto pythonArgsToDArgs(bool isVariadic, P...)(PyObject* args, PyObject* kwargs)
     if(allSatisfy!(isParameter, P))
 {
-    import autowrap.pynih.python.raw: PyTuple_Size, PyTuple_GetItem, PyTuple_GetSlice, PyUnicode_DecodeUTF8, PyDict_GetItem;
+    import python.c: PyTuple_Size, PyTuple_GetItem, PyTuple_GetSlice, PyUnicode_DecodeUTF8, PyDict_GetItem;
     import autowrap.pynih.python.conv: to;
     import std.typecons: Tuple;
     import std.meta: staticMap;
@@ -574,7 +574,7 @@ auto pythonArgsToDArgs(bool isVariadic, P...)(PyObject* args, PyObject* kwargs)
 
         static if(__traits(compiles, checkPythonType!T(item))) {
             if(!checkPythonType!T(item)) {
-                import autowrap.pynih.python.raw: PyErr_Clear;
+                import python.c: PyErr_Clear;
                 PyErr_Clear;
                 throw new ArgumentConversionException("Can't convert to " ~ T.stringof);
             }
@@ -644,7 +644,7 @@ struct PythonMethod(T, alias F) {
 private void mutateSelf(T)(PyObject* self, auto ref T dAggregate) {
 
     import autowrap.pynih.python.conv.d_to_python: toPython;
-    import autowrap.pynih.python.raw: Py_DecRef;
+    import python.c: Py_DecRef;
 
     auto newSelf = self is null ? self : toPython(dAggregate);
     scope(exit) {
@@ -672,7 +672,7 @@ struct PythonFunction(alias F) {
 
 
 auto noThrowable(alias F, A...)(auto ref A args) {
-    import autowrap.pynih.python.raw: PyErr_SetString, PyExc_RuntimeError;
+    import python.c: PyErr_SetString, PyExc_RuntimeError;
     import std.string: toStringz;
     import std.traits: ReturnType;
 
@@ -700,7 +700,7 @@ class ArgsException: Exception {
 
 private PyObject* callDlangFunction(T, alias F)(PyObject* self, PyObject* args, PyObject *kwargs) {
 
-    import autowrap.pynih.python.raw: PyTuple_Size;
+    import python.c: PyTuple_Size;
     import autowrap.pynih.python.conv: toPython, to;
     import mirror.meta.traits: Parameters, NumDefaultParameters, NumRequiredParameters;
     import std.traits: variadicFunctionStyle, Variadic,
@@ -833,7 +833,7 @@ class ArgumentConversionException: Exception {
 
 
 private PyObject* callDlangFunction(alias F, A)(auto ref A argTuple) {
-    import autowrap.pynih.python.raw: Py_IncRef, Py_None;
+    import python.c: Py_IncRef, Py_None;
     import autowrap.pynih.python.conv: toPython;
     import std.traits: ReturnType;
 
@@ -856,7 +856,7 @@ private PyObject* callDlangFunction(alias F, A)(auto ref A argTuple) {
 PyObject* pythonClass(T)(auto ref T dobj) {
 
     import autowrap.pynih.python.conv: toPython;
-    import autowrap.pynih.python.raw: pyObjectNew;
+    import python.c: pyObjectNew;
     import std.traits: isPointer, PointerTarget;
 
     static if(is(T == class) || isPointer!T) {
@@ -913,7 +913,7 @@ Object delegate(PyObject*)[string] gFactory;
    will raise `TypeError`.
  */
 struct PythonClass(T) {//}if(isUserAggregate!T) {
-    import autowrap.pynih.python.raw: PyObjectHead, PyGetSetDef;
+    import python.c: PyObjectHead, PyGetSetDef;
     import std.traits: Unqual;
 
     alias fieldNames = PythonType!(Unqual!T).fieldNames;
@@ -957,7 +957,7 @@ struct PythonClass(T) {//}if(isUserAggregate!T) {
         nothrow
         in(self_ !is null)
     {
-        import autowrap.pynih.python.raw: Py_IncRef;
+        import python.c: Py_IncRef;
 
         auto self = cast(PythonClass*) self_;
 
@@ -978,7 +978,7 @@ struct PythonClass(T) {//}if(isUserAggregate!T) {
         nothrow
         in(self_ !is null)
     {
-        import autowrap.pynih.python.raw: Py_IncRef, Py_DecRef, PyErr_SetString, PyExc_TypeError;
+        import python.c: Py_IncRef, Py_DecRef, PyErr_SetString, PyExc_TypeError;
 
         if(value is null) {
             enum deleteErrStr = "Cannot delete " ~ fieldNames[FieldIndex];
@@ -1045,7 +1045,7 @@ struct PythonClass(T) {//}if(isUserAggregate!T) {
         nothrow
         in(self_ !is null)
     {
-        import autowrap.pynih.python.raw: PyTuple_New, PyTuple_SetItem, Py_DecRef;
+        import python.c: PyTuple_New, PyTuple_SetItem, Py_DecRef;
 
         auto args = PyTuple_New(1);
         PyTuple_SetItem(args, 0, value);
@@ -1059,7 +1059,7 @@ struct PythonClass(T) {//}if(isUserAggregate!T) {
 
 
 PyObject* pythonCallable(T)(T callable) {
-    import autowrap.pynih.python.raw: pyObjectNew;
+    import python.c: pyObjectNew;
 
     auto ret = pyObjectNew!(PythonCallable!T)(PythonType!T.pyType);
     ret._callable = callable;
@@ -1082,7 +1082,7 @@ private struct PythonCallable(T) if(isCallable!T) {
            can later be called.
         */
 
-        import autowrap.pynih.python.raw: PyObjectHead;
+        import python.c: PyObjectHead;
 
         // Every python object must have this
         mixin PyObjectHead;
@@ -1240,7 +1240,7 @@ private template PythonAssignOperator(T, string op) {
 // implements _py_cmp for types with opCmp
 private template PythonOpCmp(T) {
     static extern(C) PyObject* _py_cmp(PyObject* lhs, PyObject* rhs, int opId) nothrow {
-        import autowrap.pynih.python.raw: Py_LT, Py_LE, Py_EQ, Py_NE, Py_GT, Py_GE;
+        import python.c: Py_LT, Py_LE, Py_EQ, Py_NE, Py_GT, Py_GE;
         import autowrap.pynih.python.conv.python_to_d: to;
         import autowrap.pynih.python.conv.d_to_python: toPython;
         import std.conv: text;
@@ -1274,7 +1274,7 @@ private template PythonOpCmp(T) {
 private template PythonSubscript(T) {
 
     static extern(C) PyObject* _py_index(PyObject* self, PyObject* key) nothrow {
-        import autowrap.pynih.python.raw: PyIndex_Check, PySlice_Check, PyObject_Repr, PyObject_Length,
+        import python.c: PyIndex_Check, PySlice_Check, PyObject_Repr, PyObject_Length,
             Py_ssize_t, PySlice_GetIndices;
         import autowrap.pynih.python.conv.python_to_d: to;
         import autowrap.pynih.python.conv.d_to_python: toPython;
@@ -1346,7 +1346,7 @@ private template PythonSubscript(T) {
 private template PythonIterViaList(T) {
 
     static extern(C) PyObject* _py_iter(PyObject* self) nothrow {
-        import autowrap.pynih.python.raw: PyObject_GetIter;
+        import python.c: PyObject_GetIter;
         import autowrap.pynih.python.conv.d_to_python: toPython;
         import autowrap.pynih.python.conv.python_to_d: to;
         import std.array: array;
@@ -1377,7 +1377,7 @@ private template PythonIter(T) if(isInputRange!T)
     }
 
     static extern(C) PyObject* _py_iter_next(PyObject* self) nothrow {
-        import autowrap.pynih.python.raw: PyErr_SetNone, PyExc_StopIteration;
+        import python.c: PyErr_SetNone, PyExc_StopIteration;
         import autowrap.pynih.python.conv: to, toPython;
 
         auto impl() {
@@ -1406,7 +1406,7 @@ private template PythonIndexAssign(T) {
 
         import autowrap.pynih.python.conv.python_to_d: to;
         import autowrap.pynih.python.conv.d_to_python: toPython;
-        import autowrap.pynih.python.raw: PyIndex_Check, PySlice_Check, PyObject_Repr, PyObject_Length, PySlice_GetIndices, Py_ssize_t;
+        import python.c: PyIndex_Check, PySlice_Check, PyObject_Repr, PyObject_Length, PySlice_GetIndices, Py_ssize_t;
         import std.traits: Parameters, Unqual;
         import std.conv: to;
         import std.meta: Filter, AliasSeq;
@@ -1475,7 +1475,7 @@ private template PythonCompare(T) {
         PyObject* impl() {
             import autowrap.pynih.python.conv.python_to_d: to;
             import autowrap.pynih.python.conv.d_to_python: toPython;
-            import autowrap.pynih.python.raw: Py_IncRef, _Py_NotImplementedStruct, Py_EQ, Py_LT, Py_LE, Py_NE, Py_GT, Py_GE;
+            import python.c: Py_IncRef, _Py_NotImplementedStruct, Py_EQ, Py_LT, Py_LE, Py_NE, Py_GT, Py_GE;
 
             static notImplemented() {
                 auto pyNotImplemented = cast(PyObject*) &_Py_NotImplementedStruct;
@@ -1524,13 +1524,13 @@ private template PythonCompare(T) {
 
 
 private bool isInstanceOf(T)(PyObject* obj) {
-    import autowrap.pynih.python.raw: PyObject_IsInstance;
+    import python.c: PyObject_IsInstance;
     return cast(bool) PyObject_IsInstance(obj, cast(PyObject*) PythonType!T.pyType);
 }
 
 
 private bool checkPythonType(T)(PyObject* value) if(isArray!T) {
-    import autowrap.pynih.python.raw: PySequence_Check;
+    import python.c: PySequence_Check;
     const ret = cast(bool) PySequence_Check(value);
     if(!ret) setPyErrTypeString!"sequence";
     return ret;
@@ -1538,7 +1538,7 @@ private bool checkPythonType(T)(PyObject* value) if(isArray!T) {
 
 
 private bool checkPythonType(T)(PyObject* value) if(isIntegral!T) {
-    import autowrap.pynih.python.raw: PyLong_Check;
+    import python.c: PyLong_Check;
     const ret = cast(bool) PyLong_Check(value);
     if(!ret) setPyErrTypeString!"long";
     return ret;
@@ -1546,7 +1546,7 @@ private bool checkPythonType(T)(PyObject* value) if(isIntegral!T) {
 
 
 private bool checkPythonType(T)(PyObject* value) if(isFloatingPoint!T) {
-    import autowrap.pynih.python.raw: PyFloat_Check;
+    import python.c: PyFloat_Check;
     const ret = cast(bool) PyFloat_Check(value);
     if(!ret) setPyErrTypeString!"float";
     return ret;
@@ -1554,7 +1554,7 @@ private bool checkPythonType(T)(PyObject* value) if(isFloatingPoint!T) {
 
 
 private bool checkPythonType(T)(PyObject* value) if(is(T == DateTime)) {
-    import autowrap.pynih.python.raw: PyDateTime_Check;
+    import python.c: PyDateTime_Check;
     const ret = cast(bool) PyDateTime_Check(value);
     if(!ret) setPyErrTypeString!"DateTime";
     return ret;
@@ -1562,7 +1562,7 @@ private bool checkPythonType(T)(PyObject* value) if(is(T == DateTime)) {
 
 
 private bool checkPythonType(T)(PyObject* value) if(is(T == Date)) {
-    import autowrap.pynih.python.raw: PyDate_Check;
+    import python.c: PyDate_Check;
     const ret = cast(bool) PyDate_Check(value);
     if(!ret) setPyErrTypeString!"Date";
     return ret;
@@ -1570,7 +1570,7 @@ private bool checkPythonType(T)(PyObject* value) if(is(T == Date)) {
 
 
 private bool checkPythonType(T)(PyObject* value) if(isAssociativeArray!T) {
-    import autowrap.pynih.python.raw: PyMapping_Check;
+    import python.c: PyMapping_Check;
     const ret = cast(bool) PyMapping_Check(value);
     if(!ret) setPyErrTypeString!"dict";
     return ret;
@@ -1583,7 +1583,7 @@ private bool checkPythonType(T)(PyObject* value) if(isUserAggregate!T) {
 
 
 private bool checkPythonType(T)(PyObject* value) if(isSomeFunction!T) {
-    import autowrap.pynih.python.raw: PyCallable_Check;
+    import python.c: PyCallable_Check;
     const ret = cast(bool) PyCallable_Check(value);
     if(!ret) setPyErrTypeString!"callable";
     return ret;
@@ -1591,7 +1591,7 @@ private bool checkPythonType(T)(PyObject* value) if(isSomeFunction!T) {
 
 
 private void setPyErrTypeString(string type)() @trusted @nogc nothrow {
-    import autowrap.pynih.python.raw: PyErr_SetString, PyExc_TypeError;
+    import python.c: PyErr_SetString, PyExc_TypeError;
     enum str = "must be a " ~ type;
     PyErr_SetString(PyExc_TypeError, &str[0]);
 }

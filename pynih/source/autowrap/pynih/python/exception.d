@@ -1,14 +1,14 @@
 module autowrap.pynih.python.exception;
 
 
-import autowrap.pynih.python.raw: PyObject;
+import python.c: PyObject;
 
 
 class PythonException: Exception {
 
     this(in string backupMsg, in string file = __FILE__, in size_t line = __LINE__) {
 
-        import autowrap.pynih.python.raw: PyErr_Occurred;
+        import python.c: PyErr_Occurred;
 
         if(PyErr_Occurred is null)
             super(backupMsg, file, line);
@@ -20,7 +20,7 @@ class PythonException: Exception {
 
 
 private string pythonExceptionMsg() {
-    import autowrap.pynih.python.raw: PyErr_Occurred, PyErr_Fetch, PyErr_NormalizeException,
+    import python.c: PyErr_Occurred, PyErr_Fetch, PyErr_NormalizeException,
         PyObject_GetAttrString, PyTuple_Check, PyTuple_GetItem;
     import autowrap.pynih.python.conv.python_to_d: to;
 
@@ -40,7 +40,7 @@ private string pythonExceptionMsg() {
 
 
 private string pyExceptionTypeToString(PyObject* type) {
-    import autowrap.pynih.python.raw: PyObject_Str;
+    import python.c: PyObject_Str;
     import autowrap.pynih.python.conv.python_to_d: to;
 
     enum prefix = "class <'";
