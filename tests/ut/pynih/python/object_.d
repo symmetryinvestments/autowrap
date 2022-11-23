@@ -189,7 +189,7 @@ unittest {
 
 @("setattr")
 unittest {
-    import autowrap.pynih.python.raw: PyRun_StringFlags, Py_file_input, Py_eval_input, PyCompilerFlags, PyDict_New;
+    import python.c: PyRun_StringFlags, Py_file_input, Py_eval_input, PyCompilerFlags, PyDict_New;
     import std.array: join;
     import std.string: toStringz;
 
@@ -252,7 +252,7 @@ unittest {
 
 @("delattr")
 unittest {
-    import autowrap.pynih.python.raw: PyRun_StringFlags, Py_file_input, Py_eval_input, PyCompilerFlags, PyDict_New;
+    import python.c: PyRun_StringFlags, Py_file_input, Py_eval_input, PyCompilerFlags, PyDict_New;
     import std.array: join;
     import std.string: toStringz;
 
@@ -313,7 +313,7 @@ unittest {
 
 @("opDispatch")
 unittest {
-    import autowrap.pynih.python.raw: PyRun_StringFlags, Py_file_input, Py_eval_input, PyCompilerFlags,
+    import python.c: PyRun_StringFlags, Py_file_input, Py_eval_input, PyCompilerFlags,
         PyDict_New;
     import std.array: join;
     import std.string: toStringz;
@@ -435,7 +435,7 @@ unittest {
 
 @("inheritance")
 unittest {
-    import autowrap.pynih.python.raw: PyRun_StringFlags, Py_file_input, Py_eval_input, PyCompilerFlags,
+    import python.c: PyRun_StringFlags, Py_file_input, Py_eval_input, PyCompilerFlags,
         PyDict_New;
     import std.array: join;
     import std.string: toStringz;

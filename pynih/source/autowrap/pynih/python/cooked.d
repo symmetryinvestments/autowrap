@@ -4,7 +4,7 @@
 module autowrap.pynih.python.cooked;
 
 
-import autowrap.pynih.python.raw;
+import python.c;
 import autowrap.pynih.python.boilerplate: Module, CFunctions, Aggregates;
 
 
@@ -113,7 +113,7 @@ auto pyMethodDef(string name, int flags = defaultMethodFlags, string doc = "", F
 enum defaultMethodFlags = METH_VARARGS | METH_KEYWORDS;
 
 void addStringConstant(string key, string val)(PyObject* module_) {
-    import autowrap.pynih.python.raw: PyModule_AddStringConstant;
+    import python.c: PyModule_AddStringConstant;
 
     static immutable char[1] emptyString = ['\0'];
 
@@ -126,6 +126,6 @@ void addStringConstant(string key, string val)(PyObject* module_) {
 }
 
 void addIntConstant(string key, long val)(PyObject* module_) {
-    import autowrap.pynih.python.raw: PyModule_AddIntConstant;
+    import python.c: PyModule_AddIntConstant;
     PyModule_AddIntConstant(module_, &key[0], val);
 }

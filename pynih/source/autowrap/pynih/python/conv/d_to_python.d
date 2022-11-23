@@ -1,7 +1,7 @@
 module autowrap.pynih.python.conv.d_to_python;
 
 
-import autowrap.pynih.python.raw: PyObject;
+import python.c: PyObject;
 import autowrap.pynih.python.type: isUserAggregate, isTuple, isNonRangeUDT;
 import std.traits: Unqual, isIntegral, isFloatingPoint, isAggregateType,
     isStaticArray, isAssociativeArray, isPointer, isSomeChar,
@@ -13,7 +13,7 @@ import core.time: Duration;
 
 
 PyObject* toPython(in bool val) @trusted @nogc {
-    import autowrap.pynih.python.raw: Py_IncRef, _Py_TrueStruct, _Py_FalseStruct;
+    import python.c: Py_IncRef, _Py_TrueStruct, _Py_FalseStruct;
 
     auto pyTrue = cast(PyObject*) &_Py_TrueStruct;
     auto pyFalse = cast(PyObject*) &_Py_FalseStruct;
@@ -28,13 +28,13 @@ PyObject* toPython(in bool val) @trusted @nogc {
 
 
 PyObject* toPython(T)(T value) @trusted if(isIntegral!T && !is(T == enum)) {
-    import autowrap.pynih.python.raw: PyLong_FromLong;
+    import python.c: PyLong_FromLong;
     return PyLong_FromLong(value);
 }
 
 
 PyObject* toPython(T)(T value) @trusted if(isFloatingPoint!T) {
-    import autowrap.pynih.python.raw: PyFloat_FromDouble;
+    import python.c: PyFloat_FromDouble;
     return PyFloat_FromDouble(value);
 }
 
@@ -48,7 +48,7 @@ PyObject* toPython(T)(T value) if(is(Unqual!T == void[])) {
 PyObject* toPython(T)(T value)
     if(isInputRange!T && !isInfinite!T && !isSomeString!T && !isStaticArray!T)
 {
-    import autowrap.pynih.python.raw: PyList_New, PyList_SetItem, PyList_Append;
+    import python.c: PyList_New, PyList_SetItem, PyList_Append;
     import std.range: isForwardRange, enumerate;
 
     static if(__traits(hasMember, T, "length")) {
@@ -120,24 +120,24 @@ PyObject* toPython(T)(T value)
 
 
 PyObject* toPython(T)(T value) if(is(Unqual!T == DateTime)) {
-    import autowrap.pynih.python.raw: PyDateTime_FromDateAndTime;
+    import python.c: PyDateTime_FromDateAndTime;
     return PyDateTime_FromDateAndTime(value.year, value.month, value.day,
                                       value.hour, value.minute, value.second, 0 /*usec*/);
 }
 
 PyObject* toPython(T)(T value) if(is(Unqual!T == Date)) {
-    import autowrap.pynih.python.raw: PyDate_FromDate;
+    import python.c: PyDate_FromDate;
     return PyDate_FromDate(value.year, value.month, value.day);
 }
 
 PyObject* toPython(T)(T value) if(is(Unqual!T == TimeOfDay)) {
-    import autowrap.pynih.python.raw: PyTime_FromTime;
+    import python.c: PyTime_FromTime;
     return PyTime_FromTime(value.hour, value.minute, value.second, 0 /*usec*/);
 }
 
 
 PyObject* toPython(T)(T value) if(isSomeString!T) {
-    import autowrap.pynih.python.raw: PyUnicode_FromStringAndSize;
+    import python.c: PyUnicode_FromStringAndSize;
     import std.conv: to;
     auto str = value.to!string;
     return PyUnicode_FromStringAndSize(str.ptr, str.length);
@@ -145,7 +145,7 @@ PyObject* toPython(T)(T value) if(isSomeString!T) {
 
 
 PyObject* toPython(T)(T value) if(is(Unqual!T == bool)) {
-    import autowrap.pynih.python.raw: PyBool_FromLong;
+    import python.c: PyBool_FromLong;
     return PyBool_FromLong(value);
 }
 
@@ -156,7 +156,7 @@ PyObject* toPython(T)(T value) if(isStaticArray!T) {
 
 
 PyObject* toPython(T)(T value) if(isAssociativeArray!T) {
-    import autowrap.pynih.python.raw: PyDict_New, PyDict_SetItem;
+    import python.c: PyDict_New, PyDict_SetItem;
 
     auto ret = PyDict_New;
 
@@ -168,7 +168,7 @@ PyObject* toPython(T)(T value) if(isAssociativeArray!T) {
 }
 
 PyObject* toPython(T)(T value) if(isTuple!T) {
-    import autowrap.pynih.python.raw: PyTuple_New, PyTuple_SetItem;
+    import python.c: PyTuple_New, PyTuple_SetItem;
 
     auto ret = PyTuple_New(value.length);
 
@@ -192,7 +192,7 @@ PyObject* toPython(T)(T value) if(isCallable!T && !isUserAggregate!T) {
 
 
 PyObject* toPython(T)(T value) if(is(Unqual!T == Duration)) {
-    import autowrap.pynih.python.raw: PyDelta_FromDSU;
+    import python.c: PyDelta_FromDSU;
     int days, seconds, useconds;
     value.split!("days", "seconds", "usecs")(days, seconds, useconds);
     return PyDelta_FromDSU(days, seconds, useconds);

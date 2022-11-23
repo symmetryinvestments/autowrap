@@ -44,7 +44,7 @@ std_$1/lib/pynih/std_$1.so: std_$1/lib/pynih/libstd_$1.so
 	@cp $$^ $$@
 
 .PHONY: std_$1/lib/pynih/libstd_$1.so
-std_$1/lib/pynih/libstd_$1.so: ../../pynih/source/autowrap/pynih/python/raw.d
+std_$1/lib/pynih/libstd_$1.so:
 	@cd std_$1 && dub build -q -c pynih --compiler=${DC}
 endef
 
@@ -64,11 +64,6 @@ test_std_traits test_std_typecons test_std_typetuple test_std_uri \
 test_std_utf test_std_uuid test_std_variant test_std_windows \
 test_std_xml test_std_zip test_std_zlib
 # test_std_uni disabled for now due to dmd bug causing it to crash
-
-# pynih needs this first and foremost
-../../pynih/source/python/raw.d: ../../pynih/Makefile ../../pynih/source/autowrap/pynih/python/raw.dpp
-	make -C ../../pynih source/autowrap/pynih/python/raw.d
-
 
 $(eval $(call test-package,algorithm))
 $(eval $(call test-package,array))

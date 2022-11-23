@@ -8,7 +8,7 @@ public import autowrap.types: Modules, Module, isModule,
     LibraryName, PreModuleInitCode, PostModuleInitCode, RootNamespace, Ignore;
 public import std.typecons : Yes, No;
 
-import autowrap.pynih.python.raw: PyDateTime_CAPI, PyObject;
+import python.c: PyDateTime_CAPI, PyObject;
 static import autowrap.pynih.python.boilerplate;
 import autowrap.common: toSnakeCase;
 import mirror.meta.reflection : FunctionSymbol;
@@ -195,7 +195,7 @@ template toCFunction(alias F, string identifier = __traits(identifier, F).toSnak
    Initialises the Python DateTime API, the druntime, and creates the Python extension module
  */
 auto createDlangPythonModule(autowrap.pynih.python.boilerplate.Module module_, alias cfunctions, alias aggregates)() {
-    import autowrap.pynih.python.raw: pyDateTimeImport;
+    import python.c: pyDateTimeImport;
     import autowrap.pynih.python.cooked: createModule;
     import core.runtime: rt_init;
 
