@@ -1,7 +1,7 @@
 attrs==21.2.0
 blessings==1.7
 bpython==0.21
-certifi==2020.12.5
+certifi==2022.12.7
 chardet==4.0.0
 curtsies==0.3.5
 cwcwidth==0.1.4
