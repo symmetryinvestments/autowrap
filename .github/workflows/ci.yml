@@ -29,7 +29,7 @@ jobs:
 
       - name: Install D compiler
         # must go before setting LD_LIBRARY_PATH for Python since this overrides it
-        uses: dlang-community/setup-dlang@v1.2.1
+        uses: dlang-community/setup-dlang@v1.3.0
         with:
           compiler: ${{ matrix.dc }}
 
