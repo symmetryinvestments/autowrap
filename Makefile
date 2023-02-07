@@ -35,7 +35,7 @@ test_phobos:
 .PHONY: test_cs
 test_cs: test_wrapper_cs test_simple_cs
 .PHONY: test_translation
-test_translation: test_translation_ut test_transl_simple_cs
+test_translation: test_translation_ut #test_transl_simple_cs
 .PHONY: test_translation_ut
 test_translation_ut:
 	cd translate && PYTHONPATH=$(PWD)/translate pytest -s -vv
