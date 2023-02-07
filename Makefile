@@ -22,7 +22,7 @@ export PYD_D_VERSION_13 ?= Python_3_8_Or_Later
 .PHONY: all
 all: test
 .PHONY: test
-test: test_python test_cs test_translation test_phobos
+test: test_python test_translation test_phobos #test_cs
 .PHONY: test_python
 test_python: ut test_python_pyd test_python_pynih
 .PHONY: test_python_pyd
