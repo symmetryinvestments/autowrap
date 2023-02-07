@@ -9,7 +9,7 @@ jobs:
         os:
           - ubuntu-20.04
         dc:
-          - dmd-2.100.2
+          - dmd-2.101.2
           - ldc-1.30.0
 
         python-version:
