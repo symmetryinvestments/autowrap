@@ -33,7 +33,7 @@ configuration "unittest" {
     versions "XllDummyGetter"
     versions "unitUnthreaded"  # GIL
     versions "TestingAutowrap"
-    dflags "-preview=dip1008" "-cov=ctfe"
+    dflags "-preview=dip1008"
 
     libs "$PYD_LIBPYTHON"
     lflags "-L$PYTHON_LIB_DIR"

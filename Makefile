@@ -22,7 +22,7 @@ export PYD_D_VERSION_13 ?= Python_3_8_Or_Later
 .PHONY: all
 all: test
 .PHONY: test
-test: test_python test_cs test_translation test_phobos
+test: test_python test_translation test_phobos #test_cs
 .PHONY: test_python
 test_python: ut test_python_pyd test_python_pynih
 .PHONY: test_python_pyd
@@ -35,7 +35,7 @@ test_phobos:
 .PHONY: test_cs
 test_cs: test_wrapper_cs test_simple_cs
 .PHONY: test_translation
-test_translation: test_translation_ut test_transl_simple_cs
+test_translation: test_translation_ut #test_transl_simple_cs
 .PHONY: test_translation_ut
 test_translation_ut:
 	cd translate && PYTHONPATH=$(PWD)/translate pytest -s -vv

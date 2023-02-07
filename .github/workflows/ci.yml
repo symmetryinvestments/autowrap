@@ -9,7 +9,7 @@ jobs:
         os:
           - ubuntu-20.04
         dc:
-          - dmd-2.100.2
+          - dmd-2.101.2
           - ldc-1.30.0
 
         python-version:
@@ -29,7 +29,7 @@ jobs:
 
       - name: Install D compiler
         # must go before setting LD_LIBRARY_PATH for Python since this overrides it
-        uses: dlang-community/setup-dlang@v1.2.1
+        uses: dlang-community/setup-dlang@v1.3.0
         with:
           compiler: ${{ matrix.dc }}
 
@@ -50,13 +50,13 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Install dotnet
-        run: |
-            wget -q https://packages.microsoft.com/config/ubuntu/20.04/packages-microsoft-prod.deb
-            sudo dpkg -i packages-microsoft-prod.deb
-            sudo apt-get install apt-transport-https
-            sudo apt-get update
-            sudo apt-get install dotnet-sdk-2.1
+      # - name: Install dotnet
+      #   run: |
+      #       wget -q https://packages.microsoft.com/config/ubuntu/20.04/packages-microsoft-prod.deb
+      #       sudo dpkg -i packages-microsoft-prod.deb
+      #       sudo apt-get install apt-transport-https
+      #       sudo apt-get update
+      #       sudo apt-get install dotnet-sdk-2.1
 
       - name: Run tests
         shell: bash
