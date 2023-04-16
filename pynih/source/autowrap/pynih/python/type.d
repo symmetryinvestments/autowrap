@@ -241,8 +241,8 @@ struct PythonType(T) {
             _pyType.tp_as_sequence.sq_length = &_py_length;
         }
 
-        if(PyType_Ready_nothrow(&_pyType) < 0) {
-            PyErr_SetString_nothrow(PyExc_TypeError, &"not ready"[0]);
+        if(PyType_Ready(&_pyType) < 0) {
+            PyErr_SetString(PyExc_TypeError, &"not ready"[0]);
             failedToReady = true;
         }
     }
@@ -670,10 +670,6 @@ struct PythonFunction(alias F) {
     }
 }
 
-//import python.c : withAttr;
-alias PyErr_SetString_nothrow = PyErr_SetString; //withAttr!(PyErr_SetString, FunctionAttribute.nothrow_);
-alias PyType_Ready_nothrow = PyType_Ready; //withAttr!(PyType_Ready, FunctionAttribute.nothrow_);
-
 auto noThrowable(alias F, A...)(auto ref A args) nothrow {
     import python.c: PyErr_SetString, PyExc_RuntimeError;
     import std.string: toStringz;
@@ -682,14 +678,14 @@ auto noThrowable(alias F, A...)(auto ref A args) nothrow {
     try {
         return F(args);
     } catch(Exception e) {
-        PyErr_SetString_nothrow(PyExc_RuntimeError, e.msg.toStringz);
+        PyErr_SetString(PyExc_RuntimeError, e.msg.toStringz);
         return ReturnType!F.init;
     } catch(Error e) {
         import std.conv: text;
         try
-            PyErr_SetString_nothrow(PyExc_RuntimeError, ("FATAL ERROR: " ~ e.text).toStringz);
+            PyErr_SetString(PyExc_RuntimeError, ("FATAL ERROR: " ~ e.text).toStringz);
         catch(Exception _)
-            PyErr_SetString_nothrow(PyExc_RuntimeError, ("FATAL ERROR: " ~ e.msg).toStringz);
+            PyErr_SetString(PyExc_RuntimeError, ("FATAL ERROR: " ~ e.msg).toStringz);
 
         return ReturnType!F.init;
     }
@@ -986,7 +982,7 @@ struct PythonClass(T) {//}if(isUserAggregate!T) {
 
         if(value is null) {
             enum deleteErrStr = "Cannot delete " ~ fieldNames[FieldIndex];
-            PyErr_SetString_nothrow(PyExc_TypeError, deleteErrStr.toStringz);
+            PyErr_SetString(PyExc_TypeError, deleteErrStr.toStringz);
             return -1;
         }
 

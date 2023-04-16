@@ -44,7 +44,7 @@ package PyObject* one_bool_param_to_not(PyObject* self, PyObject *args) nothrow 
 
 
 // returns the number passed in multiplied by two
-package PyObject* one_int_param_to_times_two(PyObject* self, PyObject *args) /*nothrow @nogc*/ {
+package PyObject* one_int_param_to_times_two(PyObject* self, PyObject *args) nothrow @nogc {
 
     long arg;
 

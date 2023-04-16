@@ -1,14 +1,12 @@
 module python.c;
 
-static import impl = impl;
+static import impl;
 
 import std.traits : FunctionAttribute;
 
 template withAttr(alias f, FunctionAttribute attributes, string name) {
     import std.traits :  SetFunctionAttributes, functionAttributes, functionLinkage,
         ReturnType, Parameters, variadicFunctionStyle, Variadic;
-
-    //pragma(msg, __LINE__, ": ", "not a type ", __traits(identifier, f), " ", typeof(f));
 
     enum newAttributes = functionAttributes!f | attributes;
     auto getFptr() {
@@ -34,14 +32,12 @@ template withAttr(alias f, FunctionAttribute attributes, string name) {
 
 // don't do anything to types
 template withAttr(f, FunctionAttribute attributes, string name) {
-    //pragma(msg, __LINE__, ": ", "it's a type ", f);
     alias withAttr = f;
 }
 
 template maybeAddAttributes(alias s, string name) {
     import std.traits : FunctionAttribute, isCallable;
     static if (is(typeof(s) == function) || is(typeof(*s) == function)) {
-        //pragma(msg, __LINE__, ": ", "it's a function ");
         alias maybeAddAttributes = withAttr!(s, FunctionAttribute.nothrow_ | FunctionAttribute.nogc, name);
     } else {
         alias maybeAddAttributes = s;
@@ -51,7 +47,6 @@ template maybeAddAttributes(alias s, string name) {
 enum ignore = ["PySignal_SetWakeupFd", "_PyCodec_Forget"];
 
 static foreach (mem; __traits(allMembers, impl)) {
-    //pragma(msg, "\n", __LINE__, ": ", mem);
     static foreach (toIgnore; ignore) {
         static if (mem == toIgnore) {
             mixin(`enum noWrap` ~ mem ~ `;`);
@@ -60,13 +55,10 @@ static foreach (mem; __traits(allMembers, impl)) {
     static if (!is(mixin(`noWrap` ~ mem))) {
         mixin(`alias ` ~ mem ~ ` = maybeAddAttributes!(__traits(getMember, impl, mem), mem);`);
     }
-    //pragma(msg, __LINE__, ": ", mixin(mem));
 }
 
-//public import impl;
-
 string untranslate(string name) {
-    return `auto ` ~ name ~ ` = ` ~ name ~ `_;`;
+    return `immutable ` ~ name ~ ` = ` ~ name ~ `_;`;
 }
 
 static foreach (name; ["METH_VARARGS", "METH_KEYWORDS", "METH_STATIC",
