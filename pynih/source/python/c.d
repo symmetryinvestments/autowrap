@@ -44,8 +44,11 @@ template maybeAddAttributes(alias s, string name) {
     }
 }
 
+// I don't really understand why, but they aren't in the python library???
 enum ignore = ["PySignal_SetWakeupFd", "_PyCodec_Forget"];
 
+// go through all the members of the impl module and alias them, adding nothrow and nogc on
+// functions and functions pointers, but not on types
 static foreach (mem; __traits(allMembers, impl)) {
     static foreach (toIgnore; ignore) {
         static if (mem == toIgnore) {
@@ -67,6 +70,7 @@ static foreach (name; ["METH_VARARGS", "METH_KEYWORDS", "METH_STATIC",
     mixin(untranslate(name));
 }
 
+// can't initialise these at compile time, so do it at runtime
 static foreach(name; ["Py_None", "Py_True", "Py_False"]) {
     mixin(`PyObject* ` ~ name ~ `;`);
     shared static this() {
@@ -74,6 +78,7 @@ static foreach(name; ["Py_None", "Py_True", "Py_False"]) {
     }
 }
 
+/// hacky way to get the PyObject_HEAD macro safely correct
 mixin template PyObjectHead() {
     import impl : PyObject_HEAD_code;
     shared static this() {
@@ -82,6 +87,7 @@ mixin template PyObjectHead() {
     PyObject ob_base;
 }
 
+/// genuinely nice little abstraction
 auto pyObjectNew(T)(PyTypeObject* typeobj) {
     return cast(T*) _PyObject_New(typeobj);
 }
