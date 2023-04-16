@@ -44,6 +44,7 @@ jobs:
           echo "PYTHON_LIB_DIR=${{ env.pythonLocation }}/lib" >> $GITHUB_ENV
           echo "PYD_LIBPYTHON_DIR=${{ env.pythonLocation }}/lib" >> $GITHUB_ENV
           echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${{ env.pythonLocation }}/lib" >> $GITHUB_ENV
+          echo "IMPORTC_H_PATH=$(find $(dirname $(which $DC))/../../ -path '*/import/importc.h')" >> $GITHUB_ENV
 
       - name: Install Python dependencies
         run: |
