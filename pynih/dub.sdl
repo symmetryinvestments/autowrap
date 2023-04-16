@@ -7,7 +7,7 @@ dependency "autowrap:common" path=".."
 dependency "autowrap:reflection" path=".."
 dependency "mirror" version="~>0.3.0"
 
-preGenerateCommands "make preprocess"
+preGenerateCommands "make preprocess DC=$DC IMPORTC_H_PATH=$IMPORTC_H_PATH"
 importPaths "source" "generated/python"
 sourceFiles "generated/python/impl.i"
 

@@ -1,4 +1,8 @@
-DC ?= dmd
+DC ?= $(shell echo $$DC)
+PYTHON ?= python
+IMPORTC_H_PATH ?= $(shell echo $$IMPORTC_H_PATH)
+
+SHELL=/bin/bash -o pipefail
 
 UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S),Linux)
@@ -8,7 +12,7 @@ ifeq ($(UNAME_S),Darwin)
 	shared_ext := .dylib
 endif
 
-PYTHON_INCLUDE_DIR = $(shell python -c 'from distutils.sysconfig import get_python_inc; print(get_python_inc())')
+PYTHON_INCLUDE_DIR = $(shell $(PYTHON) -c 'from distutils.sysconfig import get_python_inc; print(get_python_inc())')
 
 .PHONY: test
 test: contract/contract.so
@@ -17,17 +21,16 @@ test: contract/contract.so
 contract/contract.so: contract/libcontract$(shared_ext)
 	cp $< $@
 
-
 .PHONY: test contract/libcontract$(shared_ext)
 contract/libcontract$(shared_ext):
-	cd contract && dub build -v --compiler=${DC}
+	cd contract && dub build -q --compiler=${DC}
 
 preprocess: generated/python/impl.i
 
 generated/python/impl.i: source/python/_impl.c
 	mkdir -p $(@D)
-	clang -include /Users/john/dlang/ldc-1.32.0/import/importc.h -fno-blocks -std=c11 -I /opt/homebrew/Cellar/python@3.11/3.11.3/Frameworks/Python.framework/Versions/3.11/include/python3.11 -E source/python/_impl.c -o - | ./postpreprocess.d > generated/python/impl.i
+	clang -include $(IMPORTC_H_PATH) -fno-blocks -std=c11 -I $(PYTHON_INCLUDE_DIR) -E source/python/_impl.c -o - | ./postpreprocess.d > generated/python/impl.i
 
 .PHONY: clean
 clean:
-	rm -rf generated
+	rm -rf generated contract/contract.so contract/libcontract$(shared_ext)
