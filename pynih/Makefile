@@ -23,7 +23,7 @@ contract/contract.so: contract/libcontract$(shared_ext)
 
 .PHONY: test contract/libcontract$(shared_ext)
 contract/libcontract$(shared_ext):
-	cd contract && dub build -q --compiler=${DC}
+	cd contract && dub build -v --compiler=${DC}
 
 preprocess: generated/python/impl.i
 
