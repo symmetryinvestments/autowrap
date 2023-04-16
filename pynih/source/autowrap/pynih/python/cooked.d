@@ -64,7 +64,9 @@ private PyMethodDef* cFunctionsToPyMethodDefs(alias cfunctions)()
         alias cfunction = function_.symbol;
         static assert(is(typeof(&cfunction): PyCFunction) ||
                       is(typeof(&cfunction): PyCFunctionWithKeywords),
-                      __traits(identifier, cfunction) ~ " is not a Python C function");
+                      __traits(identifier, cfunction) ~ " is not a Python C function, has type\n"
+                        ~ typeof(cfunction).stringof ~ " which isn't either\n"
+                        ~ PyCFunction.stringof ~ " or\n" ~ PyCFunctionWithKeywords.stringof);
 
         methods[i] = pyMethodDef!(function_.identifier)(cast(PyCFunction) &cfunction);
     }}

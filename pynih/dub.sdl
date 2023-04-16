@@ -6,8 +6,9 @@ targetType "library"
 dependency "autowrap:common" path=".."
 dependency "autowrap:reflection" path=".."
 dependency "mirror" version="~>0.3.0"
-dependency "monty" version="~>0.0.1"
 
-configuration "default" {
+preGenerateCommands "make preprocess"
+importPaths "source" "generated/python"
+sourceFiles "generated/python/impl.i"
 
-}
+libs "python3.11"

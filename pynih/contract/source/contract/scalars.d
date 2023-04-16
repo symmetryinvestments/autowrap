@@ -37,14 +37,14 @@ package PyObject* one_bool_param_to_not(PyObject* self, PyObject *args) nothrow 
     if(arg is null) return null;
 
     if(!PyBool_Check(arg)) return null;
-    const dArg = arg == pyTrue;
+    const dArg = arg == Py_True;
 
     return PyBool_FromLong(!dArg);
 }
 
 
 // returns the number passed in multiplied by two
-package PyObject* one_int_param_to_times_two(PyObject* self, PyObject *args) nothrow @nogc {
+package PyObject* one_int_param_to_times_two(PyObject* self, PyObject *args) /*nothrow @nogc*/ {
 
     long arg;
 
@@ -120,7 +120,7 @@ package PyObject* one_string_param_to_string(PyObject* self, PyObject *args) not
 // appends "_suffix" to the string passed in without using the GC
 package PyObject* one_string_param_to_string_manual_mem(PyObject* self, PyObject *args) nothrow @nogc {
     import std.string: fromStringz;
-    import core.stdc.stdlib: malloc;
+    import core.stdc.stdlib: malloc, free;
     import core.stdc.string: strlen;
 
     if(PyTuple_Size(args) != 1) {
