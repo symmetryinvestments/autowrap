@@ -4,7 +4,7 @@ static import impl;
 
 import std.traits : FunctionAttribute;
 
-template withAttr(alias f, FunctionAttribute attributes, string name) {
+private template withAttr(alias f, FunctionAttribute attributes, string name) {
     import std.traits :  SetFunctionAttributes, functionAttributes, functionLinkage,
         ReturnType, Parameters, variadicFunctionStyle, Variadic;
 
@@ -20,22 +20,22 @@ template withAttr(alias f, FunctionAttribute attributes, string name) {
     alias newFptrT = SetFunctionAttributes!(fptrT, functionLinkage!f, newAttributes);
 
     static if (variadicFunctionStyle!newFptrT == Variadic.c) {
-        auto withAttr(Args ...)(Parameters!newFptrT args, Args extraArgs) {
+        public auto withAttr(Args ...)(Parameters!newFptrT args, Args extraArgs) {
             return (cast(newFptrT) getFptr())(args, extraArgs);
         }
     } else {
-        auto withAttr(Parameters!newFptrT args) {
+        public auto withAttr(Parameters!newFptrT args) {
             return (cast(newFptrT) getFptr())(args);
         }
     }
 }
 
 // don't do anything to types
-template withAttr(f, FunctionAttribute attributes, string name) {
+private template withAttr(f, FunctionAttribute attributes, string name) {
     alias withAttr = f;
 }
 
-template maybeAddAttributes(alias s, string name) {
+private template maybeAddAttributes(alias s, string name) {
     import std.traits : FunctionAttribute, isCallable;
     static if (is(typeof(s) == function) || is(typeof(*s) == function)) {
         alias maybeAddAttributes = withAttr!(s, FunctionAttribute.nothrow_ | FunctionAttribute.nogc, name);
@@ -45,7 +45,7 @@ template maybeAddAttributes(alias s, string name) {
 }
 
 // I don't really understand why, but they aren't in the python library???
-enum ignore = ["PySignal_SetWakeupFd", "_PyCodec_Forget"];
+private enum ignore = ["PySignal_SetWakeupFd", "_PyCodec_Forget"];
 
 // go through all the members of the impl module and alias them, adding nothrow and nogc on
 // functions and functions pointers, but not on types
@@ -60,7 +60,7 @@ static foreach (mem; __traits(allMembers, impl)) {
     }
 }
 
-string untranslate(string name) {
+private string untranslate(string name) {
     return `immutable ` ~ name ~ ` = ` ~ name ~ `_;`;
 }
 
