@@ -14,7 +14,7 @@ struct PythonObject {
 
     // can only be used on Python C API calls that create a new PyObject*
     // due to reference count issues
-    private this(PyObject* obj) {
+    this(PyObject* obj) {
         _obj = obj;
     }
 
