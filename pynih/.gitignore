@@ -1,9 +1,12 @@
 *.o
 *.so
 *.dynlib
+*.dylib
 *.dll
 *.lib
 *.exp
 __pycache__
 *.pyc
 *.d.tmp
+generated/
+pynih-test-library

@@ -1,7 +1,8 @@
 {
 	"fileVersion": 1,
 	"versions": {
-		"mirror": "0.3.2",
-		"unit-threaded": "1.0.4"
+		"autowrap": {"path":".."},
+		"mirror": "0.3.3",
+		"unit-threaded": "2.1.5"
 	}
 }

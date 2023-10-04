@@ -18,8 +18,9 @@ PyObject* toPython(in bool val) @trusted @nogc {
     auto pyTrue = cast(PyObject*) &_Py_TrueStruct;
     auto pyFalse = cast(PyObject*) &_Py_FalseStruct;
 
-    static PyObject* incAndRet(PyObject* obj) {
-        Py_IncRef(obj);
+    static PyObject* incAndRet(PyObject* obj) @nogc {
+        
+        (cast(int function(PyObject*) @nogc)(&Py_IncRef))(obj);
         return obj;
     }
 

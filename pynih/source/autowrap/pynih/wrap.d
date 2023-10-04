@@ -15,11 +15,6 @@ import mirror.meta.reflection : FunctionSymbol;
 import std.meta: allSatisfy;
 import std.traits: isInstanceOf, isSomeFunction;
 
-// This is required to avoid linker errors. Before it was in the string mixin,
-// but there's no need for it there, instead we declare it here in the library
-// instead.
-export __gshared extern(C) PyDateTime_CAPI* PyDateTimeAPI;
-
 
 /**
    Returns a string to mixin that implements the necessary boilerplate
