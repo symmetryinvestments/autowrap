@@ -12,7 +12,7 @@
 		"mirror": "0.3.2",
 		"monty": "0.0.1",
 		"openssl": "3.2.2",
-		"pyd": "0.14.3",
+		"pyd": "0.14.4,
 		"scriptlike": "0.10.3",
 		"stdx-allocator": "2.77.5",
 		"taggedalgebraic": "0.11.22",
