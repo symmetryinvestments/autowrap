@@ -1,4 +1,4 @@
-name "numpytests"
+name "numpy"
 targetType "dynamicLibrary"
 
 
