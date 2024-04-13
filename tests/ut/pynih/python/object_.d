@@ -295,9 +295,9 @@ unittest {
     "Foo object".should.be in foo.toString;
 
     foo.delattr("oops").shouldThrowWithMessage!PythonException(
-        "AttributeError: oops");
+        "AttributeError: 'Foo' object has no attribute 'oops'");
     foo.delattr(PythonObject("oopsie")).shouldThrowWithMessage!PythonException(
-        "AttributeError: oopsie");
+        "AttributeError: 'Foo' object has no attribute 'oopsie'");
 
     foo.setattr("key", "val");
     foo.hasattr("key").should == true;
