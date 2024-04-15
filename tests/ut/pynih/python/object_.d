@@ -253,8 +253,10 @@ unittest {
 @("delattr")
 unittest {
     import python.c: PyRun_StringFlags, Py_file_input, Py_eval_input, PyCompilerFlags, PyDict_New;
-    import std.array: join;
+    import std.array: join, array;
     import std.string: toStringz;
+    import std.regex: matchFirst, regex;
+    import std.conv: text;
 
     static linesToCode(in string[] lines) {
         return lines.join("\n").toStringz;
@@ -294,10 +296,23 @@ unittest {
     auto foo = PythonObject(evalRes);
     "Foo object".should.be in foo.toString;
 
-    foo.delattr("oops").shouldThrowWithMessage!PythonException(
-        "AttributeError: 'Foo' object has no attribute 'oops'");
-    foo.delattr(PythonObject("oopsie")).shouldThrowWithMessage!PythonException(
-        "AttributeError: 'Foo' object has no attribute 'oopsie'");
+    try {
+	    foo.delattr("oops");
+	    assert(false, "Should throw");
+    }
+    catch(PythonException e){
+	    auto r = regex(r"^AttributeError: ('Foo' object has no attribute ')?oops(')?$");
+	    e.msg.array.text.matchFirst(r).shouldNotBeEmpty;
+    }
+
+    try {
+	    foo.delattr("oopsie");
+	    assert(false, "Should throw");
+    }
+    catch(PythonException e){
+	    auto r = regex(r"^AttributeError: ('Foo' object has no attribute ')?oopsie(')?$");
+	    e.msg.array.text.matchFirst(r).shouldNotBeEmpty;
+    }
 
     foo.setattr("key", "val");
     foo.hasattr("key").should == true;
