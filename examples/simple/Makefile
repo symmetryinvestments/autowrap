@@ -54,11 +54,11 @@ test_simple_python: test_simple_pyd test_simple_pynih
 
 .PHONY: test_simple_pyd
 test_simple_pyd: $(TEST_SIMPLE_PY) lib/pyd/prefix.so lib/pyd/adder.so lib/pyd/structs.so lib/pyd/api.so lib/pyd/wrap_all.so
-	PYTHONPATH=$(shell pwd)/lib/pyd LD_LIBRARY_PATH="${PYTHONPATH}" PYD=1 pytest -s -vv $<
+	PYTHONPATH=$(shell pwd)/lib/pyd LD_LIBRARY_PATH=$(shell pwd)/lib/pyd PYD=1 pytest -s -vv $<
 
 .PHONY: test_simple_pynih
 test_simple_pynih: $(TEST_SIMPLE_PY) lib/pynih/prefix.so lib/pynih/adder.so lib/pynih/structs.so lib/pynih/api.so lib/pynih/wrap_all.so
-	PYTHONPATH=$(shell pwd)/lib/pynih PYNIH=1 pytest -s -vv $<
+	PYTHONPATH=$(shell pwd)/lib/pynih LD_LIBRARY_PATH=$(shell pwd)/lib/pynih PYNIH=1 pytest -s -vv $<
 
 
 $(eval $(call python-module-pyd,prefix))
