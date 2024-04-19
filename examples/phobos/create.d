@@ -31,6 +31,27 @@ void run(string[] args) @safe {
             targetType "dynamicLibrary"
 
 
+            configuration "python311" {
+                targetPath "lib/pyd"
+                lflags "-L$PYTHON_LIB_DIR"
+                dependency "autowrap:python" path="../../.."
+                subConfiguration "autowrap:python" "python311"
+            }
+
+            configuration "python310" {
+                targetPath "lib/pyd"
+                lflags "-L$PYTHON_LIB_DIR"
+                dependency "autowrap:python" path="../../.."
+                subConfiguration "autowrap:python" "python310"
+            }
+
+            configuration "python39" {
+                targetPath "lib/pyd"
+                lflags "-L$PYTHON_LIB_DIR"
+                dependency "autowrap:python" path="../../.."
+                subConfiguration "autowrap:python" "python39"
+            }
+
             configuration "python38" {
                 targetPath "lib/pyd"
                 lflags "-L$PYTHON_LIB_DIR"
