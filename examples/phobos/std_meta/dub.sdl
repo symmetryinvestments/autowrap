@@ -2,10 +2,31 @@ name "std_meta"
 targetType "dynamicLibrary"
 
 
+configuration "python311" {
+    targetPath "lib/pyd"
+    lflags "-L$PYTHON_LIB_DIR"
+    dependency "autowrap:pyd" path="../../.."
+    subConfiguration "autowrap:pyd" "python311"
+}
+
+configuration "python310" {
+    targetPath "lib/pyd"
+    lflags "-L$PYTHON_LIB_DIR"
+    dependency "autowrap:pyd" path="../../.."
+    subConfiguration "autowrap:pyd" "python310"
+}
+
+configuration "python39" {
+    targetPath "lib/pyd"
+    lflags "-L$PYTHON_LIB_DIR"
+    dependency "autowrap:pyd" path="../../.."
+    subConfiguration "autowrap:pyd" "python39"
+}
+
 configuration "python38" {
     targetPath "lib/pyd"
     lflags "-L$PYTHON_LIB_DIR"
-    dependency "autowrap:pyd" path="../../"
+    dependency "autowrap:pyd" path="../../.."
     subConfiguration "autowrap:pyd" "python38"
 }
 

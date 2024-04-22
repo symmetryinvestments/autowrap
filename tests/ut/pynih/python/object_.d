@@ -255,6 +255,7 @@ unittest {
     import python.c: PyRun_StringFlags, Py_file_input, Py_eval_input, PyCompilerFlags, PyDict_New;
     import std.array: join;
     import std.string: toStringz;
+    import std.regex: matchFirst, regex;
 
     static linesToCode(in string[] lines) {
         return lines.join("\n").toStringz;
@@ -294,10 +295,14 @@ unittest {
     auto foo = PythonObject(evalRes);
     "Foo object".should.be in foo.toString;
 
-    foo.delattr("oops").shouldThrowWithMessage!PythonException(
-        "AttributeError: oops");
-    foo.delattr(PythonObject("oopsie")).shouldThrowWithMessage!PythonException(
-        "AttributeError: oopsie");
+    {
+	    auto r = regex(r"^AttributeError: ('Foo' object has no attribute ')?oops(')?$");
+	    foo.delattr("oops").shouldThrow!PythonException.msg.matchFirst(r).shouldNotBeEmpty;
+    }
+    {
+	    auto r = regex(r"^AttributeError: ('Foo' object has no attribute ')?oopsie(')?$");
+	    foo.delattr("oopsie").shouldThrow!PythonException.msg.matchFirst(r).shouldNotBeEmpty;
+    }
 
     foo.setattr("key", "val");
     foo.hasattr("key").should == true;
