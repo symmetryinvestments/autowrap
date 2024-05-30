@@ -3,7 +3,7 @@
 	"versions": {
 		"autowrap": {"path":"../.."},
 		"mirror": "0.3.2",
-		"monty": "0.0.1",
+		"monty": "0.0.13",
 		"unit-threaded": "1.0.4"
 	}
 }
