@@ -1,8 +1,8 @@
 {
 	"fileVersion": 1,
 	"versions": {
-		"mirror": "0.3.2",
-		"monty": "0.0.12",
-		"unit-threaded": "2.0.3"
+		"mirror": "0.3.3",
+		"monty": "0.0.13",
+		"unit-threaded": "2.2.0"
 	}
 }
