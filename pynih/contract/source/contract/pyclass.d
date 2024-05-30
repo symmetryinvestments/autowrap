@@ -79,7 +79,7 @@ package PyObject* pyclass_string_list_struct(PyObject* self, PyObject *args) {
             return null;
         }
 
-        const length = PyUnicode_GetSize(item);
+        const length = PyUnicode_GetLength(item);
         auto ptr = PyBytes_AsString(unicode);
         auto str = ptr is null ? null : ptr[0 .. length];
 
