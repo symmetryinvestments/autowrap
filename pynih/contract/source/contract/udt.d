@@ -22,10 +22,10 @@ package PyObject* simple_struct_func(PyObject* self, PyObject *args) nothrow @no
     // either this of PyGetSetDef
     static PyMemberDef[3] members;
     members[0].name = cast(typeof(PyMemberDef.name)) &"the_int"[0];
-    members[0].type = Py_T_INT;
+    members[0].type = T_INT;
     members[0].offset = MyType.i.offsetof;
     members[1].name = cast(typeof(PyMemberDef.name)) &"the_double"[0];
-    members[1].type = Py_T_DOUBLE;
+    members[1].type = T_DOUBLE;
     members[1].offset = MyType.d.offsetof;
 
     static PyTypeObject type;
