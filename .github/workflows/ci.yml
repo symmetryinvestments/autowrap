@@ -16,8 +16,7 @@ jobs:
 
         python-version:
           #- '3.12'
-          - '3.10'
-          - '3.9'
+          - '3.11'
 
     runs-on: ${{ matrix.os }}
     steps:
