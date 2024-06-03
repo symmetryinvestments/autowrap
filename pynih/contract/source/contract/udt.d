@@ -34,7 +34,7 @@ package PyObject* simple_struct_func(PyObject* self, PyObject *args) nothrow @no
         type.tp_name = &"MyType"[0];
         type.tp_basicsize = MyType.sizeof;
         type.tp_members = &members[0];
-        type.tp_flags = TypeFlags.Default;
+        type.tp_flags = Py_TPFLAGS_DEFAULT;
 
         if(PyType_Ready(&type) < 0) {
             PyErr_SetString(PyExc_TypeError, &"not ready"[0]);
@@ -87,7 +87,7 @@ package PyObject* twice_struct_func(PyObject* self, PyObject *args) nothrow @nog
         type.tp_name = &"Twice"[0];
         type.tp_basicsize = Twice.sizeof;
         type.tp_methods = &methods[0];
-        type.tp_flags = TypeFlags.Default;
+        type.tp_flags = Py_TPFLAGS_DEFAULT;
 
         if(PyType_Ready(&type) < 0) {
             PyErr_SetString(PyExc_TypeError, &"not ready"[0]);
@@ -224,7 +224,7 @@ package PyObject* struct_getset(PyObject* self, PyObject *args) nothrow @nogc {
 
         outerType.tp_name = &"StructGetSet"[0];
         outerType.tp_basicsize = StructGetSet.sizeof;
-        outerType.tp_flags = TypeFlags.Default;
+        outerType.tp_flags = Py_TPFLAGS_DEFAULT;
         outerType.tp_repr = outerType.tp_str = &reprOuter;
         outerType.tp_getset = &outerGetSets[0];
 
@@ -242,7 +242,7 @@ package PyObject* struct_getset(PyObject* self, PyObject *args) nothrow @nogc {
 
         innerType.tp_name = &"StructGetSet.Inner"[0];
         innerType.tp_basicsize = StructGetSet.Inner.sizeof;
-        innerType.tp_flags = TypeFlags.Default;
+        innerType.tp_flags = Py_TPFLAGS_DEFAULT;
         innerType.tp_repr = innerType.tp_str = &reprInner;
         innerType.tp_getset = &innerGetSets[0];
 

@@ -4,10 +4,10 @@
 module autowrap.pynih.python.type;
 
 
-import python.c: PyObject;
+import python.c: PyObject, PyErr_SetString, PyType_Ready;
 import mirror.meta.traits: isParameter, BinaryOperator;
 import std.traits: Unqual, isArray, isIntegral, isBoolean, isFloatingPoint,
-    isAggregateType, isCallable, isAssociativeArray, isSomeFunction;
+    isAggregateType, isCallable, isAssociativeArray, isSomeFunction, FunctionAttribute;
 import std.datetime: DateTime, Date, TimeOfDay;
 import std.typecons: Tuple;
 import std.range.primitives: isInputRange;
@@ -63,9 +63,9 @@ struct PythonType(T) {
 
     private static void initialise() nothrow {
         import autowrap.common: AlwaysTry;
-        import python.c: PyType_GenericNew, PyType_Ready, TypeFlags,
+        import python.c: PyType_GenericNew,
             PyErr_SetString, PyExc_TypeError,
-            PyNumberMethods, PySequenceMethods;
+            PyNumberMethods, PySequenceMethods, Py_TPFLAGS_DEFAULT;
         import mirror.meta.traits: UnaryOperators, BinaryOperators, AssignOperators, functionName;
         import std.traits: arity, hasMember, TemplateOf;
         import std.meta: Filter;
@@ -76,7 +76,7 @@ struct PythonType(T) {
         // This allows tp_name to do its usual Python job and allows us to
         // construct a D class from its runtime Python type.
         _pyType.tp_name = fullyQualifiedName!(Unqual!T).ptr;
-        _pyType.tp_flags = TypeFlags.Default;
+        _pyType.tp_flags = Py_TPFLAGS_DEFAULT;
         static if(is(T == class) || is(T == interface))
             _pyType.tp_flags |= TypeFlags.BaseType;
 
@@ -670,11 +670,10 @@ struct PythonFunction(alias F) {
     }
 }
 
-
-auto noThrowable(alias F, A...)(auto ref A args) {
+auto noThrowable(alias F, A...)(auto ref A args) nothrow {
     import python.c: PyErr_SetString, PyExc_RuntimeError;
     import std.string: toStringz;
-    import std.traits: ReturnType;
+    import std.traits: ReturnType, FunctionAttribute;
 
     try {
         return F(args);
@@ -978,11 +977,12 @@ struct PythonClass(T) {//}if(isUserAggregate!T) {
         nothrow
         in(self_ !is null)
     {
-        import python.c: Py_IncRef, Py_DecRef, PyErr_SetString, PyExc_TypeError;
+        import python.c: Py_IncRef, Py_DecRef, PyExc_TypeError;
+        import std.string: toStringz;
 
         if(value is null) {
             enum deleteErrStr = "Cannot delete " ~ fieldNames[FieldIndex];
-            PyErr_SetString(PyExc_TypeError, deleteErrStr);
+            PyErr_SetString(PyExc_TypeError, deleteErrStr.toStringz);
             return -1;
         }
 
