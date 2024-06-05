@@ -37,7 +37,7 @@ package PyObject* one_bool_param_to_not(PyObject* self, PyObject *args) nothrow 
     if(arg is null) return null;
 
     if(!PyBool_Check(arg)) return null;
-    const dArg = arg == pyTrue;
+    const dArg = arg == Py_True;
 
     return PyBool_FromLong(!dArg);
 }

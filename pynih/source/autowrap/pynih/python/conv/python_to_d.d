@@ -253,8 +253,8 @@ T to(T)(PyObject* value) if(isSomeString!T) {
 
 
 T to(T)(PyObject* value) if(is(Unqual!T == bool)) {
-    import python.c: pyTrue;
-    return value is pyTrue;
+    import python.c: Py_True;
+    return value is Py_True;
 }
 
 
