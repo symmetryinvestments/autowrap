@@ -15,8 +15,9 @@ jobs:
           - ldc-1.30.0
 
         python-version:
-          #- '3.12'
+          - '3.12'
           - '3.11'
+          - '3.10'
 
     runs-on: ${{ matrix.os }}
     steps:
