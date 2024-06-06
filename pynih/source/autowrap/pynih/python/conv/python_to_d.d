@@ -233,11 +233,11 @@ T to(T)(PyObject* value) if(isArray!T && !isSomeString!T)
 
 T to(T)(PyObject* value) if(isSomeString!T) {
 
-    import python.c: PyUnicode_GetSize, PyUnicode_Check,
+    import python.c: PyUnicode_GetLength, PyUnicode_Check,
         PyBytes_AsString, PyUnicode_AsUTF8String, Py_ssize_t;
     import std.conv: to;
 
-    const length = PyUnicode_GetSize(value);
+    const length = PyUnicode_GetLength(value);
     if(length == 0) return T.init;
 
     auto str = PyUnicode_AsUTF8String(value);
@@ -253,8 +253,8 @@ T to(T)(PyObject* value) if(isSomeString!T) {
 
 
 T to(T)(PyObject* value) if(is(Unqual!T == bool)) {
-    import python.c: pyTrue;
-    return value is pyTrue;
+    import python.c: Py_True;
+    return value is Py_True;
 }
 
 

@@ -9,18 +9,20 @@ jobs:
         os:
           - ubuntu-20.04
         dc:
+          - dmd-2.108.1
           - dmd-2.101.2
+          - ldc-1.38.0
           - ldc-1.30.0
 
         python-version:
+          - '3.12'
+          - '3.11'
           - '3.10'
-          - '3.9'
-          - '3.8'
 
     runs-on: ${{ matrix.os }}
     steps:
 
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Install package dependencies
         run: |
@@ -29,12 +31,12 @@ jobs:
 
       - name: Install D compiler
         # must go before setting LD_LIBRARY_PATH for Python since this overrides it
-        uses: dlang-community/setup-dlang@v1.3.0
+        uses: dlang-community/setup-dlang@v1.4.0
         with:
           compiler: ${{ matrix.dc }}
 
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
 
@@ -66,4 +68,4 @@ jobs:
           LD_RUN_PATH: $PYTHON_LIB_DIR
           LIBRARY_PATH: /usr/lib/llvm-10/lib
 
-      - uses: codecov/codecov-action@v3
+      - uses: codecov/codecov-action@v4

@@ -20,7 +20,7 @@ auto createModule(Module module_, alias cfunctions, alias aggregates = Aggregate
     static PyModuleDef moduleDef;
 
     auto pyMethodDefs = cFunctionsToPyMethodDefs!(cfunctions);
-    moduleDef = pyModuleDef(module_.name.ptr, null /*doc*/, -1 /*size*/, pyMethodDefs);
+    moduleDef = PyModuleDef(pyModuleDefHeadInit, module_.name.ptr, null /*doc*/, -1 /*size*/, pyMethodDefs);
 
     auto module_ = PyModule_Create(&moduleDef);
     addModuleTypes!(aggregates.Types)(module_);
@@ -72,20 +72,6 @@ private PyMethodDef* cFunctionsToPyMethodDefs(alias cfunctions)()
     return &methods[0];
 }
 
-
-/**
-   Helper function to get around the C syntax problem with
-   PyModuleDef_HEAD_INIT - it doesn't compile in D.
-*/
-private auto pyModuleDef(A...)(auto ref A args) {
-    import std.functional: forward;
-
-    return PyModuleDef(
-        // the line below is a manual D version expansion of PyModuleDef_HEAD_INIT
-        PyModuleDef_Base(PyObject(1 /*ref count*/, null /*type*/), null /*m_init*/, 0/*m_index*/, null/*m_copy*/),
-        forward!args
-    );
-}
 
 /**
    Helper function to create PyMethodDef structs.

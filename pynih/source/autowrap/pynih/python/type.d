@@ -63,7 +63,7 @@ struct PythonType(T) {
 
     private static void initialise() nothrow {
         import autowrap.common: AlwaysTry;
-        import python.c: PyType_GenericNew, PyType_Ready, TypeFlags,
+        import python.c: PyType_GenericNew, PyType_Ready, Py_TPFLAGS_DEFAULT, Py_TPFLAGS_BASETYPE,
             PyErr_SetString, PyExc_TypeError,
             PyNumberMethods, PySequenceMethods;
         import mirror.meta.traits: UnaryOperators, BinaryOperators, AssignOperators, functionName;
@@ -76,9 +76,9 @@ struct PythonType(T) {
         // This allows tp_name to do its usual Python job and allows us to
         // construct a D class from its runtime Python type.
         _pyType.tp_name = fullyQualifiedName!(Unqual!T).ptr;
-        _pyType.tp_flags = TypeFlags.Default;
+        _pyType.tp_flags = Py_TPFLAGS_DEFAULT;
         static if(is(T == class) || is(T == interface))
-            _pyType.tp_flags |= TypeFlags.BaseType;
+            _pyType.tp_flags |= Py_TPFLAGS_BASETYPE;
 
         // FIXME: types are that user aggregates *and* callables
         static if(isUserAggregate!T) {

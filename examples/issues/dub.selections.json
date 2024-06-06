@@ -8,7 +8,7 @@
 		"memutils": "1.0.10",
 		"mir-linux-kernel": "1.0.1",
 		"mirror": "0.3.3",
-		"monty": "0.0.12",
+		"monty": "0.0.14",
 		"openssl": "3.3.3",
 		"openssl-static": "1.0.3+3.0.8",
 		"pyd": "0.14.4",
