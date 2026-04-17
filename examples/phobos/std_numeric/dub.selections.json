@@ -4,7 +4,7 @@
 		"autowrap": {"path":"../../.."},
 		"mirror": "0.3.3",
 		"monty": "0.0.14",
-		"pyd": "0.14.5",
+		"pyd": "0.14.4",
 		"unit-threaded": "2.1.9"
 	}
 }

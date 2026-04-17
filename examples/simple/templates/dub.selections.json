@@ -8,7 +8,7 @@
 		"mirror": "0.3.3",
 		"monty": "0.0.14",
 		"nogc": "0.5.1",
-		"pyd": "0.14.5",
+		"pyd": "0.14.4",
 		"scriptlike": "0.10.3",
 		"simple": {"path":".."},
 		"test_allocator": "0.3.4",
