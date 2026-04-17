@@ -47,7 +47,7 @@ jobs:
           echo "PYTHON_INCLUDE_DIR=${{ env.pythonLocation }}/include/python${{ matrix.python-version }}" >> $GITHUB_ENV
           echo "PYTHON_LIB_DIR=${{ env.pythonLocation }}/lib" >> $GITHUB_ENV
           echo "PYD_LIBPYTHON_DIR=${{ env.pythonLocation }}/lib" >> $GITHUB_ENV
-          echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${{ env.pythonLocation }}/lib" >> $GITHUB_ENV
+          echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${{ env.pythonLocation }}/lib:${{ env.LLVM_PATH }}/lib" >> $GITHUB_ENV
 
       - name: Install Python dependencies
         run: |
@@ -68,6 +68,6 @@ jobs:
         env:
           PYD_LIBPYTHON: python${{ matrix.python-version }}
           LD_RUN_PATH: $PYTHON_LIB_DIR
-          LIBRARY_PATH: /usr/lib/llvm-10/lib
+          LIBRARY_PATH: ${{ env.LLVM_PATH }}/lib
 
       - uses: codecov/codecov-action@v5.1.2
