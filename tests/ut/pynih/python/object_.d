@@ -529,6 +529,8 @@ unittest {
 
 @("slice")
 unittest {
+    import std.regex: matchFirst, regex;
+
     PythonObject([1, 2, 3, 4, 5])[1..3].to!(int[]).should == [2, 3];
     PythonObject([1, 2, 3, 4, 5])[].to!(int[]).should == [1, 2, 3, 4, 5];
 
@@ -539,8 +541,16 @@ unittest {
     lst[] = PythonObject([77]);
     lst.to!(int[]).should == [77];
 
-    (lst[1..3] = PythonObject(-1)).shouldThrowWithMessage!PythonException(
-        "TypeError: can only assign an iterable");
+    {
+        auto r = regex(
+            r"^TypeError: (can only assign an iterable|must assign iterable to extended slice)$"
+        );
+        (lst[1..3] = PythonObject(-1))
+            .shouldThrow!PythonException
+            .msg
+            .matchFirst(r)
+            .shouldNotBeEmpty;
+    }
     PythonObject(1)[1..2].shouldThrowWithMessage!PythonException(
         "TypeError: 'int' object is unsliceable");
 }

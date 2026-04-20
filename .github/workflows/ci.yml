@@ -3,17 +3,18 @@ on: [push, pull_request]
 
 jobs:
   test:
-    name: Run tests
+    name: Run full tests
     strategy:
       matrix:
         os:
-          - ubuntu-20.04
+          - ubuntu-24.04
         dc:
           - dmd-2.108.1
           - dmd-2.101.2
-          - ldc-1.38.0
           - ldc-1.30.0
-
+        clang:
+          - 12.0.0
+          - 17.0.6
         python-version:
           - '3.12'
           - '3.11'
@@ -24,14 +25,14 @@ jobs:
 
       - uses: actions/checkout@v4
 
-      - name: Install package dependencies
-        run: |
-          sudo apt-get update -y -qq
-          sudo apt-get install -y -qq libclang-10-dev clang
+      - name: Setup C++
+        uses: aminya/setup-cpp@v1
+        with:
+          llvm: ${{ matrix.clang }}
 
       - name: Install D compiler
         # must go before setting LD_LIBRARY_PATH for Python since this overrides it
-        uses: dlang-community/setup-dlang@v1.4.0
+        uses: dlang-community/setup-dlang@v2
         with:
           compiler: ${{ matrix.dc }}
 
@@ -45,7 +46,7 @@ jobs:
           echo "PYTHON_INCLUDE_DIR=${{ env.pythonLocation }}/include/python${{ matrix.python-version }}" >> $GITHUB_ENV
           echo "PYTHON_LIB_DIR=${{ env.pythonLocation }}/lib" >> $GITHUB_ENV
           echo "PYD_LIBPYTHON_DIR=${{ env.pythonLocation }}/lib" >> $GITHUB_ENV
-          echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${{ env.pythonLocation }}/lib" >> $GITHUB_ENV
+          echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${{ env.pythonLocation }}/lib:${{ env.LLVM_PATH }}/lib" >> $GITHUB_ENV
 
       - name: Install Python dependencies
         run: |
@@ -66,6 +67,64 @@ jobs:
         env:
           PYD_LIBPYTHON: python${{ matrix.python-version }}
           LD_RUN_PATH: $PYTHON_LIB_DIR
-          LIBRARY_PATH: /usr/lib/llvm-10/lib
+          LIBRARY_PATH: ${{ env.LLVM_PATH }}/lib
 
-      - uses: codecov/codecov-action@v4
+      - uses: codecov/codecov-action@v5.1.2
+
+  test-non-pyd:
+    name: Run non-pyd tests
+    strategy:
+      matrix:
+        os:
+          - ubuntu-24.04
+        dc:
+          - dmd-2.112.0
+          - ldc-1.42.0
+        clang:
+          - 12.0.0
+          - 17.0.6
+        python-version:
+          - '3.12'
+          - '3.11'
+          - '3.10'
+
+    runs-on: ${{ matrix.os }}
+    steps:
+
+      - uses: actions/checkout@v4
+
+      - name: Setup C++
+        uses: aminya/setup-cpp@v1
+        with:
+          llvm: ${{ matrix.clang }}
+
+      - name: Install D compiler
+        # must go before setting LD_LIBRARY_PATH for Python since this overrides it
+        uses: dlang-community/setup-dlang@v2
+        with:
+          compiler: ${{ matrix.dc }}
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Python env vars
+        run: |
+          echo "PYTHON_INCLUDE_DIR=${{ env.pythonLocation }}/include/python${{ matrix.python-version }}" >> $GITHUB_ENV
+          echo "PYTHON_LIB_DIR=${{ env.pythonLocation }}/lib" >> $GITHUB_ENV
+          echo "PYD_LIBPYTHON_DIR=${{ env.pythonLocation }}/lib" >> $GITHUB_ENV
+          echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${{ env.pythonLocation }}/lib:${{ env.LLVM_PATH }}/lib" >> $GITHUB_ENV
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run non-pyd tests
+        shell: bash
+        run: bash ci/test-all-non-pyd.sh
+        env:
+          PYD_LIBPYTHON: python${{ matrix.python-version }}
+          LD_RUN_PATH: $PYTHON_LIB_DIR
+          LIBRARY_PATH: ${{ env.LLVM_PATH }}/lib
